@@ -1,0 +1,147 @@
+# =========================
+# .NET / C#
+# =========================
+
+## Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+## Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+## NuGet
+*.nupkg
+*.snupkg
+.nuget/
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+!**/[Pp]ackages/repositories.config
+
+## Build artifacts
+project.lock.json
+project.fragment.lock.json
+artifacts/
+**/Properties/launchSettings.json
+
+## .NET Core
+*.db
+*.sqlite
+
+## User-specific files
+*.rsuser
+*.dotCover
+*.gpState
+
+## Rider IDE
+.idea/
+*.sln.iml
+
+## StyleCop
+StyleCopReport.xml
+
+## Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
+
+## Publish output
+publish/
+out/
+
+# =========================
+# Angular
+# =========================
+
+## Dependencies
+node_modules/
+
+## Build output
+dist/
+tmp/
+out-tsc/
+bazel-out/
+
+## IDE
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+## IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+## Miscellaneous
+/.angular/cache
+.sass-cache/
+connect.lock
+coverage/
+libpeerconnection.log
+testem.log
+typings/
+
+## System files
+.DS_Store
+Thumbs.db
+
+## Optional npm cache
+.npm
+
+## Optional eslint cache
+.eslintcache
+
+## Optional REPL history
+.node_repl_history
+
+## Yarn
+.yarn-integrity
+.pnp.*
+
+## Lock files (uncomment if you want to ignore)
+# package-lock.json
+# yarn.lock
+
+# =========================
+# Environment files
+# =========================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+appsettings.Development.json
+appsettings.Local.json
+
+# =========================
+# Secrets and certificates
+# =========================
+*.pfx
+*.p12
+*.key
+*.pem
+secrets.json
