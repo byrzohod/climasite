@@ -1,0 +1,322 @@
+// =============================================================================
+// CLIMASITE COLOR SYSTEM
+// =============================================================================
+// This file is THE SINGLE SOURCE OF TRUTH for all colors in the application.
+// To change the brand colors, modify ONLY this file.
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// BASE COLORS (SCSS Variables)
+// -----------------------------------------------------------------------------
+$color-white: #ffffff;
+$color-black: #000000;
+
+// Gray Palette
+$color-gray-50: #f9fafb;
+$color-gray-100: #f3f4f6;
+$color-gray-200: #e5e7eb;
+$color-gray-300: #d1d5db;
+$color-gray-400: #9ca3af;
+$color-gray-500: #6b7280;
+$color-gray-600: #4b5563;
+$color-gray-700: #374151;
+$color-gray-800: #1f2937;
+$color-gray-900: #111827;
+$color-gray-950: #030712;
+
+// Primary Palette - Blue (HVAC professional look)
+$color-primary-50: #eff6ff;
+$color-primary-100: #dbeafe;
+$color-primary-200: #bfdbfe;
+$color-primary-300: #93c5fd;
+$color-primary-400: #60a5fa;
+$color-primary-500: #3b82f6;
+$color-primary-600: #2563eb;
+$color-primary-700: #1d4ed8;
+$color-primary-800: #1e40af;
+$color-primary-900: #1e3a8a;
+$color-primary-950: #172554;
+
+// Secondary Palette - Slate (neutral)
+$color-secondary-50: #f8fafc;
+$color-secondary-100: #f1f5f9;
+$color-secondary-200: #e2e8f0;
+$color-secondary-300: #cbd5e1;
+$color-secondary-400: #94a3b8;
+$color-secondary-500: #64748b;
+$color-secondary-600: #475569;
+$color-secondary-700: #334155;
+$color-secondary-800: #1e293b;
+$color-secondary-900: #0f172a;
+$color-secondary-950: #020617;
+
+// Accent Palette - Cyan (cool/air conditioning feel)
+$color-accent-50: #ecfeff;
+$color-accent-100: #cffafe;
+$color-accent-200: #a5f3fc;
+$color-accent-300: #67e8f9;
+$color-accent-400: #22d3ee;
+$color-accent-500: #06b6d4;
+$color-accent-600: #0891b2;
+$color-accent-700: #0e7490;
+$color-accent-800: #155e75;
+$color-accent-900: #164e63;
+$color-accent-950: #083344;
+
+// Warm Palette - Orange (heating theme)
+$color-warm-50: #fff7ed;
+$color-warm-100: #ffedd5;
+$color-warm-200: #fed7aa;
+$color-warm-300: #fdba74;
+$color-warm-400: #fb923c;
+$color-warm-500: #f97316;
+$color-warm-600: #ea580c;
+$color-warm-700: #c2410c;
+$color-warm-800: #9a3412;
+$color-warm-900: #7c2d12;
+$color-warm-950: #431407;
+
+// Success Palette - Green
+$color-success-50: #f0fdf4;
+$color-success-100: #dcfce7;
+$color-success-200: #bbf7d0;
+$color-success-300: #86efac;
+$color-success-400: #4ade80;
+$color-success-500: #22c55e;
+$color-success-600: #16a34a;
+$color-success-700: #15803d;
+$color-success-800: #166534;
+$color-success-900: #14532d;
+$color-success-950: #052e16;
+
+// Warning Palette - Amber
+$color-warning-50: #fffbeb;
+$color-warning-100: #fef3c7;
+$color-warning-200: #fde68a;
+$color-warning-300: #fcd34d;
+$color-warning-400: #fbbf24;
+$color-warning-500: #f59e0b;
+$color-warning-600: #d97706;
+$color-warning-700: #b45309;
+$color-warning-800: #92400e;
+$color-warning-900: #78350f;
+$color-warning-950: #451a03;
+
+// Error Palette - Red
+$color-error-50: #fef2f2;
+$color-error-100: #fee2e2;
+$color-error-200: #fecaca;
+$color-error-300: #fca5a5;
+$color-error-400: #f87171;
+$color-error-500: #ef4444;
+$color-error-600: #dc2626;
+$color-error-700: #b91c1c;
+$color-error-800: #991b1b;
+$color-error-900: #7f1d1d;
+$color-error-950: #450a0a;
+
+// Info Palette - Sky
+$color-info-50: #f0f9ff;
+$color-info-100: #e0f2fe;
+$color-info-200: #bae6fd;
+$color-info-300: #7dd3fc;
+$color-info-400: #38bdf8;
+$color-info-500: #0ea5e9;
+$color-info-600: #0284c7;
+$color-info-700: #0369a1;
+$color-info-800: #075985;
+$color-info-900: #0c4a6e;
+$color-info-950: #082f49;
+
+// =============================================================================
+// CSS CUSTOM PROPERTIES - LIGHT THEME (Default)
+// =============================================================================
+:root {
+  // Static palette values (available in both themes)
+  --color-primary-50: #{$color-primary-50};
+  --color-primary-100: #{$color-primary-100};
+  --color-primary-200: #{$color-primary-200};
+  --color-primary-300: #{$color-primary-300};
+  --color-primary-400: #{$color-primary-400};
+  --color-primary-500: #{$color-primary-500};
+  --color-primary-600: #{$color-primary-600};
+  --color-primary-700: #{$color-primary-700};
+  --color-primary-800: #{$color-primary-800};
+  --color-primary-900: #{$color-primary-900};
+  --color-primary-950: #{$color-primary-950};
+
+  --color-secondary-50: #{$color-secondary-50};
+  --color-secondary-100: #{$color-secondary-100};
+  --color-secondary-200: #{$color-secondary-200};
+  --color-secondary-300: #{$color-secondary-300};
+  --color-secondary-400: #{$color-secondary-400};
+  --color-secondary-500: #{$color-secondary-500};
+  --color-secondary-600: #{$color-secondary-600};
+  --color-secondary-700: #{$color-secondary-700};
+  --color-secondary-800: #{$color-secondary-800};
+  --color-secondary-900: #{$color-secondary-900};
+  --color-secondary-950: #{$color-secondary-950};
+
+  --color-accent-50: #{$color-accent-50};
+  --color-accent-100: #{$color-accent-100};
+  --color-accent-200: #{$color-accent-200};
+  --color-accent-300: #{$color-accent-300};
+  --color-accent-400: #{$color-accent-400};
+  --color-accent-500: #{$color-accent-500};
+  --color-accent-600: #{$color-accent-600};
+  --color-accent-700: #{$color-accent-700};
+  --color-accent-800: #{$color-accent-800};
+  --color-accent-900: #{$color-accent-900};
+  --color-accent-950: #{$color-accent-950};
+
+  --color-warm-50: #{$color-warm-50};
+  --color-warm-100: #{$color-warm-100};
+  --color-warm-200: #{$color-warm-200};
+  --color-warm-300: #{$color-warm-300};
+  --color-warm-400: #{$color-warm-400};
+  --color-warm-500: #{$color-warm-500};
+  --color-warm-600: #{$color-warm-600};
+  --color-warm-700: #{$color-warm-700};
+  --color-warm-800: #{$color-warm-800};
+  --color-warm-900: #{$color-warm-900};
+  --color-warm-950: #{$color-warm-950};
+
+  // Background Colors (Light Theme)
+  --color-bg-primary: #{$color-white};
+  --color-bg-secondary: #{$color-gray-50};
+  --color-bg-tertiary: #{$color-gray-100};
+  --color-bg-inverse: #{$color-gray-900};
+  --color-bg-overlay: rgba(0, 0, 0, 0.5);
+  --color-bg-card: #{$color-white};
+  --color-bg-input: #{$color-white};
+  --color-bg-hover: #{$color-gray-50};
+  --color-bg-active: #{$color-gray-100};
+  --color-bg-disabled: #{$color-gray-100};
+
+  // Text Colors (Light Theme) - Enhanced contrast
+  --color-text-primary: #{$color-gray-900};
+  --color-text-secondary: #{$color-gray-700};
+  --color-text-tertiary: #{$color-gray-600};
+  --color-text-inverse: #{$color-white};
+  --color-text-disabled: #{$color-gray-400};
+  --color-text-placeholder: #{$color-gray-500};
+  --color-text-muted: #{$color-gray-500};
+
+  // Border Colors (Light Theme)
+  --color-border-primary: #{$color-gray-200};
+  --color-border-secondary: #{$color-gray-300};
+  --color-border-focus: #{$color-primary-500};
+  --color-border-error: #{$color-error-500};
+
+  // Brand Colors
+  --color-primary: #{$color-primary-500};
+  --color-primary-hover: #{$color-primary-600};
+  --color-primary-active: #{$color-primary-700};
+  --color-primary-light: #{$color-primary-100};
+
+  --color-secondary: #{$color-secondary-500};
+  --color-secondary-hover: #{$color-secondary-600};
+  --color-secondary-active: #{$color-secondary-700};
+
+  --color-accent: #{$color-accent-500};
+  --color-accent-hover: #{$color-accent-600};
+  --color-accent-active: #{$color-accent-700};
+
+  --color-warm: #{$color-warm-500};
+  --color-warm-hover: #{$color-warm-600};
+
+  // Semantic Colors
+  --color-success: #{$color-success-500};
+  --color-success-light: #{$color-success-100};
+  --color-success-dark: #{$color-success-700};
+
+  --color-warning: #{$color-warning-500};
+  --color-warning-light: #{$color-warning-100};
+  --color-warning-dark: #{$color-warning-700};
+
+  --color-error: #{$color-error-500};
+  --color-error-light: #{$color-error-100};
+  --color-error-dark: #{$color-error-700};
+
+  --color-info: #{$color-info-500};
+  --color-info-light: #{$color-info-100};
+  --color-info-dark: #{$color-info-700};
+
+  // Shadow Colors
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --shadow-color-lg: rgba(0, 0, 0, 0.15);
+
+  // Ring/Focus Colors
+  --color-ring: #{$color-primary-500};
+  --color-ring-offset: #{$color-white};
+
+  // Theme transition
+  --theme-transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+// =============================================================================
+// CSS CUSTOM PROPERTIES - DARK THEME
+// =============================================================================
+[data-theme="dark"],
+.dark {
+  // Background Colors (Dark Theme)
+  --color-bg-primary: #{$color-gray-900};
+  --color-bg-secondary: #{$color-gray-800};
+  --color-bg-tertiary: #{$color-gray-700};
+  --color-bg-inverse: #{$color-white};
+  --color-bg-overlay: rgba(0, 0, 0, 0.7);
+  --color-bg-card: #{$color-gray-800};
+  --color-bg-input: #{$color-gray-800};
+  --color-bg-hover: #{$color-gray-700};
+  --color-bg-active: #{$color-gray-600};
+  --color-bg-disabled: #{$color-gray-700};
+
+  // Text Colors (Dark Theme)
+  --color-text-primary: #{$color-gray-50};
+  --color-text-secondary: #{$color-gray-300};
+  --color-text-tertiary: #{$color-gray-400};
+  --color-text-inverse: #{$color-gray-900};
+  --color-text-disabled: #{$color-gray-500};
+  --color-text-placeholder: #{$color-gray-500};
+  --color-text-muted: #{$color-gray-500};
+
+  // Border Colors (Dark Theme)
+  --color-border-primary: #{$color-gray-700};
+  --color-border-secondary: #{$color-gray-600};
+  --color-border-focus: #{$color-primary-400};
+  --color-border-error: #{$color-error-400};
+
+  // Brand Colors (Adjusted for dark mode)
+  --color-primary: #{$color-primary-400};
+  --color-primary-hover: #{$color-primary-300};
+  --color-primary-active: #{$color-primary-500};
+  --color-primary-light: #{$color-primary-900};
+
+  --color-accent: #{$color-accent-400};
+  --color-accent-hover: #{$color-accent-300};
+
+  // Semantic Colors (Adjusted for dark mode)
+  --color-success: #{$color-success-400};
+  --color-success-light: #{$color-success-900};
+  --color-success-dark: #{$color-success-300};
+
+  --color-warning: #{$color-warning-400};
+  --color-warning-light: #{$color-warning-900};
+  --color-warning-dark: #{$color-warning-300};
+
+  --color-error: #{$color-error-400};
+  --color-error-light: #{$color-error-900};
+  --color-error-dark: #{$color-error-300};
+
+  --color-info: #{$color-info-400};
+  --color-info-light: #{$color-info-900};
+  --color-info-dark: #{$color-info-300};
+
+  // Shadow Colors
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --shadow-color-lg: rgba(0, 0, 0, 0.4);
+
+  // Ring/Focus Colors
+  --color-ring: #{$color-primary-400};
+  --color-ring-offset: #{$color-gray-900};
+}

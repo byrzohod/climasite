@@ -1,0 +1,476 @@
+{
+  "common": {
+    "appName": "ClimaSite",
+    "tagline": "Ihr Partner für HLK-Lösungen",
+    "loading": "Laden...",
+    "error": "Ein Fehler ist aufgetreten",
+    "retry": "Erneut versuchen",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "add": "Hinzufügen",
+    "search": "Suchen",
+    "filter": "Filtern",
+    "sort": "Sortieren",
+    "reset": "Zurücksetzen",
+    "submit": "Absenden",
+    "back": "Zurück",
+    "next": "Weiter",
+    "previous": "Zurück",
+    "yes": "Ja",
+    "no": "Nein",
+    "close": "Schließen",
+    "viewAll": "Alle anzeigen",
+    "showMore": "Mehr anzeigen",
+    "showLess": "Weniger anzeigen",
+    "currency": "{{amount}} €"
+  },
+  "nav": {
+    "home": "Startseite",
+    "products": "Produkte",
+    "promotions": "Aktionen",
+    "brands": "Marken",
+    "resources": "Ressourcen",
+    "categories": "Kategorien",
+    "airConditioners": "Klimaanlagen",
+    "heatingSystems": "Heizsysteme",
+    "ventilation": "Lüftung",
+    "accessories": "Zubehör",
+    "about": "Über uns",
+    "contact": "Kontakt",
+    "cart": "Warenkorb",
+    "wishlist": "Wunschliste",
+    "account": "Mein Konto",
+    "orders": "Bestellungen",
+    "admin": "Admin-Panel",
+    "settings": "Einstellungen",
+    "logout": "Abmelden",
+    "login": "Anmelden",
+    "register": "Registrieren"
+  },
+  "auth": {
+    "login": {
+      "title": "Willkommen zurück",
+      "subtitle": "Melden Sie sich bei Ihrem Konto an",
+      "email": "E-Mail-Adresse",
+      "password": "Passwort",
+      "rememberMe": "Angemeldet bleiben",
+      "forgotPassword": "Passwort vergessen?",
+      "submit": "Anmelden",
+      "noAccount": "Sie haben noch kein Konto?",
+      "signUp": "Registrieren"
+    },
+    "register": {
+      "title": "Konto erstellen",
+      "subtitle": "Werden Sie heute Teil von ClimaSite",
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "email": "E-Mail-Adresse",
+      "password": "Passwort",
+      "confirmPassword": "Passwort bestätigen",
+      "terms": "Ich stimme den Nutzungsbedingungen und der Datenschutzerklärung zu",
+      "submit": "Konto erstellen",
+      "hasAccount": "Sie haben bereits ein Konto?",
+      "signIn": "Anmelden"
+    },
+    "forgotPassword": {
+      "title": "Passwort zurücksetzen",
+      "subtitle": "Geben Sie Ihre E-Mail-Adresse ein, um einen Reset-Link zu erhalten",
+      "email": "E-Mail-Adresse",
+      "submit": "Reset-Link senden",
+      "backToLogin": "Zurück zur Anmeldung"
+    },
+    "logout": "Abmelden"
+  },
+  "products": {
+    "title": "Produkte",
+    "all": "Alle Produkte",
+    "featured": "Empfohlene Produkte",
+    "newArrivals": "Neuheiten",
+    "onSale": "Im Angebot",
+    "bestsellers": "Bestseller",
+    "noProducts": "Keine Produkte gefunden",
+    "filters": {
+      "title": "Filter",
+      "category": "Kategorie",
+      "brand": "Marke",
+      "price": "Preis",
+      "priceRange": "Preisbereich",
+      "rating": "Bewertung",
+      "inStock": "Nur verfügbare",
+      "clearAll": "Alle löschen"
+    },
+    "sort": {
+      "title": "Sortieren nach",
+      "newest": "Neueste",
+      "priceAsc": "Preis: aufsteigend",
+      "priceDesc": "Preis: absteigend",
+      "nameAsc": "Name: A bis Z",
+      "nameDesc": "Name: Z bis A",
+      "rating": "Kundenbewertung",
+      "popularity": "Beliebtheit"
+    },
+    "details": {
+      "description": "Beschreibung",
+      "specifications": "Spezifikationen",
+      "features": "Eigenschaften",
+      "reviews": "Bewertungen",
+      "relatedProducts": "Ähnliche Produkte",
+      "inStock": "Auf Lager",
+      "outOfStock": "Nicht verfügbar",
+      "lowStock": "Nur noch wenige verfügbar",
+      "quantity": "Menge",
+      "addToCart": "In den Warenkorb",
+      "addToWishlist": "Zur Wunschliste hinzufügen",
+      "removeFromWishlist": "Von Wunschliste entfernen",
+      "sku": "Artikelnummer",
+      "brand": "Marke",
+      "model": "Modell",
+      "warranty": "Garantie",
+      "installation": "Installationsservice verfügbar",
+      "noImage": "Kein Bild",
+      "months": "Monate",
+      "noDescription": "Keine Beschreibung verfügbar.",
+      "noSpecifications": "Keine Spezifikationen verfügbar.",
+      "reviewsComingSoon": "Bewertungen demnächst verfügbar..."
+    }
+  },
+  "cart": {
+    "title": "Warenkorb",
+    "empty": "Ihr Warenkorb ist leer",
+    "continueShopping": "Weiter einkaufen",
+    "items": "{{count}} Artikel",
+    "item": {
+      "remove": "Entfernen",
+      "moveToWishlist": "Zur Wunschliste",
+      "quantity": "Anz.",
+      "added": "In den Warenkorb gelegt"
+    },
+    "summary": {
+      "title": "Bestellübersicht",
+      "subtotal": "Zwischensumme",
+      "shipping": "Versand",
+      "tax": "MwSt.",
+      "total": "Gesamt",
+      "freeShipping": "Kostenloser Versand",
+      "calculatedAtCheckout": "Wird an der Kasse berechnet"
+    },
+    "checkout": "Zur Kasse",
+    "promoCode": {
+      "title": "Gutscheincode",
+      "placeholder": "Code eingeben",
+      "apply": "Einlösen",
+      "applied": "Code eingelöst!"
+    }
+  },
+  "checkout": {
+    "title": "Kasse",
+    "steps": {
+      "shipping": "Versand",
+      "payment": "Zahlung",
+      "review": "Überprüfung"
+    },
+    "shipping": {
+      "title": "Lieferinformationen",
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "address": "Adresse",
+      "apartment": "Wohnung, Büro etc. (optional)",
+      "city": "Stadt",
+      "country": "Land",
+      "state": "Bundesland",
+      "postalCode": "Postleitzahl",
+      "phone": "Telefonnummer",
+      "saveAddress": "Diese Adresse für zukünftige Bestellungen speichern",
+      "method": "Versandart",
+      "standard": "Standardversand",
+      "standardTime": "5-7 Tage",
+      "express": "Expressversand",
+      "expressTime": "2-3 Tage",
+      "overnight": "Overnight-Versand",
+      "overnightTime": "1 Tag",
+      "free": "Kostenlos"
+    },
+    "payment": {
+      "title": "Zahlungsmethode",
+      "card": "Kredit-/Debitkarte",
+      "cardNumber": "Kartennummer",
+      "expiry": "Ablaufdatum",
+      "cvv": "CVV",
+      "nameOnCard": "Name auf der Karte",
+      "paypal": "PayPal",
+      "bank": "Banküberweisung"
+    },
+    "review": {
+      "title": "Bestellung überprüfen",
+      "items": "Bestellte Artikel",
+      "shippingAddress": "Lieferadresse",
+      "paymentMethod": "Zahlungsmethode"
+    },
+    "placeOrder": "Bestellung aufgeben",
+    "backToCart": "Zurück zum Warenkorb",
+    "orderComplete": {
+      "title": "Bestellung bestätigt!",
+      "message": "Vielen Dank für Ihre Bestellung. Sie erhalten in Kürze eine Bestätigungs-E-Mail.",
+      "orderNumber": "Bestellnummer",
+      "viewOrder": "Bestellung anzeigen",
+      "continueShopping": "Weiter einkaufen"
+    }
+  },
+  "account": {
+    "title": "Mein Konto",
+    "dashboard": "Übersicht",
+    "orders": {
+      "title": "Meine Bestellungen",
+      "empty": "Sie haben noch keine Bestellungen aufgegeben",
+      "orderNumber": "Bestellung Nr.",
+      "date": "Datum",
+      "status": "Status",
+      "total": "Gesamt",
+      "viewDetails": "Details anzeigen",
+      "track": "Sendung verfolgen",
+      "backToOrders": "Zurück zu Bestellungen",
+      "orderDetails": "Bestelldetails",
+      "items": "Artikel",
+      "item": "Artikel",
+      "shippingAddress": "Lieferadresse",
+      "billingAddress": "Rechnungsadresse",
+      "paymentMethod": "Zahlungsmethode",
+      "subtotal": "Zwischensumme",
+      "shipping": "Versand",
+      "tax": "MwSt.",
+      "discount": "Rabatt",
+      "orderDate": "Bestelldatum",
+      "searchPlaceholder": "Bestellungen durchsuchen...",
+      "allStatuses": "Alle Status",
+      "dateFrom": "Von Datum",
+      "dateTo": "Bis Datum",
+      "sortBy": "Sortieren nach",
+      "showPerPage": "Anzeigen",
+      "clearFilters": "Filter löschen",
+      "showingResults": "{{count}} Bestellung(en) angezeigt",
+      "noMatchingOrders": "Keine Bestellungen entsprechen Ihren Filtern",
+      "moreItems": "mehr",
+      "sortOptions": {
+        "date": "Datum",
+        "total": "Summe",
+        "status": "Status"
+      },
+      "statuses": {
+        "pending": "Ausstehend",
+        "paid": "Bezahlt",
+        "processing": "In Bearbeitung",
+        "shipped": "Versendet",
+        "delivered": "Zugestellt",
+        "cancelled": "Storniert",
+        "refunded": "Erstattet",
+        "returned": "Zurückgegeben"
+      },
+      "paymentStatuses": {
+        "pending": "Zahlung ausstehend",
+        "paid": "Bezahlt",
+        "failed": "Zahlung fehlgeschlagen",
+        "refunded": "Erstattet"
+      },
+      "timeline": {
+        "title": "Bestellverlauf",
+        "orderPlaced": "Bestellung aufgegeben",
+        "paymentReceived": "Zahlung erhalten",
+        "processing": "Bestellung wird bearbeitet",
+        "shipped": "Bestellung versendet",
+        "delivered": "Bestellung zugestellt"
+      },
+      "actions": {
+        "cancelOrder": "Bestellung stornieren",
+        "reorder": "Erneut bestellen",
+        "downloadInvoice": "Rechnung herunterladen",
+        "trackShipment": "Sendung verfolgen"
+      },
+      "cancelModal": {
+        "title": "Bestellung stornieren",
+        "message": "Möchten Sie diese Bestellung wirklich stornieren?",
+        "reasonLabel": "Grund für Stornierung (optional)",
+        "confirm": "Ja, Bestellung stornieren",
+        "cancel": "Nein, Bestellung behalten"
+      }
+    },
+    "addresses": {
+      "title": "Gespeicherte Adressen",
+      "addNew": "Neue Adresse hinzufügen",
+      "default": "Standard",
+      "makeDefault": "Als Standard festlegen"
+    },
+    "profile": {
+      "title": "Profileinstellungen",
+      "personalInfo": "Persönliche Informationen",
+      "changePassword": "Passwort ändern",
+      "preferences": "Einstellungen",
+      "language": "Sprache",
+      "currency": "Währung"
+    }
+  },
+  "footer": {
+    "about": {
+      "title": "Über ClimaSite",
+      "description": "Ihr vertrauenswürdiger Partner für alle HLK-Lösungen. Qualitätsprodukte, fachkundige Beratung und außergewöhnlicher Service."
+    },
+    "shop": {
+      "title": "Shop",
+      "airConditioners": "Klimaanlagen",
+      "heatingSystems": "Heizsysteme",
+      "ventilation": "Lüftung",
+      "accessories": "Zubehör"
+    },
+    "support": {
+      "title": "Support",
+      "contact": "Kontaktieren Sie uns",
+      "faq": "FAQ",
+      "shipping": "Versandinformationen",
+      "returns": "Rückgabe & Erstattung"
+    },
+    "legal": {
+      "title": "Rechtliches",
+      "terms": "Nutzungsbedingungen",
+      "privacy": "Datenschutzerklärung",
+      "cookies": "Cookie-Richtlinie"
+    },
+    "newsletter": {
+      "title": "Bleiben Sie informiert",
+      "description": "Abonnieren Sie unseren Newsletter für exklusive Angebote und Updates.",
+      "placeholder": "Ihre E-Mail-Adresse",
+      "subscribe": "Abonnieren"
+    },
+    "copyright": "© {{year}} ClimaSite. Alle Rechte vorbehalten."
+  },
+  "errors": {
+    "required": "Dieses Feld ist erforderlich",
+    "email": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+    "minLength": "Muss mindestens {{min}} Zeichen lang sein",
+    "maxLength": "Darf nicht mehr als {{max}} Zeichen haben",
+    "passwordMatch": "Passwörter stimmen nicht überein",
+    "invalidCredentials": "Ungültige E-Mail oder Passwort",
+    "networkError": "Netzwerkfehler. Bitte versuchen Sie es erneut.",
+    "serverError": "Serverfehler. Bitte versuchen Sie es später erneut.",
+    "notFound": "Seite nicht gefunden"
+  },
+  "home": {
+    "hero": {
+      "title": "Exzellente Klimakontrolle",
+      "subtitle": "Entdecken Sie hochwertige HLK-Lösungen für Ihr Zuhause und Unternehmen",
+      "cta": "Jetzt einkaufen"
+    },
+    "featured": {
+      "title": "Empfohlene Produkte",
+      "viewAll": "Alle Produkte anzeigen"
+    },
+    "categories": {
+      "title": "Nach Kategorie einkaufen"
+    },
+    "benefits": {
+      "title": "Warum ClimaSite wählen",
+      "freeShipping": "Kostenloser Versand",
+      "freeShippingDesc": "Bei Bestellungen über 500€",
+      "warranty": "Erweiterte Garantie",
+      "warrantyDesc": "Bis zu 5 Jahre Abdeckung",
+      "support": "Experten-Support",
+      "supportDesc": "24/7 Kundenservice",
+      "installation": "Professionelle Installation",
+      "installationDesc": "Von zertifizierten Technikern"
+    }
+  },
+  "contact": {
+    "title": "Kontaktieren Sie uns",
+    "subtitle": "Wir sind hier, um bei all Ihren HLK-Bedürfnissen zu helfen",
+    "form": {
+      "name": "Ihr Name",
+      "email": "E-Mail-Adresse",
+      "subject": "Betreff",
+      "message": "Ihre Nachricht",
+      "submit": "Nachricht senden",
+      "success": "Vielen Dank! Ihre Nachricht wurde erfolgreich gesendet.",
+      "error": "Entschuldigung, beim Senden ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut."
+    },
+    "info": {
+      "title": "Kontakt aufnehmen",
+      "address": "Adresse",
+      "addressValue": "Klimastraße 123, 1000 Sofia, Bulgarien",
+      "phone": "Telefon",
+      "phoneValue": "+359 2 123 4567",
+      "email": "E-Mail",
+      "emailValue": "support@climasite.com",
+      "hours": "Öffnungszeiten",
+      "hoursValue": "Mo-Fr: 9:00 - 18:00 Uhr"
+    },
+    "map": {
+      "title": "Finden Sie uns"
+    }
+  },
+  "about": {
+    "title": "Über uns",
+    "subtitle": "Ihr vertrauenswürdiger HLK-Partner seit 2010",
+    "story": {
+      "title": "Unsere Geschichte",
+      "content": "ClimaSite wurde mit einer einfachen Mission gegründet: hochwertige HLK-Lösungen anzubieten, die Häuser und Unternehmen komfortabler machen. Im Laufe der Jahre sind wir von einem kleinen lokalen Geschäft zu einem führenden Online-Händler gewachsen, der tausende zufriedene Kunden bedient."
+    },
+    "mission": {
+      "title": "Unsere Mission",
+      "content": "Außergewöhnliche Klimakontrollprodukte und -dienstleistungen zu liefern, die den Komfort verbessern, die Energieeffizienz steigern und die Kundenerwartungen übertreffen."
+    },
+    "values": {
+      "title": "Unsere Werte",
+      "quality": "Qualität zuerst",
+      "qualityDesc": "Wir bieten nur Produkte von vertrauenswürdigen Herstellern mit bewährter Erfolgsbilanz an.",
+      "service": "Kundenservice",
+      "serviceDesc": "Ihre Zufriedenheit hat für uns oberste Priorität. Wir sind vor, während und nach Ihrem Kauf für Sie da.",
+      "expertise": "Fachwissen",
+      "expertiseDesc": "Unser Team von HLK-Spezialisten ist bereit, Sie zur perfekten Lösung zu führen.",
+      "sustainability": "Nachhaltigkeit",
+      "sustainabilityDesc": "Wir fördern energieeffiziente Lösungen, die besser für Ihr Budget und den Planeten sind."
+    },
+    "team": {
+      "title": "Unser Team",
+      "subtitle": "Engagierte Fachleute, die sich Ihrem Komfort verschrieben haben"
+    },
+    "stats": {
+      "customers": "Zufriedene Kunden",
+      "products": "Verfügbare Produkte",
+      "years": "Jahre im Geschäft",
+      "support": "24/7 Support"
+    }
+  },
+  "admin": {
+    "title": "Admin-Dashboard",
+    "products": {
+      "title": "Produktverwaltung",
+      "add": "Produkt hinzufügen",
+      "edit": "Produkt bearbeiten",
+      "delete": "Produkt löschen",
+      "list": "Produktliste"
+    },
+    "orders": {
+      "title": "Bestellungsverwaltung",
+      "list": "Bestellliste",
+      "details": "Bestelldetails",
+      "updateStatus": "Status aktualisieren"
+    },
+    "users": {
+      "title": "Benutzerverwaltung",
+      "list": "Benutzerliste",
+      "details": "Benutzerdetails",
+      "roles": "Rollen verwalten"
+    },
+    "categories": {
+      "title": "Kategorieverwaltung",
+      "add": "Kategorie hinzufügen",
+      "edit": "Kategorie bearbeiten",
+      "delete": "Kategorie löschen"
+    },
+    "stats": {
+      "totalOrders": "Gesamtbestellungen",
+      "totalRevenue": "Gesamtumsatz",
+      "totalUsers": "Gesamtbenutzer",
+      "totalProducts": "Gesamtprodukte"
+    }
+  }
+}

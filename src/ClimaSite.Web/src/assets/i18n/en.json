@@ -1,0 +1,476 @@
+{
+  "common": {
+    "appName": "ClimaSite",
+    "tagline": "Your HVAC Solutions Partner",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "reset": "Reset",
+    "submit": "Submit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "yes": "Yes",
+    "no": "No",
+    "close": "Close",
+    "viewAll": "View All",
+    "showMore": "Show More",
+    "showLess": "Show Less",
+    "currency": "${{amount}}"
+  },
+  "nav": {
+    "home": "Home",
+    "products": "Products",
+    "promotions": "Promotions",
+    "brands": "Brands",
+    "resources": "Resources",
+    "categories": "Categories",
+    "airConditioners": "Air Conditioners",
+    "heatingSystems": "Heating Systems",
+    "ventilation": "Ventilation",
+    "accessories": "Accessories",
+    "about": "About Us",
+    "contact": "Contact",
+    "cart": "Cart",
+    "wishlist": "Wishlist",
+    "account": "My Account",
+    "orders": "My Orders",
+    "admin": "Admin Panel",
+    "settings": "Settings",
+    "logout": "Logout",
+    "login": "Login",
+    "register": "Register"
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to your account",
+      "email": "Email Address",
+      "password": "Password",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "submit": "Sign In",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up"
+    },
+    "register": {
+      "title": "Create Account",
+      "subtitle": "Join ClimaSite today",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email Address",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "terms": "I agree to the Terms of Service and Privacy Policy",
+      "submit": "Create Account",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign in"
+    },
+    "forgotPassword": {
+      "title": "Reset Password",
+      "subtitle": "Enter your email to receive a reset link",
+      "email": "Email Address",
+      "submit": "Send Reset Link",
+      "backToLogin": "Back to login"
+    },
+    "logout": "Sign Out"
+  },
+  "products": {
+    "title": "Products",
+    "all": "All Products",
+    "featured": "Featured Products",
+    "newArrivals": "New Arrivals",
+    "onSale": "On Sale",
+    "bestsellers": "Bestsellers",
+    "noProducts": "No products found",
+    "filters": {
+      "title": "Filters",
+      "category": "Category",
+      "brand": "Brand",
+      "price": "Price",
+      "priceRange": "Price Range",
+      "rating": "Rating",
+      "inStock": "In Stock Only",
+      "clearAll": "Clear All"
+    },
+    "sort": {
+      "title": "Sort by",
+      "newest": "Newest",
+      "priceAsc": "Price: Low to High",
+      "priceDesc": "Price: High to Low",
+      "nameAsc": "Name: A to Z",
+      "nameDesc": "Name: Z to A",
+      "rating": "Customer Rating",
+      "popularity": "Popularity"
+    },
+    "details": {
+      "description": "Description",
+      "specifications": "Specifications",
+      "features": "Features",
+      "reviews": "Reviews",
+      "relatedProducts": "Related Products",
+      "inStock": "In Stock",
+      "outOfStock": "Out of Stock",
+      "lowStock": "Low Stock",
+      "quantity": "Quantity",
+      "addToCart": "Add to Cart",
+      "addToWishlist": "Add to Wishlist",
+      "removeFromWishlist": "Remove from Wishlist",
+      "sku": "SKU",
+      "brand": "Brand",
+      "model": "Model",
+      "warranty": "Warranty",
+      "installation": "Installation Service Available",
+      "noImage": "No Image",
+      "months": "months",
+      "noDescription": "No description available.",
+      "noSpecifications": "No specifications available.",
+      "reviewsComingSoon": "Reviews coming soon..."
+    }
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "empty": "Your cart is empty",
+    "continueShopping": "Continue Shopping",
+    "items": "{{count}} item(s)",
+    "item": {
+      "remove": "Remove",
+      "moveToWishlist": "Move to Wishlist",
+      "quantity": "Qty",
+      "added": "Added to Cart"
+    },
+    "summary": {
+      "title": "Order Summary",
+      "subtotal": "Subtotal",
+      "shipping": "Shipping",
+      "tax": "Tax",
+      "total": "Total",
+      "freeShipping": "Free Shipping",
+      "calculatedAtCheckout": "Calculated at checkout"
+    },
+    "checkout": "Proceed to Checkout",
+    "promoCode": {
+      "title": "Promo Code",
+      "placeholder": "Enter code",
+      "apply": "Apply",
+      "applied": "Code applied!"
+    }
+  },
+  "checkout": {
+    "title": "Checkout",
+    "steps": {
+      "shipping": "Shipping",
+      "payment": "Payment",
+      "review": "Review"
+    },
+    "shipping": {
+      "title": "Shipping Information",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "address": "Address",
+      "apartment": "Apartment, suite, etc. (optional)",
+      "city": "City",
+      "country": "Country",
+      "state": "State/Province",
+      "postalCode": "Postal Code",
+      "phone": "Phone Number",
+      "saveAddress": "Save this address for future orders",
+      "method": "Shipping Method",
+      "standard": "Standard Shipping",
+      "standardTime": "5-7 days",
+      "express": "Express Shipping",
+      "expressTime": "2-3 days",
+      "overnight": "Overnight Shipping",
+      "overnightTime": "1 day",
+      "free": "Free"
+    },
+    "payment": {
+      "title": "Payment Method",
+      "card": "Credit/Debit Card",
+      "cardNumber": "Card Number",
+      "expiry": "Expiry Date",
+      "cvv": "CVV",
+      "nameOnCard": "Name on Card",
+      "paypal": "PayPal",
+      "bank": "Bank Transfer"
+    },
+    "review": {
+      "title": "Review Your Order",
+      "items": "Order Items",
+      "shippingAddress": "Shipping Address",
+      "paymentMethod": "Payment Method"
+    },
+    "placeOrder": "Place Order",
+    "backToCart": "Back to Cart",
+    "orderComplete": {
+      "title": "Order Confirmed!",
+      "message": "Thank you for your order. You will receive a confirmation email shortly.",
+      "orderNumber": "Order Number",
+      "viewOrder": "View Order",
+      "continueShopping": "Continue Shopping"
+    }
+  },
+  "account": {
+    "title": "My Account",
+    "dashboard": "Dashboard",
+    "orders": {
+      "title": "My Orders",
+      "empty": "You haven't placed any orders yet",
+      "orderNumber": "Order #",
+      "date": "Date",
+      "status": "Status",
+      "total": "Total",
+      "viewDetails": "View Details",
+      "track": "Track Order",
+      "backToOrders": "Back to Orders",
+      "orderDetails": "Order Details",
+      "items": "Items",
+      "item": "item",
+      "shippingAddress": "Shipping Address",
+      "billingAddress": "Billing Address",
+      "paymentMethod": "Payment Method",
+      "subtotal": "Subtotal",
+      "shipping": "Shipping",
+      "tax": "Tax",
+      "discount": "Discount",
+      "orderDate": "Order Date",
+      "searchPlaceholder": "Search orders by number, product...",
+      "allStatuses": "All Statuses",
+      "dateFrom": "From date",
+      "dateTo": "To date",
+      "sortBy": "Sort by",
+      "showPerPage": "Show",
+      "clearFilters": "Clear Filters",
+      "showingResults": "Showing {{count}} order(s)",
+      "noMatchingOrders": "No orders match your filters",
+      "moreItems": "more",
+      "sortOptions": {
+        "date": "Date",
+        "total": "Total",
+        "status": "Status"
+      },
+      "statuses": {
+        "pending": "Pending",
+        "paid": "Paid",
+        "processing": "Processing",
+        "shipped": "Shipped",
+        "delivered": "Delivered",
+        "cancelled": "Cancelled",
+        "refunded": "Refunded",
+        "returned": "Returned"
+      },
+      "paymentStatuses": {
+        "pending": "Payment Pending",
+        "paid": "Paid",
+        "failed": "Payment Failed",
+        "refunded": "Refunded"
+      },
+      "timeline": {
+        "title": "Order Timeline",
+        "orderPlaced": "Order placed",
+        "paymentReceived": "Payment received",
+        "processing": "Processing order",
+        "shipped": "Order shipped",
+        "delivered": "Order delivered"
+      },
+      "actions": {
+        "cancelOrder": "Cancel Order",
+        "reorder": "Order Again",
+        "downloadInvoice": "Download Invoice",
+        "trackShipment": "Track Shipment"
+      },
+      "cancelModal": {
+        "title": "Cancel Order",
+        "message": "Are you sure you want to cancel this order?",
+        "reasonLabel": "Reason for cancellation (optional)",
+        "confirm": "Yes, Cancel Order",
+        "cancel": "No, Keep Order"
+      }
+    },
+    "addresses": {
+      "title": "Saved Addresses",
+      "addNew": "Add New Address",
+      "default": "Default",
+      "makeDefault": "Make Default"
+    },
+    "profile": {
+      "title": "Profile Settings",
+      "personalInfo": "Personal Information",
+      "changePassword": "Change Password",
+      "preferences": "Preferences",
+      "language": "Language",
+      "currency": "Currency"
+    }
+  },
+  "footer": {
+    "about": {
+      "title": "About ClimaSite",
+      "description": "Your trusted partner for all HVAC solutions. Quality products, expert advice, and exceptional service."
+    },
+    "shop": {
+      "title": "Shop",
+      "airConditioners": "Air Conditioners",
+      "heatingSystems": "Heating Systems",
+      "ventilation": "Ventilation",
+      "accessories": "Accessories"
+    },
+    "support": {
+      "title": "Support",
+      "contact": "Contact Us",
+      "faq": "FAQ",
+      "shipping": "Shipping Info",
+      "returns": "Returns & Refunds"
+    },
+    "legal": {
+      "title": "Legal",
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy",
+      "cookies": "Cookie Policy"
+    },
+    "newsletter": {
+      "title": "Stay Updated",
+      "description": "Subscribe to our newsletter for exclusive offers and updates.",
+      "placeholder": "Your email address",
+      "subscribe": "Subscribe"
+    },
+    "copyright": "© {{year}} ClimaSite. All rights reserved."
+  },
+  "errors": {
+    "required": "This field is required",
+    "email": "Please enter a valid email address",
+    "minLength": "Must be at least {{min}} characters",
+    "maxLength": "Must be no more than {{max}} characters",
+    "passwordMatch": "Passwords do not match",
+    "invalidCredentials": "Invalid email or password",
+    "networkError": "Network error. Please try again.",
+    "serverError": "Server error. Please try again later.",
+    "notFound": "Page not found"
+  },
+  "home": {
+    "hero": {
+      "title": "Climate Control Excellence",
+      "subtitle": "Discover premium HVAC solutions for your home and business",
+      "cta": "Shop Now"
+    },
+    "featured": {
+      "title": "Featured Products",
+      "viewAll": "View All Products"
+    },
+    "categories": {
+      "title": "Shop by Category"
+    },
+    "benefits": {
+      "title": "Why Choose ClimaSite",
+      "freeShipping": "Free Shipping",
+      "freeShippingDesc": "On orders over $500",
+      "warranty": "Extended Warranty",
+      "warrantyDesc": "Up to 5 years coverage",
+      "support": "Expert Support",
+      "supportDesc": "24/7 customer service",
+      "installation": "Professional Installation",
+      "installationDesc": "By certified technicians"
+    }
+  },
+  "contact": {
+    "title": "Contact Us",
+    "subtitle": "We're here to help with all your HVAC needs",
+    "form": {
+      "name": "Your Name",
+      "email": "Email Address",
+      "subject": "Subject",
+      "message": "Your Message",
+      "submit": "Send Message",
+      "success": "Thank you! Your message has been sent successfully.",
+      "error": "Sorry, there was an error sending your message. Please try again."
+    },
+    "info": {
+      "title": "Get in Touch",
+      "address": "Address",
+      "addressValue": "123 Climate Street, Sofia 1000, Bulgaria",
+      "phone": "Phone",
+      "phoneValue": "+359 2 123 4567",
+      "email": "Email",
+      "emailValue": "support@climasite.com",
+      "hours": "Business Hours",
+      "hoursValue": "Mon-Fri: 9:00 AM - 6:00 PM"
+    },
+    "map": {
+      "title": "Find Us"
+    }
+  },
+  "about": {
+    "title": "About Us",
+    "subtitle": "Your Trusted HVAC Partner Since 2010",
+    "story": {
+      "title": "Our Story",
+      "content": "ClimaSite was founded with a simple mission: to provide high-quality HVAC solutions that make homes and businesses more comfortable. Over the years, we've grown from a small local shop to a leading online retailer, serving thousands of satisfied customers."
+    },
+    "mission": {
+      "title": "Our Mission",
+      "content": "To deliver exceptional climate control products and services that enhance comfort, improve energy efficiency, and exceed customer expectations."
+    },
+    "values": {
+      "title": "Our Values",
+      "quality": "Quality First",
+      "qualityDesc": "We only offer products from trusted manufacturers with proven track records.",
+      "service": "Customer Service",
+      "serviceDesc": "Your satisfaction is our top priority. We're here to help before, during, and after your purchase.",
+      "expertise": "Expert Knowledge",
+      "expertiseDesc": "Our team of HVAC specialists is ready to guide you to the perfect solution.",
+      "sustainability": "Sustainability",
+      "sustainabilityDesc": "We promote energy-efficient solutions that are better for your wallet and the planet."
+    },
+    "team": {
+      "title": "Meet Our Team",
+      "subtitle": "Dedicated professionals committed to your comfort"
+    },
+    "stats": {
+      "customers": "Happy Customers",
+      "products": "Products Available",
+      "years": "Years in Business",
+      "support": "24/7 Support"
+    }
+  },
+  "admin": {
+    "title": "Admin Dashboard",
+    "products": {
+      "title": "Product Management",
+      "add": "Add Product",
+      "edit": "Edit Product",
+      "delete": "Delete Product",
+      "list": "Product List"
+    },
+    "orders": {
+      "title": "Order Management",
+      "list": "Order List",
+      "details": "Order Details",
+      "updateStatus": "Update Status"
+    },
+    "users": {
+      "title": "User Management",
+      "list": "User List",
+      "details": "User Details",
+      "roles": "Manage Roles"
+    },
+    "categories": {
+      "title": "Category Management",
+      "add": "Add Category",
+      "edit": "Edit Category",
+      "delete": "Delete Category"
+    },
+    "stats": {
+      "totalOrders": "Total Orders",
+      "totalRevenue": "Total Revenue",
+      "totalUsers": "Total Users",
+      "totalProducts": "Total Products"
+    }
+  }
+}

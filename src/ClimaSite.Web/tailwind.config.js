@@ -1,0 +1,143 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./src/**/*.{html,ts}",
+  ],
+  darkMode: ['selector', '[data-theme="dark"]'],
+  theme: {
+    extend: {
+      colors: {
+        // Semantic background colors
+        background: {
+          primary: 'var(--color-bg-primary)',
+          secondary: 'var(--color-bg-secondary)',
+          tertiary: 'var(--color-bg-tertiary)',
+          inverse: 'var(--color-bg-inverse)',
+          card: 'var(--color-bg-card)',
+          input: 'var(--color-bg-input)',
+          hover: 'var(--color-bg-hover)',
+          active: 'var(--color-bg-active)',
+          disabled: 'var(--color-bg-disabled)',
+        },
+        // Semantic text colors
+        foreground: {
+          primary: 'var(--color-text-primary)',
+          secondary: 'var(--color-text-secondary)',
+          tertiary: 'var(--color-text-tertiary)',
+          inverse: 'var(--color-text-inverse)',
+          disabled: 'var(--color-text-disabled)',
+          placeholder: 'var(--color-text-placeholder)',
+        },
+        // Semantic border colors
+        border: {
+          primary: 'var(--color-border-primary)',
+          secondary: 'var(--color-border-secondary)',
+          focus: 'var(--color-border-focus)',
+          error: 'var(--color-border-error)',
+        },
+        // Brand colors with palette
+        primary: {
+          DEFAULT: 'var(--color-primary)',
+          hover: 'var(--color-primary-hover)',
+          active: 'var(--color-primary-active)',
+          light: 'var(--color-primary-light)',
+          50: 'var(--color-primary-50)',
+          100: 'var(--color-primary-100)',
+          200: 'var(--color-primary-200)',
+          300: 'var(--color-primary-300)',
+          400: 'var(--color-primary-400)',
+          500: 'var(--color-primary-500)',
+          600: 'var(--color-primary-600)',
+          700: 'var(--color-primary-700)',
+          800: 'var(--color-primary-800)',
+          900: 'var(--color-primary-900)',
+          950: 'var(--color-primary-950)',
+        },
+        secondary: {
+          DEFAULT: 'var(--color-secondary)',
+          hover: 'var(--color-secondary-hover)',
+          active: 'var(--color-secondary-active)',
+          50: 'var(--color-secondary-50)',
+          100: 'var(--color-secondary-100)',
+          200: 'var(--color-secondary-200)',
+          300: 'var(--color-secondary-300)',
+          400: 'var(--color-secondary-400)',
+          500: 'var(--color-secondary-500)',
+          600: 'var(--color-secondary-600)',
+          700: 'var(--color-secondary-700)',
+          800: 'var(--color-secondary-800)',
+          900: 'var(--color-secondary-900)',
+          950: 'var(--color-secondary-950)',
+        },
+        accent: {
+          DEFAULT: 'var(--color-accent)',
+          hover: 'var(--color-accent-hover)',
+          active: 'var(--color-accent-active)',
+          50: 'var(--color-accent-50)',
+          100: 'var(--color-accent-100)',
+          200: 'var(--color-accent-200)',
+          300: 'var(--color-accent-300)',
+          400: 'var(--color-accent-400)',
+          500: 'var(--color-accent-500)',
+          600: 'var(--color-accent-600)',
+          700: 'var(--color-accent-700)',
+          800: 'var(--color-accent-800)',
+          900: 'var(--color-accent-900)',
+          950: 'var(--color-accent-950)',
+        },
+        warm: {
+          DEFAULT: 'var(--color-warm)',
+          hover: 'var(--color-warm-hover)',
+          50: 'var(--color-warm-50)',
+          100: 'var(--color-warm-100)',
+          200: 'var(--color-warm-200)',
+          300: 'var(--color-warm-300)',
+          400: 'var(--color-warm-400)',
+          500: 'var(--color-warm-500)',
+          600: 'var(--color-warm-600)',
+          700: 'var(--color-warm-700)',
+          800: 'var(--color-warm-800)',
+          900: 'var(--color-warm-900)',
+          950: 'var(--color-warm-950)',
+        },
+        // Semantic status colors
+        success: {
+          DEFAULT: 'var(--color-success)',
+          light: 'var(--color-success-light)',
+          dark: 'var(--color-success-dark)',
+        },
+        warning: {
+          DEFAULT: 'var(--color-warning)',
+          light: 'var(--color-warning-light)',
+          dark: 'var(--color-warning-dark)',
+        },
+        error: {
+          DEFAULT: 'var(--color-error)',
+          light: 'var(--color-error-light)',
+          dark: 'var(--color-error-dark)',
+        },
+        info: {
+          DEFAULT: 'var(--color-info)',
+          light: 'var(--color-info-light)',
+          dark: 'var(--color-info-dark)',
+        },
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+      },
+      boxShadow: {
+        'card': '0 1px 3px 0 var(--shadow-color), 0 1px 2px -1px var(--shadow-color)',
+        'card-hover': '0 10px 15px -3px var(--shadow-color-lg), 0 4px 6px -4px var(--shadow-color)',
+        'lg': '0 10px 15px -3px var(--shadow-color-lg), 0 4px 6px -4px var(--shadow-color)',
+      },
+      ringColor: {
+        DEFAULT: 'var(--color-ring)',
+      },
+      ringOffsetColor: {
+        DEFAULT: 'var(--color-ring-offset)',
+      },
+    },
+  },
+  plugins: [],
+}

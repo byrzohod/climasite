@@ -1,0 +1,33 @@
+# Build stage
+FROM node:22-alpine AS build
+WORKDIR /app
+
+# Copy package files
+COPY src/ClimaSite.Web/package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy source files
+COPY src/ClimaSite.Web/ .
+
+# Build the Angular application
+RUN npm run build -- --configuration=production
+
+# Runtime stage
+FROM nginx:alpine AS final
+
+# Copy built application
+COPY --from=build /app/dist/clima-site.web/browser /usr/share/nginx/html
+
+# Copy nginx configuration template (will be processed by entrypoint)
+COPY src/ClimaSite.Web/nginx.conf.template /etc/nginx/nginx.conf.template
+
+# Copy entrypoint script
+COPY src/ClimaSite.Web/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+# Railway injects PORT env var at runtime, no EXPOSE needed
+
+# Use entrypoint script to generate runtime config
+ENTRYPOINT ["/docker-entrypoint.sh"]
