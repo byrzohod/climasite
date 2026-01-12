@@ -141,11 +141,21 @@ public class OrdersPage : BasePage
         // Confirm cancellation
         await Page.ClickAsync("[data-testid='confirm-cancel-btn']");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        // Wait for the status to update (modal closes and status changes)
+        await Page.WaitForSelectorAsync("[data-testid='cancel-modal']", new PageWaitForSelectorOptions { State = WaitForSelectorState.Hidden, Timeout = 5000 });
+
+        // Small delay to allow Angular to update the DOM
+        await Task.Delay(500);
     }
 
     public async Task ReorderAsync()
     {
         await Page.ClickAsync("[data-testid='reorder-btn']");
+        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        // Wait for the component to redirect to cart (happens after 1500ms delay in Angular)
+        await Task.Delay(2000);
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }
 

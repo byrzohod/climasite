@@ -137,6 +137,11 @@ public class TestDataFactory
             product.Id = result?.Id ?? Guid.Empty;
             product.Slug = result?.Slug ?? string.Empty;
         }
+        else
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Product creation failed: {response.StatusCode} - {errorContent}");
+        }
 
         return product;
     }
@@ -154,31 +159,50 @@ public class TestDataFactory
             products.Add(await CreateProductAsync());
         }
 
-        // Add products to cart via API
+        // Add products to cart via API with user authentication
         _apiClient.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", user.Token);
 
         foreach (var product in products)
         {
-            await _apiClient.PostAsJsonAsync("/api/cart/items", new
+            if (product.Id == Guid.Empty)
+            {
+                Console.WriteLine($"Skipping invalid product: Id={product.Id}");
+                continue;
+            }
+
+            // Add to cart without variantId - let the API pick the default variant
+            var cartResponse = await _apiClient.PostAsJsonAsync("/api/cart/items", new
             {
                 productId = product.Id,
-                quantity = _faker.Random.Int(1, 3)
+                quantity = 1
             });
+
+            if (!cartResponse.IsSuccessStatusCode)
+            {
+                var errorContent = await cartResponse.Content.ReadAsStringAsync();
+                Console.WriteLine($"Cart add failed for product {product.Id}: {cartResponse.StatusCode} - {errorContent}");
+            }
         }
 
-        // Create order from cart
+        // Create order from cart with correct address format
         var orderResponse = await _apiClient.PostAsJsonAsync("/api/orders", new
         {
+            customerEmail = user.Email,
+            customerPhone = _faker.Phone.PhoneNumber("+359########"),
             shippingAddress = new
             {
-                street = _faker.Address.StreetAddress(),
+                firstName = user.FirstName,
+                lastName = user.LastName,
+                addressLine1 = _faker.Address.StreetAddress(),
+                addressLine2 = _faker.Address.SecondaryAddress(),
                 city = _faker.Address.City(),
-                postalCode = _faker.Address.ZipCode(),
-                country = "Bulgaria"
+                state = "Sofia",
+                postalCode = _faker.Address.ZipCode("####"),
+                country = "Bulgaria",
+                phone = _faker.Phone.PhoneNumber("+359########")
             },
-            paymentMethod = "card",
-            correlationId = _correlationId
+            shippingMethod = "standard"
         });
 
         var order = new TestOrder
@@ -193,6 +217,12 @@ public class TestDataFactory
             order.Id = result?.Id ?? Guid.Empty;
             order.OrderNumber = result?.OrderNumber ?? string.Empty;
             order.TotalAmount = result?.TotalAmount ?? 0;
+        }
+        else
+        {
+            // Log the error for debugging
+            var errorContent = await orderResponse.Content.ReadAsStringAsync();
+            Console.WriteLine($"Order creation failed: {orderResponse.StatusCode} - {errorContent}");
         }
 
         return order;
@@ -305,6 +335,7 @@ public class TestUser
 public class TestProduct
 {
     public Guid Id { get; set; }
+    public Guid VariantId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public decimal Price { get; set; }
@@ -324,9 +355,33 @@ public class TestOrder
 }
 
 // API Response DTOs
-public record RegisterResponse(Guid Id, string Email, string FirstName, string LastName);
-public record AuthResponse(string AccessToken, string RefreshToken, AuthUserResponse User);
-public record AuthUserResponse(Guid Id, string Email);
-public record ProductResponse(Guid Id, string Slug);
-public record OrderResponse(Guid Id, string OrderNumber, decimal TotalAmount);
-public record CategoryResponse(Guid Id, string Name);
+public record RegisterResponse(
+    [property: System.Text.Json.Serialization.JsonPropertyName("id")] Guid Id,
+    [property: System.Text.Json.Serialization.JsonPropertyName("email")] string Email,
+    [property: System.Text.Json.Serialization.JsonPropertyName("firstName")] string FirstName,
+    [property: System.Text.Json.Serialization.JsonPropertyName("lastName")] string LastName);
+public record AuthResponse(
+    [property: System.Text.Json.Serialization.JsonPropertyName("accessToken")] string AccessToken,
+    [property: System.Text.Json.Serialization.JsonPropertyName("refreshToken")] string RefreshToken,
+    [property: System.Text.Json.Serialization.JsonPropertyName("user")] AuthUserResponse User);
+public record AuthUserResponse(
+    [property: System.Text.Json.Serialization.JsonPropertyName("id")] Guid Id,
+    [property: System.Text.Json.Serialization.JsonPropertyName("email")] string Email);
+public record ProductResponse(
+    [property: System.Text.Json.Serialization.JsonPropertyName("id")] Guid Id,
+    [property: System.Text.Json.Serialization.JsonPropertyName("slug")] string Slug);
+public record ProductDetailsResponse(
+    [property: System.Text.Json.Serialization.JsonPropertyName("id")] Guid Id,
+    [property: System.Text.Json.Serialization.JsonPropertyName("slug")] string Slug,
+    [property: System.Text.Json.Serialization.JsonPropertyName("variants")] List<ProductVariantResponse>? Variants);
+public record ProductVariantResponse(
+    [property: System.Text.Json.Serialization.JsonPropertyName("id")] Guid Id,
+    [property: System.Text.Json.Serialization.JsonPropertyName("sku")] string Sku,
+    [property: System.Text.Json.Serialization.JsonPropertyName("name")] string? Name);
+public record OrderResponse(
+    [property: System.Text.Json.Serialization.JsonPropertyName("id")] Guid Id,
+    [property: System.Text.Json.Serialization.JsonPropertyName("orderNumber")] string OrderNumber,
+    [property: System.Text.Json.Serialization.JsonPropertyName("total")] decimal TotalAmount);
+public record CategoryResponse(
+    [property: System.Text.Json.Serialization.JsonPropertyName("id")] Guid Id,
+    [property: System.Text.Json.Serialization.JsonPropertyName("name")] string Name);
