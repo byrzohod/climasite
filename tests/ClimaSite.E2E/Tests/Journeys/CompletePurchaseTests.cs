@@ -213,27 +213,43 @@ public class CompletePurchaseTests : IAsyncLifetime
         // Create a product
         var product = await _dataFactory.CreateProductAsync();
 
-        // Add to cart
-        await _page.GotoAsync("/products");
+        // Navigate to the specific product page to ensure we add the right product
+        await _page.GotoAsync($"/products/{product.Slug}");
         await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        await _page.ClickAsync("[data-testid='add-to-cart'] >> nth=0");
 
-        // Get cart count
-        await Assertions.Expect(_page.Locator("[data-testid='cart-count']")).ToBeVisibleAsync();
+        // Wait for the add-to-cart button to be available
+        var addToCartButton = _page.Locator("[data-testid='add-to-cart']");
+        await Assertions.Expect(addToCartButton).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+
+        // Click add to cart
+        await addToCartButton.ClickAsync();
+
+        // Wait for the cart API call to complete and cart count to update
+        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        // Get cart count with extended timeout (API needs to respond)
+        await Assertions.Expect(_page.Locator("[data-testid='cart-count']")).ToBeVisibleAsync(
+            new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
         var countBefore = await _page.Locator("[data-testid='cart-count']").TextContentAsync();
+        countBefore.Should().NotBeNullOrEmpty("Cart count should have a value after adding item");
 
         // Navigate to different pages
         await _page.GotoAsync("/about");
         await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-        // Assert - Cart count persists
+        // Assert - Cart count persists (with timeout for header to render)
+        await Assertions.Expect(_page.Locator("[data-testid='cart-count']")).ToBeVisibleAsync(
+            new LocatorAssertionsToBeVisibleOptions { Timeout = 5000 });
         var countAfter = await _page.Locator("[data-testid='cart-count']").TextContentAsync();
         countAfter.Should().Be(countBefore);
 
         // Navigate to home
         await _page.GotoAsync("/");
+        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Assert - Cart count still persists
+        await Assertions.Expect(_page.Locator("[data-testid='cart-count']")).ToBeVisibleAsync(
+            new LocatorAssertionsToBeVisibleOptions { Timeout = 5000 });
         var countHome = await _page.Locator("[data-testid='cart-count']").TextContentAsync();
         countHome.Should().Be(countBefore);
     }
