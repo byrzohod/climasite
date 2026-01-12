@@ -13,7 +13,7 @@ import { AddressCardComponent } from '../../../shared/components/address-card/ad
   imports: [CommonModule, RouterLink, FormsModule, TranslateModule, AddressCardComponent],
   template: `
     <div class="order-details-container" data-testid="order-details-page">
-      <a routerLink="/account/orders" class="back-link">
+      <a routerLink="/account/orders" class="back-link" data-testid="back-to-orders">
         <span class="back-arrow">&#8592;</span> {{ 'account.orders.backToOrders' | translate }}
       </a>
 
@@ -33,7 +33,7 @@ import { AddressCardComponent } from '../../../shared/components/address-card/ad
           <div class="order-header">
             <div class="header-info">
               <h1>{{ 'account.orders.orderDetails' | translate }}</h1>
-              <p class="order-number">{{ 'account.orders.orderNumber' | translate }}{{ order()!.orderNumber }}</p>
+              <p class="order-number">{{ 'account.orders.orderNumber' | translate }}<span data-testid="order-number">{{ order()!.orderNumber }}</span></p>
               <p class="order-date">{{ 'account.orders.orderDate' | translate }}: {{ order()!.createdAt | date:'medium' }}</p>
             </div>
             <div class="header-actions">
@@ -41,6 +41,7 @@ import { AddressCardComponent } from '../../../shared/components/address-card/ad
                 class="order-status"
                 [style.background]="getStatusConfig(order()!.status).bgColor"
                 [style.color]="getStatusConfig(order()!.status).color"
+                data-testid="order-status"
               >
                 {{ 'account.orders.statuses.' + order()!.status.toLowerCase() | translate }}
               </span>
@@ -120,7 +121,7 @@ import { AddressCardComponent } from '../../../shared/components/address-card/ad
               <h2>{{ 'account.orders.items' | translate }} ({{ order()!.items.length }})</h2>
               <div class="items-list">
                 @for (item of order()!.items; track item.id) {
-                  <div class="order-item" data-testid="order-item">
+                  <div class="order-item" data-testid="order-item-row">
                     @if (item.imageUrl) {
                       <img [src]="item.imageUrl" [alt]="item.productName" class="item-image" />
                     } @else {
@@ -171,13 +172,13 @@ import { AddressCardComponent } from '../../../shared/components/address-card/ad
                 }
                 <div class="summary-row total">
                   <span>{{ 'account.orders.total' | translate }}</span>
-                  <span>{{ order()!.total | currency:order()!.currency }}</span>
+                  <span data-testid="order-total">{{ order()!.total | currency:order()!.currency }}</span>
                 </div>
               </div>
             </div>
 
             <!-- Shipping Address -->
-            <div class="section address-section">
+            <div class="section address-section" data-testid="shipping-address">
               <h2>{{ 'account.orders.shippingAddress' | translate }}</h2>
               <div class="address-card">
                 <p class="address-name">{{ order()!.shippingAddress.firstName }} {{ order()!.shippingAddress.lastName }}</p>
@@ -194,13 +195,13 @@ import { AddressCardComponent } from '../../../shared/components/address-card/ad
               @if (order()!.trackingNumber) {
                 <div class="tracking-info">
                   <span class="tracking-label">{{ 'account.orders.track' | translate }}:</span>
-                  <span class="tracking-number">{{ order()!.trackingNumber }}</span>
+                  <span class="tracking-number" data-testid="tracking-number">{{ order()!.trackingNumber }}</span>
                 </div>
               }
             </div>
 
             <!-- Payment Info -->
-            <div class="section payment-section">
+            <div class="section payment-section" data-testid="payment-method">
               <h2>{{ 'account.orders.paymentMethod' | translate }}</h2>
               <div class="payment-card">
                 @if (order()!.paymentMethod) {
@@ -243,7 +244,7 @@ import { AddressCardComponent } from '../../../shared/components/address-card/ad
         <!-- Cancel Order Modal -->
         @if (showCancelModal) {
           <div class="modal-overlay" (click)="showCancelModal = false">
-            <div class="modal-content" (click)="$event.stopPropagation()" data-testid="cancel-order-modal">
+            <div class="modal-content" (click)="$event.stopPropagation()" data-testid="cancel-modal">
               <h3>{{ 'account.orders.cancelModal.title' | translate }}</h3>
               <p>{{ 'account.orders.cancelModal.message' | translate }}</p>
               <div class="form-group">
@@ -252,7 +253,7 @@ import { AddressCardComponent } from '../../../shared/components/address-card/ad
                   id="cancelReason"
                   [(ngModel)]="cancelReason"
                   rows="3"
-                  data-testid="cancel-reason-input"
+                  data-testid="cancel-reason"
                 ></textarea>
               </div>
               <div class="modal-actions">

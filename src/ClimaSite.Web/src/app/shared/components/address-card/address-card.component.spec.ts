@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { AddressCardComponent, AddressData } from './address-card.component';
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -118,11 +118,8 @@ describe('AddressCardComponent', () => {
     expect(compiled.querySelector('.address-card.compact')).toBeTruthy();
   });
 
-  it('should copy address to clipboard when copy button clicked', async () => {
-    const mockClipboard = {
-      writeText: jasmine.createSpy('writeText').and.returnValue(Promise.resolve())
-    };
-    Object.assign(navigator, { clipboard: mockClipboard });
+  it('should copy address to clipboard when copy button clicked', fakeAsync(() => {
+    spyOn(navigator.clipboard, 'writeText').and.returnValue(Promise.resolve());
 
     fixture.componentRef.setInput('address', mockAddress);
     fixture.componentRef.setInput('title', 'Address');
@@ -131,17 +128,15 @@ describe('AddressCardComponent', () => {
     const copyBtn = fixture.nativeElement.querySelector('[data-testid="copy-address-btn"]');
     copyBtn.click();
 
-    await fixture.whenStable();
+    tick(); // Wait for the promise to resolve
+    fixture.detectChanges();
 
-    expect(mockClipboard.writeText).toHaveBeenCalled();
+    expect(navigator.clipboard.writeText).toHaveBeenCalled();
     expect(component.copied()).toBeTrue();
-  });
+  }));
 
   it('should emit addressCopied event when copy succeeds', async () => {
-    const mockClipboard = {
-      writeText: jasmine.createSpy('writeText').and.returnValue(Promise.resolve())
-    };
-    Object.assign(navigator, { clipboard: mockClipboard });
+    spyOn(navigator.clipboard, 'writeText').and.returnValue(Promise.resolve());
 
     fixture.componentRef.setInput('address', mockAddress);
     fixture.componentRef.setInput('title', 'Address');

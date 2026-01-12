@@ -26,8 +26,8 @@ public class OrdersPage : BasePage
     {
         try
         {
-            await Page.WaitForSelectorAsync("[data-testid='no-orders'], [data-testid='order-item']", new PageWaitForSelectorOptions { Timeout = 5000 });
-            var noOrders = await Page.QuerySelectorAsync("[data-testid='no-orders']");
+            await Page.WaitForSelectorAsync("[data-testid='orders-empty'], [data-testid='order-card']", new PageWaitForSelectorOptions { Timeout = 5000 });
+            var noOrders = await Page.QuerySelectorAsync("[data-testid='orders-empty']");
             return noOrders != null;
         }
         catch
@@ -38,8 +38,8 @@ public class OrdersPage : BasePage
 
     public async Task<int> GetOrderCountAsync()
     {
-        await Page.WaitForSelectorAsync("[data-testid='order-item'], [data-testid='no-orders']", new PageWaitForSelectorOptions { Timeout = 5000 });
-        var orderItems = await Page.QuerySelectorAllAsync("[data-testid='order-item']");
+        await Page.WaitForSelectorAsync("[data-testid='order-card'], [data-testid='orders-empty']", new PageWaitForSelectorOptions { Timeout = 5000 });
+        var orderItems = await Page.QuerySelectorAllAsync("[data-testid='order-card']");
         return orderItems.Count;
     }
 
@@ -62,30 +62,30 @@ public class OrdersPage : BasePage
 
     public async Task ClickOrderAsync(int index)
     {
-        var orderItems = await Page.QuerySelectorAllAsync("[data-testid='order-item']");
-        if (index < orderItems.Count)
+        var viewDetailsButtons = await Page.QuerySelectorAllAsync("[data-testid='view-order-details']");
+        if (index < viewDetailsButtons.Count)
         {
-            await orderItems[index].ClickAsync();
+            await viewDetailsButtons[index].ClickAsync();
             await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         }
     }
 
     public async Task FilterByStatusAsync(string status)
     {
-        await Page.SelectOptionAsync("[data-testid='status-filter']", new SelectOptionValue { Label = status });
+        await Page.SelectOptionAsync("[data-testid='orders-status-filter']", new SelectOptionValue { Label = status });
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }
 
     public async Task SearchOrdersAsync(string query)
     {
-        await Page.FillAsync("[data-testid='order-search']", query);
+        await Page.FillAsync("[data-testid='orders-search']", query);
         await Page.Keyboard.PressAsync("Enter");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }
 
     public async Task SortByAsync(string sortOption)
     {
-        await Page.SelectOptionAsync("[data-testid='sort-select']", new SelectOptionValue { Label = sortOption });
+        await Page.SelectOptionAsync("[data-testid='orders-sort-by']", new SelectOptionValue { Label = sortOption });
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }
 
@@ -187,19 +187,19 @@ public class OrdersPage : BasePage
     // Pagination Methods
     public async Task<bool> HasNextPageAsync()
     {
-        var nextButton = await Page.QuerySelectorAsync("[data-testid='next-page']");
+        var nextButton = await Page.QuerySelectorAsync("[data-testid='pagination-next']");
         return nextButton != null && await nextButton.IsEnabledAsync();
     }
 
     public async Task GoToNextPageAsync()
     {
-        await Page.ClickAsync("[data-testid='next-page']");
+        await Page.ClickAsync("[data-testid='pagination-next']");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }
 
     public async Task GoToPreviousPageAsync()
     {
-        await Page.ClickAsync("[data-testid='prev-page']");
+        await Page.ClickAsync("[data-testid='pagination-prev']");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }
 }

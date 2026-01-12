@@ -122,7 +122,7 @@ describe('OrderDetailsComponent', () => {
   it('should display order items', () => {
     fixture.detectChanges();
     const compiled = fixture.nativeElement;
-    const items = compiled.querySelectorAll('[data-testid="order-item"]');
+    const items = compiled.querySelectorAll('[data-testid="order-item-row"]');
     expect(items.length).toBe(1);
   });
 

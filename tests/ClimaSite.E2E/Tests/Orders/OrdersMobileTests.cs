@@ -160,7 +160,7 @@ public class OrdersMobileTests : IAsyncLifetime
 
         // Assert - Filter should be accessible (may be in dropdown or collapsible)
         var filterElement = await _page.QuerySelectorAsync(
-            "[data-testid='status-filter'], [data-testid='filter-toggle'], [data-testid='mobile-filter']");
+            "[data-testid='orders-status-filter'], [data-testid='filter-toggle'], [data-testid='mobile-filter']");
 
         // Mobile may have filters in different UI element
         // This test just verifies the orders page works

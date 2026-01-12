@@ -42,7 +42,7 @@ public class OrdersListTests : IAsyncLifetime
 
         // Assert - Should redirect to login
         var currentUrl = _page.Url;
-        currentUrl.Should().Contain("/auth/login");
+        currentUrl.Should().Contain("/login");
     }
 
     [Fact]
