@@ -24,7 +24,9 @@
     "viewAll": "View All",
     "showMore": "Show More",
     "showLess": "Show Less",
-    "currency": "${{amount}}"
+    "currency": "${{amount}}",
+    "copyToClipboard": "Copy to clipboard",
+    "noAddress": "No address provided"
   },
   "nav": {
     "home": "Home",
@@ -293,6 +295,11 @@
         "reasonLabel": "Reason for cancellation (optional)",
         "confirm": "Yes, Cancel Order",
         "cancel": "No, Keep Order"
+      },
+      "reorder": {
+        "success": "{{count}} item(s) added to cart",
+        "partial": "{{added}} item(s) added, {{skipped}} item(s) skipped due to unavailability",
+        "error": "Failed to add items to cart"
       }
     },
     "addresses": {

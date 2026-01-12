@@ -103,6 +103,37 @@ public class OrdersController : ControllerBase
 
         return Ok(result.Value);
     }
+
+    [Authorize]
+    [HttpPost("{id:guid}/reorder")]
+    public async Task<IActionResult> Reorder(Guid id, [FromHeader(Name = "X-Session-Id")] string? sessionId = null)
+    {
+        var command = new ReorderCommand
+        {
+            OrderId = id,
+            GuestSessionId = sessionId
+        };
+
+        var result = await _mediator.Send(command);
+
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.Error });
+
+        return Ok(result.Value);
+    }
+
+    [Authorize]
+    [HttpGet("{id:guid}/invoice")]
+    public async Task<IActionResult> DownloadInvoice(Guid id)
+    {
+        var query = new GenerateInvoiceQuery { OrderId = id };
+        var result = await _mediator.Send(query);
+
+        if (!result.IsSuccess)
+            return NotFound(new { message = result.Error });
+
+        return File(result.Value!.PdfContent, result.Value.ContentType, result.Value.FileName);
+    }
 }
 
 public record CancelOrderRequest

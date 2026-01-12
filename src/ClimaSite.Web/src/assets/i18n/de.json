@@ -24,7 +24,9 @@
     "viewAll": "Alle anzeigen",
     "showMore": "Mehr anzeigen",
     "showLess": "Weniger anzeigen",
-    "currency": "{{amount}} €"
+    "currency": "{{amount}} €",
+    "copyToClipboard": "In Zwischenablage kopieren",
+    "noAddress": "Keine Adresse angegeben"
   },
   "nav": {
     "home": "Startseite",
@@ -293,6 +295,11 @@
         "reasonLabel": "Grund für Stornierung (optional)",
         "confirm": "Ja, Bestellung stornieren",
         "cancel": "Nein, Bestellung behalten"
+      },
+      "reorder": {
+        "success": "{{count}} Artikel zum Warenkorb hinzugefügt",
+        "partial": "{{added}} Artikel hinzugefügt, {{skipped}} Artikel übersprungen (nicht verfügbar)",
+        "error": "Artikel konnten nicht zum Warenkorb hinzugefügt werden"
       }
     },
     "addresses": {

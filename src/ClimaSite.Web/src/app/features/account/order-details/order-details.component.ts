@@ -1,15 +1,16 @@
 import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { CheckoutService } from '../../../core/services/checkout.service';
 import { Order, OrderEvent, ORDER_STATUS_CONFIG, OrderStatus } from '../../../core/models/order.model';
+import { AddressCardComponent } from '../../../shared/components/address-card/address-card.component';
 
 @Component({
   selector: 'app-order-details',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, TranslateModule],
+  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, AddressCardComponent],
   template: `
     <div class="order-details-container" data-testid="order-details-page">
       <a routerLink="/account/orders" class="back-link">
@@ -48,8 +49,47 @@ import { Order, OrderEvent, ORDER_STATUS_CONFIG, OrderStatus } from '../../../co
                   {{ 'account.orders.actions.cancelOrder' | translate }}
                 </button>
               }
+              <button
+                class="btn-action"
+                (click)="reorder()"
+                [disabled]="isReordering()"
+                data-testid="reorder-btn"
+              >
+                @if (isReordering()) {
+                  <span class="spinner-small"></span>
+                } @else {
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                  </svg>
+                }
+                {{ 'account.orders.actions.reorder' | translate }}
+              </button>
+              <button
+                class="btn-action"
+                (click)="downloadInvoice()"
+                [disabled]="isDownloading()"
+                data-testid="download-invoice-btn"
+              >
+                @if (isDownloading()) {
+                  <span class="spinner-small"></span>
+                } @else {
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                }
+                {{ 'account.orders.actions.downloadInvoice' | translate }}
+              </button>
             </div>
           </div>
+
+          @if (reorderMessage()) {
+            <div class="alert" [class.alert-success]="reorderSuccess()" [class.alert-warning]="!reorderSuccess()">
+              {{ reorderMessage() }}
+            </div>
+          }
 
           <div class="order-grid">
             <!-- Order Timeline -->
@@ -364,6 +404,64 @@ import { Order, OrderEvent, ORDER_STATUS_CONFIG, OrderStatus } from '../../../co
       &:hover {
         background: var(--color-error);
         color: white;
+      }
+    }
+
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--color-bg-secondary);
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover:not(:disabled) {
+        background: var(--color-bg-tertiary);
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      svg {
+        flex-shrink: 0;
+      }
+    }
+
+    .spinner-small {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--color-border);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .alert {
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      font-size: 0.875rem;
+
+      &.alert-success {
+        background: var(--color-success-bg, #dcfce7);
+        color: var(--color-success, #166534);
+        border: 1px solid var(--color-success, #166534);
+      }
+
+      &.alert-warning {
+        background: var(--color-warning-bg, #fef3c7);
+        color: var(--color-warning, #92400e);
+        border: 1px solid var(--color-warning, #92400e);
       }
     }
 
@@ -805,12 +903,18 @@ import { Order, OrderEvent, ORDER_STATUS_CONFIG, OrderStatus } from '../../../co
 })
 export class OrderDetailsComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly checkoutService = inject(CheckoutService);
+  private readonly translate = inject(TranslateService);
 
   order = signal<Order | null>(null);
   isLoading = signal(true);
   isCancelling = signal(false);
+  isReordering = signal(false);
+  isDownloading = signal(false);
   error = signal<string | null>(null);
+  reorderMessage = signal<string | null>(null);
+  reorderSuccess = signal(false);
 
   showCancelModal = false;
   cancelReason = '';
@@ -865,5 +969,72 @@ export class OrderDetailsComponent implements OnInit {
   getStatusConfig(status: string): { bgColor: string; color: string } {
     const config = ORDER_STATUS_CONFIG[status as OrderStatus];
     return config || { bgColor: '#e5e7eb', color: '#374151' };
+  }
+
+  reorder(): void {
+    const orderId = this.order()?.id;
+    if (!orderId) return;
+
+    this.isReordering.set(true);
+    this.reorderMessage.set(null);
+
+    this.checkoutService.reorder(orderId).subscribe({
+      next: (result) => {
+        this.isReordering.set(false);
+        if (result.itemsSkipped > 0) {
+          this.reorderSuccess.set(false);
+          this.reorderMessage.set(
+            this.translate.instant('account.orders.reorder.partial', {
+              added: result.itemsAdded,
+              skipped: result.itemsSkipped
+            })
+          );
+        } else {
+          this.reorderSuccess.set(true);
+          this.reorderMessage.set(
+            this.translate.instant('account.orders.reorder.success', {
+              count: result.itemsAdded
+            })
+          );
+        }
+        // Navigate to cart after a short delay
+        setTimeout(() => {
+          this.router.navigate(['/cart']);
+        }, 1500);
+      },
+      error: (err) => {
+        this.isReordering.set(false);
+        this.reorderSuccess.set(false);
+        this.reorderMessage.set(
+          err.error?.message || this.translate.instant('account.orders.reorder.error')
+        );
+      }
+    });
+  }
+
+  downloadInvoice(): void {
+    const orderId = this.order()?.id;
+    const orderNumber = this.order()?.orderNumber;
+    if (!orderId) return;
+
+    this.isDownloading.set(true);
+
+    this.checkoutService.downloadInvoice(orderId).subscribe({
+      next: (blob) => {
+        this.isDownloading.set(false);
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Invoice-${orderNumber}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      },
+      error: () => {
+        this.isDownloading.set(false);
+      }
+    });
   }
 }

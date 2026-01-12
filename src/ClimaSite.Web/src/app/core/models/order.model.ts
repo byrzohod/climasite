@@ -132,3 +132,41 @@ export const ORDER_STATUS_CONFIG: Record<OrderStatus, { label: string; color: st
   Refunded: { label: 'Refunded', color: '#6b21a8', bgColor: '#f3e8ff' },
   Returned: { label: 'Returned', color: '#0369a1', bgColor: '#e0f2fe' }
 };
+
+export interface ReorderResult {
+  cart: Cart;
+  itemsAdded: number;
+  itemsSkipped: number;
+  skippedReasons: string[];
+}
+
+export interface Cart {
+  id: string;
+  userId?: string;
+  guestSessionId?: string;
+  items: CartItem[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  itemCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CartItem {
+  id: string;
+  productId: string;
+  variantId: string;
+  productName: string;
+  productSlug?: string;
+  variantName?: string;
+  sku?: string;
+  imageUrl?: string;
+  unitPrice: number;
+  salePrice?: number;
+  effectivePrice: number;
+  quantity: number;
+  lineTotal: number;
+  availableStock: number;
+  isAvailable: boolean;
+}

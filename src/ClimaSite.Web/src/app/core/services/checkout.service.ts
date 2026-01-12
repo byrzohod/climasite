@@ -9,7 +9,8 @@ import {
   OrderBrief,
   PaginatedOrders,
   OrdersFilterParams,
-  OrderStatus
+  OrderStatus,
+  ReorderResult
 } from '../models/order.model';
 
 export type CheckoutStep = 'shipping' | 'payment' | 'review';
@@ -144,6 +145,17 @@ export class CheckoutService {
 
   cancelOrder(orderId: string, reason?: string): Observable<Order> {
     return this.http.post<Order>(`${this.apiUrl}/${orderId}/cancel`, { reason }, { headers: this.getHeaders() });
+  }
+
+  reorder(orderId: string): Observable<ReorderResult> {
+    return this.http.post<ReorderResult>(`${this.apiUrl}/${orderId}/reorder`, {}, { headers: this.getHeaders() });
+  }
+
+  downloadInvoice(orderId: string): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${orderId}/invoice`, {
+      headers: this.getHeaders(),
+      responseType: 'blob'
+    });
   }
 
   resetCheckout(): void {
