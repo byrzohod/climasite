@@ -137,12 +137,18 @@ public class OrdersMobileTests : IAsyncLifetime
         var ordersPage = new OrdersPage(_page);
         await ordersPage.NavigateAsync();
 
-        // Act - Tap on order (simulates touch)
+        // Wait for orders to load
+        var orderCount = await ordersPage.GetOrderCountAsync();
+        orderCount.Should().BeGreaterThanOrEqualTo(1, "User should have at least one order to navigate to");
+
+        // Act - Tap on order (simulates touch) - uses the improved ClickOrderAsync
         await ordersPage.ClickOrderAsync(0);
 
-        // Assert - Should navigate to details
+        // Assert - Should navigate to details (URL should contain order ID pattern)
         var currentUrl = _page.Url;
-        currentUrl.Should().Contain("/account/orders/");
+        // The URL should now contain the order details path
+        (currentUrl.Contains("/account/orders/") && currentUrl.Length > "/account/orders/".Length + 20)
+            .Should().BeTrue($"Should navigate to order details. Current URL: {currentUrl}");
     }
 
     [Fact]
@@ -186,7 +192,18 @@ public class OrdersMobileTests : IAsyncLifetime
         if (backButton != null)
         {
             await backButton.ClickAsync();
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+            // Wait for URL to change
+            try
+            {
+                await _page.WaitForURLAsync(url => url.Contains("/account/orders") && !url.Contains(order.Id.ToString()),
+                    new PageWaitForURLOptions { Timeout = 10000 });
+            }
+            catch
+            {
+                await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                await Task.Delay(500);
+            }
 
             // Assert
             var currentUrl = _page.Url;

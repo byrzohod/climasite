@@ -62,11 +62,26 @@ public class OrdersPage : BasePage
 
     public async Task ClickOrderAsync(int index)
     {
+        // Wait for order cards to be visible first
+        await Page.WaitForSelectorAsync("[data-testid='view-order-details']", new PageWaitForSelectorOptions { Timeout = 10000 });
+
         var viewDetailsButtons = await Page.QuerySelectorAllAsync("[data-testid='view-order-details']");
         if (index < viewDetailsButtons.Count)
         {
+            var currentUrl = Page.Url;
             await viewDetailsButtons[index].ClickAsync();
-            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+            // Wait for URL to change (navigation to happen)
+            try
+            {
+                await Page.WaitForURLAsync(url => url != currentUrl && url.Contains("/account/orders/"),
+                    new PageWaitForURLOptions { Timeout = 10000 });
+            }
+            catch
+            {
+                // Fallback to network idle
+                await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            }
         }
     }
 
@@ -106,11 +121,54 @@ public class OrdersPage : BasePage
 
     public async Task<decimal> GetOrderTotalAsync()
     {
+        // Wait for the order total element to be present
+        try
+        {
+            await Page.WaitForSelectorAsync("[data-testid='order-total']", new PageWaitForSelectorOptions { Timeout = 5000 });
+        }
+        catch
+        {
+            return 0;
+        }
+
         var total = await Page.QuerySelectorAsync("[data-testid='order-total']");
         var text = total != null ? await total.TextContentAsync() ?? "0" : "0";
-        // Parse the total (remove currency symbols)
+
+        // Parse the total (remove all non-numeric characters except . and ,)
+        // Currency formats can be: $1,234.56, €1.234,56, 1 234,56 лв, etc.
         var numericText = new string(text.Where(c => char.IsDigit(c) || c == '.' || c == ',').ToArray());
-        return decimal.TryParse(numericText.Replace(',', '.'), out var result) ? result : 0;
+
+        // Handle different decimal separators - if we have both . and ,, use culture-aware parsing
+        if (numericText.Contains('.') && numericText.Contains(','))
+        {
+            // If comma comes after dot, comma is decimal separator (European: 1.234,56)
+            if (numericText.LastIndexOf(',') > numericText.LastIndexOf('.'))
+            {
+                numericText = numericText.Replace(".", "").Replace(",", ".");
+            }
+            else
+            {
+                // Dot is decimal separator (US: 1,234.56)
+                numericText = numericText.Replace(",", "");
+            }
+        }
+        else if (numericText.Contains(','))
+        {
+            // Only comma - could be decimal separator or thousands separator
+            // If there's exactly one comma and 2 digits after, treat as decimal
+            var parts = numericText.Split(',');
+            if (parts.Length == 2 && parts[1].Length <= 2)
+            {
+                numericText = numericText.Replace(",", ".");
+            }
+            else
+            {
+                numericText = numericText.Replace(",", "");
+            }
+        }
+
+        return decimal.TryParse(numericText, System.Globalization.NumberStyles.Any,
+            System.Globalization.CultureInfo.InvariantCulture, out var result) ? result : 0;
     }
 
     public async Task<int> GetOrderItemCountAsync()
@@ -154,9 +212,17 @@ public class OrdersPage : BasePage
         await Page.ClickAsync("[data-testid='reorder-btn']");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-        // Wait for the component to redirect to cart (happens after 1500ms delay in Angular)
-        await Task.Delay(2000);
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        // Wait for either navigation to cart or an error/success message to appear
+        // The component redirects after 1500ms on success
+        try
+        {
+            await Page.WaitForURLAsync(url => url.Contains("/cart"), new PageWaitForURLOptions { Timeout = 5000 });
+        }
+        catch
+        {
+            // If no navigation, check if there's a message (error or partial success)
+            await Task.Delay(500);
+        }
     }
 
     public async Task DownloadInvoiceAsync()

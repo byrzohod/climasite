@@ -163,7 +163,7 @@ import { OrderBrief, OrdersFilterParams, PaginatedOrders, ORDER_STATUS_CONFIG, O
             <div class="order-card" data-testid="order-card">
               <div class="order-header">
                 <div class="order-info">
-                  <span class="order-number">{{ 'account.orders.orderNumber' | translate }}{{ order.orderNumber }}</span>
+                  <span class="order-number" data-testid="order-number">{{ 'account.orders.orderNumber' | translate }}{{ order.orderNumber }}</span>
                   <span class="order-date">{{ order.createdAt | date:'mediumDate' }}</span>
                 </div>
                 <span
@@ -254,6 +254,9 @@ import { OrderBrief, OrdersFilterParams, PaginatedOrders, ORDER_STATUS_CONFIG, O
       padding: 2rem;
       max-width: 1000px;
       margin: 0 auto;
+      width: 100%;
+      box-sizing: border-box;
+      overflow-x: hidden;
 
       h1 {
         font-size: 2rem;
@@ -704,6 +707,7 @@ import { OrderBrief, OrdersFilterParams, PaginatedOrders, ORDER_STATUS_CONFIG, O
     @media (max-width: 768px) {
       .orders-container {
         padding: 1rem;
+        max-width: 100%;
 
         h1 {
           font-size: 1.5rem;
@@ -712,6 +716,7 @@ import { OrderBrief, OrdersFilterParams, PaginatedOrders, ORDER_STATUS_CONFIG, O
 
       .filters-section {
         padding: 1rem;
+        max-width: 100%;
       }
 
       .filters-row {
@@ -754,16 +759,30 @@ import { OrderBrief, OrdersFilterParams, PaginatedOrders, ORDER_STATUS_CONFIG, O
         margin-left: 0;
       }
 
+      .order-card {
+        max-width: 100%;
+        overflow: hidden;
+      }
+
       .order-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 0.75rem;
       }
 
+      .order-items {
+        padding: 0.75rem;
+      }
+
+      .item-name {
+        max-width: 80px;
+      }
+
       .order-footer {
         flex-direction: column;
         gap: 1rem;
         align-items: stretch;
+        padding: 1rem;
       }
 
       .btn-view-details {

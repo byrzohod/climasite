@@ -231,9 +231,24 @@ public class OrderDetailsTests : IAsyncLifetime
         var ordersPage = new OrdersPage(_page);
         await ordersPage.NavigateToOrderDetailsAsync(order.Id.ToString());
 
-        // Act - Click back button
-        await _page.ClickAsync("[data-testid='back-to-orders']");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        // Act - Click back button and wait for navigation
+        var backButton = await _page.WaitForSelectorAsync("[data-testid='back-to-orders']", new PageWaitForSelectorOptions { Timeout = 5000 });
+        backButton.Should().NotBeNull("Back button should exist");
+
+        await backButton!.ClickAsync();
+
+        // Wait for URL to change to orders list (without order ID)
+        try
+        {
+            await _page.WaitForURLAsync(url => url.Contains("/account/orders") && !url.Contains(order.Id.ToString()),
+                new PageWaitForURLOptions { Timeout = 10000 });
+        }
+        catch
+        {
+            // Fallback - wait and check
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await Task.Delay(500);
+        }
 
         // Assert
         var currentUrl = _page.Url;

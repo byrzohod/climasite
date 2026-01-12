@@ -23,8 +23,8 @@ import { AddressCardComponent } from '../../../shared/components/address-card/ad
           <p>{{ 'common.loading' | translate }}</p>
         </div>
       } @else if (error()) {
-        <div class="error-container">
-          <p class="error-message">{{ error() }}</p>
+        <div class="error-container" data-testid="error-message">
+          <p class="error-message" data-testid="not-found">{{ error() }}</p>
           <a routerLink="/account/orders" class="btn-primary">{{ 'account.orders.backToOrders' | translate }}</a>
         </div>
       } @else if (order()) {
@@ -284,6 +284,9 @@ import { AddressCardComponent } from '../../../shared/components/address-card/ad
       padding: 2rem;
       max-width: 1100px;
       margin: 0 auto;
+      width: 100%;
+      box-sizing: border-box;
+      overflow-x: hidden;
     }
 
     .back-link {
@@ -853,6 +856,7 @@ import { AddressCardComponent } from '../../../shared/components/address-card/ad
     @media (max-width: 768px) {
       .order-details-container {
         padding: 1rem;
+        max-width: 100%;
       }
 
       .order-grid {
@@ -862,16 +866,30 @@ import { AddressCardComponent } from '../../../shared/components/address-card/ad
       .order-header {
         flex-direction: column;
         align-items: flex-start;
+
+        h1 {
+          font-size: 1.25rem;
+        }
       }
 
       .header-actions {
         width: 100%;
-        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .btn-action, .btn-cancel {
+        flex: 1 1 auto;
+        min-width: 0;
+        font-size: 0.75rem;
+        padding: 0.5rem 0.75rem;
+        white-space: nowrap;
       }
 
       .order-item {
         grid-template-columns: 60px 1fr;
         gap: 0.75rem;
+        max-width: 100%;
 
         .item-pricing, .item-total {
           grid-column: 2;
@@ -886,10 +904,25 @@ import { AddressCardComponent } from '../../../shared/components/address-card/ad
         .item-total {
           text-align: left;
         }
+
+        .item-name {
+          word-break: break-word;
+        }
+      }
+
+      .section {
+        padding: 1rem;
+        max-width: 100%;
+        overflow: hidden;
+      }
+
+      .timeline {
+        padding-left: 1.5rem;
       }
 
       .modal-content {
         padding: 1.5rem;
+        max-width: calc(100vw - 2rem);
       }
 
       .modal-actions {
@@ -898,6 +931,12 @@ import { AddressCardComponent } from '../../../shared/components/address-card/ad
         button {
           width: 100%;
         }
+      }
+
+      .address-card p,
+      .customer-card p,
+      .payment-card p {
+        word-break: break-word;
       }
     }
   `]
