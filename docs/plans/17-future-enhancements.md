@@ -1,13 +1,26 @@
-# Plan 14: Missing Pages & Product Detail Enhancements
+# Plan 17: Future Enhancements - Professional E-Commerce Features
 
 ## Overview
 
-This plan covers the implementation of:
-1. **Missing Pages**: Promotions, Resources, Brands
-2. **Product Translation**: Full i18n support for product content
-3. **Enhanced Product Details**: Based on CDL.bg and EMAG.bg feature analysis
-4. **Product Consumables Section**: Related consumable products
-5. **Similar/Linked Products Section**: Related and similar product recommendations
+This plan covers the implementation of professional e-commerce features to bring ClimaSite to the level of established HVAC retailers like CDL.bg and EMAG.bg.
+
+### Features Summary
+
+| Category | Features | Priority | Effort |
+|----------|----------|----------|--------|
+| **Missing Pages** | Promotions, Brands, Resources | High | Large |
+| **Product Translation** | Full i18n for product content | High | Medium |
+| **Product Details** | Gallery, Energy Rating, Warranty, Q&A | High | Large |
+| **Related Products** | Consumables, Similar, Bundles | High | Medium |
+| **Admin Enhancements** | Translation mgmt, Related products mgmt | Medium | Medium |
+
+### Total Task Count
+- **Phase 1**: 9 tasks (Missing Pages)
+- **Phase 2**: 5 tasks (Product Translation)
+- **Phase 3**: 15 tasks (Enhanced Product Details)
+- **Phase 4**: 6 tasks (Related Products)
+- **Phase 5**: 10 tasks (Testing)
+- **Total**: 45 tasks
 
 ---
 
@@ -2358,15 +2371,129 @@ Add these to `/src/ClimaSite.Web/src/assets/i18n/{lang}.json`:
 
 ---
 
+## Implementation Checklist
+
+### Phase 1: Missing Pages
+| Task | Description | Backend | Frontend | Tests | Status |
+|------|-------------|---------|----------|-------|--------|
+| PAGES-001 | Promotions Backend | [ ] Entity | [ ] - | [ ] Unit | ⬜ |
+| PAGES-002 | Promotions Frontend | [ ] - | [ ] Component | [ ] E2E | ⬜ |
+| PAGES-003 | Brands Backend | [ ] Entity | [ ] - | [ ] Unit | ⬜ |
+| PAGES-004 | Brands Frontend | [ ] - | [ ] Component | [ ] E2E | ⬜ |
+| PAGES-005 | Resources Backend | [ ] Entity | [ ] - | [ ] Unit | ⬜ |
+| PAGES-006 | Resources Frontend | [ ] - | [ ] Component | [ ] E2E | ⬜ |
+| PAGES-007 | Navigation Links | [ ] - | [ ] Update | [ ] E2E | ⬜ |
+| PAGES-008 | Promotions Integration | [ ] API | [ ] Badge | [ ] E2E | ⬜ |
+| PAGES-009 | SEO & Metadata | [ ] - | [ ] Meta | [ ] - | ⬜ |
+
+### Phase 2: Product Translation
+| Task | Description | Backend | Frontend | Tests | Status |
+|------|-------------|---------|----------|-------|--------|
+| TRANS-001 | Translation API | [ ] Handler | [ ] - | [ ] Unit | ⬜ |
+| TRANS-002 | Specifications i18n | [ ] Model | [ ] Pipe | [ ] Unit | ⬜ |
+| TRANS-003 | Admin Translation UI | [ ] API | [ ] Editor | [ ] E2E | ⬜ |
+| TRANS-004 | Language-Aware Display | [ ] - | [ ] Service | [ ] E2E | ⬜ |
+| TRANS-005 | Categories/Brands i18n | [ ] Entity | [ ] - | [ ] Unit | ⬜ |
+
+### Phase 3: Enhanced Product Details
+| Task | Description | Backend | Frontend | Tests | Status |
+|------|-------------|---------|----------|-------|--------|
+| PROD-001 | Image Gallery with Zoom | [ ] - | [ ] Component | [ ] E2E | ⬜ |
+| PROD-002 | Energy Rating Display | [ ] - | [ ] Component | [ ] Unit | ⬜ |
+| PROD-003 | Warranty Badges | [ ] - | [ ] Component | [ ] Unit | ⬜ |
+| PROD-004 | Financing Options | [ ] - | [ ] Service | [ ] Unit | ⬜ |
+| PROD-005 | Stock & Delivery | [ ] - | [ ] Component | [ ] Unit | ⬜ |
+| PROD-006 | Q&A Section | [ ] Entity | [ ] Component | [ ] E2E | ⬜ |
+| PROD-007 | Family Variants (BTU) | [ ] Query | [ ] Component | [ ] E2E | ⬜ |
+| PROD-008 | Specs Table Enhanced | [ ] - | [ ] Component | [ ] Unit | ⬜ |
+| PROD-009 | Installation Service | [ ] Cart | [ ] Component | [ ] E2E | ⬜ |
+| PROD-010 | Price History Chart | [ ] Entity | [ ] Chart | [ ] Unit | ⬜ |
+| PROD-011 | Comparison Feature | [ ] - | [ ] Service | [ ] E2E | ⬜ |
+| PROD-012 | Recently Viewed | [ ] - | [ ] Service | [ ] Unit | ⬜ |
+| PROD-013 | Print Styles | [ ] - | [ ] SCSS | [ ] - | ⬜ |
+| PROD-014 | Share Product | [ ] - | [ ] Component | [ ] Unit | ⬜ |
+| PROD-015 | Structured Data SEO | [ ] - | [ ] Service | [ ] - | ⬜ |
+
+### Phase 4: Related Products
+| Task | Description | Backend | Frontend | Tests | Status |
+|------|-------------|---------|----------|-------|--------|
+| REL-001 | Consumables Backend | [ ] Query | [ ] - | [ ] Unit | ⬜ |
+| REL-002 | Consumables Frontend | [ ] - | [ ] Component | [ ] E2E | ⬜ |
+| REL-003 | Similar Products Backend | [ ] Query | [ ] - | [ ] Unit | ⬜ |
+| REL-004 | Similar Products Frontend | [ ] - | [ ] Carousel | [ ] E2E | ⬜ |
+| REL-005 | Frequently Bought Together | [ ] Query | [ ] Component | [ ] E2E | ⬜ |
+| REL-006 | Admin Related Products | [ ] API | [ ] Manager | [ ] E2E | ⬜ |
+
+### Phase 5: Testing
+| Task | Description | Type | Coverage | Status |
+|------|-------------|------|----------|--------|
+| TEST-001 | Promotions E2E | E2E | Full flow | ⬜ |
+| TEST-002 | Brands E2E | E2E | Full flow | ⬜ |
+| TEST-003 | Resources E2E | E2E | Full flow | ⬜ |
+| TEST-004 | Product Translation E2E | E2E | Language switch | ⬜ |
+| TEST-005 | Product Gallery E2E | E2E | Zoom, fullscreen | ⬜ |
+| TEST-006 | Related Products E2E | E2E | Consumables, similar | ⬜ |
+| TEST-007 | Q&A Section E2E | E2E | Ask, answer | ⬜ |
+| TEST-008 | Promotions API Integration | Integration | CRUD | ⬜ |
+| TEST-009 | Brands API Integration | Integration | CRUD | ⬜ |
+| TEST-010 | Translation Unit Tests | Unit | Service | ⬜ |
+
+---
+
 ## Success Criteria
 
-1. **All new pages accessible** from navigation
-2. **Product translations** work for EN, BG, DE
-3. **Consumables section** shows on products with accessories
-4. **Similar products** show on all product pages
-5. **Gallery zoom** works on desktop, touch on mobile
-6. **All E2E tests pass** (minimum 90% coverage)
-7. **All unit tests pass** (80% backend, 70% frontend)
-8. **All integration tests pass** for new API endpoints
-9. **Responsive design** verified on mobile, tablet, desktop
-10. **Performance** - LCP < 2.5s, FID < 100ms
+### Functional Requirements
+- [ ] All new pages (Promotions, Brands, Resources) accessible from navigation
+- [ ] Product translations work correctly for EN, BG, DE with fallback
+- [ ] Consumables section displays on products with accessories
+- [ ] Similar products section displays on all product pages
+- [ ] Gallery zoom works on desktop (hover) and mobile (pinch)
+- [ ] Q&A section allows logged-in users to ask questions
+- [ ] Family variants (BTU options) display for product families
+- [ ] Financing calculator shows correct installment amounts
+
+### Testing Requirements
+- [ ] All E2E tests pass (minimum 125 existing + 30 new = 155 total)
+- [ ] All unit tests pass (backend 80%+, frontend 70%+)
+- [ ] All integration tests pass for new API endpoints
+- [ ] No console errors in browser
+
+### Quality Requirements
+- [ ] Responsive design verified on mobile (375px), tablet (768px), desktop (1280px+)
+- [ ] All text uses i18n translation keys (no hardcoded strings)
+- [ ] All colors use CSS variables from _colors.scss
+- [ ] Accessibility: keyboard navigation works for all interactive elements
+- [ ] Performance: LCP < 2.5s, FID < 100ms, CLS < 0.1
+
+### Admin Requirements
+- [ ] Admin can manage promotions (CRUD)
+- [ ] Admin can manage brands (CRUD)
+- [ ] Admin can manage resources (CRUD)
+- [ ] Admin can manage product translations
+- [ ] Admin can manage related products relationships
+
+---
+
+## Quick Reference: Commands
+
+```bash
+# Run all tests before marking any task complete
+dotnet test && cd src/ClimaSite.Web && ng test --watch=false && cd ../../tests/ClimaSite.E2E && npx playwright test
+
+# Run specific E2E test file
+npx playwright test tests/ClimaSite.E2E/Tests/Promotions/
+
+# Check for TypeScript errors
+cd src/ClimaSite.Web && ng build --configuration=production
+
+# Run database migrations
+dotnet ef database update --project src/ClimaSite.Infrastructure
+
+# Seed test data for development
+dotnet run --project src/ClimaSite.Api -- --seed-data
+```
+
+---
+
+*Last Updated: January 13, 2026*
+*Status: Ready for Implementation*
