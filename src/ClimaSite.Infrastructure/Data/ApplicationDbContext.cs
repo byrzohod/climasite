@@ -48,6 +48,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<ProductQuestion> ProductQuestions => Set<ProductQuestion>();
     public DbSet<ProductAnswer> ProductAnswers => Set<ProductAnswer>();
     public DbSet<InstallationRequest> InstallationRequests => Set<InstallationRequest>();
+    public DbSet<ProductPriceHistory> ProductPriceHistory => Set<ProductPriceHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

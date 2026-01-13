@@ -283,6 +283,18 @@
       "errors": {
         "questionTooShort": "Question must be at least 10 characters"
       }
+    },
+    "priceHistory": {
+      "title": "Price History",
+      "days30": "30 Days",
+      "days60": "60 Days",
+      "days90": "90 Days",
+      "current": "Current",
+      "lowest": "Lowest",
+      "highest": "Highest",
+      "average": "Average",
+      "noHistory": "No price history available for the selected period.",
+      "notAvailable": "Price history is not available for this product."
     }
   },
   "delivery": {

@@ -283,6 +283,18 @@
       "errors": {
         "questionTooShort": "Die Frage muss mindestens 10 Zeichen lang sein"
       }
+    },
+    "priceHistory": {
+      "title": "Preisverlauf",
+      "days30": "30 Tage",
+      "days60": "60 Tage",
+      "days90": "90 Tage",
+      "current": "Aktuell",
+      "lowest": "Niedrigster",
+      "highest": "Höchster",
+      "average": "Durchschnitt",
+      "noHistory": "Für den ausgewählten Zeitraum ist kein Preisverlauf verfügbar.",
+      "notAvailable": "Der Preisverlauf ist für dieses Produkt nicht verfügbar."
     }
   },
   "delivery": {

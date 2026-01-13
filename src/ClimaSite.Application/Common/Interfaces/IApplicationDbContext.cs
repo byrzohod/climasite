@@ -31,6 +31,7 @@ public interface IApplicationDbContext
     DbSet<ProductQuestion> ProductQuestions { get; }
     DbSet<ProductAnswer> ProductAnswers { get; }
     DbSet<InstallationRequest> InstallationRequests { get; }
+    DbSet<ProductPriceHistory> ProductPriceHistory { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }
