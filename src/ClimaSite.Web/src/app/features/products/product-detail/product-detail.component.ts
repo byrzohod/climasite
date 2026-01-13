@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -8,12 +8,15 @@ import { CartService } from '../../../core/services/cart.service';
 import { Product } from '../../../core/models/product.model';
 import { ProductConsumablesComponent } from '../../../shared/components/product-consumables/product-consumables.component';
 import { SimilarProductsComponent } from '../../../shared/components/similar-products/similar-products.component';
+import { ProductGalleryComponent, ProductImage as GalleryImage } from '../../../shared/components/product-gallery/product-gallery.component';
+import { EnergyRatingComponent, EnergyRatingLevel } from '../../../shared/components/energy-rating/energy-rating.component';
+import { WarrantyBadgeComponent } from '../../../shared/components/warranty-badge/warranty-badge.component';
 import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, ProductConsumablesComponent, SimilarProductsComponent, SpecKeyPipe],
+  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, ProductConsumablesComponent, SimilarProductsComponent, ProductGalleryComponent, EnergyRatingComponent, WarrantyBadgeComponent, SpecKeyPipe],
   template: `
     <div class="product-detail-container" data-testid="product-detail">
       @if (isLoading()) {
@@ -42,28 +45,11 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
           </nav>
 
           <div class="product-main">
-            <!-- Image Gallery -->
-            <div class="product-gallery">
-              <div class="main-image">
-                @if (product()?.images?.length) {
-                  <img [src]="selectedImage() || product()?.images?.[0]?.url" [alt]="product()?.name" />
-                } @else {
-                  <div class="no-image">{{ 'products.noImage' | translate }}</div>
-                }
-              </div>
-              @if (product()?.images && product()!.images.length > 1) {
-                <div class="thumbnail-list">
-                  @for (image of product()?.images; track image.id) {
-                    <button
-                      class="thumbnail"
-                      [class.active]="selectedImage() === image.url"
-                      (click)="selectImage(image.url)"
-                    >
-                      <img [src]="image.url" [alt]="image.altText || product()?.name" />
-                    </button>
-                  }
-                </div>
-              }
+            <!-- Image Gallery with Zoom -->
+            <div class="product-gallery-wrapper">
+              <app-product-gallery
+                [images]="galleryImages()"
+                [productName]="product()?.name || ''" />
             </div>
 
             <!-- Product Info -->
@@ -114,13 +100,24 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
                     <span class="meta-value">{{ product()?.model }}</span>
                   </div>
                 }
-                @if (product()?.warrantyMonths) {
-                  <div class="meta-item">
-                    <span class="meta-label">{{ 'products.details.warranty' | translate }}:</span>
-                    <span class="meta-value">{{ product()?.warrantyMonths }} {{ 'products.details.months' | translate }}</span>
-                  </div>
-                }
               </div>
+
+              <!-- Warranty & Trust Badges -->
+              <app-warranty-badge
+                [warrantyMonths]="product()?.warrantyMonths || 0"
+                [returnDays]="30"
+                [freeShipping]="(product()?.basePrice || 0) >= 500"
+                [inStock]="true"
+                [installationAvailable]="product()?.requiresInstallation || false" />
+
+              <!-- Energy Rating (if available) -->
+              @if (energyClass()) {
+                <div class="energy-ratings-section">
+                  <app-energy-rating
+                    [rating]="energyClass()!"
+                    [label]="'products.energyRating'" />
+                </div>
+              }
 
               <!-- Add to Cart Section -->
               <div class="add-to-cart-section">
@@ -293,56 +290,17 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
       margin-bottom: 3rem;
     }
 
-    .product-gallery {
-      .main-image {
-        aspect-ratio: 1;
-        background: var(--color-bg-secondary);
-        border-radius: 12px;
-        overflow: hidden;
-        margin-bottom: 1rem;
+    .product-gallery-wrapper {
+      position: relative;
+    }
 
-        img {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-        }
+    .energy-ratings-section {
+      margin: 1.5rem 0;
+    }
 
-        .no-image {
-          width: 100%;
-          height: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: var(--color-text-secondary);
-        }
-      }
-
-      .thumbnail-list {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-      }
-
-      .thumbnail {
-        width: 80px;
-        height: 80px;
-        padding: 0;
-        border: 2px solid var(--color-border);
-        border-radius: 8px;
-        overflow: hidden;
-        cursor: pointer;
-        background: var(--color-bg-secondary);
-
-        &.active {
-          border-color: var(--color-primary);
-        }
-
-        img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-      }
+    app-warranty-badge {
+      display: block;
+      margin: 1.5rem 0;
     }
 
     .product-info {
@@ -683,6 +641,30 @@ export class ProductDetailComponent implements OnInit {
   isAddingToCart = signal(false);
   addedToCart = signal(false);
   showNotification = signal(false);
+
+  // Computed properties for new components
+  galleryImages = computed<GalleryImage[]>(() => {
+    const prod = this.product();
+    if (!prod?.images?.length) return [];
+    return prod.images.map(img => ({
+      id: img.id,
+      url: img.url,
+      altText: img.altText,
+      sortOrder: img.sortOrder
+    }));
+  });
+
+  energyClass = computed<EnergyRatingLevel | null>(() => {
+    const prod = this.product();
+    if (!prod?.specifications) return null;
+    const energySpec = prod.specifications['energy_class'] ||
+                       prod.specifications['energyClass'] ||
+                       prod.specifications['energy_efficiency'];
+    if (!energySpec) return null;
+    const validRatings: EnergyRatingLevel[] = ['A+++', 'A++', 'A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G'];
+    const rating = String(energySpec).toUpperCase();
+    return validRatings.includes(rating as EnergyRatingLevel) ? rating as EnergyRatingLevel : null;
+  });
 
   ngOnInit(): void {
     const slug = this.route.snapshot.paramMap.get('slug');

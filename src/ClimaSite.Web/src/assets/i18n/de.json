@@ -148,6 +148,31 @@
       "noDescription": "Keine Beschreibung verfügbar.",
       "noSpecifications": "Keine Spezifikationen verfügbar.",
       "reviewsComingSoon": "Bewertungen demnächst verfügbar..."
+    },
+    "energyRating": "Energieklasse",
+    "coolingEfficiency": "Kühleffizienz",
+    "heatingEfficiency": "Heizeffizienz",
+    "warranty": {
+      "title": "Garantie",
+      "months": "Monate",
+      "years": "Jahre"
+    },
+    "returnPolicy": {
+      "title": "Rückgaberecht",
+      "days": "{{count}} Tage Rückgabe"
+    },
+    "freeShipping": "Kostenloser Versand",
+    "stock": {
+      "inStock": "Auf Lager",
+      "outOfStock": "Nicht verfügbar",
+      "lowStock": "Nur noch {{count}} verfügbar"
+    },
+    "installation": {
+      "available": "Installation verfügbar",
+      "title": "Installationsservice",
+      "none": "Keine Installation",
+      "standard": "Standard-Installation",
+      "premium": "Premium-Installation"
     }
   },
   "cart": {

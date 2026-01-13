@@ -148,6 +148,31 @@
       "noDescription": "No description available.",
       "noSpecifications": "No specifications available.",
       "reviewsComingSoon": "Reviews coming soon..."
+    },
+    "energyRating": "Energy Class",
+    "coolingEfficiency": "Cooling Efficiency",
+    "heatingEfficiency": "Heating Efficiency",
+    "warranty": {
+      "title": "Warranty",
+      "months": "months",
+      "years": "years"
+    },
+    "returnPolicy": {
+      "title": "Return Policy",
+      "days": "{{count}} day returns"
+    },
+    "freeShipping": "Free Shipping",
+    "stock": {
+      "inStock": "In Stock",
+      "outOfStock": "Out of Stock",
+      "lowStock": "Only {{count}} left"
+    },
+    "installation": {
+      "available": "Installation Available",
+      "title": "Installation Service",
+      "none": "No installation",
+      "standard": "Standard Installation",
+      "premium": "Premium Installation"
     }
   },
   "cart": {

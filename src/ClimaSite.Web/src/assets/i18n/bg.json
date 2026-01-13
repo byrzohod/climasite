@@ -148,6 +148,31 @@
       "noDescription": "Няма налично описание.",
       "noSpecifications": "Няма налични спецификации.",
       "reviewsComingSoon": "Отзивите скоро ще бъдат налични..."
+    },
+    "energyRating": "Енергиен клас",
+    "coolingEfficiency": "Ефективност на охлаждане",
+    "heatingEfficiency": "Ефективност на отопление",
+    "warranty": {
+      "title": "Гаранция",
+      "months": "месеца",
+      "years": "години"
+    },
+    "returnPolicy": {
+      "title": "Политика за връщане",
+      "days": "{{count}} дни за връщане"
+    },
+    "freeShipping": "Безплатна доставка",
+    "stock": {
+      "inStock": "В наличност",
+      "outOfStock": "Изчерпано",
+      "lowStock": "Остават само {{count}}"
+    },
+    "installation": {
+      "available": "Монтаж на разположение",
+      "title": "Услуга за монтаж",
+      "none": "Без монтаж",
+      "standard": "Стандартен монтаж",
+      "premium": "Премиум монтаж"
     }
   },
   "cart": {
