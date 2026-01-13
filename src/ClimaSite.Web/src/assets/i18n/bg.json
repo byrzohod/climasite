@@ -185,6 +185,36 @@
       "bundleSavings": "Спестявания от пакет",
       "bundlePrice": "Цена на пакета",
       "addBundle": "Добави пакета в количката"
+    },
+    "recentlyViewed": {
+      "title": "Наскоро разглеждани",
+      "clearHistory": "Изчисти историята"
+    },
+    "share": {
+      "title": "Сподели продукта",
+      "copyLink": "Копирай линк",
+      "copied": "Линкът е копиран!",
+      "shareVia": "Сподели чрез"
+    },
+    "comparison": {
+      "title": "Сравни продукти",
+      "addToCompare": "Добави за сравнение",
+      "removeFromCompare": "Премахни от сравнение",
+      "compareNow": "Сравни сега",
+      "clearAll": "Изчисти всички",
+      "maxItems": "Максимум {{count}} продукта",
+      "noProducts": "Няма продукти за сравнение",
+      "specifications": "Спецификации"
+    },
+    "financing": {
+      "title": "Възможности за финансиране",
+      "monthlyFrom": "От {{amount}}/месец",
+      "months": "{{count}} месеца",
+      "interestRate": "{{rate}}% ГПР",
+      "zeroInterest": "0% лихва",
+      "calculate": "Изчисли вноска",
+      "totalCost": "Обща цена",
+      "monthlyPayment": "Месечна вноска"
     }
   },
   "delivery": {

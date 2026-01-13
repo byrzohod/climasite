@@ -446,3 +446,240 @@ body {
     color: var(--color-info-300);
   }
 }
+
+// Print Styles
+@media print {
+  // Reset colors for print
+  * {
+    color: #000 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  body {
+    font-size: 12pt;
+    line-height: 1.5;
+    font-family: Georgia, 'Times New Roman', serif;
+  }
+
+  // Hide non-essential elements
+  header,
+  footer,
+  nav,
+  .nav-menu,
+  .sidebar,
+  .cart-sidebar,
+  .share-product,
+  .compare-btn,
+  .financing-calculator,
+  .recently-viewed,
+  .similar-products,
+  .frequently-bought,
+  .btn,
+  button:not(.print-btn),
+  .add-to-cart,
+  .wishlist-btn,
+  [data-testid="add-to-cart"],
+  [data-testid="wishlist-btn"],
+  .toast-container,
+  .cookie-banner,
+  .chat-widget,
+  .scroll-to-top {
+    display: none !important;
+  }
+
+  // Show print-only elements
+  .print-only {
+    display: block !important;
+  }
+
+  // Page breaks
+  h1, h2, h3 {
+    page-break-after: avoid;
+    page-break-inside: avoid;
+  }
+
+  img, figure, table {
+    page-break-inside: avoid;
+  }
+
+  p, blockquote, ul, ol {
+    orphans: 3;
+    widows: 3;
+  }
+
+  // Product detail specific
+  .product-detail {
+    .product-gallery {
+      width: 40%;
+      float: left;
+      margin-right: 2rem;
+      margin-bottom: 1rem;
+
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+
+      // Hide gallery controls
+      .gallery-controls,
+      .thumbnail-strip,
+      .zoom-controls {
+        display: none !important;
+      }
+    }
+
+    .product-info {
+      overflow: hidden;
+    }
+
+    .product-name {
+      font-size: 18pt;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    .product-price {
+      font-size: 16pt;
+      font-weight: bold;
+      margin-bottom: 1rem;
+
+      .original {
+        text-decoration: line-through;
+        color: #666 !important;
+      }
+
+      .sale {
+        color: #c00 !important;
+      }
+    }
+
+    .product-description {
+      margin-bottom: 1rem;
+    }
+  }
+
+  // Specifications table
+  .specifications-table,
+  .specs-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.5rem;
+      text-align: left;
+    }
+
+    th {
+      background: #f5f5f5 !important;
+      font-weight: bold;
+    }
+
+    tr:nth-child(even) {
+      background: #fafafa !important;
+    }
+  }
+
+  // Energy rating print styles
+  .energy-rating {
+    .rating-label {
+      border: 2px solid #000;
+      padding: 0.25rem 0.5rem;
+      font-weight: bold;
+    }
+  }
+
+  // Warranty badges
+  .warranty-badges {
+    .badge {
+      border: 1px solid #ccc;
+      padding: 0.25rem 0.5rem;
+      margin: 0.25rem;
+    }
+  }
+
+  // Links - show URL
+  a[href]:after {
+    content: " (" attr(href) ")";
+    font-size: 10pt;
+    color: #666 !important;
+  }
+
+  // Don't show URL for internal links or buttons
+  a[href^="#"]:after,
+  a[href^="javascript:"]:after,
+  a.btn:after,
+  nav a:after {
+    content: "";
+  }
+
+  // Container full width for print
+  .container {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  // Clear floats for proper page breaks
+  .clearfix:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+
+  // Stock status
+  .stock-status {
+    &.in-stock {
+      color: #000 !important;
+
+      &:before {
+        content: "In Stock - ";
+      }
+    }
+
+    &.out-of-stock {
+      color: #000 !important;
+
+      &:before {
+        content: "Out of Stock - ";
+      }
+    }
+  }
+
+  // Page margins
+  @page {
+    margin: 2cm;
+  }
+
+  // First page
+  @page :first {
+    margin-top: 3cm;
+  }
+
+  // Header/Footer for print
+  .print-header {
+    display: block !important;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 10pt;
+    color: #666 !important;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 0.5rem;
+  }
+
+  .print-footer {
+    display: block !important;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 10pt;
+    color: #666 !important;
+    border-top: 1px solid #ccc;
+    padding-top: 0.5rem;
+  }
+}

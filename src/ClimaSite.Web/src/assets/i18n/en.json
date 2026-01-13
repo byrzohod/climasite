@@ -185,6 +185,36 @@
       "bundleSavings": "Bundle savings",
       "bundlePrice": "Bundle price",
       "addBundle": "Add Bundle to Cart"
+    },
+    "recentlyViewed": {
+      "title": "Recently Viewed",
+      "clearHistory": "Clear History"
+    },
+    "share": {
+      "title": "Share Product",
+      "copyLink": "Copy Link",
+      "copied": "Link copied!",
+      "shareVia": "Share via"
+    },
+    "comparison": {
+      "title": "Compare Products",
+      "addToCompare": "Add to Compare",
+      "removeFromCompare": "Remove from Compare",
+      "compareNow": "Compare Now",
+      "clearAll": "Clear All",
+      "maxItems": "Maximum {{count}} products",
+      "noProducts": "No products to compare",
+      "specifications": "Specifications"
+    },
+    "financing": {
+      "title": "Financing Options",
+      "monthlyFrom": "From {{amount}}/month",
+      "months": "{{count}} months",
+      "interestRate": "{{rate}}% APR",
+      "zeroInterest": "0% Interest",
+      "calculate": "Calculate Payment",
+      "totalCost": "Total Cost",
+      "monthlyPayment": "Monthly Payment"
     }
   },
   "delivery": {
