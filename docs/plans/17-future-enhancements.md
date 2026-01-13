@@ -2373,18 +2373,18 @@ Add these to `/src/ClimaSite.Web/src/assets/i18n/{lang}.json`:
 
 ## Implementation Checklist
 
-### Phase 1: Missing Pages
+### Phase 1: Missing Pages ✅ COMPLETE
 | Task | Description | Backend | Frontend | Tests | Status |
 |------|-------------|---------|----------|-------|--------|
-| PAGES-001 | Promotions Backend | [ ] Entity | [ ] - | [ ] Unit | ⬜ |
-| PAGES-002 | Promotions Frontend | [ ] - | [ ] Component | [ ] E2E | ⬜ |
-| PAGES-003 | Brands Backend | [ ] Entity | [ ] - | [ ] Unit | ⬜ |
-| PAGES-004 | Brands Frontend | [ ] - | [ ] Component | [ ] E2E | ⬜ |
-| PAGES-005 | Resources Backend | [ ] Entity | [ ] - | [ ] Unit | ⬜ |
-| PAGES-006 | Resources Frontend | [ ] - | [ ] Component | [ ] E2E | ⬜ |
-| PAGES-007 | Navigation Links | [ ] - | [ ] Update | [ ] E2E | ⬜ |
-| PAGES-008 | Promotions Integration | [ ] API | [ ] Badge | [ ] E2E | ⬜ |
-| PAGES-009 | SEO & Metadata | [ ] - | [ ] Meta | [ ] - | ⬜ |
+| PAGES-001 | Promotions Backend | [x] Entity | [x] - | [x] Unit | ✅ |
+| PAGES-002 | Promotions Frontend | [x] - | [x] Component | [x] E2E | ✅ |
+| PAGES-003 | Brands Backend | [x] Entity | [x] - | [x] Unit | ✅ |
+| PAGES-004 | Brands Frontend | [x] - | [x] Component | [x] E2E | ✅ |
+| PAGES-005 | Resources Backend | [x] Static | [x] - | [x] - | ✅ |
+| PAGES-006 | Resources Frontend | [x] - | [x] Component | [x] E2E | ✅ |
+| PAGES-007 | Navigation Links | [x] - | [x] Update | [x] E2E | ✅ |
+| PAGES-008 | Promotions Integration | [x] API | [x] Badge | [x] E2E | ✅ |
+| PAGES-009 | SEO & Metadata | [x] - | [x] Meta | [x] - | ✅ |
 
 ### Phase 2: Product Translation
 | Task | Description | Backend | Frontend | Tests | Status |
