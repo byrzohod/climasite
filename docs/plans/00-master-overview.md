@@ -182,8 +182,9 @@ climasite/
 | 11 | Reviews & Ratings | [11-reviews-ratings.md](./11-reviews-ratings.md) | REV- | Medium | Complete |
 | 12 | Notifications System | [12-notifications-system.md](./12-notifications-system.md) | NOT- | Medium | Complete |
 | 13 | Wishlist | [13-wishlist.md](./13-wishlist.md) | WISH- | Low | Complete |
-| 14 | Backend API Implementation | [14-backend-api-implementation.md](./14-backend-api-implementation.md) | API- | Critical | Complete |
 | 15 | UI/UX Enhancements Phase 2 | [15-ui-ux-enhancements-phase2.md](./15-ui-ux-enhancements-phase2.md) | UX2- | High | Complete |
+| 16 | E2E Testing Reference | [16-e2e-testing-comprehensive.md](./16-e2e-testing-comprehensive.md) | E2E- | High | Reference |
+| 18 | Future Enhancements | [18-future-enhancements.md](./18-future-enhancements.md) | FUT- | Low | Backlog |
 
 ### Task ID Convention
 
@@ -1138,7 +1139,7 @@ GET /health/live    Liveness probe
 - Shopping Cart: Complete with guest cart support and merge functionality
 - Checkout Flow: Multi-step flow fully implemented
 - Admin Panel: Full CRUD operations for products, orders, customers
-- Unit Tests: **190 tests passing**
+- Unit Tests: **213 tests passing**
 
 ### Backend Implementation: 100% Complete
 - Authentication: Complete (login, register, JWT, refresh tokens, password reset)
@@ -1156,22 +1157,23 @@ GET /health/live    Liveness probe
 | Test Suite | Status | Count |
 |------------|--------|-------|
 | Backend Unit Tests (ClimaSite.Core.Tests) | Passing | 167/167 |
-| Frontend Unit Tests (Angular/Karma) | Passing | 190/190 |
-| E2E Tests | Require running server | - |
+| Backend API Tests (ClimaSite.Api.Tests) | Passing | 8/8 |
+| Frontend Unit Tests (Angular/Karma) | Passing | 213/213 |
+| E2E Tests (Playwright) | Passing | 125/128 (3 skipped) |
 
 ### Build Status
-- Backend Build: Passing (0 errors, 2 minor warnings)
-- Frontend Build: Passing (0 errors, 1 minor warning)
+- Backend Build: Passing (0 errors, minor warnings only)
+- Frontend Build: Passing (0 errors)
 
 ### All Features Complete
-All 15 implementation plans have been completed successfully. The application is fully functional with:
+All core implementation plans have been completed successfully. The application is fully functional with:
 - Complete HVAC e-commerce functionality
 - Multi-language support (English, Bulgarian, German)
 - Light/Dark theme switching
 - Admin panel for content management
-- Comprehensive test coverage
+- Comprehensive test coverage (513 total tests)
 
 ---
 
-*Last Updated: January 11, 2026*
-*Version: 2.0.0 - All Plans Complete*
+*Last Updated: January 13, 2026*
+*Version: 2.1.0 - All Plans Complete, Cleanup Done*
