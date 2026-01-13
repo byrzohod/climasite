@@ -10,6 +10,7 @@
     "delete": "Delete",
     "edit": "Edit",
     "add": "Add",
+    "added": "Added",
     "search": "Search",
     "filter": "Filter",
     "sort": "Sort",
@@ -93,6 +94,17 @@
     "onSale": "On Sale",
     "bestsellers": "Bestsellers",
     "noProducts": "No products found",
+    "noImage": "No Image",
+    "outOfStock": "Out of Stock",
+    "similar": {
+      "title": "Similar Products"
+    },
+    "consumables": {
+      "title": "Recommended Accessories",
+      "subtitle": "Essential accessories and consumables for this product",
+      "totalPrice": "Total",
+      "addAll": "Add All to Cart"
+    },
     "filters": {
       "title": "Filters",
       "category": "Category",
@@ -478,6 +490,127 @@
       "totalRevenue": "Total Revenue",
       "totalUsers": "Total Users",
       "totalProducts": "Total Products"
+    }
+  },
+  "promotions": {
+    "title": "Special Offers",
+    "subtitle": "Don't miss our exclusive deals",
+    "activeUntil": "Valid until",
+    "useCode": "Use code",
+    "shopNow": "Shop Now",
+    "viewProducts": "View Products",
+    "noPromotions": "No active promotions at the moment",
+    "termsApply": "Terms and conditions apply",
+    "limitedTime": "Limited Time Offer",
+    "discount": "{{value}}% OFF",
+    "minOrder": "Minimum order: {{amount}}",
+    "products": "products"
+  },
+  "brands": {
+    "title": "Our Brands",
+    "subtitle": "Discover quality HVAC products from leading manufacturers",
+    "products": "products",
+    "featured": "Featured",
+    "noBrands": "No brands available at the moment",
+    "countryOfOrigin": "Country",
+    "foundedYear": "Founded",
+    "visitWebsite": "Visit Website"
+  },
+  "resources": {
+    "title": "Resources & Guides",
+    "subtitle": "Everything you need to know about HVAC systems, installation, and maintenance",
+    "types": {
+      "pdf": "PDF",
+      "video": "Video",
+      "article": "Article",
+      "link": "Link"
+    },
+    "categories": {
+      "installation": {
+        "title": "Installation Guides",
+        "description": "Step-by-step guides for proper HVAC system installation",
+        "items": {
+          "acInstall": {
+            "title": "Air Conditioner Installation Guide",
+            "description": "Complete guide for split and window AC installation"
+          },
+          "heatPump": {
+            "title": "Heat Pump Installation Manual",
+            "description": "Professional installation guidelines for heat pumps"
+          },
+          "ductInstall": {
+            "title": "Ductwork Installation Video",
+            "description": "Video tutorial on proper duct installation techniques"
+          }
+        }
+      },
+      "maintenance": {
+        "title": "Maintenance Tips",
+        "description": "Keep your HVAC system running efficiently with these guides",
+        "items": {
+          "seasonal": {
+            "title": "Seasonal Maintenance Checklist",
+            "description": "Essential tasks for spring and fall HVAC maintenance"
+          },
+          "filter": {
+            "title": "Filter Replacement Guide",
+            "description": "When and how to replace your HVAC filters"
+          },
+          "troubleshoot": {
+            "title": "Troubleshooting Common Issues",
+            "description": "Solutions for the most common HVAC problems"
+          }
+        }
+      },
+      "energy": {
+        "title": "Energy Efficiency",
+        "description": "Save money and reduce your environmental impact",
+        "items": {
+          "efficiency": {
+            "title": "Energy Efficiency Tips",
+            "description": "Simple ways to reduce your energy consumption"
+          },
+          "calculator": {
+            "title": "Energy Savings Calculator",
+            "description": "Calculate potential savings from HVAC upgrades"
+          },
+          "rebates": {
+            "title": "Tax Credits & Rebates",
+            "description": "Available incentives for energy-efficient systems"
+          }
+        }
+      }
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "subtitle": "Find answers to common HVAC questions",
+      "items": {
+        "sizing": {
+          "question": "How do I know what size HVAC system I need?",
+          "answer": "The size of your HVAC system depends on several factors including your home's square footage, insulation quality, number of windows, and local climate. A professional can perform a Manual J load calculation to determine the exact size needed. Generally, you need about 20 BTUs per square foot, but this can vary significantly based on your specific situation."
+        },
+        "maintenance": {
+          "question": "How often should I service my HVAC system?",
+          "answer": "We recommend having your HVAC system professionally serviced at least twice a year - once in spring before cooling season and once in fall before heating season. Additionally, you should replace or clean your air filters every 1-3 months depending on usage and filter type."
+        },
+        "efficiency": {
+          "question": "What SEER rating should I look for?",
+          "answer": "SEER (Seasonal Energy Efficiency Ratio) measures cooling efficiency. The minimum SEER for new systems is 14, but we recommend SEER 16 or higher for optimal efficiency and energy savings. Higher SEER units cost more upfront but provide significant long-term savings on energy bills."
+        },
+        "warranty": {
+          "question": "What warranty do your products come with?",
+          "answer": "Most of our HVAC equipment comes with manufacturer warranties ranging from 5 to 10 years on parts. Extended warranties are available for purchase. Professional installation is required to maintain warranty coverage on most products."
+        },
+        "installation": {
+          "question": "Do you offer professional installation services?",
+          "answer": "Yes, we partner with certified HVAC technicians across the country to provide professional installation services. Professional installation ensures your system operates at peak efficiency and maintains warranty coverage. Contact us for a free installation quote."
+        }
+      }
+    },
+    "cta": {
+      "title": "Need More Help?",
+      "description": "Our team of HVAC experts is here to answer your questions and help you find the perfect solution.",
+      "button": "Contact Us"
     }
   }
 }

@@ -6,11 +6,13 @@ import { TranslateModule } from '@ngx-translate/core';
 import { ProductService } from '../../../core/services/product.service';
 import { CartService } from '../../../core/services/cart.service';
 import { Product } from '../../../core/models/product.model';
+import { ProductConsumablesComponent } from '../../../shared/components/product-consumables/product-consumables.component';
+import { SimilarProductsComponent } from '../../../shared/components/similar-products/similar-products.component';
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, TranslateModule],
+  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, ProductConsumablesComponent, SimilarProductsComponent],
   template: `
     <div class="product-detail-container" data-testid="product-detail">
       @if (isLoading()) {
@@ -238,6 +240,12 @@ import { Product } from '../../../core/models/product.model';
               }
             </div>
           </div>
+
+          <!-- Recommended Accessories / Consumables -->
+          <app-product-consumables [productId]="product()!.id" />
+
+          <!-- Similar Products -->
+          <app-similar-products [productId]="product()!.id" />
         </div>
       }
     </div>

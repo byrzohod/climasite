@@ -12,8 +12,9 @@ public record GetRelatedProductsQuery : IRequest<List<ProductBriefDto>>, ICachea
     public Guid ProductId { get; init; }
     public RelationType? RelationType { get; init; }
     public int Count { get; init; } = 8;
+    public string? LanguageCode { get; init; }
 
-    public string CacheKey => $"related_products_{ProductId}_{RelationType}_{Count}";
+    public string CacheKey => $"related_products_{ProductId}_{RelationType}_{Count}_{LanguageCode ?? "en"}";
     public TimeSpan? CacheDuration => TimeSpan.FromMinutes(15);
 }
 
@@ -36,6 +37,8 @@ public class GetRelatedProductsQueryHandler : IRequestHandler<GetRelatedProducts
                 .ThenInclude(p => p.Images)
             .Include(rp => rp.Related)
                 .ThenInclude(p => p.Variants)
+            .Include(rp => rp.Related)
+                .ThenInclude(p => p.Translations)
             .Where(rp => rp.ProductId == request.ProductId && rp.Related.IsActive);
 
         if (request.RelationType.HasValue)
@@ -46,12 +49,17 @@ public class GetRelatedProductsQueryHandler : IRequestHandler<GetRelatedProducts
         var relatedProducts = await query
             .OrderBy(rp => rp.SortOrder)
             .Take(request.Count)
-            .Select(rp => new ProductBriefDto
+            .ToListAsync(cancellationToken);
+
+        return relatedProducts.Select(rp =>
+        {
+            var translated = rp.Related.GetTranslatedContent(request.LanguageCode);
+            return new ProductBriefDto
             {
                 Id = rp.Related.Id,
-                Name = rp.Related.Name,
+                Name = translated.Name,
                 Slug = rp.Related.Slug,
-                ShortDescription = rp.Related.ShortDescription,
+                ShortDescription = translated.ShortDescription,
                 BasePrice = rp.Related.BasePrice,
                 SalePrice = rp.Related.CompareAtPrice,
                 IsOnSale = rp.Related.CompareAtPrice.HasValue && rp.Related.CompareAtPrice > rp.Related.BasePrice,
@@ -66,9 +74,7 @@ public class GetRelatedProductsQueryHandler : IRequestHandler<GetRelatedProducts
                     .Select(i => i.Url)
                     .FirstOrDefault(),
                 InStock = rp.Related.Variants.Any(v => v.StockQuantity > 0)
-            })
-            .ToListAsync(cancellationToken);
-
-        return relatedProducts;
+            };
+        }).ToList();
     }
 }

@@ -95,6 +95,33 @@ export class ProductService {
     return this.http.get<ProductBrief[]>(`${this.apiUrl}/${productId}/related`, { params });
   }
 
+  getSimilarProducts(productId: string, count: number = 8): Observable<ProductBrief[]> {
+    let params = new HttpParams().set('count', count.toString());
+    const lang = this.languageService.currentLanguage();
+    if (lang && lang !== 'en') {
+      params = params.set('lang', lang);
+    }
+    return this.http.get<ProductBrief[]>(`${this.apiUrl}/${productId}/similar`, { params });
+  }
+
+  getProductConsumables(productId: string, count: number = 6): Observable<ProductBrief[]> {
+    let params = new HttpParams().set('count', count.toString());
+    const lang = this.languageService.currentLanguage();
+    if (lang && lang !== 'en') {
+      params = params.set('lang', lang);
+    }
+    return this.http.get<ProductBrief[]>(`${this.apiUrl}/${productId}/consumables`, { params });
+  }
+
+  getFrequentlyBoughtTogether(productId: string, count: number = 4): Observable<ProductBrief[]> {
+    let params = new HttpParams().set('count', count.toString());
+    const lang = this.languageService.currentLanguage();
+    if (lang && lang !== 'en') {
+      params = params.set('lang', lang);
+    }
+    return this.http.get<ProductBrief[]>(`${this.apiUrl}/${productId}/frequently-bought-together`, { params });
+  }
+
   getFilterOptions(categorySlug?: string): Observable<FilterOptions> {
     let params = new HttpParams();
     if (categorySlug) params = params.set('categorySlug', categorySlug);

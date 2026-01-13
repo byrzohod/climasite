@@ -22,6 +22,11 @@ public interface IApplicationDbContext
     DbSet<ApplicationUser> Users { get; }
     DbSet<Notification> Notifications { get; }
     DbSet<ProductTranslation> ProductTranslations { get; }
+    DbSet<Promotion> Promotions { get; }
+    DbSet<PromotionProduct> PromotionProducts { get; }
+    DbSet<PromotionTranslation> PromotionTranslations { get; }
+    DbSet<Brand> Brands { get; }
+    DbSet<BrandTranslation> BrandTranslations { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

@@ -71,6 +71,18 @@ export const routes: Routes = [
     loadComponent: () => import('./features/about/about.component').then(m => m.AboutComponent)
   },
   {
+    path: 'promotions',
+    loadChildren: () => import('./features/promotions/promotions.routes').then(m => m.PROMOTIONS_ROUTES)
+  },
+  {
+    path: 'brands',
+    loadChildren: () => import('./features/brands/brands.routes').then(m => m.BRANDS_ROUTES)
+  },
+  {
+    path: 'resources',
+    loadComponent: () => import('./features/resources/resources.component').then(m => m.ResourcesComponent)
+  },
+  {
     path: '**',
     loadComponent: () => import('./features/not-found/not-found.component').then(m => m.NotFoundComponent)
   }

@@ -9,8 +9,9 @@ namespace ClimaSite.Application.Features.Products.Queries;
 public record GetFeaturedProductsQuery : IRequest<List<ProductBriefDto>>, ICacheableQuery
 {
     public int Count { get; init; } = 8;
+    public string? LanguageCode { get; init; }
 
-    public string CacheKey => $"featured_products_{Count}";
+    public string CacheKey => $"featured_products_{Count}_{LanguageCode ?? "en"}";
     public TimeSpan? CacheDuration => TimeSpan.FromMinutes(15);
 }
 
@@ -31,15 +32,21 @@ public class GetFeaturedProductsQueryHandler : IRequestHandler<GetFeaturedProduc
             .AsNoTracking()
             .Include(p => p.Images)
             .Include(p => p.Variants)
+            .Include(p => p.Translations)
             .Where(p => p.IsActive && p.IsFeatured)
             .OrderByDescending(p => p.CreatedAt)
             .Take(request.Count)
-            .Select(p => new ProductBriefDto
+            .ToListAsync(cancellationToken);
+
+        return products.Select(p =>
+        {
+            var translated = p.GetTranslatedContent(request.LanguageCode);
+            return new ProductBriefDto
             {
                 Id = p.Id,
-                Name = p.Name,
+                Name = translated.Name,
                 Slug = p.Slug,
-                ShortDescription = p.ShortDescription,
+                ShortDescription = translated.ShortDescription,
                 BasePrice = p.BasePrice,
                 SalePrice = p.CompareAtPrice,
                 IsOnSale = p.CompareAtPrice.HasValue && p.CompareAtPrice > p.BasePrice,
@@ -54,9 +61,7 @@ public class GetFeaturedProductsQueryHandler : IRequestHandler<GetFeaturedProduc
                     .Select(i => i.Url)
                     .FirstOrDefault(),
                 InStock = p.Variants.Any(v => v.StockQuantity > 0)
-            })
-            .ToListAsync(cancellationToken);
-
-        return products;
+            };
+        }).ToList();
     }
 }

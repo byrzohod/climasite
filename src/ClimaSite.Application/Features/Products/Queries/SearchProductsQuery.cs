@@ -1,3 +1,4 @@
+using ClimaSite.Application.Common.Behaviors;
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Models;
 using ClimaSite.Application.Features.Products.DTOs;
@@ -6,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClimaSite.Application.Features.Products.Queries;
 
-public record SearchProductsQuery : IRequest<PaginatedList<ProductBriefDto>>
+public record SearchProductsQuery : IRequest<PaginatedList<ProductBriefDto>>, ICacheableQuery
 {
     public string Query { get; init; } = string.Empty;
     public int PageNumber { get; init; } = 1;
@@ -15,6 +16,10 @@ public record SearchProductsQuery : IRequest<PaginatedList<ProductBriefDto>>
     public List<string>? Brands { get; init; }
     public decimal? MinPrice { get; init; }
     public decimal? MaxPrice { get; init; }
+    public string? LanguageCode { get; init; }
+
+    public string CacheKey => $"search_products_{Query}_{PageNumber}_{PageSize}_{CategorySlug}_{string.Join(",", Brands ?? new())}_{MinPrice}_{MaxPrice}_{LanguageCode ?? "en"}";
+    public TimeSpan? CacheDuration => TimeSpan.FromMinutes(5);
 }
 
 public class SearchProductsQueryHandler : IRequestHandler<SearchProductsQuery, PaginatedList<ProductBriefDto>>
@@ -31,14 +36,17 @@ public class SearchProductsQueryHandler : IRequestHandler<SearchProductsQuery, P
         CancellationToken cancellationToken)
     {
         var searchTerms = request.Query.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var langCode = request.LanguageCode?.ToLowerInvariant();
 
         var query = _context.Products
             .AsNoTracking()
             .Include(p => p.Images)
             .Include(p => p.Variants)
+            .Include(p => p.Translations)
             .Where(p => p.IsActive)
             .AsQueryable();
 
+        // Search in both default fields and translations
         foreach (var term in searchTerms)
         {
             query = query.Where(p =>
@@ -47,7 +55,12 @@ public class SearchProductsQueryHandler : IRequestHandler<SearchProductsQuery, P
                 (p.Description != null && p.Description.ToLower().Contains(term)) ||
                 (p.Brand != null && p.Brand.ToLower().Contains(term)) ||
                 (p.Model != null && p.Model.ToLower().Contains(term)) ||
-                p.Tags.Any(t => t.Contains(term)));
+                p.Tags.Any(t => t.Contains(term)) ||
+                // Search in translations
+                p.Translations.Any(t =>
+                    t.Name.ToLower().Contains(term) ||
+                    (t.ShortDescription != null && t.ShortDescription.ToLower().Contains(term)) ||
+                    (t.Description != null && t.Description.ToLower().Contains(term))));
         }
 
         if (!string.IsNullOrWhiteSpace(request.CategorySlug))
@@ -80,33 +93,44 @@ public class SearchProductsQueryHandler : IRequestHandler<SearchProductsQuery, P
             (p.Brand != null && p.Brand.ToLower().Contains(request.Query.ToLower()) ? 5 : 0))
             .ThenBy(p => p.Name);
 
-        var projectedQuery = query.Select(p => new ProductBriefDto
-        {
-            Id = p.Id,
-            Name = p.Name,
-            Slug = p.Slug,
-            ShortDescription = p.ShortDescription,
-            BasePrice = p.BasePrice,
-            SalePrice = p.CompareAtPrice,
-            IsOnSale = p.CompareAtPrice.HasValue && p.CompareAtPrice > p.BasePrice,
-            DiscountPercentage = p.CompareAtPrice.HasValue && p.CompareAtPrice > p.BasePrice
-                ? Math.Round((p.CompareAtPrice.Value - p.BasePrice) / p.CompareAtPrice.Value * 100, 0)
-                : 0,
-            Brand = p.Brand,
-            AverageRating = 0,
-            ReviewCount = 0,
-            PrimaryImageUrl = p.Images
-                .Where(i => i.IsPrimary)
-                .Select(i => i.Url)
-                .FirstOrDefault(),
-            InStock = p.Variants.Any(v => v.StockQuantity > 0)
-        });
+        // Fetch products then apply translations in memory
+        var totalCount = await query.CountAsync(cancellationToken);
+        var products = await query
+            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .ToListAsync(cancellationToken);
 
-        return await PaginatedList<ProductBriefDto>.CreateAsync(
-            projectedQuery,
+        var items = products.Select(p =>
+        {
+            var translated = p.GetTranslatedContent(request.LanguageCode);
+            return new ProductBriefDto
+            {
+                Id = p.Id,
+                Name = translated.Name,
+                Slug = p.Slug,
+                ShortDescription = translated.ShortDescription,
+                BasePrice = p.BasePrice,
+                SalePrice = p.CompareAtPrice,
+                IsOnSale = p.CompareAtPrice.HasValue && p.CompareAtPrice > p.BasePrice,
+                DiscountPercentage = p.CompareAtPrice.HasValue && p.CompareAtPrice > p.BasePrice
+                    ? Math.Round((p.CompareAtPrice.Value - p.BasePrice) / p.CompareAtPrice.Value * 100, 0)
+                    : 0,
+                Brand = p.Brand,
+                AverageRating = 0,
+                ReviewCount = 0,
+                PrimaryImageUrl = p.Images
+                    .Where(i => i.IsPrimary)
+                    .Select(i => i.Url)
+                    .FirstOrDefault(),
+                InStock = p.Variants.Any(v => v.StockQuantity > 0)
+            };
+        }).ToList();
+
+        return new PaginatedList<ProductBriefDto>(
+            items,
+            totalCount,
             request.PageNumber,
-            request.PageSize,
-            cancellationToken);
+            request.PageSize);
     }
 
     private async Task<List<Guid>> GetCategoryIdsWithDescendantsAsync(string categorySlug, CancellationToken cancellationToken)

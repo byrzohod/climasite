@@ -1,4 +1,5 @@
 using ClimaSite.Application.Features.Products.Queries;
+using ClimaSite.Core.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -61,9 +62,11 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("featured")]
-    public async Task<IActionResult> GetFeaturedProducts([FromQuery] int count = 8)
+    public async Task<IActionResult> GetFeaturedProducts(
+        [FromQuery] int count = 8,
+        [FromQuery] string? lang = null)
     {
-        var query = new GetFeaturedProductsQuery { Count = count };
+        var query = new GetFeaturedProductsQuery { Count = count, LanguageCode = lang };
         var result = await _mediator.Send(query);
         return Ok(result);
     }
@@ -76,7 +79,8 @@ public class ProductsController : ControllerBase
         [FromQuery] string? categorySlug = null,
         [FromQuery] List<string>? brands = null,
         [FromQuery] decimal? minPrice = null,
-        [FromQuery] decimal? maxPrice = null)
+        [FromQuery] decimal? maxPrice = null,
+        [FromQuery] string? lang = null)
     {
         if (string.IsNullOrWhiteSpace(q))
         {
@@ -91,7 +95,8 @@ public class ProductsController : ControllerBase
             CategorySlug = categorySlug,
             Brands = brands,
             MinPrice = minPrice,
-            MaxPrice = maxPrice
+            MaxPrice = maxPrice,
+            LanguageCode = lang
         };
 
         var result = await _mediator.Send(query);
@@ -99,12 +104,70 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("{id:guid}/related")]
-    public async Task<IActionResult> GetRelatedProducts(Guid id, [FromQuery] int count = 8)
+    public async Task<IActionResult> GetRelatedProducts(
+        Guid id,
+        [FromQuery] int count = 8,
+        [FromQuery] string? lang = null)
     {
         var query = new GetRelatedProductsQuery
         {
             ProductId = id,
-            Count = count
+            Count = count,
+            LanguageCode = lang
+        };
+
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:guid}/similar")]
+    public async Task<IActionResult> GetSimilarProducts(
+        Guid id,
+        [FromQuery] int count = 8,
+        [FromQuery] string? lang = null)
+    {
+        var query = new GetRelatedProductsQuery
+        {
+            ProductId = id,
+            RelationType = RelationType.Similar,
+            Count = count,
+            LanguageCode = lang
+        };
+
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:guid}/consumables")]
+    public async Task<IActionResult> GetProductConsumables(
+        Guid id,
+        [FromQuery] int count = 6,
+        [FromQuery] string? lang = null)
+    {
+        var query = new GetRelatedProductsQuery
+        {
+            ProductId = id,
+            RelationType = RelationType.Accessory,
+            Count = count,
+            LanguageCode = lang
+        };
+
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:guid}/frequently-bought-together")]
+    public async Task<IActionResult> GetFrequentlyBoughtTogether(
+        Guid id,
+        [FromQuery] int count = 4,
+        [FromQuery] string? lang = null)
+    {
+        var query = new GetRelatedProductsQuery
+        {
+            ProductId = id,
+            RelationType = RelationType.FrequentlyBoughtTogether,
+            Count = count,
+            LanguageCode = lang
         };
 
         var result = await _mediator.Send(query);

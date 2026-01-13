@@ -39,6 +39,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<WishlistItem> WishlistItems => Set<WishlistItem>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<ProductTranslation> ProductTranslations => Set<ProductTranslation>();
+    public DbSet<Promotion> Promotions => Set<Promotion>();
+    public DbSet<PromotionProduct> PromotionProducts => Set<PromotionProduct>();
+    public DbSet<PromotionTranslation> PromotionTranslations => Set<PromotionTranslation>();
+    public DbSet<Brand> Brands => Set<Brand>();
+    public DbSet<BrandTranslation> BrandTranslations => Set<BrandTranslation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

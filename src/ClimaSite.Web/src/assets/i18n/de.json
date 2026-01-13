@@ -10,6 +10,7 @@
     "delete": "Löschen",
     "edit": "Bearbeiten",
     "add": "Hinzufügen",
+    "added": "Hinzugefügt",
     "search": "Suchen",
     "filter": "Filtern",
     "sort": "Sortieren",
@@ -93,6 +94,17 @@
     "onSale": "Im Angebot",
     "bestsellers": "Bestseller",
     "noProducts": "Keine Produkte gefunden",
+    "noImage": "Kein Bild",
+    "outOfStock": "Nicht verfügbar",
+    "similar": {
+      "title": "Ähnliche Produkte"
+    },
+    "consumables": {
+      "title": "Empfohlenes Zubehör",
+      "subtitle": "Wichtiges Zubehör und Verbrauchsmaterial für dieses Produkt",
+      "totalPrice": "Gesamt",
+      "addAll": "Alle in den Warenkorb"
+    },
     "filters": {
       "title": "Filter",
       "category": "Kategorie",
@@ -478,6 +490,127 @@
       "totalRevenue": "Gesamtumsatz",
       "totalUsers": "Gesamtbenutzer",
       "totalProducts": "Gesamtprodukte"
+    }
+  },
+  "promotions": {
+    "title": "Sonderangebote",
+    "subtitle": "Verpassen Sie nicht unsere exklusiven Angebote",
+    "activeUntil": "Gültig bis",
+    "useCode": "Code verwenden",
+    "shopNow": "Jetzt einkaufen",
+    "viewProducts": "Produkte anzeigen",
+    "noPromotions": "Derzeit keine aktiven Aktionen",
+    "termsApply": "Es gelten die AGB",
+    "limitedTime": "Zeitlich begrenzt",
+    "discount": "{{value}}% Rabatt",
+    "minOrder": "Mindestbestellwert: {{amount}}",
+    "products": "Produkte"
+  },
+  "brands": {
+    "title": "Unsere Marken",
+    "subtitle": "Entdecken Sie hochwertige HVAC-Produkte von führenden Herstellern",
+    "products": "Produkte",
+    "featured": "Empfohlen",
+    "noBrands": "Derzeit keine Marken verfügbar",
+    "countryOfOrigin": "Land",
+    "foundedYear": "Gegründet",
+    "visitWebsite": "Website besuchen"
+  },
+  "resources": {
+    "title": "Ressourcen & Anleitungen",
+    "subtitle": "Alles, was Sie über HVAC-Systeme, Installation und Wartung wissen müssen",
+    "types": {
+      "pdf": "PDF",
+      "video": "Video",
+      "article": "Artikel",
+      "link": "Link"
+    },
+    "categories": {
+      "installation": {
+        "title": "Installationsanleitungen",
+        "description": "Schritt-für-Schritt-Anleitungen für die richtige HVAC-Systeminstallation",
+        "items": {
+          "acInstall": {
+            "title": "Klimaanlagen-Installationsanleitung",
+            "description": "Vollständige Anleitung für Split- und Fenster-Klimaanlagen"
+          },
+          "heatPump": {
+            "title": "Wärmepumpen-Installationshandbuch",
+            "description": "Professionelle Installationsrichtlinien für Wärmepumpen"
+          },
+          "ductInstall": {
+            "title": "Luftkanal-Installationsvideo",
+            "description": "Video-Tutorial zu richtigen Luftkanal-Installationstechniken"
+          }
+        }
+      },
+      "maintenance": {
+        "title": "Wartungstipps",
+        "description": "Halten Sie Ihr HVAC-System mit diesen Anleitungen effizient am Laufen",
+        "items": {
+          "seasonal": {
+            "title": "Saisonale Wartungscheckliste",
+            "description": "Wichtige Aufgaben für die HVAC-Wartung im Frühjahr und Herbst"
+          },
+          "filter": {
+            "title": "Filteraustausch-Anleitung",
+            "description": "Wann und wie Sie Ihre HVAC-Filter austauschen"
+          },
+          "troubleshoot": {
+            "title": "Behebung häufiger Probleme",
+            "description": "Lösungen für die häufigsten HVAC-Probleme"
+          }
+        }
+      },
+      "energy": {
+        "title": "Energieeffizienz",
+        "description": "Sparen Sie Geld und reduzieren Sie Ihre Umweltbelastung",
+        "items": {
+          "efficiency": {
+            "title": "Energieeffizienz-Tipps",
+            "description": "Einfache Wege zur Reduzierung Ihres Energieverbrauchs"
+          },
+          "calculator": {
+            "title": "Energiesparrechner",
+            "description": "Berechnen Sie potenzielle Einsparungen durch HVAC-Upgrades"
+          },
+          "rebates": {
+            "title": "Steuervergünstigungen & Rabatte",
+            "description": "Verfügbare Anreize für energieeffiziente Systeme"
+          }
+        }
+      }
+    },
+    "faq": {
+      "title": "Häufig gestellte Fragen",
+      "subtitle": "Finden Sie Antworten auf häufige HVAC-Fragen",
+      "items": {
+        "sizing": {
+          "question": "Woher weiß ich, welche HVAC-Systemgröße ich benötige?",
+          "answer": "Die Größe Ihres HVAC-Systems hängt von mehreren Faktoren ab, darunter die Quadratmeterzahl Ihres Hauses, die Isolierungsqualität, die Anzahl der Fenster und das lokale Klima. Ein Fachmann kann eine Lastberechnung nach Manual J durchführen, um die genaue benötigte Größe zu ermitteln. Im Allgemeinen benötigen Sie etwa 20 BTU pro Quadratmeter, aber dies kann je nach Ihrer spezifischen Situation erheblich variieren."
+        },
+        "maintenance": {
+          "question": "Wie oft sollte ich mein HVAC-System warten lassen?",
+          "answer": "Wir empfehlen, Ihr HVAC-System mindestens zweimal jährlich professionell warten zu lassen - einmal im Frühjahr vor der Kühlsaison und einmal im Herbst vor der Heizsaison. Zusätzlich sollten Sie Ihre Luftfilter je nach Nutzung und Filtertyp alle 1-3 Monate austauschen oder reinigen."
+        },
+        "efficiency": {
+          "question": "Welche SEER-Bewertung sollte ich suchen?",
+          "answer": "SEER (Seasonal Energy Efficiency Ratio) misst die Kühleffizienz. Der minimale SEER für neue Systeme beträgt 14, aber wir empfehlen SEER 16 oder höher für optimale Effizienz und Energieeinsparungen. Geräte mit höherem SEER kosten zunächst mehr, bieten aber erhebliche langfristige Einsparungen bei den Energiekosten."
+        },
+        "warranty": {
+          "question": "Welche Garantie haben Ihre Produkte?",
+          "answer": "Die meisten unserer HVAC-Geräte werden mit Herstellergarantien von 5 bis 10 Jahren auf Teile geliefert. Erweiterte Garantien sind zum Kauf erhältlich. Eine professionelle Installation ist erforderlich, um den Garantieschutz bei den meisten Produkten aufrechtzuerhalten."
+        },
+        "installation": {
+          "question": "Bieten Sie professionelle Installationsservices an?",
+          "answer": "Ja, wir arbeiten mit zertifizierten HVAC-Technikern im ganzen Land zusammen, um professionelle Installationsservices anzubieten. Die professionelle Installation stellt sicher, dass Ihr System mit maximaler Effizienz arbeitet und den Garantieschutz aufrechterhält. Kontaktieren Sie uns für ein kostenloses Installationsangebot."
+        }
+      }
+    },
+    "cta": {
+      "title": "Brauchen Sie mehr Hilfe?",
+      "description": "Unser Team von HVAC-Experten ist hier, um Ihre Fragen zu beantworten und Ihnen bei der Suche nach der perfekten Lösung zu helfen.",
+      "button": "Kontaktieren Sie uns"
     }
   }
 }
