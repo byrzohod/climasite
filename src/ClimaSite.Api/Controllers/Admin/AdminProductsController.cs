@@ -1,5 +1,7 @@
 using ClimaSite.Application.Features.Products.Commands;
 using ClimaSite.Application.Features.Products.Queries;
+using ClimaSite.Application.Features.Admin.RelatedProducts.Commands;
+using ClimaSite.Application.Features.Admin.RelatedProducts.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -149,7 +151,55 @@ public class AdminProductsController : ControllerBase
 
         return Ok(new { success = true });
     }
+
+    // Related Products Management
+
+    [HttpGet("{id:guid}/relations")]
+    public async Task<IActionResult> GetProductRelations(Guid id)
+    {
+        var query = new GetProductRelationsQuery(id);
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
+
+    [HttpPost("{id:guid}/relations")]
+    public async Task<IActionResult> AddRelatedProduct(Guid id, [FromBody] AddRelationRequest request)
+    {
+        var command = new AddRelatedProductCommand(id, request.RelatedProductId, request.RelationType);
+        var relationId = await _mediator.Send(command);
+        return CreatedAtAction(nameof(GetProductRelations), new { id }, new { relationId });
+    }
+
+    [HttpDelete("{id:guid}/relations/{relationId:guid}")]
+    public async Task<IActionResult> RemoveRelatedProduct(Guid id, Guid relationId)
+    {
+        var command = new RemoveRelatedProductCommand(id, relationId);
+        var success = await _mediator.Send(command);
+
+        if (!success)
+        {
+            return NotFound();
+        }
+
+        return Ok(new { success = true });
+    }
+
+    [HttpPut("{id:guid}/relations/reorder")]
+    public async Task<IActionResult> ReorderRelatedProducts(Guid id, [FromBody] ReorderRelationsRequest request)
+    {
+        var command = new ReorderRelatedProductsCommand(id, request.RelationType, request.RelationIds);
+        var success = await _mediator.Send(command);
+
+        if (!success)
+        {
+            return BadRequest(new { message = "Failed to reorder relations" });
+        }
+
+        return Ok(new { success = true });
+    }
 }
 
 public record ToggleStatusRequest(bool IsActive);
 public record ToggleFeaturedRequest(bool IsFeatured);
+public record AddRelationRequest(Guid RelatedProductId, string RelationType);
+public record ReorderRelationsRequest(string RelationType, List<Guid> RelationIds);

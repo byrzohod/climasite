@@ -623,7 +623,18 @@
       "add": "Add Product",
       "edit": "Edit Product",
       "delete": "Delete Product",
-      "list": "Product List"
+      "list": "Product List",
+      "relatedProducts": "Related Products",
+      "noRelations": "No related products for this type",
+      "addRelation": "Add Related Product",
+      "searchProducts": "Search products...",
+      "relations": {
+        "Similar": "Similar Products",
+        "Accessory": "Accessories",
+        "Upgrade": "Upgrades",
+        "Bundle": "Bundles",
+        "FrequentlyBoughtTogether": "Frequently Bought Together"
+      }
     },
     "orders": {
       "title": "Order Management",

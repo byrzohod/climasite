@@ -623,7 +623,18 @@
       "add": "Produkt hinzufügen",
       "edit": "Produkt bearbeiten",
       "delete": "Produkt löschen",
-      "list": "Produktliste"
+      "list": "Produktliste",
+      "relatedProducts": "Verwandte Produkte",
+      "noRelations": "Keine verwandten Produkte für diesen Typ",
+      "addRelation": "Verwandtes Produkt hinzufügen",
+      "searchProducts": "Produkte suchen...",
+      "relations": {
+        "Similar": "Ähnliche Produkte",
+        "Accessory": "Zubehör",
+        "Upgrade": "Upgrades",
+        "Bundle": "Bundles",
+        "FrequentlyBoughtTogether": "Häufig zusammen gekauft"
+      }
     },
     "orders": {
       "title": "Bestellungsverwaltung",
