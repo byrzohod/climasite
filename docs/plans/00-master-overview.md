@@ -184,7 +184,7 @@ climasite/
 | 13 | Wishlist | [13-wishlist.md](./13-wishlist.md) | WISH- | Low | Complete |
 | 15 | UI/UX Enhancements Phase 2 | [15-ui-ux-enhancements-phase2.md](./15-ui-ux-enhancements-phase2.md) | UX2- | High | Complete |
 | 16 | E2E Testing Reference | [16-e2e-testing-comprehensive.md](./16-e2e-testing-comprehensive.md) | E2E- | High | Reference |
-| 18 | Future Enhancements | [18-future-enhancements.md](./18-future-enhancements.md) | FUT- | Low | Backlog |
+| 17 | Future Enhancements | [17-future-enhancements.md](./17-future-enhancements.md) | FUT- | Low | Backlog |
 
 ### Task ID Convention
 
