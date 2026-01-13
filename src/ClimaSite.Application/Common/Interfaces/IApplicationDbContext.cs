@@ -30,6 +30,7 @@ public interface IApplicationDbContext
     DbSet<CategoryTranslation> CategoryTranslations { get; }
     DbSet<ProductQuestion> ProductQuestions { get; }
     DbSet<ProductAnswer> ProductAnswers { get; }
+    DbSet<InstallationRequest> InstallationRequests { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }
