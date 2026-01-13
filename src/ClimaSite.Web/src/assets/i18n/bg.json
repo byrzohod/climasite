@@ -215,6 +215,35 @@
       "calculate": "Изчисли вноска",
       "totalCost": "Обща цена",
       "monthlyPayment": "Месечна вноска"
+    },
+    "qa": {
+      "title": "Въпроси и отговори",
+      "totalQuestions": "{{count}} въпрос(а)",
+      "answeredQuestions": "{{count}} с отговор",
+      "askQuestion": "Задай въпрос",
+      "yourQuestion": "Вашият въпрос",
+      "questionPlaceholder": "Какво бихте искали да знаете за този продукт?",
+      "yourName": "Вашето име (по избор)",
+      "namePlaceholder": "Въведете името си",
+      "yourEmail": "Имейл за известия",
+      "emailPlaceholder": "Въведете имейла си",
+      "emailHint": "Ще ви уведомим, когато отговорят на въпроса ви",
+      "submitQuestion": "Изпрати въпрос",
+      "submitting": "Изпращане...",
+      "questionSubmittedSuccess": "Въпросът ви е изпратен за преглед. Ще ви уведомим, когато бъде одобрен.",
+      "helpful": "Полезно",
+      "answer": "Отговори",
+      "answerPlaceholder": "Споделете знанията си за този продукт...",
+      "submitAnswer": "Изпрати отговор",
+      "anonymous": "Анонимен",
+      "communityMember": "Член на общността",
+      "officialAnswer": "Официален отговор",
+      "noAnswersYet": "Все още няма отговори. Бъдете първият, който помага!",
+      "noQuestionsYet": "Все още няма въпроси за този продукт",
+      "beFirstToAsk": "Бъдете първият, който задава въпрос!",
+      "errors": {
+        "questionTooShort": "Въпросът трябва да е поне 10 символа"
+      }
     }
   },
   "delivery": {

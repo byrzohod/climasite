@@ -215,6 +215,35 @@
       "calculate": "Rate berechnen",
       "totalCost": "Gesamtkosten",
       "monthlyPayment": "Monatliche Rate"
+    },
+    "qa": {
+      "title": "Fragen & Antworten",
+      "totalQuestions": "{{count}} Frage(n)",
+      "answeredQuestions": "{{count}} Beantwortet",
+      "askQuestion": "Frage stellen",
+      "yourQuestion": "Ihre Frage",
+      "questionPlaceholder": "Was möchten Sie über dieses Produkt wissen?",
+      "yourName": "Ihr Name (optional)",
+      "namePlaceholder": "Geben Sie Ihren Namen ein",
+      "yourEmail": "E-Mail für Benachrichtigungen",
+      "emailPlaceholder": "Geben Sie Ihre E-Mail ein",
+      "emailHint": "Wir benachrichtigen Sie, wenn Ihre Frage beantwortet wird",
+      "submitQuestion": "Frage absenden",
+      "submitting": "Wird gesendet...",
+      "questionSubmittedSuccess": "Ihre Frage wurde zur Überprüfung eingereicht. Wir benachrichtigen Sie, wenn sie genehmigt wird.",
+      "helpful": "Hilfreich",
+      "answer": "Antworten",
+      "answerPlaceholder": "Teilen Sie Ihr Wissen über dieses Produkt...",
+      "submitAnswer": "Antwort absenden",
+      "anonymous": "Anonym",
+      "communityMember": "Community-Mitglied",
+      "officialAnswer": "Offizielle Antwort",
+      "noAnswersYet": "Noch keine Antworten. Seien Sie der Erste, der hilft!",
+      "noQuestionsYet": "Noch keine Fragen zu diesem Produkt",
+      "beFirstToAsk": "Stellen Sie die erste Frage!",
+      "errors": {
+        "questionTooShort": "Die Frage muss mindestens 10 Zeichen lang sein"
+      }
     }
   },
   "delivery": {

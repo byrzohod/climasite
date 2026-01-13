@@ -32,6 +32,7 @@ public class Product : BaseEntity
     public virtual ICollection<ProductImage> Images { get; private set; } = new List<ProductImage>();
     public virtual ICollection<RelatedProduct> RelatedProducts { get; private set; } = new List<RelatedProduct>();
     public virtual ICollection<ProductTranslation> Translations { get; private set; } = new List<ProductTranslation>();
+    public virtual ICollection<ProductQuestion> Questions { get; private set; } = new List<ProductQuestion>();
 
     /// <summary>
     /// Gets the translated content for the specified language, or returns the default (English) content.

@@ -28,6 +28,8 @@ public interface IApplicationDbContext
     DbSet<Brand> Brands { get; }
     DbSet<BrandTranslation> BrandTranslations { get; }
     DbSet<CategoryTranslation> CategoryTranslations { get; }
+    DbSet<ProductQuestion> ProductQuestions { get; }
+    DbSet<ProductAnswer> ProductAnswers { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

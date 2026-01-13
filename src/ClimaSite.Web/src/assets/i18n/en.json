@@ -215,6 +215,35 @@
       "calculate": "Calculate Payment",
       "totalCost": "Total Cost",
       "monthlyPayment": "Monthly Payment"
+    },
+    "qa": {
+      "title": "Questions & Answers",
+      "totalQuestions": "{{count}} Question(s)",
+      "answeredQuestions": "{{count}} Answered",
+      "askQuestion": "Ask a Question",
+      "yourQuestion": "Your Question",
+      "questionPlaceholder": "What would you like to know about this product?",
+      "yourName": "Your Name (optional)",
+      "namePlaceholder": "Enter your name",
+      "yourEmail": "Email for Notifications",
+      "emailPlaceholder": "Enter your email",
+      "emailHint": "We'll notify you when your question is answered",
+      "submitQuestion": "Submit Question",
+      "submitting": "Submitting...",
+      "questionSubmittedSuccess": "Your question has been submitted for review. We'll notify you when it's approved.",
+      "helpful": "Helpful",
+      "answer": "Answer",
+      "answerPlaceholder": "Share your knowledge about this product...",
+      "submitAnswer": "Submit Answer",
+      "anonymous": "Anonymous",
+      "communityMember": "Community Member",
+      "officialAnswer": "Official Answer",
+      "noAnswersYet": "No answers yet. Be the first to help!",
+      "noQuestionsYet": "No questions yet about this product",
+      "beFirstToAsk": "Be the first to ask a question!",
+      "errors": {
+        "questionTooShort": "Question must be at least 10 characters"
+      }
     }
   },
   "delivery": {
