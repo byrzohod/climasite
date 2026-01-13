@@ -8,11 +8,12 @@ import { CartService } from '../../../core/services/cart.service';
 import { Product } from '../../../core/models/product.model';
 import { ProductConsumablesComponent } from '../../../shared/components/product-consumables/product-consumables.component';
 import { SimilarProductsComponent } from '../../../shared/components/similar-products/similar-products.component';
+import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, ProductConsumablesComponent, SimilarProductsComponent],
+  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, ProductConsumablesComponent, SimilarProductsComponent, SpecKeyPipe],
   template: `
     <div class="product-detail-container" data-testid="product-detail">
       @if (isLoading()) {
@@ -221,7 +222,7 @@ import { SimilarProductsComponent } from '../../../shared/components/similar-pro
                       <tbody>
                         @for (spec of getSpecifications(); track spec.key) {
                           <tr>
-                            <th>{{ spec.key }}</th>
+                            <th>{{ spec.key | specKey }}</th>
                             <td>{{ spec.value }}</td>
                           </tr>
                         }

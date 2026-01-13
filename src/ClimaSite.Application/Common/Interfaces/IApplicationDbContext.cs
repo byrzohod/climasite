@@ -27,6 +27,7 @@ public interface IApplicationDbContext
     DbSet<PromotionTranslation> PromotionTranslations { get; }
     DbSet<Brand> Brands { get; }
     DbSet<BrandTranslation> BrandTranslations { get; }
+    DbSet<CategoryTranslation> CategoryTranslations { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

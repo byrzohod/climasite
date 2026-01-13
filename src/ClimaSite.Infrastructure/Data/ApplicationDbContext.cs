@@ -44,6 +44,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<PromotionTranslation> PromotionTranslations => Set<PromotionTranslation>();
     public DbSet<Brand> Brands => Set<Brand>();
     public DbSet<BrandTranslation> BrandTranslations => Set<BrandTranslation>();
+    public DbSet<CategoryTranslation> CategoryTranslations => Set<CategoryTranslation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -17,6 +17,31 @@ public class Category : BaseEntity
     public virtual Category? Parent { get; private set; }
     public virtual ICollection<Category> Children { get; private set; } = new List<Category>();
     public virtual ICollection<Product> Products { get; private set; } = new List<Product>();
+    public virtual ICollection<CategoryTranslation> Translations { get; private set; } = new List<CategoryTranslation>();
+
+    /// <summary>
+    /// Gets the translated content for the specified language, or returns the default (English) content.
+    /// </summary>
+    public (string Name, string? Description, string? MetaTitle, string? MetaDescription) GetTranslatedContent(string? languageCode)
+    {
+        if (string.IsNullOrEmpty(languageCode) || languageCode.Equals("en", StringComparison.OrdinalIgnoreCase))
+        {
+            return (Name, Description, MetaTitle, MetaDescription);
+        }
+
+        var translation = Translations.FirstOrDefault(t => t.LanguageCode.Equals(languageCode, StringComparison.OrdinalIgnoreCase));
+        if (translation == null)
+        {
+            return (Name, Description, MetaTitle, MetaDescription);
+        }
+
+        return (
+            translation.Name ?? Name,
+            translation.Description ?? Description,
+            translation.MetaTitle ?? MetaTitle,
+            translation.MetaDescription ?? MetaDescription
+        );
+    }
 
     private Category() { }
 
@@ -155,4 +180,17 @@ public class Category : BaseEntity
 
         return false;
     }
+}
+
+public class CategoryTranslation
+{
+    public Guid Id { get; set; }
+    public Guid CategoryId { get; set; }
+    public string LanguageCode { get; set; } = "en";
+    public string? Name { get; set; }
+    public string? Description { get; set; }
+    public string? MetaTitle { get; set; }
+    public string? MetaDescription { get; set; }
+
+    public virtual Category? Category { get; set; }
 }

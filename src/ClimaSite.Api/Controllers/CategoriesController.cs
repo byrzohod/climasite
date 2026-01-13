@@ -16,17 +16,21 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetCategoryTree([FromQuery] string? name = null)
+    public async Task<IActionResult> GetCategoryTree(
+        [FromQuery] string? name = null,
+        [FromQuery] string? lang = null)
     {
-        var query = new GetCategoryTreeQuery { NameFilter = name };
+        var query = new GetCategoryTreeQuery { NameFilter = name, LanguageCode = lang };
         var result = await _mediator.Send(query);
         return Ok(result);
     }
 
     [HttpGet("{slug}")]
-    public async Task<IActionResult> GetCategoryBySlug(string slug)
+    public async Task<IActionResult> GetCategoryBySlug(
+        string slug,
+        [FromQuery] string? lang = null)
     {
-        var query = new GetCategoryBySlugQuery { Slug = slug };
+        var query = new GetCategoryBySlugQuery { Slug = slug, LanguageCode = lang };
         var result = await _mediator.Send(query);
         return Ok(result);
     }

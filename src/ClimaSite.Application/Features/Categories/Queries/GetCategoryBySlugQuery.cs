@@ -10,8 +10,9 @@ namespace ClimaSite.Application.Features.Categories.Queries;
 public record GetCategoryBySlugQuery : IRequest<CategoryDto>, ICacheableQuery
 {
     public string Slug { get; init; } = string.Empty;
+    public string? LanguageCode { get; init; }
 
-    public string CacheKey => $"category_slug_{Slug}";
+    public string CacheKey => $"category_slug_{Slug}_{LanguageCode ?? "en"}";
     public TimeSpan? CacheDuration => TimeSpan.FromMinutes(30);
 }
 
@@ -28,7 +29,9 @@ public class GetCategoryBySlugQueryHandler : IRequestHandler<GetCategoryBySlugQu
     {
         var category = await _context.Categories
             .AsNoTracking()
+            .Include(c => c.Translations)
             .Include(c => c.Children.Where(ch => ch.IsActive).OrderBy(ch => ch.SortOrder))
+                .ThenInclude(ch => ch.Translations)
             .FirstOrDefaultAsync(c => c.Slug == request.Slug.ToLowerInvariant() && c.IsActive, cancellationToken);
 
         if (category == null)
@@ -39,29 +42,37 @@ public class GetCategoryBySlugQueryHandler : IRequestHandler<GetCategoryBySlugQu
         var productCount = await _context.Products
             .CountAsync(p => p.CategoryId == category.Id && p.IsActive, cancellationToken);
 
+        var (name, description, metaTitle, metaDescription) = category.GetTranslatedContent(request.LanguageCode);
+
         return new CategoryDto
         {
             Id = category.Id,
-            Name = category.Name,
+            Name = name,
             Slug = category.Slug,
-            Description = category.Description,
+            Description = description,
             ImageUrl = category.ImageUrl,
             SortOrder = category.SortOrder,
             IsActive = category.IsActive,
             ParentId = category.ParentId,
             ProductCount = productCount,
-            Children = category.Children.Select(c => new CategoryDto
+            MetaTitle = metaTitle,
+            MetaDescription = metaDescription,
+            Children = category.Children.Select(c =>
             {
-                Id = c.Id,
-                Name = c.Name,
-                Slug = c.Slug,
-                Description = c.Description,
-                ImageUrl = c.ImageUrl,
-                SortOrder = c.SortOrder,
-                IsActive = c.IsActive,
-                ParentId = c.ParentId,
-                ProductCount = 0,
-                Children = new List<CategoryDto>()
+                var (childName, childDesc, _, _) = c.GetTranslatedContent(request.LanguageCode);
+                return new CategoryDto
+                {
+                    Id = c.Id,
+                    Name = childName,
+                    Slug = c.Slug,
+                    Description = childDesc,
+                    ImageUrl = c.ImageUrl,
+                    SortOrder = c.SortOrder,
+                    IsActive = c.IsActive,
+                    ParentId = c.ParentId,
+                    ProductCount = 0,
+                    Children = new List<CategoryDto>()
+                };
             }).ToList()
         };
     }

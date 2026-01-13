@@ -12,6 +12,8 @@ public record CategoryDto
     public Guid? ParentId { get; init; }
     public List<CategoryDto> Children { get; init; } = new();
     public int ProductCount { get; init; }
+    public string? MetaTitle { get; init; }
+    public string? MetaDescription { get; init; }
 }
 
 public record CategoryTreeDto

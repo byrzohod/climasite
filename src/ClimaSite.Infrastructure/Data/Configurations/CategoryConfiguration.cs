@@ -77,3 +77,50 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
         builder.HasIndex(c => c.SortOrder);
     }
 }
+
+public class CategoryTranslationConfiguration : IEntityTypeConfiguration<CategoryTranslation>
+{
+    public void Configure(EntityTypeBuilder<CategoryTranslation> builder)
+    {
+        builder.ToTable("category_translations");
+
+        builder.HasKey(ct => ct.Id);
+
+        builder.Property(ct => ct.Id)
+            .HasColumnName("id")
+            .ValueGeneratedNever();
+
+        builder.Property(ct => ct.CategoryId)
+            .HasColumnName("category_id")
+            .IsRequired();
+
+        builder.Property(ct => ct.LanguageCode)
+            .HasColumnName("language_code")
+            .HasMaxLength(10)
+            .IsRequired();
+
+        builder.Property(ct => ct.Name)
+            .HasColumnName("name")
+            .HasMaxLength(100);
+
+        builder.Property(ct => ct.Description)
+            .HasColumnName("description");
+
+        builder.Property(ct => ct.MetaTitle)
+            .HasColumnName("meta_title")
+            .HasMaxLength(200);
+
+        builder.Property(ct => ct.MetaDescription)
+            .HasColumnName("meta_description")
+            .HasMaxLength(500);
+
+        // Relationships
+        builder.HasOne(ct => ct.Category)
+            .WithMany(c => c.Translations)
+            .HasForeignKey(ct => ct.CategoryId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Indexes
+        builder.HasIndex(ct => new { ct.CategoryId, ct.LanguageCode }).IsUnique();
+    }
+}
