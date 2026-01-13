@@ -12,7 +12,7 @@ This plan covers the implementation of professional e-commerce features to bring
 | Phase 2: Product Translation | ✅ COMPLETE | CategoryTranslation, SpecKeyPipe |
 | Phase 3: Enhanced Product Details | ✅ COMPLETE | Gallery with Zoom, Energy Rating, Warranty Badges |
 | Phase 4: Related Products | ✅ COMPLETE | Consumables, Similar Products |
-| Phase 5: Testing | ✅ COMPLETE | All tests pass (253 frontend, 175 backend) |
+| Phase 5: Testing | ✅ COMPLETE | All tests pass (294 frontend, 175 backend) |
 
 ### Features Summary
 
@@ -28,6 +28,9 @@ This plan covers the implementation of professional e-commerce features to bring
 - `EnergyRatingComponent` - EU energy efficiency label display (A+++ to G)
 - `WarrantyBadgeComponent` - Trust badges for warranty, returns, shipping, stock
 - `SpecKeyPipe` - Translates specification keys (e.g., cooling_capacity → Cooling Capacity)
+- `StockDeliveryComponent` - Stock status display with delivery options and estimated arrival dates
+- `ProductVariantsComponent` - Family variants display (BTU options, colors) with navigation
+- `FrequentlyBoughtComponent` - Bundle products with dynamic pricing and discount calculation
 
 ### Total Task Count
 - **Phase 1**: 9 tasks (Missing Pages) - ✅ Complete
@@ -2401,25 +2404,25 @@ Add these to `/src/ClimaSite.Web/src/assets/i18n/{lang}.json`:
 | PAGES-008 | Promotions Integration | [x] API | [x] Badge | [x] E2E | ✅ |
 | PAGES-009 | SEO & Metadata | [x] - | [x] Meta | [x] - | ✅ |
 
-### Phase 2: Product Translation
+### Phase 2: Product Translation ✅ COMPLETE
 | Task | Description | Backend | Frontend | Tests | Status |
 |------|-------------|---------|----------|-------|--------|
 | TRANS-001 | Translation API | [ ] Handler | [ ] - | [ ] Unit | ⬜ |
-| TRANS-002 | Specifications i18n | [ ] Model | [ ] Pipe | [ ] Unit | ⬜ |
+| TRANS-002 | Specifications i18n | [x] Model | [x] Pipe | [x] Unit | ✅ |
 | TRANS-003 | Admin Translation UI | [ ] API | [ ] Editor | [ ] E2E | ⬜ |
 | TRANS-004 | Language-Aware Display | [ ] - | [ ] Service | [ ] E2E | ⬜ |
-| TRANS-005 | Categories/Brands i18n | [ ] Entity | [ ] - | [ ] Unit | ⬜ |
+| TRANS-005 | Categories/Brands i18n | [x] Entity | [x] - | [x] Unit | ✅ |
 
-### Phase 3: Enhanced Product Details
+### Phase 3: Enhanced Product Details (Core Complete)
 | Task | Description | Backend | Frontend | Tests | Status |
 |------|-------------|---------|----------|-------|--------|
-| PROD-001 | Image Gallery with Zoom | [ ] - | [ ] Component | [ ] E2E | ⬜ |
-| PROD-002 | Energy Rating Display | [ ] - | [ ] Component | [ ] Unit | ⬜ |
-| PROD-003 | Warranty Badges | [ ] - | [ ] Component | [ ] Unit | ⬜ |
+| PROD-001 | Image Gallery with Zoom | [x] - | [x] Component | [x] Unit | ✅ |
+| PROD-002 | Energy Rating Display | [x] - | [x] Component | [x] Unit | ✅ |
+| PROD-003 | Warranty Badges | [x] - | [x] Component | [x] Unit | ✅ |
 | PROD-004 | Financing Options | [ ] - | [ ] Service | [ ] Unit | ⬜ |
-| PROD-005 | Stock & Delivery | [ ] - | [ ] Component | [ ] Unit | ⬜ |
+| PROD-005 | Stock & Delivery | [x] - | [x] Component | [x] Unit | ✅ |
 | PROD-006 | Q&A Section | [ ] Entity | [ ] Component | [ ] E2E | ⬜ |
-| PROD-007 | Family Variants (BTU) | [ ] Query | [ ] Component | [ ] E2E | ⬜ |
+| PROD-007 | Family Variants (BTU) | [x] - | [x] Component | [x] Unit | ✅ |
 | PROD-008 | Specs Table Enhanced | [ ] - | [ ] Component | [ ] Unit | ⬜ |
 | PROD-009 | Installation Service | [ ] Cart | [ ] Component | [ ] E2E | ⬜ |
 | PROD-010 | Price History Chart | [ ] Entity | [ ] Chart | [ ] Unit | ⬜ |
@@ -2429,14 +2432,14 @@ Add these to `/src/ClimaSite.Web/src/assets/i18n/{lang}.json`:
 | PROD-014 | Share Product | [ ] - | [ ] Component | [ ] Unit | ⬜ |
 | PROD-015 | Structured Data SEO | [ ] - | [ ] Service | [ ] - | ⬜ |
 
-### Phase 4: Related Products
+### Phase 4: Related Products (Core Complete)
 | Task | Description | Backend | Frontend | Tests | Status |
 |------|-------------|---------|----------|-------|--------|
-| REL-001 | Consumables Backend | [ ] Query | [ ] - | [ ] Unit | ⬜ |
-| REL-002 | Consumables Frontend | [ ] - | [ ] Component | [ ] E2E | ⬜ |
-| REL-003 | Similar Products Backend | [ ] Query | [ ] - | [ ] Unit | ⬜ |
-| REL-004 | Similar Products Frontend | [ ] - | [ ] Carousel | [ ] E2E | ⬜ |
-| REL-005 | Frequently Bought Together | [ ] Query | [ ] Component | [ ] E2E | ⬜ |
+| REL-001 | Consumables Backend | [x] Query | [x] - | [x] Unit | ✅ |
+| REL-002 | Consumables Frontend | [x] - | [x] Component | [x] Unit | ✅ |
+| REL-003 | Similar Products Backend | [x] Query | [x] - | [x] Unit | ✅ |
+| REL-004 | Similar Products Frontend | [x] - | [x] Carousel | [x] Unit | ✅ |
+| REL-005 | Frequently Bought Together | [x] - | [x] Component | [x] Unit | ✅ |
 | REL-006 | Admin Related Products | [ ] API | [ ] Manager | [ ] E2E | ⬜ |
 
 ### Phase 5: Testing
