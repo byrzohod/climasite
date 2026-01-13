@@ -2,6 +2,8 @@ using ClimaSite.Application.Features.Products.Commands;
 using ClimaSite.Application.Features.Products.Queries;
 using ClimaSite.Application.Features.Admin.RelatedProducts.Commands;
 using ClimaSite.Application.Features.Admin.RelatedProducts.Queries;
+using ClimaSite.Application.Features.Admin.Translations.Commands;
+using ClimaSite.Application.Features.Admin.Translations.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -197,9 +199,92 @@ public class AdminProductsController : ControllerBase
 
         return Ok(new { success = true });
     }
+
+
+    // Translation Management
+
+    [HttpGet("{id:guid}/translations")]
+    public async Task<IActionResult> GetProductTranslations(Guid id)
+    {
+        var query = new GetProductTranslationsQuery(id);
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
+
+    [HttpPost("{id:guid}/translations")]
+    public async Task<IActionResult> AddProductTranslation(Guid id, [FromBody] AddTranslationRequest request)
+    {
+        var command = new AddProductTranslationCommand
+        {
+            ProductId = id,
+            LanguageCode = request.LanguageCode,
+            Name = request.Name,
+            ShortDescription = request.ShortDescription,
+            Description = request.Description,
+            MetaTitle = request.MetaTitle,
+            MetaDescription = request.MetaDescription
+        };
+
+        var translationId = await _mediator.Send(command);
+        return CreatedAtAction(nameof(GetProductTranslations), new { id }, new { translationId });
+    }
+
+    [HttpPut("{id:guid}/translations/{languageCode}")]
+    public async Task<IActionResult> UpdateProductTranslation(
+        Guid id,
+        string languageCode,
+        [FromBody] UpdateTranslationRequest request)
+    {
+        var command = new UpdateProductTranslationCommand
+        {
+            ProductId = id,
+            LanguageCode = languageCode,
+            Name = request.Name,
+            ShortDescription = request.ShortDescription,
+            Description = request.Description,
+            MetaTitle = request.MetaTitle,
+            MetaDescription = request.MetaDescription
+        };
+
+        var success = await _mediator.Send(command);
+
+        if (!success)
+        {
+            return NotFound(new { message = $"Translation for language '{languageCode}' not found" });
+        }
+
+        return Ok(new { success = true });
+    }
+
+    [HttpDelete("{id:guid}/translations/{languageCode}")]
+    public async Task<IActionResult> DeleteProductTranslation(Guid id, string languageCode)
+    {
+        var command = new DeleteProductTranslationCommand(id, languageCode);
+        var success = await _mediator.Send(command);
+
+        if (!success)
+        {
+            return NotFound(new { message = $"Translation for language '{languageCode}' not found" });
+        }
+
+        return Ok(new { success = true });
+    }
 }
 
 public record ToggleStatusRequest(bool IsActive);
 public record ToggleFeaturedRequest(bool IsFeatured);
 public record AddRelationRequest(Guid RelatedProductId, string RelationType);
 public record ReorderRelationsRequest(string RelationType, List<Guid> RelationIds);
+public record AddTranslationRequest(
+    string LanguageCode,
+    string Name,
+    string? ShortDescription,
+    string? Description,
+    string? MetaTitle,
+    string? MetaDescription);
+public record UpdateTranslationRequest(
+    string Name,
+    string? ShortDescription,
+    string? Description,
+    string? MetaTitle,
+    string? MetaDescription);

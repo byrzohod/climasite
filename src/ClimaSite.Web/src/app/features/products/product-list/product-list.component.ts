@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -6,6 +6,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { Subject, takeUntil } from 'rxjs';
 import { ProductService } from '../../../core/services/product.service';
 import { CategoryService } from '../../../core/services/category.service';
+import { LanguageService } from '../../../core/services/language.service';
 import { ProductBrief, FilterOptions, ProductFilter, PaginatedResult } from '../../../core/models/product.model';
 import { Category } from '../../../core/models/category.model';
 import { ProductCardComponent } from '../product-card/product-card.component';
@@ -571,9 +572,12 @@ import { LoadingComponent } from '../../../shared/components/loading/loading.com
 export class ProductListComponent implements OnInit, OnDestroy {
   private readonly productService = inject(ProductService);
   private readonly categoryService = inject(CategoryService);
+  private readonly languageService = inject(LanguageService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroy$ = new Subject<void>();
+  private isInitialized = false;
+  private lastLanguage: string | null = null;
 
   products = signal<ProductBrief[]>([]);
   category = signal<Category | null>(null);
@@ -589,6 +593,18 @@ export class ProductListComponent implements OnInit, OnDestroy {
   selectedBrand = signal<string | null>(null);
   inStockOnly = signal(false);
   onSaleOnly = signal(false);
+
+  constructor() {
+    // Refresh products when language changes
+    effect(() => {
+      const currentLang = this.languageService.currentLanguage();
+      // Only reload if initialized and language actually changed
+      if (this.isInitialized && this.lastLanguage !== null && this.lastLanguage !== currentLang) {
+        this.fetchProducts(this.category()?.id);
+      }
+      this.lastLanguage = currentLang;
+    });
+  }
 
   minPrice: number | null = null;
   maxPrice: number | null = null;
@@ -622,6 +638,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
       const categorySlug = params['categorySlug'];
       this.currentPage.set(1);
       this.loadProducts(categorySlug);
+      this.isInitialized = true;
     });
 
     this.route.queryParams.pipe(takeUntil(this.destroy$)).subscribe(params => {

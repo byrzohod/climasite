@@ -634,7 +634,20 @@
         "Upgrade": "Upgrades",
         "Bundle": "Bundles",
         "FrequentlyBoughtTogether": "Frequently Bought Together"
-      }
+      },
+      "translations": {
+        "title": "Product Translations",
+        "subtitle": "Manage product content in different languages",
+        "addTranslation": "Add Translation",
+        "defaultLanguageNotice": "English is the default language. Edit the main product to change this content.",
+        "seoSection": "SEO Settings",
+        "confirmDelete": "Are you sure you want to delete the {{language}} translation?"
+      },
+      "name": "Name",
+      "shortDescription": "Short Description",
+      "description": "Description",
+      "metaTitle": "Meta Title",
+      "metaDescription": "Meta Description"
     },
     "orders": {
       "title": "Order Management",

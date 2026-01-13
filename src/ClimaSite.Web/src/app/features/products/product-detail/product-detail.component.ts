@@ -1,10 +1,11 @@
-import { Component, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, inject, signal, OnInit, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ProductService } from '../../../core/services/product.service';
 import { CartService } from '../../../core/services/cart.service';
+import { LanguageService } from '../../../core/services/language.service';
 import { Product } from '../../../core/models/product.model';
 import { ProductConsumablesComponent } from '../../../shared/components/product-consumables/product-consumables.component';
 import { SimilarProductsComponent } from '../../../shared/components/similar-products/similar-products.component';
@@ -629,6 +630,9 @@ export class ProductDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly productService = inject(ProductService);
   private readonly cartService = inject(CartService);
+  private readonly languageService = inject(LanguageService);
+  private currentSlug: string | null = null;
+  private lastLanguage: string | null = null;
 
   Math = Math;
 
@@ -641,6 +645,17 @@ export class ProductDetailComponent implements OnInit {
   isAddingToCart = signal(false);
   addedToCart = signal(false);
   showNotification = signal(false);
+
+  constructor() {
+    // Refresh product when language changes
+    effect(() => {
+      const currentLang = this.languageService.currentLanguage();
+      if (this.currentSlug && this.lastLanguage !== null && this.lastLanguage !== currentLang) {
+        this.loadProduct(this.currentSlug);
+      }
+      this.lastLanguage = currentLang;
+    });
+  }
 
   // Computed properties for new components
   galleryImages = computed<GalleryImage[]>(() => {
@@ -669,6 +684,7 @@ export class ProductDetailComponent implements OnInit {
   ngOnInit(): void {
     const slug = this.route.snapshot.paramMap.get('slug');
     if (slug) {
+      this.currentSlug = slug;
       this.loadProduct(slug);
     } else {
       this.error.set('Product not found');

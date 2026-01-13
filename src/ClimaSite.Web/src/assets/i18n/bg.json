@@ -634,7 +634,20 @@
         "Upgrade": "Надстройки",
         "Bundle": "Комплекти",
         "FrequentlyBoughtTogether": "Често купувани заедно"
-      }
+      },
+      "translations": {
+        "title": "Преводи на продукта",
+        "subtitle": "Управление на съдържанието на различни езици",
+        "addTranslation": "Добави превод",
+        "defaultLanguageNotice": "Английският е езикът по подразбиране. Редактирайте основния продукт, за да промените това съдържание.",
+        "seoSection": "SEO настройки",
+        "confirmDelete": "Сигурни ли сте, че искате да изтриете превода на {{language}}?"
+      },
+      "name": "Име",
+      "shortDescription": "Кратко описание",
+      "description": "Описание",
+      "metaTitle": "Мета заглавие",
+      "metaDescription": "Мета описание"
     },
     "orders": {
       "title": "Управление на поръчки",

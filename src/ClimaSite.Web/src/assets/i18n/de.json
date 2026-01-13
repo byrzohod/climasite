@@ -634,7 +634,20 @@
         "Upgrade": "Upgrades",
         "Bundle": "Bundles",
         "FrequentlyBoughtTogether": "Häufig zusammen gekauft"
-      }
+      },
+      "translations": {
+        "title": "Produktübersetzungen",
+        "subtitle": "Produktinhalte in verschiedenen Sprachen verwalten",
+        "addTranslation": "Übersetzung hinzufügen",
+        "defaultLanguageNotice": "Englisch ist die Standardsprache. Bearbeiten Sie das Hauptprodukt, um diesen Inhalt zu ändern.",
+        "seoSection": "SEO-Einstellungen",
+        "confirmDelete": "Sind Sie sicher, dass Sie die {{language}}-Übersetzung löschen möchten?"
+      },
+      "name": "Name",
+      "shortDescription": "Kurzbeschreibung",
+      "description": "Beschreibung",
+      "metaTitle": "Meta-Titel",
+      "metaDescription": "Meta-Beschreibung"
     },
     "orders": {
       "title": "Bestellungsverwaltung",
