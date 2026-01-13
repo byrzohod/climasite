@@ -173,7 +173,30 @@
       "none": "Keine Installation",
       "standard": "Standard-Installation",
       "premium": "Premium-Installation"
+    },
+    "variants": {
+      "priceRange": "Preisspanne"
+    },
+    "frequentlyBought": {
+      "title": "Wird oft zusammen gekauft",
+      "subtitle": "Sparen Sie mehr beim Kauf dieser Artikel zusammen",
+      "included": "Enthalten",
+      "totalItems": "Artikel insgesamt",
+      "bundleSavings": "Bundle-Ersparnis",
+      "bundlePrice": "Bundle-Preis",
+      "addBundle": "Bundle in den Warenkorb"
     }
+  },
+  "delivery": {
+    "options": "Lieferoptionen",
+    "free": "Kostenlos",
+    "readyToShip": "Versandbereit",
+    "expectedRestock": "Erwarteter Nachschub: {{date}}",
+    "estimatedArrival": "Voraussichtliche Ankunft"
+  },
+  "common": {
+    "items": "Artikel",
+    "loading": "Laden..."
   },
   "cart": {
     "title": "Warenkorb",

@@ -173,7 +173,30 @@
       "none": "Без монтаж",
       "standard": "Стандартен монтаж",
       "premium": "Премиум монтаж"
+    },
+    "variants": {
+      "priceRange": "Ценови диапазон"
+    },
+    "frequentlyBought": {
+      "title": "Често купувани заедно",
+      "subtitle": "Спестете повече, като купите тези артикули заедно",
+      "included": "Включено",
+      "totalItems": "Общо артикули",
+      "bundleSavings": "Спестявания от пакет",
+      "bundlePrice": "Цена на пакета",
+      "addBundle": "Добави пакета в количката"
     }
+  },
+  "delivery": {
+    "options": "Опции за доставка",
+    "free": "Безплатно",
+    "readyToShip": "Готово за изпращане",
+    "expectedRestock": "Очаквано зареждане: {{date}}",
+    "estimatedArrival": "Очаквано пристигане"
+  },
+  "common": {
+    "items": "артикула",
+    "loading": "Зареждане..."
   },
   "cart": {
     "title": "Количка",

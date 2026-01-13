@@ -173,7 +173,30 @@
       "none": "No installation",
       "standard": "Standard Installation",
       "premium": "Premium Installation"
+    },
+    "variants": {
+      "priceRange": "Price range"
+    },
+    "frequentlyBought": {
+      "title": "Frequently Bought Together",
+      "subtitle": "Save more when you buy these items together",
+      "included": "Included",
+      "totalItems": "Total items",
+      "bundleSavings": "Bundle savings",
+      "bundlePrice": "Bundle price",
+      "addBundle": "Add Bundle to Cart"
     }
+  },
+  "delivery": {
+    "options": "Delivery Options",
+    "free": "Free",
+    "readyToShip": "Ready to ship",
+    "expectedRestock": "Expected restock: {{date}}",
+    "estimatedArrival": "Estimated arrival"
+  },
+  "common": {
+    "items": "items",
+    "loading": "Loading..."
   },
   "cart": {
     "title": "Shopping Cart",
