@@ -33,6 +33,12 @@ export const routes: Routes = [
         path: '',
         loadComponent: () => import('./features/products/product-list/product-list.component').then(m => m.ProductListComponent)
       },
+      // NAV-001 FIX: Add category route for filtering products by category
+      {
+        path: 'category/:categorySlug',
+        loadComponent: () => import('./features/products/product-list/product-list.component').then(m => m.ProductListComponent),
+        title: 'Products by Category - ClimaSite'
+      },
       {
         path: ':slug',
         loadComponent: () => import('./features/products/product-detail/product-detail.component').then(m => m.ProductDetailComponent)
@@ -46,6 +52,12 @@ export const routes: Routes = [
   {
     path: 'cart',
     loadComponent: () => import('./features/cart/cart.component').then(m => m.CartComponent)
+  },
+  // NAV-002: Add wishlist route
+  {
+    path: 'wishlist',
+    loadComponent: () => import('./features/wishlist/wishlist.component').then(m => m.WishlistComponent),
+    title: 'Wishlist - ClimaSite'
   },
   {
     path: 'checkout',

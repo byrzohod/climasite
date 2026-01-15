@@ -65,6 +65,12 @@ export class AuthService {
 
   // Use token-based auth check to handle async user loading
   private readonly _hasToken = signal(false);
+
+  // AUTH-001 FIX: Track when initial auth check is complete
+  // This allows guards to wait for auth initialization before redirecting
+  private readonly _authReady = signal(false);
+  readonly authReady = this._authReady.asReadonly();
+
   readonly isAuthenticated = computed(() => this._hasToken());
   readonly isAdmin = computed(() => this._user()?.role === 'Admin');
 
@@ -208,7 +214,11 @@ export class AuthService {
   }
 
   private loadUserFromToken(): void {
-    if (!this.isBrowser) return;
+    // AUTH-001 FIX: Mark auth as ready immediately for non-browser environments
+    if (!this.isBrowser) {
+      this._authReady.set(true);
+      return;
+    }
 
     const token = localStorage.getItem(this.TOKEN_KEY);
     if (token) {
@@ -219,6 +229,8 @@ export class AuthService {
       this.getCurrentUser().subscribe({
         next: (user) => {
           console.log('User profile loaded:', user.email);
+          // AUTH-001 FIX: Mark auth as ready after user is loaded
+          this._authReady.set(true);
         },
         error: (err) => {
           console.error('Failed to load user profile:', err);
@@ -226,8 +238,13 @@ export class AuthService {
           if (err.status === 401) {
             this.clearAuth();
           }
+          // AUTH-001 FIX: Mark auth as ready even on error
+          this._authReady.set(true);
         }
       });
+    } else {
+      // AUTH-001 FIX: No token, mark auth as ready immediately
+      this._authReady.set(true);
     }
   }
 

@@ -1,50 +1,94 @@
-import { Component } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
+import { ProductService } from '../../core/services/product.service';
+import { ProductBrief } from '../../core/models/product.model';
+import { ProductCardComponent } from '../products/product-card/product-card.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, TranslateModule],
+  imports: [CommonModule, RouterLink, TranslateModule, ProductCardComponent],
   template: `
     <div class="home-container">
-      <section class="hero">
+      <!-- HOME-001: Enhanced hero section -->
+      <section class="hero" data-testid="hero-section">
         <div class="hero-content">
           <h1>{{ 'common.tagline' | translate }}</h1>
-          <p>Quality HVAC products for your home and business</p>
-          <a routerLink="/products" class="cta-button">{{ 'common.viewAll' | translate }} {{ 'nav.products' | translate }}</a>
+          <p>{{ 'home.hero.subtitle' | translate }}</p>
+          <a routerLink="/products" class="cta-button" data-testid="hero-cta">{{ 'home.hero.cta' | translate }}</a>
         </div>
       </section>
 
+      <!-- HOME-001: Benefits section -->
+      <section class="benefits-section" data-testid="benefits-section">
+        <div class="benefits-grid">
+          <div class="benefit-card">
+            <div class="benefit-icon">🚚</div>
+            <h3>{{ 'home.benefits.freeShipping' | translate }}</h3>
+            <p>{{ 'home.benefits.freeShippingDesc' | translate }}</p>
+          </div>
+          <div class="benefit-card">
+            <div class="benefit-icon">🛡️</div>
+            <h3>{{ 'home.benefits.warranty' | translate }}</h3>
+            <p>{{ 'home.benefits.warrantyDesc' | translate }}</p>
+          </div>
+          <div class="benefit-card">
+            <div class="benefit-icon">💬</div>
+            <h3>{{ 'home.benefits.support' | translate }}</h3>
+            <p>{{ 'home.benefits.supportDesc' | translate }}</p>
+          </div>
+          <div class="benefit-card">
+            <div class="benefit-icon">🔧</div>
+            <h3>{{ 'home.benefits.installation' | translate }}</h3>
+            <p>{{ 'home.benefits.installationDesc' | translate }}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- NAV-001 FIX: Use route-based navigation instead of query params -->
       <section class="categories-section">
-        <h2>{{ 'nav.categories' | translate }}</h2>
+        <h2>{{ 'home.categories.title' | translate }}</h2>
         <div class="categories-grid">
-          <a routerLink="/products" [queryParams]="{category: 'air-conditioners'}" class="category-card" data-testid="category-card">
+          <a [routerLink]="['/products/category', 'air-conditioning']" class="category-card" data-testid="category-card">
             <div class="category-icon">❄️</div>
-            <h3>{{ 'nav.airConditioners' | translate }}</h3>
+            <h3>{{ 'categories.airConditioning' | translate }}</h3>
           </a>
-          <a routerLink="/products" [queryParams]="{category: 'heating'}" class="category-card" data-testid="category-card">
+          <a [routerLink]="['/products/category', 'heating']" class="category-card" data-testid="category-card">
             <div class="category-icon">🔥</div>
-            <h3>{{ 'nav.heatingSystems' | translate }}</h3>
+            <h3>{{ 'categories.heatingSystems' | translate }}</h3>
           </a>
-          <a routerLink="/products" [queryParams]="{category: 'ventilation'}" class="category-card" data-testid="category-card">
+          <a [routerLink]="['/products/category', 'ventilation']" class="category-card" data-testid="category-card">
             <div class="category-icon">💨</div>
-            <h3>{{ 'nav.ventilation' | translate }}</h3>
+            <h3>{{ 'categories.ventilation' | translate }}</h3>
           </a>
-          <a routerLink="/products" [queryParams]="{category: 'accessories'}" class="category-card" data-testid="category-card">
+          <a [routerLink]="['/products/category', 'accessories']" class="category-card" data-testid="category-card">
             <div class="category-icon">🔧</div>
-            <h3>{{ 'nav.accessories' | translate }}</h3>
+            <h3>{{ 'categories.accessories' | translate }}</h3>
           </a>
         </div>
       </section>
 
+      <!-- HOME-001: Featured products with actual loading -->
       <section class="featured-section" data-testid="featured-products">
         <h2>{{ 'home.featured.title' | translate }}</h2>
-        <div class="featured-grid">
-          <p class="coming-soon">{{ 'products.featured' | translate }} - {{ 'common.loading' | translate }}</p>
-        </div>
-        <a routerLink="/products" class="view-all-link">{{ 'home.featured.viewAll' | translate }} →</a>
+        @if (loadingFeatured()) {
+          <div class="featured-loading">
+            <p>{{ 'common.loading' | translate }}</p>
+          </div>
+        } @else if (featuredProducts().length === 0) {
+          <div class="featured-empty">
+            <p>{{ 'products.noProducts' | translate }}</p>
+          </div>
+        } @else {
+          <div class="featured-grid">
+            @for (product of featuredProducts(); track product.id) {
+              <app-product-card [product]="product" />
+            }
+          </div>
+        }
+        <a routerLink="/products" class="view-all-link" data-testid="view-all-products">{{ 'home.featured.viewAll' | translate }} →</a>
       </section>
     </div>
   `,
@@ -155,13 +199,60 @@ import { TranslateModule } from '@ngx-translate/core';
       }
     }
 
-    .featured-grid {
-      margin-bottom: 2rem;
+    /* HOME-001: Benefits section styles */
+    .benefits-section {
+      background: var(--color-bg-secondary);
+      padding: 3rem 2rem;
     }
 
-    .coming-soon {
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .benefit-card {
+      background: var(--color-bg-primary);
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+      .benefit-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+      }
+
+      h3 {
+        color: var(--color-text-primary);
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+      }
+
+      p {
+        color: var(--color-text-secondary);
+        font-size: 0.875rem;
+        margin: 0;
+      }
+    }
+
+    /* HOME-001: Featured products grid */
+    .featured-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      text-align: left;
+    }
+
+    .featured-loading,
+    .featured-empty {
+      padding: 3rem;
+      text-align: center;
       color: var(--color-text-secondary);
-      font-size: 1rem;
     }
 
     .view-all-link {
@@ -179,7 +270,40 @@ import { TranslateModule } from '@ngx-translate/core';
       .hero-content h1 {
         font-size: 2rem;
       }
+
+      .benefits-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .benefits-grid {
+        grid-template-columns: 1fr;
+      }
     }
   `]
 })
-export class HomeComponent {}
+export class HomeComponent implements OnInit {
+  private readonly productService = inject(ProductService);
+
+  featuredProducts = signal<ProductBrief[]>([]);
+  loadingFeatured = signal(true);
+
+  ngOnInit(): void {
+    this.loadFeaturedProducts();
+  }
+
+  private loadFeaturedProducts(): void {
+    this.loadingFeatured.set(true);
+    this.productService.getFeaturedProducts(8).subscribe({
+      next: (products) => {
+        this.featuredProducts.set(products);
+        this.loadingFeatured.set(false);
+      },
+      error: () => {
+        this.featuredProducts.set([]);
+        this.loadingFeatured.set(false);
+      }
+    });
+  }
+}

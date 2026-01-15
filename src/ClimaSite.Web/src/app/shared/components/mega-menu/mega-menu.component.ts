@@ -75,7 +75,8 @@ import { CategoryTree } from '../../../core/models/category.model';
                       }
                     }
                   </span>
-                  <span class="category-name">{{ category.name }}</span>
+                  <!-- I18N-002 FIX: Use translate pipe for category names -->
+                  <span class="category-name">{{ category.name | translate }}</span>
                   @if (category.children && category.children.length > 0) {
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="category-arrow">
                       <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/>
@@ -89,10 +90,11 @@ import { CategoryTree } from '../../../core/models/category.model';
             @if (activeCategory() && activeCategory()!.children && activeCategory()!.children.length > 0) {
               <div class="subcategories-panel" data-testid="subcategories-panel">
                 <div class="panel-header">
-                  <h3 class="panel-title">{{ activeCategory()!.name }}</h3>
+                  <!-- I18N-002 FIX: Use translate pipe for panel title -->
+                  <h3 class="panel-title">{{ activeCategory()!.name | translate }}</h3>
+                  <!-- NAV-001 FIX: Use route-based navigation instead of query params -->
                   <a
-                    [routerLink]="['/products']"
-                    [queryParams]="{category: activeCategory()!.slug}"
+                    [routerLink]="['/products/category', activeCategory()!.slug]"
                     class="view-all-link"
                     (click)="closeMenu()"
                   >
@@ -104,14 +106,15 @@ import { CategoryTree } from '../../../core/models/category.model';
                 </div>
                 <div class="subcategories-grid">
                   @for (subcat of activeCategory()!.children; track subcat.id) {
+                    <!-- NAV-001 FIX: Use route-based navigation -->
+                    <!-- I18N-002 FIX: Use translate pipe for subcategory names -->
                     <a
-                      [routerLink]="['/products']"
-                      [queryParams]="{category: subcat.slug}"
+                      [routerLink]="['/products/category', subcat.slug]"
                       class="subcategory-link"
                       (click)="closeMenu()"
                       data-testid="subcategory-link"
                     >
-                      {{ subcat.name }}
+                      {{ subcat.name | translate }}
                     </a>
                   }
                 </div>
@@ -443,72 +446,73 @@ export class MegaMenuComponent implements OnInit {
     this.closeMenu();
   }
 
+  // I18N-002 FIX: Use translation keys instead of hardcoded strings
   private getMockCategories(): CategoryTree[] {
     return [
       {
         id: '1',
-        name: 'Air Conditioning',
+        name: 'categories.airConditioning',
         slug: 'air-conditioning',
         children: [
-          { id: '1-1', name: 'Wall-Mounted AC', slug: 'wall-mounted-ac', children: [] },
-          { id: '1-2', name: 'Multi-Split Systems', slug: 'multi-split', children: [] },
-          { id: '1-3', name: 'Floor AC', slug: 'floor-ac', children: [] },
-          { id: '1-4', name: 'Cassette AC', slug: 'cassette-ac', children: [] },
-          { id: '1-5', name: 'Ducted AC', slug: 'ducted-ac', children: [] },
-          { id: '1-6', name: 'Heat Pumps', slug: 'heat-pumps', children: [] },
-          { id: '1-7', name: 'Air Purifiers', slug: 'air-purifiers', children: [] },
-          { id: '1-8', name: 'Dehumidifiers', slug: 'dehumidifiers', children: [] },
-          { id: '1-9', name: 'VRV/VRF Systems', slug: 'vrv-vrf', children: [] },
+          { id: '1-1', name: 'categories.wallMountedAc', slug: 'wall-mounted-ac', children: [] },
+          { id: '1-2', name: 'categories.multiSplit', slug: 'multi-split', children: [] },
+          { id: '1-3', name: 'categories.floorAc', slug: 'floor-ac', children: [] },
+          { id: '1-4', name: 'categories.cassetteAc', slug: 'cassette-ac', children: [] },
+          { id: '1-5', name: 'categories.ductedAc', slug: 'ducted-ac', children: [] },
+          { id: '1-6', name: 'categories.heatPumps', slug: 'heat-pumps', children: [] },
+          { id: '1-7', name: 'categories.airPurifiers', slug: 'air-purifiers', children: [] },
+          { id: '1-8', name: 'categories.dehumidifiers', slug: 'dehumidifiers', children: [] },
+          { id: '1-9', name: 'categories.vrvVrf', slug: 'vrv-vrf', children: [] },
         ]
       },
       {
         id: '2',
-        name: 'Heating Systems',
+        name: 'categories.heatingSystems',
         slug: 'heating',
         children: [
-          { id: '2-1', name: 'Electric Heaters', slug: 'electric-heaters', children: [] },
-          { id: '2-2', name: 'Gas Heaters', slug: 'gas-heaters', children: [] },
-          { id: '2-3', name: 'Infrared Heaters', slug: 'infrared-heaters', children: [] },
-          { id: '2-4', name: 'Convectors', slug: 'convectors', children: [] },
-          { id: '2-5', name: 'Radiators', slug: 'radiators', children: [] },
-          { id: '2-6', name: 'Underfloor Heating', slug: 'underfloor-heating', children: [] },
+          { id: '2-1', name: 'categories.electricHeaters', slug: 'electric-heaters', children: [] },
+          { id: '2-2', name: 'categories.gasHeaters', slug: 'gas-heaters', children: [] },
+          { id: '2-3', name: 'categories.infraredHeaters', slug: 'infrared-heaters', children: [] },
+          { id: '2-4', name: 'categories.convectors', slug: 'convectors', children: [] },
+          { id: '2-5', name: 'categories.radiators', slug: 'radiators', children: [] },
+          { id: '2-6', name: 'categories.underfloorHeating', slug: 'underfloor-heating', children: [] },
         ]
       },
       {
         id: '3',
-        name: 'Ventilation',
+        name: 'categories.ventilation',
         slug: 'ventilation',
         children: [
-          { id: '3-1', name: 'Exhaust Fans', slug: 'exhaust-fans', children: [] },
-          { id: '3-2', name: 'Duct Fans', slug: 'duct-fans', children: [] },
-          { id: '3-3', name: 'Recovery Ventilators', slug: 'recovery-ventilators', children: [] },
-          { id: '3-4', name: 'Air Curtains', slug: 'air-curtains', children: [] },
-          { id: '3-5', name: 'Industrial Fans', slug: 'industrial-fans', children: [] },
+          { id: '3-1', name: 'categories.exhaustFans', slug: 'exhaust-fans', children: [] },
+          { id: '3-2', name: 'categories.ductFans', slug: 'duct-fans', children: [] },
+          { id: '3-3', name: 'categories.recoveryVentilators', slug: 'recovery-ventilators', children: [] },
+          { id: '3-4', name: 'categories.airCurtains', slug: 'air-curtains', children: [] },
+          { id: '3-5', name: 'categories.industrialFans', slug: 'industrial-fans', children: [] },
         ]
       },
       {
         id: '4',
-        name: 'Water Purification',
+        name: 'categories.waterPurification',
         slug: 'water-purification',
         children: [
-          { id: '4-1', name: 'Water Filters', slug: 'water-filters', children: [] },
-          { id: '4-2', name: 'Reverse Osmosis', slug: 'reverse-osmosis', children: [] },
-          { id: '4-3', name: 'UV Sterilizers', slug: 'uv-sterilizers', children: [] },
-          { id: '4-4', name: 'Water Softeners', slug: 'water-softeners', children: [] },
-          { id: '4-5', name: 'Consumables', slug: 'water-consumables', children: [] },
+          { id: '4-1', name: 'categories.waterFilters', slug: 'water-filters', children: [] },
+          { id: '4-2', name: 'categories.reverseOsmosis', slug: 'reverse-osmosis', children: [] },
+          { id: '4-3', name: 'categories.uvSterilizers', slug: 'uv-sterilizers', children: [] },
+          { id: '4-4', name: 'categories.waterSofteners', slug: 'water-softeners', children: [] },
+          { id: '4-5', name: 'categories.consumables', slug: 'water-consumables', children: [] },
         ]
       },
       {
         id: '5',
-        name: 'Accessories',
+        name: 'categories.accessories',
         slug: 'accessories',
         children: [
-          { id: '5-1', name: 'Remote Controls', slug: 'remote-controls', children: [] },
-          { id: '5-2', name: 'Installation Kits', slug: 'installation-kits', children: [] },
-          { id: '5-3', name: 'Copper Pipes', slug: 'copper-pipes', children: [] },
-          { id: '5-4', name: 'Refrigerants', slug: 'refrigerants', children: [] },
-          { id: '5-5', name: 'Brackets & Mounts', slug: 'brackets-mounts', children: [] },
-          { id: '5-6', name: 'Drain Pumps', slug: 'drain-pumps', children: [] },
+          { id: '5-1', name: 'categories.remoteControls', slug: 'remote-controls', children: [] },
+          { id: '5-2', name: 'categories.installationKits', slug: 'installation-kits', children: [] },
+          { id: '5-3', name: 'categories.copperPipes', slug: 'copper-pipes', children: [] },
+          { id: '5-4', name: 'categories.refrigerants', slug: 'refrigerants', children: [] },
+          { id: '5-5', name: 'categories.bracketsMounts', slug: 'brackets-mounts', children: [] },
+          { id: '5-6', name: 'categories.drainPumps', slug: 'drain-pumps', children: [] },
         ]
       }
     ];

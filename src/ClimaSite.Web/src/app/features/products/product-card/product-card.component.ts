@@ -1,9 +1,10 @@
-import { Component, Input, inject, signal } from '@angular/core';
+import { Component, Input, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { ProductBrief } from '../../../core/models/product.model';
 import { CartService } from '../../../core/services/cart.service';
+import { WishlistService } from '../../../core/services/wishlist.service';
 
 @Component({
   selector: 'app-product-card',
@@ -97,13 +98,19 @@ import { CartService } from '../../../core/services/cart.service';
             }
           </button>
 
+          <!-- NAV-002: Wishlist button with state management -->
           <button
             class="btn-wishlist"
-            (click)="addToWishlist($event)"
-            [attr.aria-label]="'products.details.addToWishlist' | translate"
-            data-testid="add-to-wishlist-btn"
+            [class.wishlisted]="isWishlisted()"
+            (click)="toggleWishlist($event)"
+            [attr.aria-label]="(isWishlisted() ? 'products.details.removeFromWishlist' : 'products.details.addToWishlist') | translate"
+            data-testid="wishlist-button"
           >
-            <span class="heart-icon">&#9825;</span>
+            @if (isWishlisted()) {
+              <span class="heart-icon filled">&#9829;</span>
+            } @else {
+              <span class="heart-icon">&#9825;</span>
+            }
           </button>
         </div>
       </div>
@@ -346,9 +353,23 @@ import { CartService } from '../../../core/services/cart.service';
       .heart-icon {
         font-size: 1.25rem;
         color: var(--color-text-secondary);
+
+        &.filled {
+          color: var(--color-error);
+        }
       }
 
       &:hover {
+        background: var(--color-error-bg);
+        border-color: var(--color-error);
+
+        .heart-icon {
+          color: var(--color-error);
+        }
+      }
+
+      /* NAV-002: Wishlisted state */
+      &.wishlisted {
         background: var(--color-error-bg);
         border-color: var(--color-error);
 
@@ -364,11 +385,15 @@ export class ProductCardComponent {
   @Input() listView = false;
 
   private readonly cartService = inject(CartService);
+  private readonly wishlistService = inject(WishlistService);
 
   Math = Math;
   stars = [1, 2, 3, 4, 5];
   isAddingToCart = signal(false);
   addedToCart = signal(false);
+
+  // NAV-002: Check if product is in wishlist
+  isWishlisted = computed(() => this.wishlistService.isInWishlist(this.product?.id));
 
   addToCart(event: Event): void {
     event.preventDefault();
@@ -394,10 +419,10 @@ export class ProductCardComponent {
     });
   }
 
-  addToWishlist(event: Event): void {
+  // NAV-002: Toggle wishlist functionality
+  toggleWishlist(event: Event): void {
     event.preventDefault();
     event.stopPropagation();
-    // TODO: Implement wishlist service integration
-    console.log('Add to wishlist:', this.product.id);
+    this.wishlistService.toggleWishlist(this.product.id, this.product);
   }
 }

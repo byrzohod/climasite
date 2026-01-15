@@ -2,37 +2,170 @@
 
 ## Project Overview
 
-ClimaSite is an online shop specializing in air conditioners, heating systems, cooling equipment, and related HVAC (Heating, Ventilation, and Air Conditioning) products.
+ClimaSite is a production-grade online shop specializing in air conditioners, heating systems, cooling equipment, and related HVAC (Heating, Ventilation, and Air Conditioning) products. The platform supports multi-language (EN, BG, DE), multi-theme (light/dark), and provides a complete e-commerce experience.
+
+## Current Project Status
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Design System & Theming | Complete | Light/dark themes, CSS variables |
+| Internationalization | Complete | EN, BG, DE with ngx-translate |
+| Authentication | Complete | JWT with refresh tokens, Argon2 |
+| Product Catalog | Complete | Products, categories, variants |
+| Shopping Cart | Complete | Guest cart, cart merging |
+| Checkout & Orders | Complete | Stripe integration |
+| Admin Panel | Complete | CRUD, dashboard |
+| Reviews & Ratings | Complete | Q&A, verified purchases |
+| Translation Management | Complete | Admin UI for product translations |
+| **Bug Fixes (Plan 18)** | **Complete** | Category navigation, wishlist, auth timing, i18n, theme fixes |
+
+### Recently Completed (Plan 18)
+
+| Issue | Status | Solution |
+|-------|--------|----------|
+| NAV-001 | Fixed | Added `/products/category/:slug` route |
+| NAV-002 | Fixed | Created WishlistService and WishlistComponent |
+| AUTH-001 | Fixed | Added `authReady` signal to AuthService |
+| THEME-001 | Fixed | Corrected hardcoded colors, added CSS variables |
+| I18N-002 | Fixed | Added category translations to EN, BG, DE |
+
+---
 
 ## Tech Stack
 
-- **Backend**: ASP.NET Core with .NET 10
-- **Frontend**: Angular 19+ (latest LTS)
-- **Database**: PostgreSQL 16+
-- **ORM**: Entity Framework Core
-- **Cache**: Redis
-- **API**: RESTful with OpenAPI/Swagger documentation
-- **E2E Testing**: Playwright
-- **Unit Testing**: xUnit (backend), Jasmine/Karma (frontend)
+| Layer | Technology | Version |
+|-------|------------|---------|
+| **Backend** | ASP.NET Core | .NET 10 |
+| **Frontend** | Angular | 19+ (standalone components) |
+| **Database** | PostgreSQL | 16+ |
+| **ORM** | Entity Framework Core | 9.x |
+| **Cache** | Redis | 7.x |
+| **API** | RESTful | OpenAPI/Swagger |
+| **E2E Testing** | Playwright | Latest |
+| **Unit Testing** | xUnit (backend), Jasmine (frontend) | Latest |
+| **Payments** | Stripe | stripe-dotnet, @stripe/stripe-js |
+
+---
 
 ## Project Structure
 
 ```
 climasite/
 ├── src/
-│   ├── ClimaSite.Api/           # ASP.NET Core Web API
-│   ├── ClimaSite.Application/   # CQRS handlers, DTOs, validators
-│   ├── ClimaSite.Core/          # Domain models, interfaces
-│   ├── ClimaSite.Infrastructure/ # Data access, external services
-│   └── ClimaSite.Web/           # Angular frontend
+│   ├── ClimaSite.Api/              # ASP.NET Core Web API
+│   │   ├── Controllers/            # API controllers (REST endpoints)
+│   │   │   ├── Admin/              # Admin-only endpoints
+│   │   │   └── *.cs                # Public endpoints
+│   │   └── Program.cs              # App configuration
+│   │
+│   ├── ClimaSite.Application/      # Application layer (CQRS)
+│   │   ├── Features/               # Feature-based organization
+│   │   │   ├── Products/           # Product queries/commands
+│   │   │   ├── Orders/             # Order queries/commands
+│   │   │   ├── Auth/               # Authentication
+│   │   │   └── Admin/              # Admin operations
+│   │   ├── Common/                 # Shared DTOs, interfaces
+│   │   └── Behaviors/              # MediatR pipeline behaviors
+│   │
+│   ├── ClimaSite.Core/             # Domain layer
+│   │   ├── Entities/               # Domain entities
+│   │   ├── ValueObjects/           # Value objects
+│   │   ├── Interfaces/             # Repository interfaces
+│   │   └── Exceptions/             # Domain exceptions
+│   │
+│   ├── ClimaSite.Infrastructure/   # Infrastructure layer
+│   │   ├── Data/                   # EF Core DbContext, configs
+│   │   ├── Repositories/           # Repository implementations
+│   │   ├── Services/               # External service clients
+│   │   └── Migrations/             # EF Core migrations
+│   │
+│   └── ClimaSite.Web/              # Angular frontend
+│       └── src/
+│           ├── app/
+│           │   ├── core/           # Singleton services, guards
+│           │   │   ├── services/   # API services
+│           │   │   ├── models/     # TypeScript interfaces
+│           │   │   └── layout/     # Header, footer, layout
+│           │   ├── shared/         # Reusable components
+│           │   │   └── components/ # Buttons, cards, etc.
+│           │   ├── features/       # Feature modules
+│           │   │   ├── home/
+│           │   │   ├── products/
+│           │   │   ├── cart/
+│           │   │   ├── checkout/
+│           │   │   ├── account/
+│           │   │   └── admin/
+│           │   └── auth/           # Auth components, guards
+│           ├── assets/
+│           │   └── i18n/           # Translation JSON files
+│           ├── styles/
+│           │   ├── _colors.scss    # ONLY source of truth for colors
+│           │   └── styles.scss     # Global styles
+│           └── environments/       # Environment configs
+│
 ├── tests/
-│   ├── ClimaSite.Api.Tests/     # API integration tests
-│   ├── ClimaSite.Core.Tests/    # Domain unit tests
-│   ├── ClimaSite.E2E/           # Playwright E2E tests
-│   └── ClimaSite.Web.Tests/     # Angular unit tests
+│   ├── ClimaSite.Api.Tests/        # API integration tests
+│   ├── ClimaSite.Core.Tests/       # Domain unit tests
+│   ├── ClimaSite.E2E/              # Playwright E2E tests
+│   │   ├── fixtures/               # Test data factory
+│   │   ├── helpers/                # Utility functions
+│   │   └── tests/                  # Test files by feature
+│   └── ClimaSite.Web.Tests/        # Angular unit tests (karma.conf.js)
+│
 ├── docs/
-│   └── plans/                   # Feature implementation plans
-└── scripts/                     # Build and deployment scripts
+│   ├── plans/                      # Implementation plans (00-18)
+│   └── skills.md                   # Required skills documentation
+│
+└── scripts/                        # Build and deployment scripts
+```
+
+---
+
+## API Conventions
+
+### Endpoint Structure
+
+```
+/api/auth/*              # Authentication endpoints (public)
+/api/products/*          # Product endpoints (public)
+/api/categories/*        # Category endpoints (public)
+/api/cart/*              # Cart endpoints (public, uses session)
+/api/orders/*            # Order endpoints (requires auth)
+/api/account/*           # Account endpoints (requires auth)
+/api/admin/*             # Admin endpoints (requires Admin role)
+```
+
+### Common Response Patterns
+
+```csharp
+// Success with data
+return Ok(result);
+
+// Created with location header
+return CreatedAtAction(nameof(Get), new { id }, result);
+
+// Validation error
+return BadRequest(ProblemDetails);
+
+// Not found
+return NotFound();
+
+// Paginated response
+{
+  "items": [...],
+  "totalCount": 100,
+  "pageNumber": 1,
+  "pageSize": 12,
+  "totalPages": 9
+}
+```
+
+### Headers
+
+```
+Accept-Language: en|bg|de          # For translated content
+Authorization: Bearer <token>       # JWT access token
+X-Correlation-Id: <guid>           # Request tracking
 ```
 
 ---
@@ -58,10 +191,9 @@ climasite/
 2. **Self-contained tests** - Each test creates its own test data (users, products, orders)
 3. **Database cleanup** - Tests clean up after themselves using correlation IDs
 4. **Test isolation** - Tests must not depend on other tests or pre-existing data
+5. **Use `data-testid` attributes** - All interactive elements must have testids
 
 ### Test Data Factory Pattern
-
-Every E2E test must use the TestDataFactory to create real data:
 
 ```typescript
 // Example E2E test structure
@@ -83,14 +215,6 @@ test('user can complete checkout', async ({ page, request }) => {
 });
 ```
 
-### Before Marking Any Task Complete
-
-1. **Run ALL tests** - `dotnet test` and `npm test` and `npx playwright test`
-2. **Verify the app runs** - Start the app and manually verify the feature works
-3. **Check for console errors** - No JavaScript errors, no API errors
-4. **Test edge cases** - Empty states, error states, loading states
-5. **Test responsive design** - Mobile, tablet, desktop views
-
 ### Quality Checklist (MUST pass before completion)
 
 - [ ] All existing tests still pass
@@ -103,6 +227,8 @@ test('user can complete checkout', async ({ page, request }) => {
 - [ ] No TypeScript/ESLint errors
 - [ ] No C# compiler warnings
 - [ ] Database migrations run successfully
+- [ ] Works in BOTH light and dark themes
+- [ ] Works in ALL languages (EN, BG, DE)
 
 ---
 
@@ -117,23 +243,83 @@ test('user can complete checkout', async ({ page, request }) => {
 - Apply proper exception handling with ProblemDetails
 - **Write unit tests for every handler and service**
 
+```csharp
+// Example CQRS command
+public record CreateProductCommand(
+    string Name,
+    string Description,
+    decimal Price
+) : IRequest<Guid>;
+
+public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand, Guid>
+{
+    // Implementation
+}
+
+// Example validator
+public class CreateProductCommandValidator : AbstractValidator<CreateProductCommand>
+{
+    public CreateProductCommandValidator()
+    {
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
+        RuleFor(x => x.Price).GreaterThan(0);
+    }
+}
+```
+
 ### Frontend (Angular)
 
-- Use standalone components (no NgModules)
-- Use Angular Signals for reactive state management
-- Implement lazy loading for feature modules
-- Follow Angular style guide
-- Implement responsive design (mobile-first)
-- Use Tailwind CSS for styling
+- **Standalone components only** - NO NgModules
+- **Angular Signals for state** - NOT RxJS BehaviorSubjects
+- Implement lazy loading for feature routes
+- Use `inject()` function, not constructor injection
 - **All user-facing text must use i18n (ngx-translate)**
-- **Write unit tests for services and complex components**
+- Add `data-testid` attributes to all interactive elements
 
-### Theming & Colors
+```typescript
+// Example Angular component with Signals
+@Component({
+  selector: 'app-product-card',
+  standalone: true,
+  imports: [CommonModule, RouterLink, TranslateModule],
+  template: `...`
+})
+export class ProductCardComponent {
+  private readonly cartService = inject(CartService);
+
+  product = input.required<Product>();      // Signal input
+  isLoading = signal(false);                // Local signal
+
+  addToCart(): void {
+    this.isLoading.set(true);
+    this.cartService.addItem(this.product()).subscribe({
+      next: () => this.isLoading.set(false),
+      error: () => this.isLoading.set(false)
+    });
+  }
+}
+```
+
+### Theming & Colors (CRITICAL)
 
 - **ALL colors must be defined in `src/ClimaSite.Web/src/styles/_colors.scss`**
 - Use CSS custom properties for theme switching
 - Support light and dark themes
-- Never hardcode colors in components
+- **NEVER hardcode colors in components**
+
+```scss
+// CORRECT - Use CSS variables
+.button {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+// WRONG - Never do this
+.button {
+  background-color: #3b82f6;
+  color: white;
+}
+```
 
 ### Internationalization (i18n)
 
@@ -142,27 +328,54 @@ test('user can complete checkout', async ({ page, request }) => {
 - Translation files: `src/ClimaSite.Web/src/assets/i18n/{lang}.json`
 - Supported languages: EN (English), BG (Bulgarian), DE (German)
 
+```typescript
+// In template
+{{ 'products.title' | translate }}
+
+// With parameters
+{{ 'cart.items' | translate:{ count: itemCount } }}
+
+// In component
+constructor(private translate: TranslateService) {
+  this.translate.get('messages.success').subscribe(msg => {
+    // Use translated message
+  });
+}
+```
+
 ### Database
 
 - Use EF Core migrations for schema changes
-- Follow naming conventions: snake_case for PostgreSQL
+- Follow naming conventions: **snake_case for PostgreSQL**
 - Use JSONB for flexible attributes (product specifications)
 - Index frequently queried columns
 - Use soft deletes where appropriate
 
-### Code Style
+```csharp
+// JSONB column for specifications
+public class Product
+{
+    public Dictionary<string, object> Specifications { get; set; } = new();
+}
 
-- C#: Follow Microsoft coding conventions
-- TypeScript: Use ESLint with Angular recommended rules
-- Use meaningful variable and function names
-- Document public APIs with XML comments (C#) and JSDoc (TS)
+// In configuration
+builder.Property(p => p.Specifications)
+    .HasColumnType("jsonb")
+    .HasColumnName("specifications");
+```
 
 ### Git Workflow
 
 - Main branch: production-ready code
 - Feature branches: `feature/description`
 - Bug fixes: `fix/description`
-- Use conventional commits
+- Use conventional commits:
+  - `feat:` new feature
+  - `fix:` bug fix
+  - `refactor:` code refactoring
+  - `docs:` documentation
+  - `test:` tests
+  - `chore:` maintenance
 
 ---
 
@@ -170,38 +383,51 @@ test('user can complete checkout', async ({ page, request }) => {
 
 ```bash
 # Backend
-dotnet build
+dotnet build                                   # Build all projects
 dotnet test                                    # Run all backend tests
-dotnet run --project src/ClimaSite.Api
+dotnet run --project src/ClimaSite.Api         # Start API server (http://localhost:5000)
 
 # Frontend
 cd src/ClimaSite.Web
-npm install
-ng serve                                       # Start dev server
-ng test                                        # Run unit tests
+npm install                                    # Install dependencies
+ng serve                                       # Start dev server (http://localhost:4200)
+ng test                                        # Run unit tests (watch mode)
 ng test --watch=false --browsers=ChromeHeadless  # CI mode
-ng build --configuration=production
+ng build --configuration=production            # Production build
 
 # E2E Tests (Playwright)
 cd tests/ClimaSite.E2E
-npx playwright install                         # Install browsers
+npx playwright install                         # Install browsers (first time)
 npx playwright test                            # Run all E2E tests
 npx playwright test --ui                       # Interactive UI mode
-npx playwright test auth/                      # Run specific test folder
+npx playwright test tests/auth/                # Run specific folder
+npx playwright test -g "checkout"              # Run tests matching pattern
+npx playwright test --debug                    # Debug mode
 
 # Database
-dotnet ef migrations add <MigrationName> --project src/ClimaSite.Infrastructure
-dotnet ef database update --project src/ClimaSite.Infrastructure
+cd src/ClimaSite.Infrastructure
+dotnet ef migrations add <Name>                # Create migration
+dotnet ef database update                      # Apply migrations
+dotnet ef migrations remove                    # Remove last migration
 
 # Full Test Suite (run before any PR)
-dotnet test && cd src/ClimaSite.Web && ng test --watch=false && cd ../../tests/ClimaSite.E2E && npx playwright test
+dotnet test && \
+cd src/ClimaSite.Web && ng test --watch=false --browsers=ChromeHeadless && \
+cd ../../tests/ClimaSite.E2E && npx playwright test
+
+# Linting
+cd src/ClimaSite.Web
+ng lint                                        # Run ESLint
+
+# Generate Angular component
+ng generate component features/my-feature/components/my-component --standalone
 ```
 
 ---
 
 ## Environment Variables
 
-Store sensitive configuration in environment variables:
+Store sensitive configuration in environment variables or `appsettings.Development.json`:
 
 | Variable | Description |
 |----------|-------------|
@@ -211,6 +437,7 @@ Store sensitive configuration in environment variables:
 | `JWT_ISSUER` | JWT issuer URL |
 | `JWT_AUDIENCE` | JWT audience URL |
 | `STRIPE_SECRET_KEY` | Stripe API secret key |
+| `STRIPE_PUBLISHABLE_KEY` | Stripe publishable key (frontend) |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
 | `SMTP_HOST` | Email server host |
 | `SMTP_PORT` | Email server port |
@@ -227,6 +454,51 @@ Store sensitive configuration in environment variables:
 - Price changes should be logged for audit
 - Customer data must comply with GDPR
 - Reviews require order completion for "verified purchase" badge
+- Cart merges when guest user logs in
+
+---
+
+## Common Debugging Tips
+
+### Frontend Issues
+
+```typescript
+// Check if translations are loaded
+this.translate.get('test.key').subscribe(console.log);
+
+// Debug signal values
+console.log('Current value:', this.mySignal());
+
+// Check auth state
+console.log('Is authenticated:', this.authService.isAuthenticated());
+console.log('User:', this.authService.user());
+```
+
+### Backend Issues
+
+```csharp
+// Check request headers
+var lang = Request.Headers["Accept-Language"].FirstOrDefault();
+
+// Debug EF queries
+optionsBuilder.LogTo(Console.WriteLine, LogLevel.Information);
+
+// Check JWT claims
+var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+```
+
+### E2E Test Debugging
+
+```typescript
+// Pause test and inspect
+await page.pause();
+
+// Screenshot on failure
+await page.screenshot({ path: 'debug.png' });
+
+// Console logs
+page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+```
 
 ---
 
@@ -234,22 +506,24 @@ Store sensitive configuration in environment variables:
 
 All feature implementation plans are in `docs/plans/`:
 
-| Plan | Task IDs | Description |
-|------|----------|-------------|
-| 00-master-overview.md | - | Project overview and phases |
-| 01-design-system-theming.md | DST-001 to DST-015 | Colors, themes, components |
-| 02-internationalization-i18n.md | I18N-001 to I18N-015 | Multi-language support |
-| 03-authentication-user-management.md | AUTH-001 to AUTH-027 | JWT auth, users, roles |
-| 04-product-catalog.md | CAT-001 to CAT-030 | Products, categories, variants |
-| 05-shopping-cart.md | CART-001 to CART-020 | Cart, guest carts, merging |
-| 06-checkout-orders.md | CHK-001 to CHK-035 | Checkout, Stripe, orders |
-| 07-admin-panel.md | ADM-001 to ADM-030 | Admin dashboard, CRUD |
-| 08-testing-infrastructure.md | TEST-001 to TEST-020 | Test setup, patterns |
-| 09-inventory-management.md | INV-001 to INV-020 | Stock, reservations |
-| 10-search-navigation.md | SRCH-001 to SRCH-024 | Search, facets, filters |
-| 11-reviews-ratings.md | REV-001 to REV-022 | Reviews, ratings, moderation |
-| 12-notifications-system.md | NOT-001 to NOT-020 | Email, in-app notifications |
-| 13-wishlist.md | WISH-001 to WISH-019 | Wishlist, sharing |
+| Plan | Task IDs | Description | Status |
+|------|----------|-------------|--------|
+| 00-master-overview.md | - | Project overview and phases | Reference |
+| 01-design-system-theming.md | DST-001 to DST-015 | Colors, themes, components | Complete |
+| 02-internationalization-i18n.md | I18N-001 to I18N-015 | Multi-language support | Complete |
+| 03-authentication-user-management.md | AUTH-001 to AUTH-027 | JWT auth, users, roles | Complete |
+| 04-product-catalog.md | CAT-001 to CAT-030 | Products, categories, variants | Complete |
+| 05-shopping-cart.md | CART-001 to CART-020 | Cart, guest carts, merging | Complete |
+| 06-checkout-orders.md | CHK-001 to CHK-035 | Checkout, Stripe, orders | Complete |
+| 07-admin-panel.md | ADM-001 to ADM-030 | Admin dashboard, CRUD | Complete |
+| 08-testing-infrastructure.md | TEST-001 to TEST-020 | Test setup, patterns | Complete |
+| 09-inventory-management.md | INV-001 to INV-020 | Stock, reservations | Complete |
+| 10-search-navigation.md | SRCH-001 to SRCH-024 | Search, facets, filters | Complete |
+| 11-reviews-ratings.md | REV-001 to REV-022 | Reviews, ratings, moderation | Complete |
+| 12-notifications-system.md | NOT-001 to NOT-020 | Email, in-app notifications | Partial |
+| 13-wishlist.md | WISH-001 to WISH-019 | Wishlist, sharing | Not Started |
+| 17-future-enhancements.md | Various | Related products, translations | Complete |
+| **18-bug-fixes-and-enhancements.md** | NAV, AUTH, I18N, THEME, HOME, FILTER | **Bug fixes and improvements** | **Pending** |
 
 ---
 
@@ -267,5 +541,34 @@ A feature is ONLY complete when:
 8. **Accessible** - Keyboard navigation, screen reader support
 9. **i18n ready** - All text uses translation keys
 10. **Themed** - Uses centralized color variables
+11. **Works in both themes** - Verified in light AND dark mode
+12. **Works in all languages** - Verified in EN, BG, and DE
 
 **DO NOT mark a task as complete until ALL of these are verified.**
+
+---
+
+## Quick Reference
+
+### File Locations
+
+| What | Where |
+|------|-------|
+| Colors/Themes | `src/ClimaSite.Web/src/styles/_colors.scss` |
+| Translations | `src/ClimaSite.Web/src/assets/i18n/*.json` |
+| API Controllers | `src/ClimaSite.Api/Controllers/` |
+| CQRS Handlers | `src/ClimaSite.Application/Features/` |
+| Domain Entities | `src/ClimaSite.Core/Entities/` |
+| EF Configs | `src/ClimaSite.Infrastructure/Data/Configurations/` |
+| E2E Tests | `tests/ClimaSite.E2E/tests/` |
+| Test Factory | `tests/ClimaSite.E2E/fixtures/test-data-factory.ts` |
+| Plans | `docs/plans/` |
+
+### Important URLs (Development)
+
+| Service | URL |
+|---------|-----|
+| Angular Frontend | http://localhost:4200 |
+| API Backend | http://localhost:5000 |
+| Swagger UI | http://localhost:5000/swagger |
+| Playwright Report | http://localhost:9323 |

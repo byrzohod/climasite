@@ -25,12 +25,13 @@ import { LoadingComponent } from '../../../shared/components/loading/loading.com
   ],
   template: `
     <div class="product-list-page">
-      <div class="breadcrumb">
+      <!-- NAV-001 FIX: Updated breadcrumb to use route-based category navigation -->
+      <div class="breadcrumb" data-testid="breadcrumb">
         <a routerLink="/">{{ 'nav.home' | translate }}</a>
         @if (category()) {
           <span class="separator">/</span>
           @for (ancestor of categoryAncestors(); track ancestor.id) {
-            <a [routerLink]="['/categories', ancestor.slug]">{{ ancestor.name }}</a>
+            <a [routerLink]="['/products/category', ancestor.slug]">{{ ancestor.name }}</a>
             <span class="separator">/</span>
           }
           <span class="current">{{ category()?.name }}</span>
