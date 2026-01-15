@@ -396,18 +396,45 @@ export class MegaMenuComponent implements OnInit {
   }
 
   loadCategories(): void {
-    // Load mock categories for now until the API is available
-    this.categories.set(this.getMockCategories());
+    // NAV-001 FIX: Load categories from API to get correct slugs
+    this.isLoading.set(true);
+    this.categoryService.getCategoryTree().subscribe({
+      next: (data) => {
+        // Transform API data to include translation keys for names
+        const categoriesWithTranslations = this.addTranslationKeys(data);
+        this.categories.set(categoriesWithTranslations);
+        this.isLoading.set(false);
+      },
+      error: () => {
+        // Fallback to mock categories if API fails
+        this.categories.set(this.getMockCategories());
+        this.isLoading.set(false);
+      }
+    });
+  }
 
-    // Uncomment when API is ready:
-    // this.isLoading.set(true);
-    // this.categoryService.getCategoryTree().subscribe({
-    //   next: (data) => {
-    //     this.categories.set(data);
-    //     this.isLoading.set(false);
-    //   },
-    //   error: () => this.isLoading.set(false)
-    // });
+  // Helper to add translation keys to category names
+  private addTranslationKeys(categories: CategoryTree[]): CategoryTree[] {
+    const slugToTranslationKey: Record<string, string> = {
+      'air-conditioners': 'categories.airConditioning',
+      'split-air-conditioners': 'categories.wallMountedAC',
+      'window-air-conditioners': 'categories.floorAC',
+      'portable-air-conditioners': 'categories.cassetteAC',
+      'central-air-conditioning': 'categories.ductedAC',
+      'heating-systems': 'categories.heatingSystems',
+      'heat-pumps': 'categories.heatPumps',
+      'electric-heaters': 'categories.electricHeaters',
+      'gas-furnaces': 'categories.gasHeaters',
+      'radiators': 'categories.radiators',
+      'ventilation': 'categories.ventilation',
+      'accessories': 'categories.accessories'
+    };
+
+    return categories.map(cat => ({
+      ...cat,
+      name: slugToTranslationKey[cat.slug] || cat.name,
+      children: cat.children ? this.addTranslationKeys(cat.children) : []
+    }));
   }
 
   openMenu(): void {

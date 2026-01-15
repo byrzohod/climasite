@@ -392,8 +392,11 @@ export class ProductCardComponent {
   isAddingToCart = signal(false);
   addedToCart = signal(false);
 
-  // NAV-002: Check if product is in wishlist
-  isWishlisted = computed(() => this.wishlistService.isInWishlist(this.product?.id));
+  // NAV-002: Check if product is in wishlist - must access items() signal for reactivity
+  isWishlisted = computed(() => {
+    const items = this.wishlistService.items();
+    return items.some(item => item.productId === this.product?.id);
+  });
 
   addToCart(event: Event): void {
     event.preventDefault();

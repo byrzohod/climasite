@@ -304,10 +304,6 @@
     "expectedRestock": "Expected restock: {{date}}",
     "estimatedArrival": "Estimated arrival"
   },
-  "common": {
-    "items": "items",
-    "loading": "Loading..."
-  },
   "cart": {
     "title": "Shopping Cart",
     "empty": "Your cart is empty",
@@ -537,12 +533,25 @@
       "subtitle": "Discover premium HVAC solutions for your home and business",
       "cta": "Shop Now"
     },
+    "slides": {
+      "summer": {
+        "title": "Stay Cool This Summer",
+        "subtitle": "Premium air conditioners with energy-efficient technology",
+        "cta": "Shop Air Conditioners"
+      },
+      "winter": {
+        "title": "Warm Up Your Home",
+        "subtitle": "Efficient heating systems for the coldest days",
+        "cta": "Shop Heating Systems"
+      }
+    },
     "featured": {
       "title": "Featured Products",
       "viewAll": "View All Products"
     },
     "categories": {
-      "title": "Shop by Category"
+      "title": "Shop by Category",
+      "viewProducts": "View Products"
     },
     "benefits": {
       "title": "Why Choose ClimaSite",
@@ -554,6 +563,32 @@
       "supportDesc": "24/7 customer service",
       "installation": "Professional Installation",
       "installationDesc": "By certified technicians"
+    },
+    "promo": {
+      "sale": {
+        "title": "Winter Sale",
+        "description": "Up to 30% off on selected items"
+      },
+      "new": {
+        "title": "New Arrivals",
+        "description": "Check out the latest products"
+      },
+      "bundle": {
+        "title": "Bundle Deals",
+        "description": "Save more when you buy together"
+      }
+    },
+    "newsletter": {
+      "title": "Stay Updated",
+      "subtitle": "Subscribe to our newsletter for exclusive deals and updates",
+      "placeholder": "Enter your email",
+      "subscribe": "Subscribe"
+    },
+    "trust": {
+      "customers": "Happy Customers",
+      "products": "Products",
+      "years": "Years Experience",
+      "rating": "Customer Rating"
     }
   },
   "contact": {

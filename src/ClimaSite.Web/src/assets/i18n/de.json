@@ -304,10 +304,6 @@
     "expectedRestock": "Erwarteter Nachschub: {{date}}",
     "estimatedArrival": "Voraussichtliche Ankunft"
   },
-  "common": {
-    "items": "Artikel",
-    "loading": "Laden..."
-  },
   "cart": {
     "title": "Warenkorb",
     "empty": "Ihr Warenkorb ist leer",
@@ -537,12 +533,67 @@
       "subtitle": "Entdecken Sie hochwertige HLK-Lösungen für Ihr Zuhause und Unternehmen",
       "cta": "Jetzt einkaufen"
     },
+    "slides": {
+      "slide1": {
+        "title": "Premium Klimaanlagen",
+        "subtitle": "Energieeffiziente Kühlung für Ihr Zuhause mit modernster Inverter-Technologie",
+        "cta": "Klimaanlagen Entdecken"
+      },
+      "slide2": {
+        "title": "Professionelle Installation",
+        "subtitle": "Experteninstallation durch zertifizierte Techniker mit Garantie",
+        "cta": "Mehr Erfahren"
+      },
+      "slide3": {
+        "title": "Winterangebote",
+        "subtitle": "Bis zu 30% Rabatt auf ausgewählte Heizsysteme und Wärmepumpen",
+        "cta": "Angebote Ansehen"
+      }
+    },
     "featured": {
       "title": "Empfohlene Produkte",
       "viewAll": "Alle Produkte anzeigen"
     },
     "categories": {
-      "title": "Nach Kategorie einkaufen"
+      "title": "Nach Kategorie einkaufen",
+      "viewProducts": "Produkte Anzeigen"
+    },
+    "promo": {
+      "delivery": {
+        "title": "Kostenlose Lieferung",
+        "description": "Kostenloser Versand bei Bestellungen über 500€"
+      },
+      "support": {
+        "title": "24/7 Support",
+        "description": "Rund um die Uhr verfügbare Expertenunterstützung"
+      },
+      "warranty": {
+        "title": "5 Jahre Garantie",
+        "description": "Erweiterte Garantie auf alle Produkte"
+      },
+      "installation": {
+        "title": "Profi-Installation",
+        "description": "Zertifizierte Techniker für die Einrichtung"
+      }
+    },
+    "newsletter": {
+      "title": "Auf dem Laufenden bleiben",
+      "subtitle": "Abonnieren Sie unseren Newsletter für exklusive Angebote und HLK-Tipps",
+      "placeholder": "Ihre E-Mail-Adresse eingeben",
+      "button": "Abonnieren",
+      "success": "Vielen Dank für Ihr Abonnement!",
+      "error": "Bitte geben Sie eine gültige E-Mail-Adresse ein"
+    },
+    "trust": {
+      "title": "Warum uns Kunden Vertrauen",
+      "reviews": "Kundenbewertungen",
+      "reviewsCount": "Über 10.000 zufriedene Kunden",
+      "guarantee": "Geld-zurück-Garantie",
+      "guaranteeText": "30 Tage Rückgaberecht",
+      "secure": "Sicheres Einkaufen",
+      "secureText": "SSL-verschlüsselte Zahlung",
+      "delivery": "Schnelle Lieferung",
+      "deliveryText": "2-5 Werktage deutschlandweit"
     },
     "benefits": {
       "title": "Warum ClimaSite wählen",
