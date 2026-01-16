@@ -608,9 +608,10 @@
       "title": "Auf dem Laufenden bleiben",
       "subtitle": "Abonnieren Sie unseren Newsletter für exklusive Angebote und HLK-Tipps",
       "placeholder": "Ihre E-Mail-Adresse eingeben",
-      "button": "Abonnieren",
+      "subscribe": "Abonnieren",
       "success": "Vielen Dank für Ihr Abonnement!",
-      "error": "Bitte geben Sie eine gültige E-Mail-Adresse ein"
+      "errorRequired": "Bitte geben Sie Ihre E-Mail-Adresse ein",
+      "errorInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein"
     },
     "trust": {
       "title": "Warum uns Kunden Vertrauen",

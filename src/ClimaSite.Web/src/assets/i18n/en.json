@@ -610,7 +610,10 @@
       "title": "Stay Updated",
       "subtitle": "Subscribe to our newsletter for exclusive deals and updates",
       "placeholder": "Enter your email",
-      "subscribe": "Subscribe"
+      "subscribe": "Subscribe",
+      "success": "Thank you for subscribing!",
+      "errorRequired": "Please enter your email address",
+      "errorInvalid": "Please enter a valid email address"
     },
     "trust": {
       "customers": "Happy Customers",

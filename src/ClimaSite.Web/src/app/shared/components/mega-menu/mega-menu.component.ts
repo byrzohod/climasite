@@ -10,12 +10,15 @@ import { CategoryTree } from '../../../core/models/category.model';
   standalone: true,
   imports: [CommonModule, RouterModule, TranslateModule],
   template: `
-    <div class="mega-menu-wrapper">
+    <div
+      class="mega-menu-wrapper"
+      (mouseenter)="onWrapperMouseEnter()"
+      (mouseleave)="onWrapperMouseLeave()"
+    >
       <!-- Trigger Button -->
       <button
         type="button"
         class="mega-menu-trigger"
-        (mouseenter)="openMenu()"
         (click)="toggleMenu()"
         [attr.aria-expanded]="isOpen()"
         aria-haspopup="true"
@@ -27,13 +30,17 @@ import { CategoryTree } from '../../../core/models/category.model';
         </svg>
       </button>
 
+      <!-- Hover bridge to connect trigger to dropdown -->
+      @if (isOpen()) {
+        <div class="hover-bridge"></div>
+      }
+
       <!-- Mega Menu Dropdown -->
       @if (isOpen()) {
         <div
           class="mega-menu"
           [style.left.px]="menuLeftPosition()"
           [class.menu-positioned]="menuLeftPosition() !== null"
-          (mouseleave)="closeMenu()"
           data-testid="mega-menu-dropdown"
         >
           <div class="mega-menu-container">
@@ -130,6 +137,19 @@ import { CategoryTree } from '../../../core/models/category.model';
   styles: [`
     .mega-menu-wrapper {
       position: relative;
+      /* Ensure wrapper captures all hover events */
+      display: inline-block;
+    }
+
+    /* Invisible bridge connecting trigger to dropdown */
+    .hover-bridge {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      height: 8px;
+      /* Invisible but captures mouse events */
+      background: transparent;
     }
 
     .mega-menu-trigger {
@@ -528,6 +548,20 @@ export class MegaMenuComponent implements OnInit, AfterViewInit {
     }));
   }
 
+  // MENU-001 FIX: Handle hover on the entire wrapper to prevent gaps
+  onWrapperMouseEnter(): void {
+    if (this.closeTimeout) {
+      clearTimeout(this.closeTimeout);
+      this.closeTimeout = null;
+    }
+    this.openMenu();
+  }
+
+  // MENU-001 FIX: Delayed close when leaving wrapper
+  onWrapperMouseLeave(): void {
+    this.scheduleClose();
+  }
+
   openMenu(): void {
     if (this.closeTimeout) {
       clearTimeout(this.closeTimeout);
@@ -541,13 +575,28 @@ export class MegaMenuComponent implements OnInit, AfterViewInit {
     }
   }
 
-  closeMenu(): void {
+  // MENU-001 FIX: Schedule close with short delay for smoother UX
+  private scheduleClose(): void {
+    if (this.closeTimeout) {
+      clearTimeout(this.closeTimeout);
+    }
     this.closeTimeout = setTimeout(() => {
       this.isOpen.set(false);
       this.activeCategory.set(null);
       this.menuLeftPosition.set(null);
       this.menuClosed.emit();
-    }, 200);
+    }, 100); // Shorter delay for snappier response
+  }
+
+  closeMenu(): void {
+    if (this.closeTimeout) {
+      clearTimeout(this.closeTimeout);
+      this.closeTimeout = null;
+    }
+    this.isOpen.set(false);
+    this.activeCategory.set(null);
+    this.menuLeftPosition.set(null);
+    this.menuClosed.emit();
   }
 
   toggleMenu(): void {

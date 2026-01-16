@@ -174,7 +174,7 @@ export class WishlistService {
    * Sync add operation to API
    */
   private syncAddToApi(productId: string): void {
-    this.http.post(`${this.apiUrl}/api/wishlist/items`, { productId }).pipe(
+    this.http.post(`${this.apiUrl}/api/wishlist/items/${productId}`, {}).pipe(
       catchError(() => of(null))
     ).subscribe();
   }
