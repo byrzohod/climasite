@@ -94,6 +94,7 @@
     "onSale": "Im Angebot",
     "bestsellers": "Bestseller",
     "noProducts": "Keine Produkte gefunden",
+    "searchResults": "Suchergebnisse für",
     "noImage": "Kein Bild",
     "outOfStock": "Nicht verfügbar",
     "similar": {
@@ -351,6 +352,8 @@
       "postalCode": "Postleitzahl",
       "phone": "Telefonnummer",
       "saveAddress": "Diese Adresse für zukünftige Bestellungen speichern",
+      "useSavedAddress": "Gespeicherte Adresse verwenden",
+      "orEnterNew": "oder neue Adresse eingeben",
       "method": "Versandart",
       "standard": "Standardversand",
       "standardTime": "5-7 Tage",
@@ -368,7 +371,9 @@
       "cvv": "CVV",
       "nameOnCard": "Name auf der Karte",
       "paypal": "PayPal",
-      "bank": "Banküberweisung"
+      "bank": "Banküberweisung",
+      "cardDetails": "Kartendetails",
+      "loadingStripe": "Zahlungsformular wird geladen..."
     },
     "review": {
       "title": "Bestellung überprüfen",
@@ -471,8 +476,31 @@
     "addresses": {
       "title": "Gespeicherte Adressen",
       "addNew": "Neue Adresse hinzufügen",
+      "addAddress": "Adresse hinzufügen",
+      "editAddress": "Adresse bearbeiten",
       "default": "Standard",
-      "makeDefault": "Als Standard festlegen"
+      "makeDefault": "Als Standardadresse festlegen",
+      "setAsDefault": "Als Standard festlegen",
+      "edit": "Bearbeiten",
+      "delete": "Löschen",
+      "noAddresses": "Keine gespeicherten Adressen",
+      "noAddressesDescription": "Sie haben noch keine Adressen gespeichert. Fügen Sie Ihre erste Adresse hinzu, um den Checkout zu beschleunigen.",
+      "addFirstAddress": "Erste Adresse hinzufügen",
+      "fullName": "Vollständiger Name",
+      "addressLine1": "Adresszeile 1",
+      "addressLine2": "Adresszeile 2 (Optional)",
+      "city": "Stadt",
+      "state": "Bundesland",
+      "postalCode": "Postleitzahl",
+      "country": "Land",
+      "selectCountry": "Land auswählen",
+      "phone": "Telefonnummer",
+      "type": "Adresstyp",
+      "typeShipping": "Lieferadresse",
+      "typeBilling": "Rechnungsadresse",
+      "typeBoth": "Beides",
+      "confirmDelete": "Adresse löschen",
+      "confirmDeleteMessage": "Sind Sie sicher, dass Sie diese Adresse löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
     },
     "profile": {
       "title": "Profileinstellungen",
@@ -631,7 +659,8 @@
       "hoursValue": "Mo-Fr: 9:00 - 18:00 Uhr"
     },
     "map": {
-      "title": "Finden Sie uns"
+      "title": "Finden Sie uns",
+      "viewLarger": "Größere Karte anzeigen"
     }
   },
   "about": {
@@ -848,7 +877,12 @@
   },
   "categories": {
     "airConditioning": "Klimaanlage",
+    "splitAirConditioners": "Split-Klimaanlagen",
+    "windowAirConditioners": "Fenster-Klimaanlagen",
+    "portableAirConditioners": "Mobile Klimaanlagen",
+    "centralAirConditioning": "Zentrale Klimaanlage",
     "wallMountedAc": "Wandklimaanlagen",
+    "wallMountedAC": "Wandklimaanlagen",
     "multiSplit": "Multi-Split-Systeme",
     "floorAc": "Bodenklimaanlagen",
     "cassetteAc": "Kassettenklimaanlagen",
@@ -876,6 +910,8 @@
     "uvSterilizers": "UV-Sterilisatoren",
     "waterSofteners": "Wasserenthärter",
     "consumables": "Verbrauchsmaterial",
+    "filters": "Filter",
+    "thermostats": "Thermostate",
     "accessories": "Zubehör",
     "remoteControls": "Fernbedienungen",
     "installationKits": "Installationskits",
@@ -895,6 +931,16 @@
     "remove": "Von Wunschliste entfernen",
     "addedToWishlist": "Zur Wunschliste hinzugefügt",
     "removedFromWishlist": "Von Wunschliste entfernt"
+  },
+  "profile": {
+    "phone": "Telefonnummer",
+    "phonePlaceholder": "Telefonnummer eingeben",
+    "emailHint": "E-Mail kann nicht geändert werden",
+    "updateSuccess": "Profil erfolgreich aktualisiert",
+    "currentPassword": "Aktuelles Passwort",
+    "newPassword": "Neues Passwort",
+    "updatePassword": "Passwort ändern",
+    "passwordSuccess": "Passwort erfolgreich geändert"
   },
   "specs": {
     "cooling_capacity": "Kühlleistung",

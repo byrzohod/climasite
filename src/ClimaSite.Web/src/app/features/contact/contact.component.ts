@@ -136,6 +136,30 @@ import { TranslateModule } from '@ngx-translate/core';
               <p>{{ 'contact.info.hoursValue' | translate }}</p>
             </div>
           </div>
+
+          <!-- Map Section -->
+          <div class="map-section">
+            <h3>{{ 'contact.map.title' | translate }}</h3>
+            <div class="map-container" data-testid="contact-map">
+              <iframe
+                width="100%"
+                height="300"
+                frameborder="0"
+                scrolling="no"
+                marginheight="0"
+                marginwidth="0"
+                src="https://www.openstreetmap.org/export/embed.html?bbox=23.30%2C42.68%2C23.35%2C42.72&layer=mapnik&marker=42.6977%2C23.3219"
+                title="ClimaSite Location"
+                loading="lazy">
+              </iframe>
+              <a href="https://www.openstreetmap.org/?mlat=42.6977&mlon=23.3219#map=15/42.6977/23.3219"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 class="map-link">
+                {{ 'contact.map.viewLarger' | translate }}
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -288,6 +312,45 @@ import { TranslateModule } from '@ngx-translate/core';
         p {
           color: var(--color-text-secondary);
           margin: 0;
+        }
+      }
+    }
+
+    .map-section {
+      margin-top: 2rem;
+
+      h3 {
+        font-size: 1.25rem;
+        color: var(--color-text-primary);
+        margin-bottom: 1rem;
+      }
+    }
+
+    .map-container {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--color-border);
+      background: var(--color-bg-secondary);
+
+      iframe {
+        display: block;
+        border: none;
+      }
+
+      .map-link {
+        display: block;
+        padding: 0.75rem 1rem;
+        background: var(--color-bg-primary);
+        color: var(--color-primary);
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-align: center;
+        border-top: 1px solid var(--color-border);
+        transition: background-color 0.2s;
+
+        &:hover {
+          background: var(--color-bg-secondary);
         }
       }
     }

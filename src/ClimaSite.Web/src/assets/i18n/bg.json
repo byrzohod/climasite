@@ -94,6 +94,7 @@
     "onSale": "В промоция",
     "bestsellers": "Бестселъри",
     "noProducts": "Няма намерени продукти",
+    "searchResults": "Резултати от търсенето за",
     "noImage": "Няма изображение",
     "outOfStock": "Изчерпано",
     "similar": {
@@ -351,6 +352,8 @@
       "postalCode": "Пощенски код",
       "phone": "Телефон",
       "saveAddress": "Запази този адрес за бъдещи поръчки",
+      "useSavedAddress": "Използвай запазен адрес",
+      "orEnterNew": "или въведи нов адрес",
       "method": "Метод на доставка",
       "standard": "Стандартна доставка",
       "standardTime": "5-7 дни",
@@ -368,7 +371,9 @@
       "cvv": "CVV",
       "nameOnCard": "Име на картата",
       "paypal": "PayPal",
-      "bank": "Банков превод"
+      "bank": "Банков превод",
+      "cardDetails": "Данни за картата",
+      "loadingStripe": "Зареждане на формата за плащане..."
     },
     "review": {
       "title": "Преглед на поръчката",
@@ -471,8 +476,31 @@
     "addresses": {
       "title": "Запазени адреси",
       "addNew": "Добави нов адрес",
+      "addAddress": "Добави адрес",
+      "editAddress": "Редактирай адрес",
       "default": "По подразбиране",
-      "makeDefault": "Направи основен"
+      "makeDefault": "Направи основен адрес",
+      "setAsDefault": "Направи основен",
+      "edit": "Редактирай",
+      "delete": "Изтрий",
+      "noAddresses": "Няма запазени адреси",
+      "noAddressesDescription": "Все още нямате запазени адреси. Добавете първия си адрес за по-бързо плащане.",
+      "addFirstAddress": "Добави първия адрес",
+      "fullName": "Име и фамилия",
+      "addressLine1": "Адрес ред 1",
+      "addressLine2": "Адрес ред 2 (по избор)",
+      "city": "Град",
+      "state": "Област",
+      "postalCode": "Пощенски код",
+      "country": "Държава",
+      "selectCountry": "Изберете държава",
+      "phone": "Телефонен номер",
+      "type": "Тип адрес",
+      "typeShipping": "За доставка",
+      "typeBilling": "За фактуриране",
+      "typeBoth": "И двете",
+      "confirmDelete": "Изтриване на адрес",
+      "confirmDeleteMessage": "Сигурни ли сте, че искате да изтриете този адрес? Това действие не може да бъде отменено."
     },
     "profile": {
       "title": "Настройки на профила",
@@ -615,7 +643,8 @@
       "hoursValue": "Пон-Пет: 9:00 - 18:00"
     },
     "map": {
-      "title": "Намерете ни"
+      "title": "Намерете ни",
+      "viewLarger": "Виж по-голяма карта"
     }
   },
   "about": {
@@ -832,11 +861,15 @@
   },
   "categories": {
     "airConditioning": "Климатизация",
-    "wallMountedAc": "Стенни климатици",
+    "splitAirConditioners": "Сплит климатици",
+    "windowAirConditioners": "Прозоречни климатици",
+    "portableAirConditioners": "Преносими климатици",
+    "centralAirConditioning": "Централна климатизация",
+    "wallMountedAC": "Стенни климатици",
     "multiSplit": "Мулти сплит системи",
-    "floorAc": "Подови климатици",
-    "cassetteAc": "Касетъчни климатици",
-    "ductedAc": "Канални климатици",
+    "floorAC": "Подови климатици",
+    "cassetteAC": "Касетъчни климатици",
+    "ductedAC": "Канални климатици",
     "heatPumps": "Термопомпи",
     "airPurifiers": "Пречистватели на въздух",
     "dehumidifiers": "Обезвлажнители",
@@ -866,7 +899,9 @@
     "copperPipes": "Медни тръби",
     "refrigerants": "Хладилни агенти",
     "bracketsMounts": "Стойки и конзоли",
-    "drainPumps": "Дренажни помпи"
+    "drainPumps": "Дренажни помпи",
+    "filters": "Филтри",
+    "thermostats": "Термостати"
   },
   "wishlist": {
     "title": "Любими",
@@ -879,6 +914,16 @@
     "remove": "Премахни от любими",
     "addedToWishlist": "Добавено в любими",
     "removedFromWishlist": "Премахнато от любими"
+  },
+  "profile": {
+    "phone": "Телефонен номер",
+    "phonePlaceholder": "Въведете телефонен номер",
+    "emailHint": "Имейлът не може да бъде променен",
+    "updateSuccess": "Профилът е обновен успешно",
+    "currentPassword": "Текуща парола",
+    "newPassword": "Нова парола",
+    "updatePassword": "Промени парола",
+    "passwordSuccess": "Паролата е променена успешно"
   },
   "specs": {
     "cooling_capacity": "Охлаждаща мощност",

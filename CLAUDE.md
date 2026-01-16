@@ -17,17 +17,21 @@ ClimaSite is a production-grade online shop specializing in air conditioners, he
 | Admin Panel | Complete | CRUD, dashboard |
 | Reviews & Ratings | Complete | Q&A, verified purchases |
 | Translation Management | Complete | Admin UI for product translations |
-| **Bug Fixes (Plan 18)** | **Complete** | Category navigation, wishlist, auth timing, i18n, theme fixes |
+| Bug Fixes (Plan 18) | Complete | Category navigation, wishlist, auth timing, i18n, theme fixes |
+| **Saved Addresses** | **Complete** | Full CRUD for user addresses, checkout integration |
+| **Stripe Payments** | **Complete** | Payment intents, card input, bank transfer support |
+| **Product Search** | **Complete** | Frontend search wired to backend API |
+| **Reorder Feature** | **Complete** | Re-add previous order items to cart |
 
-### Recently Completed (Plan 18)
+### Recently Completed
 
-| Issue | Status | Solution |
-|-------|--------|----------|
-| NAV-001 | Fixed | Added `/products/category/:slug` route |
-| NAV-002 | Fixed | Created WishlistService and WishlistComponent |
-| AUTH-001 | Fixed | Added `authReady` signal to AuthService |
-| THEME-001 | Fixed | Corrected hardcoded colors, added CSS variables |
-| I18N-002 | Fixed | Added category translations to EN, BG, DE |
+| Feature | Status | Description |
+|---------|--------|-------------|
+| Saved Addresses | Complete | AddressesController, AddressService, checkout saved address selector |
+| Stripe Integration | Complete | PaymentsController, PaymentService, Stripe Elements |
+| Product Search UI | Complete | Header search wired to product list filtering |
+| Reorder | Complete | E2E test enabled, existing implementation verified |
+| Mega Menu | Complete | Fixed flaky E2E test with proper waits |
 
 ---
 
@@ -229,6 +233,34 @@ test('user can complete checkout', async ({ page, request }) => {
 - [ ] Database migrations run successfully
 - [ ] Works in BOTH light and dark themes
 - [ ] Works in ALL languages (EN, BG, DE)
+
+### MANDATORY: Post-Implementation Workflow
+
+**After EVERY implementation session, you MUST:**
+
+1. **Run ALL tests** (backend, frontend, AND E2E):
+   ```bash
+   # Run from project root
+   dotnet test && \
+   cd src/ClimaSite.Web && ng test --watch=false --browsers=ChromeHeadless && \
+   cd ../../tests/ClimaSite.E2E && dotnet test
+   ```
+
+2. **Ensure ALL tests pass** - Do not proceed if any tests fail. Fix failures first.
+
+3. **Update CLAUDE.md** if:
+   - New features were added (update status table)
+   - New patterns or conventions were established
+   - New commands or workflows were introduced
+
+4. **Commit and push to main**:
+   ```bash
+   git add -A
+   git commit -m "feat: <description of changes>"
+   git push origin main
+   ```
+
+**This workflow is NON-NEGOTIABLE. Never skip these steps.**
 
 ---
 

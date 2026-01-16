@@ -88,6 +88,7 @@ export interface CreateOrderRequest {
   billingAddress?: Address;
   shippingMethod: string;
   paymentMethod?: string;
+  paymentIntentId?: string;
   guestSessionId?: string;
   notes?: string;
 }

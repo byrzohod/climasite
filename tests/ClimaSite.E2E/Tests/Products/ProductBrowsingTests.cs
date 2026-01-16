@@ -76,11 +76,44 @@ public class ProductBrowsingTests : IAsyncLifetime
         price.Should().Be(1299.99m);
     }
 
-    [Fact(Skip = "Search functionality requires backend search indexing")]
+    [Fact]
     public async Task ProductSearch_FindsMatchingProducts()
     {
-        // This test requires full-text search which may not be immediately indexed
-        await Task.CompletedTask;
+        // Arrange - Create a product with a unique searchable name
+        var uniqueName = $"UniqueSearchTest-{Guid.NewGuid().ToString().Substring(0, 8)}";
+        await _dataFactory.CreateProductAsync(name: uniqueName, price: 999.99m);
+
+        // Navigate to homepage
+        await _page.GotoAsync("/");
+        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        // Wait for search input to be ready
+        await _page.WaitForSelectorAsync("[data-testid='search-input']", new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+
+        // Act - Enter search query
+        await _page.FillAsync("[data-testid='search-input']", uniqueName);
+
+        // Submit by pressing Enter (more reliable than clicking button)
+        await _page.PressAsync("[data-testid='search-input']", "Enter");
+
+        // Wait for navigation to products page with search param
+        await _page.WaitForURLAsync(url => url.Contains("/products") && url.Contains("search="), new PageWaitForURLOptions { Timeout = 10000 });
+
+        // Assert - Verify we're on the search results page
+        _page.Url.Should().Contain("/products");
+        _page.Url.Should().Contain("search=");
+
+        // Wait for products to load
+        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        // Verify search results title is visible
+        var searchTitle = _page.Locator("[data-testid='search-results-title']");
+        await Assertions.Expect(searchTitle).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+
+        // Verify a product card is displayed (our created product should match)
+        var productCards = _page.Locator("[data-testid='product-card']");
+        var count = await productCards.CountAsync();
+        count.Should().BeGreaterThanOrEqualTo(1, "Search should find the created product");
     }
 
     [Fact]

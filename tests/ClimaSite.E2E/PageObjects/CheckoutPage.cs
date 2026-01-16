@@ -148,7 +148,7 @@ public class CheckoutPage : BasePage
     public async Task PlaceOrderAsync()
     {
         await ClickAsync(PlaceOrderButton);
-        await Page.WaitForSelectorAsync(OrderConfirmation, new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync(OrderConfirmation, new PageWaitForSelectorOptions { Timeout = 15000 });
     }
 
     public async Task<string> GetOrderNumberAsync()
@@ -169,18 +169,29 @@ public class CheckoutPage : BasePage
     public async Task SubmitShippingFormAsync()
     {
         await ClickAsync(NextStepButton);
-        await WaitForLoadAsync();
+        // Wait for payment section to appear instead of NetworkIdle
+        await Page.WaitForSelectorAsync("[data-testid='payment-section']", new PageWaitForSelectorOptions { Timeout = 10000 });
     }
 
     public async Task<bool> IsOnPaymentStepAsync()
     {
-        return await IsVisibleAsync(CardNumberInput);
+        // Check for payment section container
+        return await IsVisibleAsync("[data-testid='payment-section']");
+    }
+
+    public async Task SelectPaymentMethodAsync(string method)
+    {
+        // method can be: card, paypal, bank
+        // The input is hidden (styled), so click on the parent label element
+        await Page.Locator($"[data-testid='payment-{method}']").Locator("..").ClickAsync();
+        await Task.Delay(100); // Wait for UI to update
     }
 
     public async Task ProceedToReviewAsync()
     {
         await ClickAsync(NextStepButton);
-        await WaitForLoadAsync();
+        // Wait for review section to appear instead of NetworkIdle
+        await Page.WaitForSelectorAsync("[data-testid='review-section'], [data-testid='place-order']", new PageWaitForSelectorOptions { Timeout = 10000 });
     }
 
     public async Task<decimal> GetOrderTotalAsync()

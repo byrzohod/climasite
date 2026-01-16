@@ -1,11 +1,15 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { CartService } from '../../core/services/cart.service';
 import { CheckoutService, CheckoutStep } from '../../core/services/checkout.service';
+import { AddressService } from '../../core/services/address.service';
+import { AuthService } from '../../auth/services/auth.service';
+import { PaymentService } from '../../core/services/payment.service';
 import { Address } from '../../core/models/order.model';
+import { SavedAddress } from '../../core/models/address.model';
 
 @Component({
   selector: 'app-checkout',
@@ -15,7 +19,26 @@ import { Address } from '../../core/models/order.model';
     <div class="checkout-container" data-testid="checkout-page">
       <h1>{{ 'checkout.title' | translate }}</h1>
 
-      @if (cartService.isEmpty()) {
+      @if (orderPlaced()) {
+        <!-- Order Confirmation - show this even if cart is empty (because we just cleared it) -->
+        <div class="checkout-section" data-testid="order-confirmation">
+          <div class="confirmation-content">
+            <div class="confirmation-icon">✓</div>
+            <h2>{{ 'checkout.orderComplete.title' | translate }}</h2>
+            <p>{{ 'checkout.orderComplete.message' | translate }}</p>
+            <p class="order-number-label">{{ 'checkout.orderComplete.orderNumber' | translate }}:</p>
+            <p class="order-number" data-testid="order-number">{{ checkoutService.lastOrderId() }}</p>
+            <div class="confirmation-actions">
+              <a [routerLink]="['/account/orders', checkoutService.lastOrderId()]" class="btn-primary" data-testid="view-order-btn">
+                {{ 'checkout.orderComplete.viewOrder' | translate }}
+              </a>
+              <a routerLink="/products" class="btn-secondary">
+                {{ 'checkout.orderComplete.continueShopping' | translate }}
+              </a>
+            </div>
+          </div>
+        </div>
+      } @else if (cartService.isEmpty()) {
         <div class="empty-cart" data-testid="checkout-empty">
           <p>{{ 'cart.empty' | translate }}</p>
           <a routerLink="/products" class="btn-primary">{{ 'cart.continueShopping' | translate }}</a>
@@ -45,6 +68,35 @@ import { Address } from '../../core/models/order.model';
             @if (checkoutService.currentStep() === 'shipping') {
               <div class="checkout-section" data-testid="shipping-section">
                 <h2>{{ 'checkout.shipping.title' | translate }}</h2>
+
+                <!-- Saved Addresses for Authenticated Users -->
+                @if (authService.isAuthenticated() && addressService.hasAddresses()) {
+                  <div class="saved-addresses-section" data-testid="saved-addresses-section">
+                    <h3>{{ 'checkout.shipping.useSavedAddress' | translate }}</h3>
+                    <div class="saved-addresses-list">
+                      @for (address of addressService.addresses(); track address.id) {
+                        <div
+                          class="saved-address-card"
+                          [class.selected]="selectedAddressId() === address.id"
+                          (click)="selectSavedAddress(address)"
+                          data-testid="saved-address-card"
+                        >
+                          @if (address.isDefault) {
+                            <span class="default-badge">{{ 'account.addresses.default' | translate }}</span>
+                          }
+                          <p class="address-name">{{ address.fullName }}</p>
+                          <p>{{ address.addressLine1 }}</p>
+                          <p>{{ address.city }}, {{ address.postalCode }}</p>
+                          <p>{{ address.country }}</p>
+                        </div>
+                      }
+                    </div>
+                    <div class="separator">
+                      <span>{{ 'checkout.shipping.orEnterNew' | translate }}</span>
+                    </div>
+                  </div>
+                }
+
                 <form [formGroup]="shippingForm" (ngSubmit)="submitShipping()" data-testid="checkout-form">
                   <div class="form-row">
                     <div class="form-group" data-testid="shipping-firstname">
@@ -161,24 +213,19 @@ import { Address } from '../../core/models/order.model';
 
                 @if (checkoutService.paymentMethod() === 'card') {
                   <div class="card-form" data-testid="card-form">
-                    <div class="form-group" data-testid="card-number">
-                      <label>{{ 'checkout.payment.cardNumber' | translate }}</label>
-                      <input type="text" placeholder="1234 5678 9012 3456" />
-                    </div>
-                    <div class="form-row">
-                      <div class="form-group" data-testid="card-expiry">
-                        <label>{{ 'checkout.payment.expiry' | translate }}</label>
-                        <input type="text" placeholder="MM/YY" />
+                    @if (!paymentService.isInitialized()) {
+                      <div class="loading-stripe">
+                        <p>{{ 'checkout.payment.loadingStripe' | translate }}</p>
                       </div>
-                      <div class="form-group" data-testid="card-cvv">
-                        <label>{{ 'checkout.payment.cvv' | translate }}</label>
-                        <input type="text" placeholder="123" />
+                    } @else {
+                      <div class="form-group">
+                        <label>{{ 'checkout.payment.cardDetails' | translate }}</label>
+                        <div id="stripe-card-element" class="stripe-element" data-testid="stripe-card-element"></div>
+                        @if (paymentService.error()) {
+                          <p class="stripe-error">{{ paymentService.error() }}</p>
+                        }
                       </div>
-                    </div>
-                    <div class="form-group" data-testid="card-name">
-                      <label>{{ 'checkout.payment.nameOnCard' | translate }}</label>
-                      <input type="text" placeholder="John Doe" />
-                    </div>
+                    }
                   </div>
                 }
 
@@ -261,26 +308,6 @@ import { Address } from '../../core/models/order.model';
               </div>
             }
 
-            <!-- Order Confirmation -->
-            @if (orderPlaced()) {
-              <div class="checkout-section" data-testid="order-confirmation">
-                <div class="confirmation-content">
-                  <div class="confirmation-icon">✓</div>
-                  <h2>{{ 'checkout.orderComplete.title' | translate }}</h2>
-                  <p>{{ 'checkout.orderComplete.message' | translate }}</p>
-                  <p class="order-number-label">{{ 'checkout.orderComplete.orderNumber' | translate }}:</p>
-                  <p class="order-number" data-testid="order-number">{{ checkoutService.lastOrderId() }}</p>
-                  <div class="confirmation-actions">
-                    <a [routerLink]="['/account/orders', checkoutService.lastOrderId()]" class="btn-secondary" data-testid="view-order">
-                      {{ 'checkout.orderComplete.viewOrder' | translate }}
-                    </a>
-                    <a routerLink="/products" class="btn-primary" data-testid="continue-shopping">
-                      {{ 'checkout.orderComplete.continueShopping' | translate }}
-                    </a>
-                  </div>
-                </div>
-              </div>
-            }
           </div>
 
           <!-- Order Summary Sidebar -->
@@ -426,6 +453,84 @@ import { Address } from '../../core/models/order.model';
       }
     }
 
+    .saved-addresses-section {
+      margin-bottom: 1.5rem;
+
+      h3 {
+        font-size: 1rem;
+        color: var(--color-text-secondary);
+        margin-bottom: 1rem;
+      }
+    }
+
+    .saved-addresses-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .saved-address-card {
+      padding: 1rem;
+      border: 2px solid var(--color-border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: border-color 0.2s, background-color 0.2s;
+      position: relative;
+
+      &:hover {
+        border-color: var(--color-primary);
+      }
+
+      &.selected {
+        border-color: var(--color-primary);
+        background-color: var(--color-primary-light);
+      }
+
+      .default-badge {
+        position: absolute;
+        top: -8px;
+        right: 8px;
+        background: var(--color-primary);
+        color: white;
+        font-size: 0.65rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+      }
+
+      p {
+        margin: 0;
+        font-size: 0.875rem;
+        color: var(--color-text-primary);
+        line-height: 1.4;
+
+        &.address-name {
+          font-weight: 600;
+          margin-bottom: 0.25rem;
+        }
+      }
+    }
+
+    .separator {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 1rem;
+
+      &::before,
+      &::after {
+        content: '';
+        flex: 1;
+        border-bottom: 1px solid var(--color-border);
+      }
+
+      span {
+        padding: 0 1rem;
+        color: var(--color-text-secondary);
+        font-size: 0.875rem;
+      }
+    }
+
     .form-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -508,6 +613,26 @@ import { Address } from '../../core/models/order.model';
       background: var(--color-bg-secondary);
       border-radius: 8px;
       margin-bottom: 1.5rem;
+    }
+
+    .stripe-element {
+      padding: 0.75rem;
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      background-color: var(--color-bg-primary);
+      min-height: 40px;
+    }
+
+    .stripe-error {
+      color: var(--color-error);
+      font-size: 0.875rem;
+      margin-top: 0.5rem;
+    }
+
+    .loading-stripe {
+      text-align: center;
+      padding: 1rem;
+      color: var(--color-text-secondary);
     }
 
     .step-actions {
@@ -792,13 +917,35 @@ import { Address } from '../../core/models/order.model';
     }
   `]
 })
-export class CheckoutComponent {
+export class CheckoutComponent implements OnInit {
   readonly cartService = inject(CartService);
   readonly checkoutService = inject(CheckoutService);
+  readonly addressService = inject(AddressService);
+  readonly authService = inject(AuthService);
+  readonly paymentService = inject(PaymentService);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
 
   orderPlaced = signal(false);
+  selectedAddressId = signal<string | null>(null);
+  private clientSecret = signal<string | null>(null);
+
+  ngOnInit(): void {
+    // Load saved addresses if user is authenticated
+    if (this.authService.isAuthenticated()) {
+      this.addressService.loadAddresses();
+    }
+  }
+
+  private async initializeStripe(): Promise<void> {
+    const initialized = await this.paymentService.initialize();
+    if (initialized) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        this.paymentService.createElements('stripe-card-element');
+      }, 100);
+    }
+  }
 
   shippingForm: FormGroup = this.fb.group({
     firstName: ['', Validators.required],
@@ -825,6 +972,33 @@ export class CheckoutComponent {
 
   goToStep(step: CheckoutStep): void {
     this.checkoutService.setStep(step);
+
+    // Initialize Stripe when entering payment step
+    if (step === 'payment' && this.checkoutService.paymentMethod() === 'card') {
+      this.initializeStripe();
+    }
+  }
+
+  selectSavedAddress(address: SavedAddress): void {
+    this.selectedAddressId.set(address.id);
+
+    // Parse fullName into firstName and lastName
+    const nameParts = address.fullName.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    // Fill the form with the saved address data
+    this.shippingForm.patchValue({
+      firstName,
+      lastName,
+      addressLine1: address.addressLine1,
+      addressLine2: address.addressLine2 || '',
+      city: address.city,
+      state: address.state || '',
+      postalCode: address.postalCode,
+      country: address.country,
+      phone: address.phone || ''
+    });
   }
 
   submitShipping(): void {
@@ -849,26 +1023,91 @@ export class CheckoutComponent {
 
   selectPaymentMethod(method: string): void {
     this.checkoutService.setPaymentMethod(method);
+
+    // Initialize Stripe when card payment is selected
+    if (method === 'card') {
+      this.initializeStripe();
+    } else {
+      this.paymentService.destroyElements();
+    }
   }
 
   selectShippingMethod(method: string): void {
     this.checkoutService.setShippingMethod(method);
   }
 
-  placeOrder(): void {
+  async placeOrder(): Promise<void> {
     const email = this.shippingForm.get('email')?.value;
     const phone = this.shippingForm.get('phone')?.value;
 
-    this.checkoutService.createOrder(email, phone).subscribe({
-      next: () => {
-        this.orderPlaced.set(true);
-        this.cartService.clearCart().subscribe();
-        // Stay on the page and show confirmation inline
-      },
-      error: (err) => {
-        console.error('Order failed:', err);
-        // Error is already set by checkoutService in catchError
+    // Handle card payment with Stripe
+    if (this.checkoutService.paymentMethod() === 'card') {
+      try {
+        // Create payment intent
+        const intentResponse = await this.paymentService.createPaymentIntent(
+          this.cartService.total(),
+          'bgn'
+        ).toPromise();
+
+        if (!intentResponse?.clientSecret) {
+          this.checkoutService.setError('Failed to initialize payment');
+          return;
+        }
+
+        // Get billing details from form
+        const address = this.checkoutService.shippingAddress();
+        const billingDetails = {
+          name: `${this.shippingForm.get('firstName')?.value} ${this.shippingForm.get('lastName')?.value}`,
+          email,
+          phone,
+          address: address ? {
+            line1: address.addressLine1,
+            line2: address.addressLine2,
+            city: address.city,
+            state: address.state,
+            postal_code: address.postalCode,
+            country: address.country === 'Bulgaria' ? 'BG' : address.country
+          } : undefined
+        };
+
+        // Confirm payment with Stripe
+        const paymentResult = await this.paymentService.confirmPayment(
+          intentResponse.clientSecret,
+          billingDetails
+        );
+
+        if (!paymentResult.success) {
+          this.checkoutService.setError(paymentResult.error || 'Payment failed');
+          return;
+        }
+
+        // Payment succeeded, create order with payment intent ID
+        this.checkoutService.createOrder(email, phone, paymentResult.paymentIntentId).subscribe({
+          next: () => {
+            this.orderPlaced.set(true);
+            this.cartService.clearCart().subscribe();
+            this.paymentService.destroyElements();
+          },
+          error: (err) => {
+            console.error('Order creation failed after payment:', err);
+          }
+        });
+      } catch (error: any) {
+        console.error('Payment error:', error);
+        this.checkoutService.setError(error.message || 'Payment failed');
       }
-    });
+    } else {
+      // Non-card payment (PayPal, bank transfer, etc.)
+      this.checkoutService.createOrder(email, phone).subscribe({
+        next: () => {
+          this.orderPlaced.set(true);
+          this.cartService.clearCart().subscribe();
+        },
+        error: (err) => {
+          console.error('Order failed:', err);
+          this.checkoutService.setError(err.error?.message || 'Failed to place order');
+        }
+      });
+    }
   }
 }

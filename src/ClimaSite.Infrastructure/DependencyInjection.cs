@@ -67,6 +67,7 @@ public static class DependencyInjection
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ICacheService, CacheService>();
         services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<IPaymentService, StripePaymentService>();
 
         // Repositories
         services.AddScoped<ICategoryRepository, CategoryRepository>();

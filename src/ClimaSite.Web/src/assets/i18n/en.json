@@ -94,6 +94,7 @@
     "onSale": "On Sale",
     "bestsellers": "Bestsellers",
     "noProducts": "No products found",
+    "searchResults": "Search results for",
     "noImage": "No Image",
     "outOfStock": "Out of Stock",
     "similar": {
@@ -351,6 +352,8 @@
       "postalCode": "Postal Code",
       "phone": "Phone Number",
       "saveAddress": "Save this address for future orders",
+      "useSavedAddress": "Use a saved address",
+      "orEnterNew": "or enter a new address",
       "method": "Shipping Method",
       "standard": "Standard Shipping",
       "standardTime": "5-7 days",
@@ -364,6 +367,8 @@
       "title": "Payment Method",
       "card": "Credit/Debit Card",
       "cardNumber": "Card Number",
+      "cardDetails": "Card Details",
+      "loadingStripe": "Loading payment form...",
       "expiry": "Expiry Date",
       "cvv": "CVV",
       "nameOnCard": "Name on Card",
@@ -471,8 +476,31 @@
     "addresses": {
       "title": "Saved Addresses",
       "addNew": "Add New Address",
+      "addAddress": "Add Address",
+      "editAddress": "Edit Address",
       "default": "Default",
-      "makeDefault": "Make Default"
+      "makeDefault": "Set as default address",
+      "setAsDefault": "Set as Default",
+      "edit": "Edit",
+      "delete": "Delete",
+      "noAddresses": "No Saved Addresses",
+      "noAddressesDescription": "You haven't saved any addresses yet. Add your first address to speed up checkout.",
+      "addFirstAddress": "Add Your First Address",
+      "fullName": "Full Name",
+      "addressLine1": "Address Line 1",
+      "addressLine2": "Address Line 2 (Optional)",
+      "city": "City",
+      "state": "State/Province",
+      "postalCode": "Postal Code",
+      "country": "Country",
+      "selectCountry": "Select a country",
+      "phone": "Phone Number",
+      "type": "Address Type",
+      "typeShipping": "Shipping",
+      "typeBilling": "Billing",
+      "typeBoth": "Both",
+      "confirmDelete": "Delete Address",
+      "confirmDeleteMessage": "Are you sure you want to delete this address? This action cannot be undone."
     },
     "profile": {
       "title": "Profile Settings",
@@ -615,7 +643,8 @@
       "hoursValue": "Mon-Fri: 9:00 AM - 6:00 PM"
     },
     "map": {
-      "title": "Find Us"
+      "title": "Find Us",
+      "viewLarger": "View Larger Map"
     }
   },
   "about": {
@@ -832,11 +861,15 @@
   },
   "categories": {
     "airConditioning": "Air Conditioning",
-    "wallMountedAc": "Wall-Mounted AC",
+    "splitAirConditioners": "Split Air Conditioners",
+    "windowAirConditioners": "Window Air Conditioners",
+    "portableAirConditioners": "Portable Air Conditioners",
+    "centralAirConditioning": "Central Air Conditioning",
+    "wallMountedAC": "Wall-Mounted AC",
     "multiSplit": "Multi-Split Systems",
-    "floorAc": "Floor AC",
-    "cassetteAc": "Cassette AC",
-    "ductedAc": "Ducted AC",
+    "floorAC": "Floor AC",
+    "cassetteAC": "Cassette AC",
+    "ductedAC": "Ducted AC",
     "heatPumps": "Heat Pumps",
     "airPurifiers": "Air Purifiers",
     "dehumidifiers": "Dehumidifiers",
@@ -866,7 +899,9 @@
     "copperPipes": "Copper Pipes",
     "refrigerants": "Refrigerants",
     "bracketsMounts": "Brackets & Mounts",
-    "drainPumps": "Drain Pumps"
+    "drainPumps": "Drain Pumps",
+    "filters": "Filters",
+    "thermostats": "Thermostats"
   },
   "wishlist": {
     "title": "Wishlist",
@@ -879,6 +914,16 @@
     "remove": "Remove from Wishlist",
     "addedToWishlist": "Added to wishlist",
     "removedFromWishlist": "Removed from wishlist"
+  },
+  "profile": {
+    "phone": "Phone Number",
+    "phonePlaceholder": "Enter your phone number",
+    "emailHint": "Email cannot be changed",
+    "updateSuccess": "Profile updated successfully",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "updatePassword": "Update Password",
+    "passwordSuccess": "Password changed successfully"
   },
   "specs": {
     "cooling_capacity": "Cooling Capacity",

@@ -1,6 +1,6 @@
-import { Component, inject, signal, OnInit, HostListener, ElementRef, Output, EventEmitter } from '@angular/core';
+import { Component, inject, signal, OnInit, HostListener, ElementRef, Output, EventEmitter, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { CategoryService } from '../../../core/services/category.service';
 import { CategoryTree } from '../../../core/models/category.model';
@@ -31,6 +31,8 @@ import { CategoryTree } from '../../../core/models/category.model';
       @if (isOpen()) {
         <div
           class="mega-menu"
+          [style.left.px]="menuLeftPosition()"
+          [class.menu-positioned]="menuLeftPosition() !== null"
           (mouseleave)="closeMenu()"
           data-testid="mega-menu-dropdown"
         >
@@ -176,6 +178,13 @@ import { CategoryTree } from '../../../core/models/category.model';
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
       z-index: 1000;
       animation: menuSlideDown 0.2s ease;
+
+      /* NAV-003 FIX: When dynamically positioned, disable centering transform */
+      &.menu-positioned {
+        left: auto;
+        transform: translateY(0);
+        animation: menuSlideDownPositioned 0.2s ease;
+      }
     }
 
     @keyframes menuSlideDown {
@@ -186,6 +195,17 @@ import { CategoryTree } from '../../../core/models/category.model';
       to {
         opacity: 1;
         transform: translateX(-50%) translateY(0);
+      }
+    }
+
+    @keyframes menuSlideDownPositioned {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
       }
     }
 
@@ -366,9 +386,10 @@ import { CategoryTree } from '../../../core/models/category.model';
     }
   `]
 })
-export class MegaMenuComponent implements OnInit {
+export class MegaMenuComponent implements OnInit, AfterViewInit {
   private readonly categoryService = inject(CategoryService);
   private readonly elementRef = inject(ElementRef);
+  private readonly router = inject(Router);
 
   @Output() menuClosed = new EventEmitter<void>();
 
@@ -376,11 +397,17 @@ export class MegaMenuComponent implements OnInit {
   readonly activeCategory = signal<CategoryTree | null>(null);
   readonly isOpen = signal(false);
   readonly isLoading = signal(false);
+  readonly menuLeftPosition = signal<number | null>(null);
 
   private closeTimeout: ReturnType<typeof setTimeout> | null = null;
+  private triggerElement: HTMLElement | null = null;
 
   ngOnInit(): void {
     this.loadCategories();
+  }
+
+  ngAfterViewInit(): void {
+    this.triggerElement = this.elementRef.nativeElement.querySelector('.mega-menu-trigger');
   }
 
   @HostListener('document:click', ['$event'])
@@ -393,6 +420,40 @@ export class MegaMenuComponent implements OnInit {
   @HostListener('document:keydown.escape')
   onEscapeKey(): void {
     this.closeMenu();
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    if (this.isOpen()) {
+      this.calculateMenuPosition();
+    }
+  }
+
+  // NAV-003 FIX: Calculate optimal menu position to keep it within viewport
+  private calculateMenuPosition(): void {
+    if (!this.triggerElement) return;
+
+    const triggerRect = this.triggerElement.getBoundingClientRect();
+    const menuWidth = 800; // min-width of mega-menu
+    const viewportWidth = window.innerWidth;
+    const padding = 16; // Padding from viewport edges
+
+    // Calculate center position
+    const triggerCenter = triggerRect.left + triggerRect.width / 2;
+    let optimalLeft = triggerCenter - menuWidth / 2;
+
+    // Clamp to viewport bounds
+    if (optimalLeft < padding) {
+      optimalLeft = padding;
+    } else if (optimalLeft + menuWidth > viewportWidth - padding) {
+      optimalLeft = viewportWidth - menuWidth - padding;
+    }
+
+    // Only use dynamic positioning if menu would overflow
+    const wouldOverflow = (triggerCenter - menuWidth / 2 < padding) ||
+                          (triggerCenter + menuWidth / 2 > viewportWidth - padding);
+
+    this.menuLeftPosition.set(wouldOverflow ? optimalLeft : null);
   }
 
   loadCategories(): void {
@@ -413,21 +474,51 @@ export class MegaMenuComponent implements OnInit {
     });
   }
 
-  // Helper to add translation keys to category names
+  // NAV-005 FIX: Comprehensive translation key mapping for all categories
   private addTranslationKeys(categories: CategoryTree[]): CategoryTree[] {
     const slugToTranslationKey: Record<string, string> = {
+      // Main categories
       'air-conditioners': 'categories.airConditioning',
-      'split-air-conditioners': 'categories.wallMountedAC',
-      'window-air-conditioners': 'categories.floorAC',
-      'portable-air-conditioners': 'categories.cassetteAC',
-      'central-air-conditioning': 'categories.ductedAC',
       'heating-systems': 'categories.heatingSystems',
+      'ventilation': 'categories.ventilation',
+      'accessories': 'categories.accessories',
+      // Air conditioning subcategories
+      'split-air-conditioners': 'categories.splitAirConditioners',
+      'window-air-conditioners': 'categories.windowAirConditioners',
+      'portable-air-conditioners': 'categories.portableAirConditioners',
+      'central-air-conditioning': 'categories.centralAirConditioning',
+      'multi-split': 'categories.multiSplit',
+      'wall-mounted-ac': 'categories.wallMountedAC',
+      'floor-ac': 'categories.floorAC',
+      'cassette-ac': 'categories.cassetteAC',
+      'ducted-ac': 'categories.ductedAC',
+      'air-purifiers': 'categories.airPurifiers',
+      'dehumidifiers': 'categories.dehumidifiers',
+      'vrv-vrf': 'categories.vrvVrf',
+      // Heating subcategories
       'heat-pumps': 'categories.heatPumps',
       'electric-heaters': 'categories.electricHeaters',
       'gas-furnaces': 'categories.gasHeaters',
+      'gas-heaters': 'categories.gasHeaters',
       'radiators': 'categories.radiators',
-      'ventilation': 'categories.ventilation',
-      'accessories': 'categories.accessories'
+      'infrared-heaters': 'categories.infraredHeaters',
+      'convectors': 'categories.convectors',
+      'underfloor-heating': 'categories.underfloorHeating',
+      // Ventilation subcategories
+      'exhaust-fans': 'categories.exhaustFans',
+      'duct-fans': 'categories.ductFans',
+      'recovery-ventilators': 'categories.recoveryVentilators',
+      'air-curtains': 'categories.airCurtains',
+      'industrial-fans': 'categories.industrialFans',
+      // Accessories subcategories
+      'remote-controls': 'categories.remoteControls',
+      'installation-kits': 'categories.installationKits',
+      'copper-pipes': 'categories.copperPipes',
+      'refrigerants': 'categories.refrigerants',
+      'brackets-mounts': 'categories.bracketsMounts',
+      'drain-pumps': 'categories.drainPumps',
+      'filters': 'categories.filters',
+      'thermostats': 'categories.thermostats'
     };
 
     return categories.map(cat => ({
@@ -443,6 +534,8 @@ export class MegaMenuComponent implements OnInit {
       this.closeTimeout = null;
     }
     this.isOpen.set(true);
+    // NAV-003 FIX: Calculate position when opening
+    this.calculateMenuPosition();
     if (this.categories().length > 0 && !this.activeCategory()) {
       this.activeCategory.set(this.categories()[0]);
     }
@@ -452,6 +545,7 @@ export class MegaMenuComponent implements OnInit {
     this.closeTimeout = setTimeout(() => {
       this.isOpen.set(false);
       this.activeCategory.set(null);
+      this.menuLeftPosition.set(null);
       this.menuClosed.emit();
     }, 200);
   }
@@ -468,8 +562,9 @@ export class MegaMenuComponent implements OnInit {
     this.activeCategory.set(category);
   }
 
+  // NAV-004 FIX: Properly navigate to category page when clicked
   navigateToCategory(category: CategoryTree): void {
-    // Navigation is handled by routerLink in template
+    this.router.navigate(['/products/category', category.slug]);
     this.closeMenu();
   }
 

@@ -73,6 +73,10 @@ export class CheckoutService {
     this._shippingMethod.set(method);
   }
 
+  setError(error: string | null): void {
+    this._error.set(error);
+  }
+
   canProceedToPayment(): boolean {
     return this._shippingAddress() !== null;
   }
@@ -81,7 +85,7 @@ export class CheckoutService {
     return this.canProceedToPayment() && this._shippingMethod() !== '';
   }
 
-  createOrder(email: string, phone?: string): Observable<Order> {
+  createOrder(email: string, phone?: string, paymentIntentId?: string): Observable<Order> {
     this._isProcessing.set(true);
     this._error.set(null);
 
@@ -99,6 +103,7 @@ export class CheckoutService {
       billingAddress: this._billingAddress() || undefined,
       shippingMethod: this._shippingMethod(),
       paymentMethod: this._paymentMethod(),
+      paymentIntentId,
       guestSessionId: this.getSessionId() || undefined
     };
 

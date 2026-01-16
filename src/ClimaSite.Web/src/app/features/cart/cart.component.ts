@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -455,8 +455,14 @@ import { CartItem } from '../../core/models/cart.model';
     }
   `]
 })
-export class CartComponent {
+export class CartComponent implements OnInit {
   readonly cartService = inject(CartService);
+
+  ngOnInit(): void {
+    // Always reload cart data when navigating to cart page
+    // This ensures fresh data after login, reorder, or other cart modifications
+    this.cartService.loadCart();
+  }
 
   updateQuantity(item: CartItem, event: Event): void {
     const input = event.target as HTMLInputElement;

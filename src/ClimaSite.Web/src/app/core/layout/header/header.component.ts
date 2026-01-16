@@ -1,6 +1,7 @@
 import { Component, inject, signal, HostListener, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ThemeToggleComponent } from '../../../shared/components/theme-toggle/theme-toggle.component';
 import { LanguageSelectorComponent } from '../../../shared/components/language-selector/language-selector.component';
@@ -15,6 +16,7 @@ import { AuthService } from '../../../auth/services/auth.service';
   imports: [
     CommonModule,
     RouterModule,
+    FormsModule,
     TranslateModule,
     ThemeToggleComponent,
     LanguageSelectorComponent,
@@ -62,20 +64,22 @@ import { AuthService } from '../../../auth/services/auth.service';
           </a>
 
           <!-- Search Box -->
-          <div class="search-box">
+          <form class="search-box" (ngSubmit)="performSearch()">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="search-icon">
               <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd"/>
             </svg>
             <input
               type="text"
+              [(ngModel)]="searchQuery"
+              name="searchQuery"
               [placeholder]="'common.search' | translate"
               class="search-input"
               data-testid="search-input"
             />
-            <button type="button" class="search-btn" aria-label="Search" data-testid="search-button">
+            <button type="submit" class="search-btn" aria-label="Search" data-testid="search-button">
               {{ 'common.search' | translate }}
             </button>
-          </div>
+          </form>
 
           <!-- Header Actions -->
           <div class="header-actions" data-testid="header-actions">
@@ -836,6 +840,7 @@ import { AuthService } from '../../../auth/services/auth.service';
 })
 export class HeaderComponent {
   private readonly elementRef = inject(ElementRef);
+  private readonly router = inject(Router);
   readonly cartService = inject(CartService);
   readonly wishlistService = inject(WishlistService);
   readonly authService = inject(AuthService);
@@ -843,6 +848,7 @@ export class HeaderComponent {
   readonly isSticky = signal(false);
   readonly userMenuOpen = signal(false);
   readonly mobileMenuOpen = signal(false);
+  searchQuery = '';
 
   private lastScrollY = 0;
 
@@ -895,5 +901,12 @@ export class HeaderComponent {
     this.closeUserMenu();
     this.closeMobileMenu();
     this.authService.logout().subscribe();
+  }
+
+  performSearch(): void {
+    const query = this.searchQuery.trim();
+    if (query) {
+      this.router.navigate(['/products'], { queryParams: { search: query } });
+    }
   }
 }

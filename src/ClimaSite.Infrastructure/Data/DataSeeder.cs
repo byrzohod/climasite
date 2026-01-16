@@ -31,8 +31,10 @@ public class DataSeeder
             await _context.Database.MigrateAsync();
             await SeedRolesAsync();
             await SeedAdminUserAsync();
+            await SeedBrandsAsync();
             await SeedCategoriesAsync();
             await SeedProductsAsync();
+            await SeedPromotionsAsync();
             _logger.LogInformation("Database seeding completed successfully");
         }
         catch (Exception ex)
@@ -522,5 +524,220 @@ public class DataSeeder
         _context.ProductImages.Add(image);
 
         await _context.SaveChangesAsync();
+    }
+
+    private async Task SeedBrandsAsync()
+    {
+        if (await _context.Brands.AnyAsync())
+        {
+            _logger.LogInformation("Brands already seeded, skipping...");
+            return;
+        }
+
+        var brands = new List<Brand>
+        {
+            CreateBrand("DualZone", "dualzone", "Premium air conditioning solutions with cutting-edge inverter technology.", "Germany", 1995, true, 1),
+            CreateBrand("ArcticBreeze", "arcticbreeze", "Affordable cooling solutions for every home.", "USA", 2005, true, 2),
+            CreateBrand("CoolMaster", "coolmaster", "Commercial-grade cooling systems for large spaces.", "Japan", 1988, true, 3),
+            CreateBrand("EcoHeat", "ecoheat", "Energy-efficient heat pumps for year-round comfort.", "Sweden", 2001, true, 4),
+            CreateBrand("ThermoFlex", "thermoflex", "Flexible heating and cooling solutions.", "USA", 2010, false, 5),
+            CreateBrand("RadiantMax", "radiantmax", "Innovative infrared heating technology.", "Germany", 2008, false, 6),
+            CreateBrand("ConvectAir", "convectair", "Efficient convection heaters for everyday use.", "Canada", 1975, false, 7),
+            CreateBrand("PortaCool", "portacool", "Portable cooling solutions with mobility in mind.", "USA", 2000, true, 8),
+            CreateBrand("MobileChill", "mobilechill", "Compact portable air conditioners.", "China", 2012, false, 9),
+            CreateBrand("FreshAir", "freshair", "Advanced ventilation and air quality systems.", "Netherlands", 1992, true, 10),
+            CreateBrand("VentMax", "ventmax", "Professional-grade ventilation solutions.", "USA", 1998, false, 11),
+            CreateBrand("SmartThermo", "smartthermo", "Smart home climate control technology.", "USA", 2015, true, 12),
+            CreateBrand("PureAir", "pureair", "Premium air filtration products.", "Germany", 2003, false, 13),
+            CreateBrand("CoolLine", "coolline", "Professional HVAC installation supplies.", "USA", 1985, false, 14)
+        };
+
+        _context.Brands.AddRange(brands);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Seeded {Count} brands", brands.Count);
+    }
+
+    private static Brand CreateBrand(string name, string slug, string description, string country, int foundedYear, bool isFeatured, int sortOrder)
+    {
+        var brand = new Brand(name, slug);
+        brand.SetDescription(description);
+        brand.SetCountryOfOrigin(country);
+        brand.SetFoundedYear(foundedYear);
+        brand.SetFeatured(isFeatured);
+        brand.SetSortOrder(sortOrder);
+        brand.SetLogoUrl($"https://placehold.co/200x100/0d9488/ffffff?text={Uri.EscapeDataString(name)}");
+        brand.SetBannerImageUrl($"https://placehold.co/1200x300/0d9488/ffffff?text={Uri.EscapeDataString(name)}");
+        brand.SetWebsiteUrl($"https://www.{slug}.com");
+        return brand;
+    }
+
+    private async Task SeedPromotionsAsync()
+    {
+        if (await _context.Promotions.AnyAsync())
+        {
+            _logger.LogInformation("Promotions already seeded, skipping...");
+            return;
+        }
+
+        var products = await _context.Products.ToListAsync();
+        var now = DateTime.UtcNow;
+
+        var promotions = new List<Promotion>
+        {
+            CreatePromotion(
+                "Winter Heating Sale",
+                "winter-heating-sale",
+                "Save up to 20% on select heating systems and heat pumps. Stay warm this winter!",
+                "WINTER20",
+                PromotionType.Percentage,
+                20,
+                500m,
+                now.AddDays(-7),
+                now.AddDays(30),
+                true,
+                1,
+                "Valid on heating systems and heat pumps only. Cannot be combined with other offers. Minimum order €500."
+            ),
+            CreatePromotion(
+                "Summer Cool Down",
+                "summer-cool-down",
+                "Beat the heat with 15% off all air conditioners. Limited time offer!",
+                "COOL15",
+                PromotionType.Percentage,
+                15,
+                300m,
+                now.AddDays(-3),
+                now.AddDays(45),
+                true,
+                2,
+                "Valid on air conditioning units only. Minimum order €300. While supplies last."
+            ),
+            CreatePromotion(
+                "Free Shipping Weekend",
+                "free-shipping-weekend",
+                "Enjoy free shipping on all orders over €200. No code needed!",
+                null,
+                PromotionType.FreeShipping,
+                0,
+                200m,
+                now.AddDays(-1),
+                now.AddDays(14),
+                true,
+                3,
+                "Free standard shipping on orders over €200. Express shipping available at additional cost."
+            ),
+            CreatePromotion(
+                "Smart Home Bundle",
+                "smart-home-bundle",
+                "Buy any smart thermostat and get €50 off your total order!",
+                "SMART50",
+                PromotionType.FixedAmount,
+                50,
+                250m,
+                now.AddDays(-5),
+                now.AddDays(60),
+                true,
+                4,
+                "Must include a smart thermostat in your order. Minimum order €250."
+            ),
+            CreatePromotion(
+                "Clearance Sale",
+                "clearance-sale",
+                "Last chance! Up to 30% off select items. While supplies last.",
+                "CLEAR30",
+                PromotionType.Percentage,
+                30,
+                null,
+                now.AddDays(-10),
+                now.AddDays(20),
+                false,
+                5,
+                "Clearance items are final sale. No returns or exchanges."
+            )
+        };
+
+        _context.Promotions.AddRange(promotions);
+        await _context.SaveChangesAsync();
+
+        // Link products to promotions
+        var acProducts = products.Where(p => p.Category?.Slug?.Contains("air-conditioner") == true ||
+                                             p.Category?.ParentId != null && p.Category.Slug?.Contains("air-conditioner") == true ||
+                                             p.Category?.Slug?.Contains("portable") == true).Take(4).ToList();
+        var heatingProducts = products.Where(p => p.Category?.Slug?.Contains("heat") == true ||
+                                                  p.Category?.Slug?.Contains("electric-heater") == true).Take(4).ToList();
+        var accessoryProducts = products.Where(p => p.Category?.Slug == "accessories").Take(3).ToList();
+
+        var winterPromo = promotions.First(p => p.Slug == "winter-heating-sale");
+        var summerPromo = promotions.First(p => p.Slug == "summer-cool-down");
+        var smartPromo = promotions.First(p => p.Slug == "smart-home-bundle");
+        var clearancePromo = promotions.First(p => p.Slug == "clearance-sale");
+
+        // Add products to winter heating sale
+        foreach (var product in heatingProducts)
+        {
+            _context.Set<PromotionProduct>().Add(new PromotionProduct
+            {
+                Id = Guid.NewGuid(),
+                PromotionId = winterPromo.Id,
+                ProductId = product.Id
+            });
+        }
+
+        // Add products to summer cool down
+        foreach (var product in acProducts)
+        {
+            _context.Set<PromotionProduct>().Add(new PromotionProduct
+            {
+                Id = Guid.NewGuid(),
+                PromotionId = summerPromo.Id,
+                ProductId = product.Id
+            });
+        }
+
+        // Add smart products to smart home bundle
+        var smartProducts = products.Where(p => p.Name.Contains("Smart") || p.Tags.Contains("smart")).Take(3).ToList();
+        foreach (var product in smartProducts)
+        {
+            _context.Set<PromotionProduct>().Add(new PromotionProduct
+            {
+                Id = Guid.NewGuid(),
+                PromotionId = smartPromo.Id,
+                ProductId = product.Id
+            });
+        }
+
+        // Add some products to clearance
+        var clearanceItems = products.Take(3).ToList();
+        foreach (var product in clearanceItems)
+        {
+            _context.Set<PromotionProduct>().Add(new PromotionProduct
+            {
+                Id = Guid.NewGuid(),
+                PromotionId = clearancePromo.Id,
+                ProductId = product.Id
+            });
+        }
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Seeded {Count} promotions with linked products", promotions.Count);
+    }
+
+    private static Promotion CreatePromotion(
+        string name, string slug, string description, string? code,
+        PromotionType type, decimal discountValue, decimal? minOrder,
+        DateTime startDate, DateTime endDate, bool isFeatured, int sortOrder, string terms)
+    {
+        var promotion = new Promotion(name, slug, type, discountValue, startDate, endDate);
+        promotion.SetDescription(description);
+        promotion.SetCode(code);
+        promotion.SetMinimumOrderAmount(minOrder);
+        promotion.SetFeatured(isFeatured);
+        promotion.SetSortOrder(sortOrder);
+        promotion.SetTermsAndConditions(terms);
+        promotion.SetThumbnailImageUrl($"https://placehold.co/400x200/0d9488/ffffff?text={Uri.EscapeDataString(name)}");
+        promotion.SetBannerImageUrl($"https://placehold.co/1200x400/0d9488/ffffff?text={Uri.EscapeDataString(name)}");
+        return promotion;
     }
 }

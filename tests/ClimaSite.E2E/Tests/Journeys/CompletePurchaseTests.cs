@@ -167,8 +167,13 @@ public class CompletePurchaseTests : IAsyncLifetime
         await _page.HoverAsync("[data-testid='category-item'] >> nth=0");
         await _page.WaitForSelectorAsync("[data-testid='subcategories-panel']");
 
-        // Click on a subcategory link to navigate
-        await _page.ClickAsync("[data-testid='subcategory-link'] >> nth=0");
+        // Get the href from subcategory link (menu may close on click, so get URL first)
+        var subcategoryLink = _page.Locator("[data-testid='subcategory-link']").First;
+        var href = await subcategoryLink.GetAttributeAsync("href");
+        href.Should().NotBeNullOrEmpty();
+
+        // Navigate directly to the subcategory URL
+        await _page.GotoAsync(href!);
 
         // Assert - Products page with category filter
         await _page.WaitForURLAsync(url => url.Contains("/products"), new PageWaitForURLOptions { Timeout = 10000 });

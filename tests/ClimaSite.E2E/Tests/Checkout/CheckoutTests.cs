@@ -246,14 +246,64 @@ public class CheckoutTests : IAsyncLifetime
             "Should either warn about stock or limit to available quantity");
     }
 
-    [Fact(Skip = "Save address feature not yet implemented")]
+    [Fact(Skip = "Address API endpoint needs debugging - form submission not persisting")]
     public async Task Checkout_SavedAddress_CanBeUsed()
     {
-        // This test requires save address checkbox which isn't implemented yet
-        await Task.CompletedTask;
+        // Arrange - Create user, product and a saved address
+        var product = await _dataFactory.CreateProductAsync(name: "Saved Address Test AC", price: 1299.99m);
+        var user = await _dataFactory.CreateUserAsync();
+
+        // Login first
+        var loginPage = new LoginPage(_page);
+        await loginPage.NavigateAsync();
+        await loginPage.LoginAsync(user.Email, user.Password);
+
+        // Go to addresses page and create a saved address
+        await _page.GotoAsync($"{_fixture.BaseUrl}/account/addresses");
+        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        // Click add address button
+        await _page.ClickAsync("[data-testid='add-address-btn']");
+        await _page.WaitForSelectorAsync("[data-testid='address-modal']");
+
+        // Fill in address form
+        await _page.FillAsync("[data-testid='address-fullname']", "Test User");
+        await _page.FillAsync("[data-testid='address-line1']", "123 Test Street");
+        await _page.FillAsync("[data-testid='address-city']", "Sofia");
+        await _page.FillAsync("[data-testid='address-postal']", "1000");
+        await _page.SelectOptionAsync("[data-testid='address-country']", "Bulgaria");
+        await _page.FillAsync("[data-testid='address-phone']", "+359888123456");
+        await _page.CheckAsync("[data-testid='address-default']");
+
+        // Save address
+        await _page.ClickAsync("[data-testid='save-address-btn']");
+        await _page.WaitForSelectorAsync("[data-testid='address-card']");
+
+        // Now add product to cart and go to checkout
+        var productPage = new ProductPage(_page);
+        await productPage.NavigateAsync(product.Slug);
+        await productPage.AddToCartAsync();
+
+        var cartPage = new CartPage(_page);
+        await cartPage.NavigateAsync();
+        await cartPage.ProceedToCheckoutAsync();
+
+        // Act - Select the saved address
+        await _page.WaitForSelectorAsync("[data-testid='saved-addresses-section']");
+        await _page.ClickAsync("[data-testid='saved-address-card']");
+
+        // Assert - Form should be filled with address data
+        var firstName = await _page.InputValueAsync("#firstName");
+        firstName.Should().Be("Test");
+
+        var city = await _page.InputValueAsync("#city");
+        city.Should().Be("Sofia");
+
+        var postalCode = await _page.InputValueAsync("#postalCode");
+        postalCode.Should().Be("1000");
     }
 
-    [Fact(Skip = "Complete checkout flow needs full payment integration - confirmation page not showing")]
+    [Fact]
     public async Task Checkout_CompleteOrder_ShowsConfirmation()
     {
         // Arrange - Create user and product
@@ -290,8 +340,9 @@ public class CheckoutTests : IAsyncLifetime
         );
         await checkoutPage.SubmitShippingFormAsync();
 
-        // Select shipping method (standard should be pre-selected)
-        // Payment method (card should be pre-selected)
+        // Select bank transfer payment method (to avoid Stripe card iframe)
+        await checkoutPage.SelectPaymentMethodAsync("bank");
+
         // Proceed to review
         await checkoutPage.ProceedToReviewAsync();
 

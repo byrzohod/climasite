@@ -42,9 +42,13 @@ import { LoadingComponent } from '../../../shared/components/loading/loading.com
       </div>
 
       <div class="page-header">
-        <h1>{{ category()?.name || ('products.all' | translate) }}</h1>
-        @if (category()?.description) {
-          <p class="category-description">{{ category()?.description }}</p>
+        @if (searchQuery()) {
+          <h1 data-testid="search-results-title">{{ 'products.searchResults' | translate }}: "{{ searchQuery() }}"</h1>
+        } @else {
+          <h1>{{ category()?.name || ('products.all' | translate) }}</h1>
+          @if (category()?.description) {
+            <p class="category-description">{{ category()?.description }}</p>
+          }
         }
         <p class="result-count">{{ totalCount() }} {{ 'products.title' | translate | lowercase }}</p>
       </div>
@@ -594,6 +598,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   selectedBrand = signal<string | null>(null);
   inStockOnly = signal(false);
   onSaleOnly = signal(false);
+  searchQuery = signal<string | null>(null);
 
   constructor() {
     // Refresh products when language changes
@@ -616,7 +621,8 @@ export class ProductListComponent implements OnInit, OnDestroy {
     this.inStockOnly() ||
     this.onSaleOnly() ||
     this.minPrice !== null ||
-    this.maxPrice !== null
+    this.maxPrice !== null ||
+    this.searchQuery() !== null
   );
 
   visiblePages = computed(() => {
@@ -664,6 +670,22 @@ export class ProductListComponent implements OnInit, OnDestroy {
       if (params['sort']) {
         this.sortBy = params['sort'];
       }
+      // Handle search query parameter
+      if (params['search']) {
+        const newSearchQuery = params['search'];
+        const oldSearchQuery = this.searchQuery();
+        this.searchQuery.set(newSearchQuery);
+        // If search query changed and we're initialized, reload products
+        if (this.isInitialized && newSearchQuery !== oldSearchQuery) {
+          this.fetchProducts(this.category()?.id);
+        }
+      } else if (this.searchQuery()) {
+        // Clear search if param is removed
+        this.searchQuery.set(null);
+        if (this.isInitialized) {
+          this.fetchProducts(this.category()?.id);
+        }
+      }
     });
   }
 
@@ -705,6 +727,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
       pageNumber: this.currentPage(),
       pageSize: 12,
       categoryId,
+      searchTerm: this.searchQuery() || undefined,
       brand: this.selectedBrand() || undefined,
       minPrice: this.minPrice ?? undefined,
       maxPrice: this.maxPrice ?? undefined,
@@ -752,9 +775,16 @@ export class ProductListComponent implements OnInit, OnDestroy {
     this.selectedBrand.set(null);
     this.inStockOnly.set(false);
     this.onSaleOnly.set(false);
+    this.searchQuery.set(null);
     this.minPrice = null;
     this.maxPrice = null;
     this.sortBy = 'newest';
+    // Clear search from URL as well
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { search: null },
+      queryParamsHandling: 'merge'
+    });
     this.applyFilters();
   }
 

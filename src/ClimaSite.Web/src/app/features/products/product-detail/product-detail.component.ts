@@ -76,8 +76,8 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
 
               <div class="product-price" data-testid="product-price">
                 @if (product()?.isOnSale && product()?.salePrice) {
-                  <span class="original-price">{{ product()?.basePrice | currency:'EUR' }}</span>
-                  <span class="sale-price">{{ product()?.salePrice | currency:'EUR' }}</span>
+                  <span class="original-price">{{ product()?.salePrice | currency:'EUR' }}</span>
+                  <span class="sale-price">{{ product()?.basePrice | currency:'EUR' }}</span>
                   <span class="discount-badge">-{{ product()?.discountPercentage }}%</span>
                 } @else {
                   <span class="current-price">{{ product()?.basePrice | currency:'EUR' }}</span>

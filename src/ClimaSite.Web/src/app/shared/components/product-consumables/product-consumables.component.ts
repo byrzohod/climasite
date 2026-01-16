@@ -37,8 +37,8 @@ import { ProductBrief } from '../../../core/models/product.model';
                 </a>
                 <div class="product-price">
                   @if (product.isOnSale && product.salePrice) {
-                    <span class="sale-price">{{ product.salePrice | currency:'EUR' }}</span>
-                    <span class="original-price">{{ product.basePrice | currency:'EUR' }}</span>
+                    <span class="original-price">{{ product.salePrice | currency:'EUR' }}</span>
+                    <span class="sale-price">{{ product.basePrice | currency:'EUR' }}</span>
                   } @else {
                     <span class="current-price">{{ product.basePrice | currency:'EUR' }}</span>
                   }
