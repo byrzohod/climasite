@@ -305,6 +305,32 @@
     "expectedRestock": "Erwarteter Nachschub: {{date}}",
     "estimatedArrival": "Voraussichtliche Ankunft"
   },
+  "reviews": {
+    "total": "Bewertungen",
+    "writeReview": "Bewertung schreiben",
+    "cancel": "Abbrechen",
+    "loginToReview": "Bitte melden Sie sich an, um eine Bewertung zu schreiben",
+    "writeYourReview": "Schreiben Sie Ihre Bewertung",
+    "yourRating": "Ihre Bewertung",
+    "reviewTitle": "Bewertungstitel",
+    "titlePlaceholder": "Fassen Sie Ihre Erfahrung zusammen",
+    "reviewContent": "Ihre Bewertung",
+    "contentPlaceholder": "Erzählen Sie anderen von Ihren Erfahrungen mit diesem Produkt...",
+    "submitReview": "Bewertung absenden",
+    "sortBy": "Sortieren nach",
+    "sort": {
+      "newest": "Neueste zuerst",
+      "oldest": "Älteste zuerst",
+      "helpful": "Hilfreichste",
+      "ratingHigh": "Höchste Bewertung",
+      "ratingLow": "Niedrigste Bewertung"
+    },
+    "noReviews": "Noch keine Bewertungen",
+    "beFirst": "Seien Sie der Erste, der dieses Produkt bewertet!",
+    "verifiedPurchase": "Verifizierter Kauf",
+    "storeResponse": "Antwort vom Shop",
+    "wasHelpful": "War diese Bewertung hilfreich?"
+  },
   "cart": {
     "title": "Warenkorb",
     "empty": "Ihr Warenkorb ist leer",
@@ -634,6 +660,10 @@
       "supportDesc": "24/7 Kundenservice",
       "installation": "Professionelle Installation",
       "installationDesc": "Von zertifizierten Technikern"
+    },
+    "testimonials": {
+      "title": "Was unsere Kunden sagen",
+      "subtitle": "Echte Bewertungen von zufriedenen Kunden"
     }
   },
   "contact": {

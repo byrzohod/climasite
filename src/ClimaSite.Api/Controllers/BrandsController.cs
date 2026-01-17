@@ -34,6 +34,17 @@ public class BrandsController : ControllerBase
         return Ok(result);
     }
 
+    // Specific route must come BEFORE generic {slug} route
+    [HttpGet("featured")]
+    public async Task<IActionResult> GetFeaturedBrands(
+        [FromQuery] int limit = 8,
+        [FromQuery] string? lang = null)
+    {
+        var query = new GetFeaturedBrandsQuery { Limit = limit, LanguageCode = lang };
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
+
     [HttpGet("{slug}")]
     public async Task<IActionResult> GetBrandBySlug(
         string slug,
@@ -54,16 +65,6 @@ public class BrandsController : ControllerBase
         if (result == null)
             return NotFound(new { message = "Brand not found" });
 
-        return Ok(result);
-    }
-
-    [HttpGet("featured")]
-    public async Task<IActionResult> GetFeaturedBrands(
-        [FromQuery] int limit = 8,
-        [FromQuery] string? lang = null)
-    {
-        var query = new GetFeaturedBrandsQuery { Limit = limit, LanguageCode = lang };
-        var result = await _mediator.Send(query);
         return Ok(result);
     }
 }

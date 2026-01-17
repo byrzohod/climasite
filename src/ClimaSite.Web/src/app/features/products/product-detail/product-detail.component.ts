@@ -6,18 +6,23 @@ import { TranslateModule } from '@ngx-translate/core';
 import { ProductService } from '../../../core/services/product.service';
 import { CartService } from '../../../core/services/cart.service';
 import { LanguageService } from '../../../core/services/language.service';
+import { WishlistService } from '../../../core/services/wishlist.service';
 import { Product } from '../../../core/models/product.model';
 import { ProductConsumablesComponent } from '../../../shared/components/product-consumables/product-consumables.component';
 import { SimilarProductsComponent } from '../../../shared/components/similar-products/similar-products.component';
 import { ProductGalleryComponent, ProductImage as GalleryImage } from '../../../shared/components/product-gallery/product-gallery.component';
 import { EnergyRatingComponent, EnergyRatingLevel } from '../../../shared/components/energy-rating/energy-rating.component';
 import { WarrantyBadgeComponent } from '../../../shared/components/warranty-badge/warranty-badge.component';
+import { ProductReviewsComponent } from '../../../shared/components/product-reviews/product-reviews.component';
+import { ProductQaComponent } from '../components/product-qa/product-qa.component';
+import { PriceHistoryChartComponent } from '../components/price-history-chart/price-history-chart.component';
+import { InstallationServiceComponent } from '../components/installation-service/installation-service.component';
 import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, ProductConsumablesComponent, SimilarProductsComponent, ProductGalleryComponent, EnergyRatingComponent, WarrantyBadgeComponent, SpecKeyPipe],
+  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, ProductConsumablesComponent, SimilarProductsComponent, ProductGalleryComponent, EnergyRatingComponent, WarrantyBadgeComponent, ProductReviewsComponent, ProductQaComponent, PriceHistoryChartComponent, InstallationServiceComponent, SpecKeyPipe],
   template: `
     <div class="product-detail-container" data-testid="product-detail">
       @if (isLoading()) {
@@ -153,8 +158,26 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
                   }
                 </button>
 
-                <button class="btn-wishlist" data-testid="add-to-wishlist">
-                  ♡ {{ 'products.details.addToWishlist' | translate }}
+                <button
+                  class="btn-wishlist"
+                  [class.active]="isInWishlist()"
+                  [disabled]="wishlistLoading()"
+                  (click)="toggleWishlist()"
+                  data-testid="add-to-wishlist"
+                >
+                  @if (wishlistLoading()) {
+                    <span class="wishlist-spinner"></span>
+                  } @else if (isInWishlist()) {
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="heart-icon">
+                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                    {{ 'products.details.removeFromWishlist' | translate }}
+                  } @else {
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="heart-icon">
+                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                    {{ 'products.details.addToWishlist' | translate }}
+                  }
                 </button>
               </div>
 
@@ -190,6 +213,13 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
                 (click)="setActiveTab('reviews')"
               >
                 {{ 'products.details.reviews' | translate }} ({{ product()?.reviewCount || 0 }})
+              </button>
+              <button
+                class="tab-header"
+                [class.active]="activeTab() === 'qa'"
+                (click)="setActiveTab('qa')"
+              >
+                {{ 'products.qa.title' | translate }}
               </button>
             </div>
 
@@ -234,11 +264,23 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
 
               @if (activeTab() === 'reviews') {
                 <div class="tab-panel">
-                  <p>{{ 'products.details.reviewsComingSoon' | translate }}</p>
+                  <app-product-reviews [productId]="product()!.id" />
+                </div>
+              }
+
+              @if (activeTab() === 'qa') {
+                <div class="tab-panel">
+                  <app-product-qa [productId]="product()!.id" />
                 </div>
               }
             </div>
           </div>
+
+          <!-- Price History -->
+          <app-price-history-chart [productId]="product()!.id" />
+
+          <!-- Installation Service -->
+          <app-installation-service [productId]="product()!.id" />
 
           <!-- Recommended Accessories / Consumables -->
           <app-product-consumables [productId]="product()!.id" />
@@ -498,6 +540,10 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
     }
 
     .btn-wishlist {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
       padding: 1rem 2rem;
       background: transparent;
       color: var(--color-text-primary);
@@ -507,10 +553,40 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
       cursor: pointer;
       transition: all 0.2s;
 
-      &:hover {
+      .heart-icon {
+        width: 20px;
+        height: 20px;
+        flex-shrink: 0;
+      }
+
+      &:hover:not(:disabled) {
         border-color: var(--color-error);
         color: var(--color-error);
       }
+
+      &.active {
+        border-color: var(--color-error);
+        color: var(--color-error);
+        background: rgba(239, 68, 68, 0.1);
+      }
+
+      &:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+      }
+
+      .wishlist-spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid var(--color-border);
+        border-top-color: var(--color-primary);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
 
     .cart-notification {
@@ -631,6 +707,7 @@ export class ProductDetailComponent implements OnInit {
   private readonly productService = inject(ProductService);
   private readonly cartService = inject(CartService);
   private readonly languageService = inject(LanguageService);
+  private readonly wishlistService = inject(WishlistService);
   private currentSlug: string | null = null;
   private lastLanguage: string | null = null;
 
@@ -641,10 +718,18 @@ export class ProductDetailComponent implements OnInit {
   error = signal<string | null>(null);
   quantity = signal(1);
   selectedImage = signal<string | null>(null);
-  activeTab = signal<'description' | 'specifications' | 'reviews'>('description');
+  activeTab = signal<'description' | 'specifications' | 'reviews' | 'qa'>('description');
   isAddingToCart = signal(false);
   addedToCart = signal(false);
   showNotification = signal(false);
+  wishlistLoading = signal(false);
+
+  // Computed: Check if current product is in wishlist
+  isInWishlist = computed(() => {
+    const prod = this.product();
+    if (!prod) return false;
+    return this.wishlistService.isInWishlist(prod.id);
+  });
 
   constructor() {
     // Refresh product when language changes
@@ -711,7 +796,7 @@ export class ProductDetailComponent implements OnInit {
     this.selectedImage.set(url);
   }
 
-  setActiveTab(tab: 'description' | 'specifications' | 'reviews'): void {
+  setActiveTab(tab: 'description' | 'specifications' | 'reviews' | 'qa'): void {
     this.activeTab.set(tab);
   }
 
@@ -774,5 +859,36 @@ export class ProductDetailComponent implements OnInit {
       key,
       value: String(value)
     }));
+  }
+
+  toggleWishlist(): void {
+    const prod = this.product();
+    if (!prod || this.wishlistLoading()) return;
+
+    this.wishlistLoading.set(true);
+
+    // Create a ProductBrief for the wishlist service
+    const productBrief = {
+      id: prod.id,
+      name: prod.name,
+      slug: prod.slug,
+      basePrice: prod.basePrice,
+      salePrice: prod.salePrice,
+      primaryImageUrl: prod.images?.[0]?.url || '',
+      category: prod.category?.name || '',
+      brand: prod.brand || '',
+      averageRating: prod.averageRating || 0,
+      reviewCount: prod.reviewCount || 0,
+      isOnSale: prod.isOnSale || false,
+      discountPercentage: prod.discountPercentage || 0,
+      inStock: true
+    };
+
+    this.wishlistService.toggleWishlist(prod.id, productBrief);
+
+    // Brief loading state for visual feedback
+    setTimeout(() => {
+      this.wishlistLoading.set(false);
+    }, 300);
   }
 }

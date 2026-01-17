@@ -6,6 +6,9 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ProductService } from '../../core/services/product.service';
 import { ProductBrief } from '../../core/models/product.model';
 import { ProductCardComponent } from '../products/product-card/product-card.component';
+import { AnimateOnScrollDirective } from '../../shared/directives/animate-on-scroll.directive';
+import { TestimonialsComponent } from '../../shared/components/testimonials/testimonials.component';
+import { SkeletonProductCardComponent } from '../../shared/components/skeleton-product-card/skeleton-product-card.component';
 
 interface HeroSlide {
   title: string;
@@ -19,7 +22,7 @@ interface HeroSlide {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, ProductCardComponent],
+  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, ProductCardComponent, AnimateOnScrollDirective, TestimonialsComponent, SkeletonProductCardComponent],
   template: `
     <div class="home-container">
       <!-- HOME-001: Enhanced Hero Slider -->
@@ -64,7 +67,7 @@ interface HeroSlide {
       </section>
 
       <!-- HOME-001: Benefits section with professional SVG icons -->
-      <section class="benefits-section" data-testid="benefits-section">
+      <section class="benefits-section" data-testid="benefits-section" appAnimateOnScroll [animation]="'fade-in-up'">
         <div class="benefits-grid">
           <div class="benefit-card">
             <div class="benefit-icon">
@@ -163,7 +166,7 @@ interface HeroSlide {
       </section>
 
       <!-- NAV-001 FIX: Use route-based navigation with correct database slugs -->
-      <section class="categories-section">
+      <section class="categories-section" appAnimateOnScroll [animation]="'fade-in-up'" [delay]="100">
         <h2>{{ 'home.categories.title' | translate }}</h2>
         <div class="categories-grid">
           <a [routerLink]="['/products/category', 'air-conditioners']" class="category-card category-card--cooling" data-testid="category-card">
@@ -206,7 +209,7 @@ interface HeroSlide {
       </section>
 
       <!-- HOME-001: Featured products with actual loading -->
-      <section class="featured-section" data-testid="featured-products">
+      <section class="featured-section" data-testid="featured-products" appAnimateOnScroll [animation]="'fade-in-up'" [delay]="200">
         <div class="section-header">
           <h2>{{ 'home.featured.title' | translate }}</h2>
           <a routerLink="/products" class="view-all-link" data-testid="view-all-products">
@@ -214,9 +217,10 @@ interface HeroSlide {
           </a>
         </div>
         @if (loadingFeatured()) {
-          <div class="featured-loading">
-            <div class="loading-spinner"></div>
-            <p>{{ 'common.loading' | translate }}</p>
+          <div class="featured-grid">
+            @for (i of [1,2,3,4,5,6,7,8]; track i) {
+              <app-skeleton-product-card />
+            }
           </div>
         } @else if (featuredProducts().length === 0) {
           <div class="featured-empty">
@@ -231,8 +235,11 @@ interface HeroSlide {
         }
       </section>
 
+      <!-- HOME-003: Customer Testimonials -->
+      <app-testimonials appAnimateOnScroll [animation]="'fade-in-up'" [delay]="250" />
+
       <!-- HOME-001: Newsletter Section with proper feedback -->
-      <section class="newsletter-section" data-testid="newsletter-section">
+      <section class="newsletter-section" data-testid="newsletter-section" appAnimateOnScroll [animation]="'fade-in-up'" [delay]="300">
         <div class="newsletter-content">
           <div class="newsletter-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -860,7 +867,7 @@ interface HeroSlide {
       }
 
       &--error {
-        border-color: #fca5a5;
+        border-color: #ff6b6b;
       }
     }
 
@@ -869,7 +876,7 @@ interface HeroSlide {
       bottom: -24px;
       left: 1.5rem;
       font-size: 0.8125rem;
-      color: #fca5a5;
+      color: #ff6b6b;
     }
 
     .newsletter-button {
@@ -922,7 +929,7 @@ interface HeroSlide {
       svg {
         width: 24px;
         height: 24px;
-        color: #86efac;
+        color: #4ade80;
       }
 
       span {

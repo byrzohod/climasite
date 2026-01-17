@@ -305,6 +305,32 @@
     "expectedRestock": "Expected restock: {{date}}",
     "estimatedArrival": "Estimated arrival"
   },
+  "reviews": {
+    "total": "reviews",
+    "writeReview": "Write a Review",
+    "cancel": "Cancel",
+    "loginToReview": "Please log in to write a review",
+    "writeYourReview": "Write Your Review",
+    "yourRating": "Your Rating",
+    "reviewTitle": "Review Title",
+    "titlePlaceholder": "Summarize your experience",
+    "reviewContent": "Your Review",
+    "contentPlaceholder": "Tell others about your experience with this product...",
+    "submitReview": "Submit Review",
+    "sortBy": "Sort by",
+    "sort": {
+      "newest": "Newest First",
+      "oldest": "Oldest First",
+      "helpful": "Most Helpful",
+      "ratingHigh": "Highest Rating",
+      "ratingLow": "Lowest Rating"
+    },
+    "noReviews": "No reviews yet",
+    "beFirst": "Be the first to review this product!",
+    "verifiedPurchase": "Verified Purchase",
+    "storeResponse": "Store Response",
+    "wasHelpful": "Was this review helpful?"
+  },
   "cart": {
     "title": "Shopping Cart",
     "empty": "Your cart is empty",
@@ -620,6 +646,10 @@
       "products": "Products",
       "years": "Years Experience",
       "rating": "Customer Rating"
+    },
+    "testimonials": {
+      "title": "What Our Customers Say",
+      "subtitle": "Real reviews from satisfied customers"
     }
   },
   "contact": {

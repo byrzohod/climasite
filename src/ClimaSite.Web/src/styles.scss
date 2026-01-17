@@ -21,10 +21,28 @@ body {
   transition: var(--theme-transition);
 }
 
-// Focus styles for accessibility
+// Focus styles for accessibility (POLISH-002)
 *:focus-visible {
   outline: 2px solid var(--color-border-focus);
   outline-offset: 2px;
+}
+
+// Enhanced focus states for interactive elements
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+// Remove default focus outline for mouse users
+:focus:not(:focus-visible) {
+  outline: none;
 }
 
 // Selection colors
@@ -547,7 +565,7 @@ body {
 
       .original {
         text-decoration: line-through;
-        color: #666 !important;
+        color: #444 !important;
       }
 
       .sale {
@@ -605,7 +623,7 @@ body {
   a[href]:after {
     content: " (" attr(href) ")";
     font-size: 10pt;
-    color: #666 !important;
+    color: #444 !important;
   }
 
   // Don't show URL for internal links or buttons
@@ -666,7 +684,7 @@ body {
     width: 100%;
     text-align: center;
     font-size: 10pt;
-    color: #666 !important;
+    color: #444 !important;
     border-bottom: 1px solid #ccc;
     padding-bottom: 0.5rem;
   }
@@ -678,7 +696,7 @@ body {
     width: 100%;
     text-align: center;
     font-size: 10pt;
-    color: #666 !important;
+    color: #444 !important;
     border-top: 1px solid #ccc;
     padding-top: 0.5rem;
   }

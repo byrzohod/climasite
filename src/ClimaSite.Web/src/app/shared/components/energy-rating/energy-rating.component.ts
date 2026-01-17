@@ -15,10 +15,11 @@ export type EnergyRatingLevel = 'A+++' | 'A++' | 'A+' | 'A' | 'B' | 'C' | 'D' | 
           <div class="level"
                [class.active]="level === rating()"
                [style.background-color]="getColor(level)"
+               [style.color]="getTextColor(level)"
                [style.width]="getWidth(level)">
             <span class="level-label">{{ level }}</span>
             @if (level === rating()) {
-              <span class="indicator">
+              <span class="indicator" [style.background-color]="getTextColor(level)" [style.color]="getColor(level)">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M10 17l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                 </svg>
@@ -29,7 +30,7 @@ export type EnergyRatingLevel = 'A+++' | 'A++' | 'A+' | 'A' | 'B' | 'C' | 'D' | 
       </div>
       <div class="rating-info">
         <span class="label">{{ label() | translate }}</span>
-        <span class="value" [style.background-color]="getColor(rating())">
+        <span class="value" [style.background-color]="getColor(rating())" [style.color]="getTextColor(rating())">
           {{ rating() }}
         </span>
       </div>
@@ -57,7 +58,6 @@ export type EnergyRatingLevel = 'A+++' | 'A++' | 'A+' | 'A' | 'B' | 'C' | 'D' | 
       justify-content: space-between;
       padding: 0.25rem 0.5rem;
       border-radius: 2px;
-      color: white;
       font-size: 0.75rem;
       font-weight: 600;
       opacity: 0.6;
@@ -80,7 +80,6 @@ export type EnergyRatingLevel = 'A+++' | 'A++' | 'A+' | 'A' | 'B' | 'C' | 'D' | 
       justify-content: center;
       width: 18px;
       height: 18px;
-      background: white;
       border-radius: 50%;
 
       svg {
@@ -106,7 +105,6 @@ export type EnergyRatingLevel = 'A+++' | 'A++' | 'A+' | 'A' | 'B' | 'C' | 'D' | 
     .value {
       padding: 0.25rem 0.75rem;
       border-radius: 4px;
-      color: white;
       font-weight: 700;
       font-size: 1rem;
     }
@@ -162,6 +160,13 @@ export class EnergyRatingComponent {
 
   getWidth(level: EnergyRatingLevel): string {
     return this.widths[level] || '100%';
+  }
+
+  // Levels with light backgrounds that need dark text for WCAG contrast
+  private readonly lightBackgrounds: EnergyRatingLevel[] = ['A+', 'A', 'B', 'C'];
+
+  getTextColor(level: EnergyRatingLevel): string {
+    return this.lightBackgrounds.includes(level) ? '#1a1a1a' : '#ffffff';
   }
 
   // Get the rating index for comparison

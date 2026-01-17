@@ -19,7 +19,20 @@ import { BrandBrief } from '../../../core/models/brand.model';
       @if (isLoading() && brands().length === 0) {
         <div class="loading">{{ 'common.loading' | translate }}</div>
       } @else if (error()) {
-        <div class="error">{{ error() }}</div>
+        <div class="error-container">
+          <div class="error-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <p class="error-message">{{ error() }}</p>
+          <button class="retry-btn" (click)="loadBrands()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path fill-rule="evenodd" d="M4.755 10.059a7.5 7.5 0 0112.548-3.364l1.903 1.903h-3.183a.75.75 0 100 1.5h4.992a.75.75 0 00.75-.75V4.356a.75.75 0 00-1.5 0v3.18l-1.9-1.9A9 9 0 003.306 9.67a.75.75 0 101.45.388zm15.408 3.352a.75.75 0 00-.919.53 7.5 7.5 0 01-12.548 3.364l-1.902-1.903h3.183a.75.75 0 000-1.5H2.984a.75.75 0 00-.75.75v4.992a.75.75 0 001.5 0v-3.18l1.9 1.9a9 9 0 0015.059-4.035.75.75 0 00-.53-.918z" clip-rule="evenodd" />
+            </svg>
+            {{ 'common.retry' | translate }}
+          </button>
+        </div>
       } @else {
         <div class="brands-grid">
           @for (brand of brands(); track brand.id) {
@@ -98,14 +111,58 @@ import { BrandBrief } from '../../../core/models/brand.model';
       }
     }
 
-    .loading, .error {
+    .loading {
       text-align: center;
       padding: 4rem 2rem;
       color: var(--color-text-secondary);
     }
 
-    .error {
+    .error-container {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: var(--color-bg-secondary);
+      border-radius: 16px;
+      max-width: 400px;
+      margin: 2rem auto;
+    }
+
+    .error-icon {
       color: var(--color-error);
+      margin-bottom: 1rem;
+
+      svg {
+        width: 48px;
+        height: 48px;
+      }
+    }
+
+    .error-message {
+      color: var(--color-text-secondary);
+      margin: 0 0 1.5rem;
+      font-size: 1rem;
+    }
+
+    .retry-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background: var(--color-primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      &:hover {
+        background: var(--color-primary-dark);
+      }
     }
 
     .brands-grid {
@@ -301,7 +358,7 @@ export class BrandsListComponent implements OnInit {
     this.loadBrands();
   }
 
-  private loadBrands(): void {
+  loadBrands(): void {
     this.isLoading.set(true);
     this.brandService.getBrands(this.currentPage(), this.pageSize).subscribe({
       next: (response) => {
