@@ -1,4 +1,4 @@
-import { Component, inject, input, signal, effect, OnDestroy } from '@angular/core';
+import { Component, inject, input, signal, effect, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
@@ -16,85 +16,88 @@ import { ProductBrief } from '../../../core/models/product.model';
       <section class="consumables-section" data-testid="consumables-section">
         <div class="section-header">
           <h3>{{ 'products.consumables.title' | translate }}</h3>
-          <p class="subtitle">{{ 'products.consumables.subtitle' | translate }}</p>
         </div>
 
-        <div class="consumables-grid">
-          @for (product of consumables(); track product.id) {
-            <div class="consumable-card" data-testid="consumable-card">
-              <div class="product-image">
-                <a [routerLink]="['/products', product.slug]">
-                  @if (product.primaryImageUrl) {
-                    <img [src]="product.primaryImageUrl" [alt]="product.name" loading="lazy" />
-                  } @else {
-                    <div class="no-image">{{ 'products.noImage' | translate }}</div>
-                  }
-                </a>
-              </div>
-              <div class="product-info">
-                <a [routerLink]="['/products', product.slug]" class="product-name">
-                  {{ product.name }}
-                </a>
-                <div class="product-price">
-                  @if (product.isOnSale && product.salePrice) {
-                    <span class="original-price">{{ product.salePrice | currency:'EUR' }}</span>
-                    <span class="sale-price">{{ product.basePrice | currency:'EUR' }}</span>
-                  } @else {
-                    <span class="current-price">{{ product.basePrice | currency:'EUR' }}</span>
-                  }
-                </div>
-              </div>
-              <button
-                class="add-btn"
-                [class.added]="addedItems()[product.id]"
-                [disabled]="!product.inStock || addingItems()[product.id]"
-                (click)="addToCart(product)"
-                data-testid="consumable-add-btn">
-                @if (addingItems()[product.id]) {
-                  <span class="spinner"></span>
-                } @else if (addedItems()[product.id]) {
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="icon">
-                    <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
-                  </svg>
-                } @else {
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="icon">
-                    <path d="M10 5a.75.75 0 01.75.75v4.5h4.5a.75.75 0 010 1.5h-4.5v4.5a.75.75 0 01-1.5 0v-4.5h-4.5a.75.75 0 010-1.5h4.5v-4.5A.75.75 0 0110 5z" />
-                  </svg>
-                }
-                <span>{{ addedItems()[product.id] ? ('common.added' | translate) : ('common.add' | translate) }}</span>
-              </button>
-            </div>
-          }
-        </div>
+        <div class="carousel-container">
+          <button
+            class="nav-btn prev"
+            [disabled]="!canScrollLeft()"
+            (click)="scrollLeft()"
+            aria-label="Previous">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" />
+            </svg>
+          </button>
 
-        @if (consumables().length > 1) {
-          <div class="add-all-section">
-            <div class="total-info">
-              <span class="label">{{ 'products.consumables.totalPrice' | translate }}:</span>
-              <span class="total-price">{{ totalPrice() | currency:'EUR' }}</span>
-            </div>
-            <button
-              class="btn-add-all"
-              [disabled]="isAddingAll()"
-              (click)="addAllToCart()"
-              data-testid="add-all-consumables">
-              @if (isAddingAll()) {
-                {{ 'common.loading' | translate }}
-              } @else {
-                {{ 'products.consumables.addAll' | translate }}
-              }
-            </button>
+          <div class="products-carousel" #carousel (scroll)="onScroll()">
+            @for (product of consumables(); track product.id) {
+              <div class="product-card" data-testid="consumable-card">
+                <a [routerLink]="['/products', product.slug]" class="product-link">
+                  <div class="product-image">
+                    @if (product.isOnSale) {
+                      <span class="sale-badge">-{{ product.discountPercentage }}%</span>
+                    }
+                    @if (product.primaryImageUrl) {
+                      <img [src]="product.primaryImageUrl" [alt]="product.name" loading="lazy" />
+                    } @else {
+                      <div class="no-image">{{ 'products.noImage' | translate }}</div>
+                    }
+                  </div>
+                  <div class="product-info">
+                    @if (product.brand) {
+                      <span class="product-brand">{{ product.brand }}</span>
+                    }
+                    <h4 class="product-name">{{ product.name }}</h4>
+                    <div class="product-price">
+                      @if (product.isOnSale && product.salePrice) {
+                        <span class="original-price">{{ product.salePrice | currency:'EUR' }}</span>
+                        <span class="sale-price">{{ product.basePrice | currency:'EUR' }}</span>
+                      } @else {
+                        <span class="current-price">{{ product.basePrice | currency:'EUR' }}</span>
+                      }
+                    </div>
+                  </div>
+                </a>
+                <button
+                  class="add-to-cart-btn"
+                  [class.added]="addedItems()[product.id]"
+                  [disabled]="!product.inStock || addingItems()[product.id]"
+                  (click)="addToCart(product, $event)"
+                  data-testid="consumable-add-btn">
+                  @if (addingItems()[product.id]) {
+                    <span class="spinner"></span>
+                  } @else if (addedItems()[product.id]) {
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+                    </svg>
+                  } @else if (!product.inStock) {
+                    <span>{{ 'products.outOfStock' | translate }}</span>
+                  } @else {
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M1 1.75A.75.75 0 011.75 1h1.628a1.75 1.75 0 011.734 1.51L5.18 3a65.25 65.25 0 0113.36 1.412.75.75 0 01.58.875 48.645 48.645 0 01-1.618 6.2.75.75 0 01-.712.513H6a2.503 2.503 0 00-2.292 1.5H17.25a.75.75 0 010 1.5H2.76a.75.75 0 01-.748-.807 4.002 4.002 0 012.716-3.486L3.626 2.716a.25.25 0 00-.248-.216H1.75A.75.75 0 011 1.75zM6 17.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15.5 19a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+                    </svg>
+                  }
+                </button>
+              </div>
+            }
           </div>
-        }
+
+          <button
+            class="nav-btn next"
+            [disabled]="!canScrollRight()"
+            (click)="scrollRight()"
+            aria-label="Next">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
       </section>
     }
   `,
   styles: [`
     .consumables-section {
       margin-top: 3rem;
-      padding: 2rem;
-      background: var(--color-bg-secondary);
-      border-radius: 12px;
     }
 
     .section-header {
@@ -104,46 +107,100 @@ import { ProductBrief } from '../../../core/models/product.model';
         font-size: 1.5rem;
         font-weight: 600;
         color: var(--color-text-primary);
-        margin: 0 0 0.5rem;
-      }
-
-      .subtitle {
-        color: var(--color-text-secondary);
-        font-size: 0.875rem;
         margin: 0;
       }
     }
 
-    .consumables-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    .carousel-container {
+      position: relative;
+      display: flex;
+      align-items: center;
       gap: 1rem;
     }
 
-    .consumable-card {
+    .nav-btn {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--color-border);
       background: var(--color-bg-primary);
-      border-radius: 8px;
-      padding: 1rem;
+      color: var(--color-text-primary);
+      cursor: pointer;
       display: flex;
-      flex-direction: column;
-      transition: box-shadow 0.2s;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
 
-      &:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      &:hover:not(:disabled) {
+        background: var(--color-bg-secondary);
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+      }
+
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
       }
     }
 
+    .products-carousel {
+      display: flex;
+      gap: 1rem;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      flex: 1;
+      padding: 0.5rem 0;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+    }
+
+    .product-card {
+      flex-shrink: 0;
+      width: 220px;
+      background: var(--color-bg-primary);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.2s;
+      position: relative;
+
+      &:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-color: var(--color-primary);
+      }
+    }
+
+    .product-link {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+    }
+
     .product-image {
+      position: relative;
       aspect-ratio: 1;
       background: var(--color-bg-secondary);
-      border-radius: 6px;
       overflow: hidden;
-      margin-bottom: 0.75rem;
 
       img {
         width: 100%;
         height: 100%;
         object-fit: contain;
+        transition: transform 0.3s;
+      }
+
+      .product-card:hover & img {
+        transform: scale(1.05);
       }
 
       .no-image {
@@ -155,25 +212,43 @@ import { ProductBrief } from '../../../core/models/product.model';
         color: var(--color-text-secondary);
         font-size: 0.75rem;
       }
+
+      .sale-badge {
+        position: absolute;
+        top: 0.5rem;
+        left: 0.5rem;
+        padding: 0.25rem 0.5rem;
+        background: var(--color-error);
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 4px;
+      }
     }
 
     .product-info {
-      flex: 1;
-      margin-bottom: 0.75rem;
+      padding: 1rem;
+    }
+
+    .product-brand {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.25rem;
     }
 
     .product-name {
-      display: block;
       font-size: 0.875rem;
       font-weight: 500;
       color: var(--color-text-primary);
-      text-decoration: none;
+      margin: 0 0 0.5rem;
       line-height: 1.4;
-      margin-bottom: 0.5rem;
-
-      &:hover {
-        color: var(--color-primary);
-      }
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
     .product-price {
@@ -182,7 +257,7 @@ import { ProductBrief } from '../../../core/models/product.model';
       gap: 0.5rem;
 
       .current-price, .sale-price {
-        font-weight: 600;
+        font-weight: 700;
         color: var(--color-text-primary);
       }
 
@@ -197,37 +272,46 @@ import { ProductBrief } from '../../../core/models/product.model';
       }
     }
 
-    .add-btn {
+    .add-to-cart-btn {
+      position: absolute;
+      bottom: 1rem;
+      right: 1rem;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: none;
+      background: var(--color-primary);
+      color: white;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
-      padding: 0.5rem 1rem;
-      background: var(--color-primary);
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 0.875rem;
-      font-weight: 500;
-      cursor: pointer;
       transition: all 0.2s;
+      opacity: 0;
 
-      .icon {
-        width: 16px;
-        height: 16px;
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      .product-card:hover & {
+        opacity: 1;
       }
 
       &:hover:not(:disabled) {
         background: var(--color-primary-dark);
+        transform: scale(1.1);
       }
 
       &:disabled {
         opacity: 0.6;
         cursor: not-allowed;
+        background: var(--color-text-secondary);
       }
 
       &.added {
         background: var(--color-success, #22c55e);
+        opacity: 1;
       }
 
       .spinner {
@@ -244,64 +328,23 @@ import { ProductBrief } from '../../../core/models/product.model';
       to { transform: rotate(360deg); }
     }
 
-    .add-all-section {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-top: 1.5rem;
-      padding-top: 1.5rem;
-      border-top: 1px solid var(--color-border);
-    }
-
-    .total-info {
-      display: flex;
-      align-items: baseline;
-      gap: 0.5rem;
-
-      .label {
-        color: var(--color-text-secondary);
+    @media (max-width: 768px) {
+      .nav-btn {
+        display: none;
       }
 
-      .total-price {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: var(--color-text-primary);
-      }
-    }
-
-    .btn-add-all {
-      padding: 0.75rem 1.5rem;
-      background: var(--color-primary);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background-color 0.2s;
-
-      &:hover:not(:disabled) {
-        background: var(--color-primary-dark);
+      .products-carousel {
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
       }
 
-      &:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
-    }
+      .product-card {
+        width: 160px;
+        scroll-snap-align: start;
 
-    @media (max-width: 640px) {
-      .consumables-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .add-all-section {
-        flex-direction: column;
-        gap: 1rem;
-        text-align: center;
-      }
-
-      .btn-add-all {
-        width: 100%;
+        .add-to-cart-btn {
+          opacity: 1;
+        }
       }
     }
   `]
@@ -311,14 +354,15 @@ export class ProductConsumablesComponent implements OnDestroy {
   private readonly cartService = inject(CartService);
   private readonly destroy$ = new Subject<void>();
 
+  @ViewChild('carousel') carousel!: ElementRef<HTMLDivElement>;
+
   productId = input.required<string>();
 
   consumables = signal<ProductBrief[]>([]);
   addingItems = signal<Record<string, boolean>>({});
   addedItems = signal<Record<string, boolean>>({});
-  isAddingAll = signal(false);
-
-  totalPrice = signal(0);
+  canScrollLeft = signal(false);
+  canScrollRight = signal(true);
 
   constructor() {
     effect(() => {
@@ -340,21 +384,40 @@ export class ProductConsumablesComponent implements OnDestroy {
       .subscribe({
         next: (products) => {
           this.consumables.set(products);
-          this.calculateTotal(products);
+          setTimeout(() => this.updateScrollButtons(), 100);
         },
         error: (err) => console.error('Failed to load consumables:', err)
       });
   }
 
-  private calculateTotal(products: ProductBrief[]): void {
-    const total = products.reduce((sum, p) => {
-      const price = p.isOnSale && p.salePrice ? p.salePrice : p.basePrice;
-      return sum + price;
-    }, 0);
-    this.totalPrice.set(total);
+  onScroll(): void {
+    this.updateScrollButtons();
   }
 
-  addToCart(product: ProductBrief): void {
+  private updateScrollButtons(): void {
+    if (!this.carousel?.nativeElement) return;
+
+    const el = this.carousel.nativeElement;
+    this.canScrollLeft.set(el.scrollLeft > 0);
+    this.canScrollRight.set(el.scrollLeft < el.scrollWidth - el.clientWidth - 10);
+  }
+
+  scrollLeft(): void {
+    if (this.carousel?.nativeElement) {
+      this.carousel.nativeElement.scrollBy({ left: -240, behavior: 'smooth' });
+    }
+  }
+
+  scrollRight(): void {
+    if (this.carousel?.nativeElement) {
+      this.carousel.nativeElement.scrollBy({ left: 240, behavior: 'smooth' });
+    }
+  }
+
+  addToCart(product: ProductBrief, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+
     if (this.addingItems()[product.id]) return;
 
     this.addingItems.update(items => ({ ...items, [product.id]: true }));
@@ -374,33 +437,5 @@ export class ProductConsumablesComponent implements OnDestroy {
           this.addingItems.update(items => ({ ...items, [product.id]: false }));
         }
       });
-  }
-
-  addAllToCart(): void {
-    if (this.isAddingAll()) return;
-
-    this.isAddingAll.set(true);
-    const products = this.consumables().filter(p => p.inStock);
-    let completed = 0;
-
-    products.forEach(product => {
-      this.cartService.addToCart(product.id, 1)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: () => {
-            this.addedItems.update(items => ({ ...items, [product.id]: true }));
-            completed++;
-            if (completed === products.length) {
-              this.isAddingAll.set(false);
-            }
-          },
-          error: () => {
-            completed++;
-            if (completed === products.length) {
-              this.isAddingAll.set(false);
-            }
-          }
-        });
-    });
   }
 }

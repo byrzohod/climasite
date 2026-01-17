@@ -94,6 +94,7 @@
     "onSale": "On Sale",
     "bestsellers": "Bestsellers",
     "noProducts": "No products found",
+    "itemsFound": "{{count}} products found",
     "searchResults": "Search results for",
     "noImage": "No Image",
     "outOfStock": "Out of Stock",
@@ -281,21 +282,12 @@
       "noAnswersYet": "No answers yet. Be the first to help!",
       "noQuestionsYet": "No questions yet about this product",
       "beFirstToAsk": "Be the first to ask a question!",
+      "loginToAsk": "Log in to ask a question about this product",
+      "loginToAnswer": "Log in to answer",
+      "loginNow": "Log in",
       "errors": {
         "questionTooShort": "Question must be at least 10 characters"
       }
-    },
-    "priceHistory": {
-      "title": "Price History",
-      "days30": "30 Days",
-      "days60": "60 Days",
-      "days90": "90 Days",
-      "current": "Current",
-      "lowest": "Lowest",
-      "highest": "Highest",
-      "average": "Average",
-      "noHistory": "No price history available for the selected period.",
-      "notAvailable": "Price history is not available for this product."
     }
   },
   "delivery": {
@@ -310,6 +302,7 @@
     "writeReview": "Write a Review",
     "cancel": "Cancel",
     "loginToReview": "Please log in to write a review",
+    "loginNow": "Log in",
     "writeYourReview": "Write Your Review",
     "yourRating": "Your Rating",
     "reviewTitle": "Review Title",
@@ -329,7 +322,9 @@
     "beFirst": "Be the first to review this product!",
     "verifiedPurchase": "Verified Purchase",
     "storeResponse": "Store Response",
-    "wasHelpful": "Was this review helpful?"
+    "wasHelpful": "Was this review helpful?",
+    "sessionExpired": "Your session has expired. Please log in again to submit your review.",
+    "submitError": "Failed to submit review. Please try again."
   },
   "cart": {
     "title": "Shopping Cart",
@@ -769,6 +764,26 @@
       "totalRevenue": "Total Revenue",
       "totalUsers": "Total Users",
       "totalProducts": "Total Products"
+    },
+    "moderation": {
+      "title": "Content Moderation",
+      "subtitle": "Review and approve user-generated content",
+      "pendingQuestions": "Pending Questions",
+      "pendingAnswers": "Pending Answers",
+      "pendingReviews": "Pending Reviews",
+      "questionsTab": "Questions",
+      "answersTab": "Answers",
+      "reviewsTab": "Reviews",
+      "noQuestions": "No pending questions to review",
+      "noAnswers": "No pending answers to review",
+      "noReviews": "No pending reviews to review",
+      "askedBy": "Asked by",
+      "answeredBy": "Answered by",
+      "question": "Question",
+      "approve": "Approve",
+      "reject": "Reject",
+      "approveAsOfficial": "Approve as Official",
+      "flag": "Flag for Review"
     }
   },
   "promotions": {

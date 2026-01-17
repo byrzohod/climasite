@@ -11,6 +11,7 @@ import { ProductBrief, FilterOptions, ProductFilter, PaginatedResult } from '../
 import { Category } from '../../../core/models/category.model';
 import { ProductCardComponent } from '../product-card/product-card.component';
 import { LoadingComponent } from '../../../shared/components/loading/loading.component';
+import { CategoryHeaderComponent, CategoryInfo } from '../../../shared/components/category-header/category-header.component';
 
 @Component({
   selector: 'app-product-list',
@@ -21,37 +22,31 @@ import { LoadingComponent } from '../../../shared/components/loading/loading.com
     FormsModule,
     TranslateModule,
     ProductCardComponent,
-    LoadingComponent
+    LoadingComponent,
+    CategoryHeaderComponent
   ],
   template: `
     <div class="product-list-page">
-      <!-- NAV-001 FIX: Updated breadcrumb to use route-based category navigation -->
-      <div class="breadcrumb" data-testid="breadcrumb">
-        <a routerLink="/">{{ 'nav.home' | translate }}</a>
-        @if (category()) {
-          <span class="separator">/</span>
-          @for (ancestor of categoryAncestors(); track ancestor.id) {
-            <a [routerLink]="['/products/category', ancestor.slug]">{{ ancestor.name }}</a>
-            <span class="separator">/</span>
-          }
-          <span class="current">{{ category()?.name }}</span>
-        } @else {
+      <!-- Category Header (when a category is selected) -->
+      @if (category() && !searchQuery()) {
+        <app-category-header [category]="categoryInfo()" />
+      } @else {
+        <!-- Default breadcrumb for all products or search results -->
+        <div class="breadcrumb" data-testid="breadcrumb">
+          <a routerLink="/">{{ 'nav.home' | translate }}</a>
           <span class="separator">/</span>
           <span class="current">{{ 'products.all' | translate }}</span>
-        }
-      </div>
+        </div>
 
-      <div class="page-header">
-        @if (searchQuery()) {
-          <h1 data-testid="search-results-title">{{ 'products.searchResults' | translate }}: "{{ searchQuery() }}"</h1>
-        } @else {
-          <h1>{{ category()?.name || ('products.all' | translate) }}</h1>
-          @if (category()?.description) {
-            <p class="category-description">{{ category()?.description }}</p>
+        <div class="page-header">
+          @if (searchQuery()) {
+            <h1 data-testid="search-results-title">{{ 'products.searchResults' | translate }}: "{{ searchQuery() }}"</h1>
+          } @else {
+            <h1>{{ 'products.all' | translate }}</h1>
           }
-        }
-        <p class="result-count">{{ totalCount() }} {{ 'products.title' | translate | lowercase }}</p>
-      </div>
+          <p class="result-count">{{ totalCount() }} {{ 'products.title' | translate | lowercase }}</p>
+        </div>
+      }
 
       <div class="product-list-layout">
         <aside class="filter-sidebar" [class.open]="filterOpen()">
@@ -624,6 +619,24 @@ export class ProductListComponent implements OnInit, OnDestroy {
     this.maxPrice !== null ||
     this.searchQuery() !== null
   );
+
+  categoryInfo = computed((): CategoryInfo | null => {
+    const cat = this.category();
+    if (!cat) return null;
+    return {
+      id: cat.id,
+      name: cat.name,
+      slug: cat.slug,
+      description: cat.description,
+      icon: cat.icon,
+      imageUrl: cat.imageUrl,
+      productCount: this.totalCount(),
+      parentCategory: cat.parentCategory ? {
+        name: cat.parentCategory.name,
+        slug: cat.parentCategory.slug
+      } : undefined
+    };
+  });
 
   visiblePages = computed(() => {
     const current = this.currentPage();

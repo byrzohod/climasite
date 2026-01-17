@@ -30,6 +30,8 @@ public class GetCategoryBySlugQueryHandler : IRequestHandler<GetCategoryBySlugQu
         var category = await _context.Categories
             .AsNoTracking()
             .Include(c => c.Translations)
+            .Include(c => c.Parent)
+                .ThenInclude(p => p!.Translations)
             .Include(c => c.Children.Where(ch => ch.IsActive).OrderBy(ch => ch.SortOrder))
                 .ThenInclude(ch => ch.Translations)
             .FirstOrDefaultAsync(c => c.Slug == request.Slug.ToLowerInvariant() && c.IsActive, cancellationToken);
@@ -44,16 +46,30 @@ public class GetCategoryBySlugQueryHandler : IRequestHandler<GetCategoryBySlugQu
 
         var (name, description, metaTitle, metaDescription) = category.GetTranslatedContent(request.LanguageCode);
 
+        // Get parent category info if exists
+        ParentCategoryInfo? parentCategory = null;
+        if (category.Parent != null)
+        {
+            var (parentName, _, _, _) = category.Parent.GetTranslatedContent(request.LanguageCode);
+            parentCategory = new ParentCategoryInfo
+            {
+                Name = parentName,
+                Slug = category.Parent.Slug
+            };
+        }
+
         return new CategoryDto
         {
             Id = category.Id,
             Name = name,
             Slug = category.Slug,
             Description = description,
+            Icon = category.Icon,
             ImageUrl = category.ImageUrl,
             SortOrder = category.SortOrder,
             IsActive = category.IsActive,
             ParentId = category.ParentId,
+            ParentCategory = parentCategory,
             ProductCount = productCount,
             MetaTitle = metaTitle,
             MetaDescription = metaDescription,
@@ -66,6 +82,7 @@ public class GetCategoryBySlugQueryHandler : IRequestHandler<GetCategoryBySlugQu
                     Name = childName,
                     Slug = c.Slug,
                     Description = childDesc,
+                    Icon = c.Icon,
                     ImageUrl = c.ImageUrl,
                     SortOrder = c.SortOrder,
                     IsActive = c.IsActive,

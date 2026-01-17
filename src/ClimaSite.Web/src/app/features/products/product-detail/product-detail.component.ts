@@ -15,14 +15,13 @@ import { EnergyRatingComponent, EnergyRatingLevel } from '../../../shared/compon
 import { WarrantyBadgeComponent } from '../../../shared/components/warranty-badge/warranty-badge.component';
 import { ProductReviewsComponent } from '../../../shared/components/product-reviews/product-reviews.component';
 import { ProductQaComponent } from '../components/product-qa/product-qa.component';
-import { PriceHistoryChartComponent } from '../components/price-history-chart/price-history-chart.component';
 import { InstallationServiceComponent } from '../components/installation-service/installation-service.component';
 import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, ProductConsumablesComponent, SimilarProductsComponent, ProductGalleryComponent, EnergyRatingComponent, WarrantyBadgeComponent, ProductReviewsComponent, ProductQaComponent, PriceHistoryChartComponent, InstallationServiceComponent, SpecKeyPipe],
+  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, ProductConsumablesComponent, SimilarProductsComponent, ProductGalleryComponent, EnergyRatingComponent, WarrantyBadgeComponent, ProductReviewsComponent, ProductQaComponent, InstallationServiceComponent, SpecKeyPipe],
   template: `
     <div class="product-detail-container" data-testid="product-detail">
       @if (isLoading()) {
@@ -37,17 +36,19 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
         <div class="product-content">
           <!-- Breadcrumb -->
           <nav class="breadcrumb" data-testid="breadcrumb">
-            <a routerLink="/">{{ 'nav.home' | translate }}</a>
-            <span>/</span>
-            <a routerLink="/products">{{ 'nav.products' | translate }}</a>
+            <a routerLink="/" data-testid="breadcrumb-home">{{ 'nav.home' | translate }}</a>
+            <span class="separator">/</span>
+            <a routerLink="/products" data-testid="breadcrumb-products">{{ 'nav.products' | translate }}</a>
             @if (product()?.category) {
-              <span>/</span>
-              <a [routerLink]="['/products']" [queryParams]="{category: product()?.category?.slug}">
+              <span class="separator">/</span>
+              <a [routerLink]="['/products/category', product()!.category!.slug]"
+                 class="breadcrumb-category"
+                 data-testid="breadcrumb-category">
                 {{ product()?.category?.name }}
               </a>
             }
-            <span>/</span>
-            <span>{{ product()?.name }}</span>
+            <span class="separator">/</span>
+            <span class="current" data-testid="breadcrumb-current">{{ product()?.name }}</span>
           </nav>
 
           <div class="product-main">
@@ -276,9 +277,6 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
             </div>
           </div>
 
-          <!-- Price History -->
-          <app-price-history-chart [productId]="product()!.id" />
-
           <!-- Installation Service -->
           <app-installation-service [productId]="product()!.id" />
 
@@ -311,18 +309,29 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
     .breadcrumb {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 0.5rem;
       margin-bottom: 2rem;
       font-size: 0.875rem;
       color: var(--color-text-secondary);
 
       a {
-        color: var(--color-text-secondary);
+        color: var(--color-primary);
         text-decoration: none;
+        transition: color 0.2s;
 
         &:hover {
-          color: var(--color-primary);
+          text-decoration: underline;
         }
+      }
+
+      .separator {
+        color: var(--color-text-secondary);
+      }
+
+      .current {
+        color: var(--color-text-primary);
+        font-weight: 500;
       }
     }
 

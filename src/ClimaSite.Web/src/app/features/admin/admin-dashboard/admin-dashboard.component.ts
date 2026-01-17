@@ -24,6 +24,10 @@ import { TranslateModule } from '@ngx-translate/core';
           <span class="icon">👥</span>
           <span>Users</span>
         </a>
+        <a routerLink="moderation" class="admin-link">
+          <span class="icon">🛡️</span>
+          <span>Moderation</span>
+        </a>
       </div>
     </div>
   `,

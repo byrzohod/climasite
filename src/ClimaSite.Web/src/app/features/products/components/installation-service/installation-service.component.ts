@@ -205,19 +205,19 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
   `,
   styles: [`
     .installation-service {
-      padding: var(--spacing-lg);
-      background: var(--color-surface);
-      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      background: var(--color-bg-card);
+      border-radius: 12px;
     }
 
     .installation-header {
       text-align: center;
-      margin-bottom: var(--spacing-xl);
+      margin-bottom: 2rem;
 
       h3 {
-        font-size: var(--font-size-xl);
+        font-size: 1.5rem;
         color: var(--color-text-primary);
-        margin: 0 0 var(--spacing-sm);
+        margin: 0 0 0.75rem;
       }
 
       .subtitle {
@@ -229,16 +229,16 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
     .options-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: var(--spacing-lg);
-      margin-bottom: var(--spacing-xl);
+      gap: 1.5rem;
+      margin-bottom: 2rem;
     }
 
     .option-card {
       position: relative;
-      padding: var(--spacing-lg);
-      background: var(--color-background);
-      border: 2px solid var(--color-border);
-      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      background: var(--color-bg-secondary);
+      border: 2px solid var(--color-border-primary);
+      border-radius: 8px;
       cursor: pointer;
       transition: all 0.2s;
 
@@ -261,13 +261,13 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
     .option-badge {
       position: absolute;
       top: -10px;
-      right: var(--spacing-md);
-      padding: var(--spacing-xs) var(--spacing-sm);
+      right: 1rem;
+      padding: 0.5rem 0.75rem;
       background: var(--color-success);
       color: white;
-      font-size: var(--font-size-xs);
+      font-size: 0.75rem;
       font-weight: 600;
-      border-radius: var(--radius-sm);
+      border-radius: 4px;
 
       &.express {
         background: var(--color-warning);
@@ -275,44 +275,44 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
     }
 
     .option-name {
-      font-size: var(--font-size-lg);
+      font-size: 1.25rem;
       color: var(--color-text-primary);
-      margin: 0 0 var(--spacing-sm);
+      margin: 0 0 0.75rem;
     }
 
     .option-description {
-      font-size: var(--font-size-sm);
+      font-size: 0.875rem;
       color: var(--color-text-secondary);
-      margin: 0 0 var(--spacing-md);
+      margin: 0 0 1rem;
     }
 
     .option-price {
-      font-size: var(--font-size-xl);
+      font-size: 1.5rem;
       font-weight: 700;
       color: var(--color-primary);
-      margin-bottom: var(--spacing-sm);
+      margin-bottom: 0.75rem;
     }
 
     .option-timeline {
       display: flex;
       align-items: center;
-      gap: var(--spacing-xs);
-      font-size: var(--font-size-sm);
+      gap: 0.5rem;
+      font-size: 0.875rem;
       color: var(--color-text-secondary);
-      margin-bottom: var(--spacing-md);
+      margin-bottom: 1rem;
     }
 
     .option-features {
       list-style: none;
       padding: 0;
-      margin: 0 0 var(--spacing-md);
+      margin: 0 0 1rem;
 
       li {
         display: flex;
         align-items: center;
-        gap: var(--spacing-xs);
-        padding: var(--spacing-xs) 0;
-        font-size: var(--font-size-sm);
+        gap: 0.5rem;
+        padding: 0.5rem 0;
+        font-size: 0.875rem;
         color: var(--color-text-secondary);
 
         .check {
@@ -324,11 +324,11 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
 
     .select-btn {
       width: 100%;
-      padding: var(--spacing-sm);
+      padding: 0.75rem;
       background: transparent;
       border: 1px solid var(--color-primary);
       color: var(--color-primary);
-      border-radius: var(--radius-sm);
+      border-radius: 4px;
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s;
@@ -345,23 +345,23 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
     }
 
     .request-form-section {
-      padding: var(--spacing-lg);
-      background: var(--color-background);
-      border-radius: var(--radius-md);
-      border: 1px solid var(--color-border);
-      margin-top: var(--spacing-lg);
+      padding: 1.5rem;
+      background: var(--color-bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--color-border-primary);
+      margin-top: 1.5rem;
 
       h4 {
-        font-size: var(--font-size-lg);
+        font-size: 1.25rem;
         color: var(--color-text-primary);
-        margin: 0 0 var(--spacing-lg);
+        margin: 0 0 1.5rem;
       }
     }
 
     .form-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: var(--spacing-md);
+      gap: 1rem;
 
       @media (max-width: 600px) {
         grid-template-columns: 1fr;
@@ -369,11 +369,11 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
     }
 
     .form-group {
-      margin-bottom: var(--spacing-md);
+      margin-bottom: 1rem;
 
       label {
         display: block;
-        margin-bottom: var(--spacing-xs);
+        margin-bottom: 0.5rem;
         font-weight: 500;
         color: var(--color-text-primary);
       }
@@ -382,11 +382,11 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
       select,
       textarea {
         width: 100%;
-        padding: var(--spacing-sm);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-sm);
-        font-size: var(--font-size-md);
-        background: var(--color-surface);
+        padding: 0.75rem;
+        border: 1px solid var(--color-border-primary);
+        border-radius: 4px;
+        font-size: 1rem;
+        background: var(--color-bg-card);
         color: var(--color-text-primary);
 
         &:focus {
@@ -403,16 +403,16 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
     }
 
     .form-summary {
-      padding: var(--spacing-md);
-      background: var(--color-surface);
-      border-radius: var(--radius-sm);
-      margin-bottom: var(--spacing-lg);
+      padding: 1rem;
+      background: var(--color-bg-card);
+      border-radius: 4px;
+      margin-bottom: 1.5rem;
     }
 
     .summary-row {
       display: flex;
       justify-content: space-between;
-      padding: var(--spacing-xs) 0;
+      padding: 0.5rem 0;
       color: var(--color-text-secondary);
 
       .value {
@@ -421,10 +421,10 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
       }
 
       &.total {
-        border-top: 1px solid var(--color-border);
-        margin-top: var(--spacing-sm);
-        padding-top: var(--spacing-md);
-        font-size: var(--font-size-lg);
+        border-top: 1px solid var(--color-border-primary);
+        margin-top: 0.75rem;
+        padding-top: 1rem;
+        font-size: 1.25rem;
 
         .value {
           color: var(--color-primary);
@@ -438,14 +438,14 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: var(--spacing-sm);
+      gap: 0.75rem;
       width: 100%;
-      padding: var(--spacing-md);
+      padding: 1rem;
       background: var(--color-primary);
       color: white;
       border: none;
-      border-radius: var(--radius-md);
-      font-size: var(--font-size-md);
+      border-radius: 8px;
+      font-size: 1rem;
       font-weight: 500;
       cursor: pointer;
       transition: background 0.2s;
@@ -461,15 +461,15 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
     }
 
     .show-form-btn {
-      margin-top: var(--spacing-lg);
+      margin-top: 1.5rem;
     }
 
     .success-message {
       text-align: center;
-      padding: var(--spacing-xl);
+      padding: 2rem;
       background: var(--color-success-light);
-      border-radius: var(--radius-md);
-      margin-top: var(--spacing-lg);
+      border-radius: 8px;
+      margin-top: 1.5rem;
 
       .icon {
         display: flex;
@@ -477,7 +477,7 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
         justify-content: center;
         width: 48px;
         height: 48px;
-        margin: 0 auto var(--spacing-md);
+        margin: 0 auto 1rem;
         background: var(--color-success);
         color: white;
         border-radius: 50%;
@@ -486,7 +486,7 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
 
       h4 {
         color: var(--color-success);
-        margin: 0 0 var(--spacing-sm);
+        margin: 0 0 0.75rem;
       }
 
       p {
@@ -496,11 +496,11 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
     }
 
     .no-installation {
-      padding: var(--spacing-lg);
+      padding: 1.5rem;
       text-align: center;
       color: var(--color-text-secondary);
-      background: var(--color-surface);
-      border-radius: var(--radius-lg);
+      background: var(--color-bg-card);
+      border-radius: 12px;
     }
 
     .spinner {

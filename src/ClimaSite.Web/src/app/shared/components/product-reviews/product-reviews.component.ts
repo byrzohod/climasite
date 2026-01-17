@@ -1,6 +1,7 @@
 import { Component, inject, input, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ReviewService, ReviewSortBy } from '../../../core/services/review.service';
 import { AuthService } from '../../../auth/services/auth.service';
@@ -9,7 +10,7 @@ import { Review, ReviewSummary, PaginatedReviews } from '../../../core/models/re
 @Component({
   selector: 'app-product-reviews',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule],
+  imports: [CommonModule, FormsModule, RouterLink, TranslateModule],
   template: `
     <div class="product-reviews" data-testid="product-reviews">
       <!-- Summary Section -->
@@ -45,6 +46,14 @@ import { Review, ReviewSummary, PaginatedReviews } from '../../../core/models/re
         </div>
       </div>
 
+      <!-- Session Expired Error (shown outside form) -->
+      @if (submitError() && !authService.isAuthenticated()) {
+        <div class="session-error" data-testid="session-error">
+          <p>{{ submitError() }}</p>
+          <a routerLink="/login" class="login-link">{{ 'auth.login' | translate }}</a>
+        </div>
+      }
+
       <!-- Write Review Button -->
       @if (authService.isAuthenticated()) {
         <button
@@ -58,10 +67,14 @@ import { Review, ReviewSummary, PaginatedReviews } from '../../../core/models/re
             {{ 'reviews.writeReview' | translate }}
           }
         </button>
-      } @else {
-        <p class="login-prompt">
-          {{ 'reviews.loginToReview' | translate }}
-        </p>
+      } @else if (!submitError()) {
+        <div class="login-prompt" data-testid="reviews-login-prompt">
+          <span class="prompt-icon">★</span>
+          <span>{{ 'reviews.loginToReview' | translate }}</span>
+          <a routerLink="/auth/login" class="login-link" data-testid="reviews-login-link">
+            {{ 'reviews.loginNow' | translate }}
+          </a>
+        </div>
       }
 
       <!-- Review Form -->
@@ -352,12 +365,74 @@ import { Review, ReviewSummary, PaginatedReviews } from '../../../core/models/re
     }
 
     .login-prompt {
-      text-align: center;
-      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
       background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border-primary);
       border-radius: 8px;
       color: var(--color-text-secondary);
       margin-bottom: 1.5rem;
+
+      .prompt-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background: var(--color-primary-light);
+        color: var(--color-primary);
+        border-radius: 50%;
+        font-size: 1rem;
+        flex-shrink: 0;
+      }
+
+      .login-link {
+        margin-left: auto;
+        padding: 0.5rem 1rem;
+        background: var(--color-primary);
+        color: white;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.875rem;
+        transition: background 0.2s;
+
+        &:hover {
+          background: var(--color-primary-dark);
+        }
+      }
+    }
+
+    .session-error {
+      text-align: center;
+      padding: 1.5rem;
+      background: var(--color-error-light, rgba(239, 68, 68, 0.1));
+      border: 1px solid var(--color-error);
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+
+      p {
+        color: var(--color-error);
+        margin: 0 0 1rem;
+        font-weight: 500;
+      }
+
+      .login-link {
+        display: inline-block;
+        padding: 0.5rem 1.5rem;
+        background: var(--color-primary);
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: background-color 0.2s;
+
+        &:hover {
+          background: var(--color-primary-dark);
+        }
+      }
     }
 
     .review-form {
@@ -765,8 +840,15 @@ export class ProductReviewsComponent implements OnInit {
       },
       error: (err) => {
         this.isSubmitting.set(false);
-        const message = err.error?.message || 'Failed to submit review';
-        this.submitError.set(message);
+        // Check if it's an authentication error (session expired)
+        if (err.status === 401) {
+          this.submitError.set(this.translate.instant('reviews.sessionExpired') || 'Your session has expired. Please log in again.');
+          // Hide the form since user is no longer authenticated
+          this.showReviewForm.set(false);
+        } else {
+          const message = err.error?.message || this.translate.instant('reviews.submitError') || 'Failed to submit review';
+          this.submitError.set(message);
+        }
       }
     });
   }

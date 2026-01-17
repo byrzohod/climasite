@@ -94,6 +94,7 @@
     "onSale": "Im Angebot",
     "bestsellers": "Bestseller",
     "noProducts": "Keine Produkte gefunden",
+    "itemsFound": "{{count}} Produkte gefunden",
     "searchResults": "Suchergebnisse für",
     "noImage": "Kein Bild",
     "outOfStock": "Nicht verfügbar",
@@ -281,21 +282,12 @@
       "noAnswersYet": "Noch keine Antworten. Seien Sie der Erste, der hilft!",
       "noQuestionsYet": "Noch keine Fragen zu diesem Produkt",
       "beFirstToAsk": "Stellen Sie die erste Frage!",
+      "loginToAsk": "Melden Sie sich an, um eine Frage zu diesem Produkt zu stellen",
+      "loginToAnswer": "Anmelden zum Antworten",
+      "loginNow": "Anmelden",
       "errors": {
         "questionTooShort": "Die Frage muss mindestens 10 Zeichen lang sein"
       }
-    },
-    "priceHistory": {
-      "title": "Preisverlauf",
-      "days30": "30 Tage",
-      "days60": "60 Tage",
-      "days90": "90 Tage",
-      "current": "Aktuell",
-      "lowest": "Niedrigster",
-      "highest": "Höchster",
-      "average": "Durchschnitt",
-      "noHistory": "Für den ausgewählten Zeitraum ist kein Preisverlauf verfügbar.",
-      "notAvailable": "Der Preisverlauf ist für dieses Produkt nicht verfügbar."
     }
   },
   "delivery": {
@@ -310,6 +302,7 @@
     "writeReview": "Bewertung schreiben",
     "cancel": "Abbrechen",
     "loginToReview": "Bitte melden Sie sich an, um eine Bewertung zu schreiben",
+    "loginNow": "Anmelden",
     "writeYourReview": "Schreiben Sie Ihre Bewertung",
     "yourRating": "Ihre Bewertung",
     "reviewTitle": "Bewertungstitel",
@@ -329,7 +322,9 @@
     "beFirst": "Seien Sie der Erste, der dieses Produkt bewertet!",
     "verifiedPurchase": "Verifizierter Kauf",
     "storeResponse": "Antwort vom Shop",
-    "wasHelpful": "War diese Bewertung hilfreich?"
+    "wasHelpful": "War diese Bewertung hilfreich?",
+    "sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an, um Ihre Bewertung abzusenden.",
+    "submitError": "Bewertung konnte nicht gesendet werden. Bitte versuchen Sie es erneut."
   },
   "cart": {
     "title": "Warenkorb",
@@ -783,6 +778,26 @@
       "totalRevenue": "Gesamtumsatz",
       "totalUsers": "Gesamtbenutzer",
       "totalProducts": "Gesamtprodukte"
+    },
+    "moderation": {
+      "title": "Inhaltsmoderation",
+      "subtitle": "Überprüfung und Genehmigung von nutzergenerierten Inhalten",
+      "pendingQuestions": "Ausstehende Fragen",
+      "pendingAnswers": "Ausstehende Antworten",
+      "pendingReviews": "Ausstehende Bewertungen",
+      "questionsTab": "Fragen",
+      "answersTab": "Antworten",
+      "reviewsTab": "Bewertungen",
+      "noQuestions": "Keine ausstehenden Fragen zur Überprüfung",
+      "noAnswers": "Keine ausstehenden Antworten zur Überprüfung",
+      "noReviews": "Keine ausstehenden Bewertungen zur Überprüfung",
+      "askedBy": "Gefragt von",
+      "answeredBy": "Beantwortet von",
+      "question": "Frage",
+      "approve": "Genehmigen",
+      "reject": "Ablehnen",
+      "approveAsOfficial": "Als offiziell genehmigen",
+      "flag": "Zur Überprüfung markieren"
     }
   },
   "promotions": {

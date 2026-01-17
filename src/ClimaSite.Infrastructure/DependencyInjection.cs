@@ -69,6 +69,17 @@ public static class DependencyInjection
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IPaymentService, StripePaymentService>();
 
+        // MinIO Storage
+        services.Configure<MinioStorageSettings>(options =>
+        {
+            options.Endpoint = configuration["Minio:Endpoint"] ?? "localhost:9000";
+            options.AccessKey = configuration["Minio:AccessKey"] ?? "climasite";
+            options.SecretKey = configuration["Minio:SecretKey"] ?? "climasite_minio_secret";
+            options.UseSSL = bool.Parse(configuration["Minio:UseSSL"] ?? "false");
+            options.PublicUrl = configuration["Minio:PublicUrl"] ?? "http://localhost:9000";
+        });
+        services.AddScoped<IStorageService, MinioStorageService>();
+
         // Repositories
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();

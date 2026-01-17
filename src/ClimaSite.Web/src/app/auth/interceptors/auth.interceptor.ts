@@ -40,8 +40,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
             return next(clonedReq);
           }),
           catchError((refreshError) => {
-            // Refresh failed, logout user
-            authService.logout().subscribe();
+            // Refresh failed - clear auth state but don't navigate
+            // This allows components to handle the error gracefully
+            // and show a "session expired" message
+            authService.clearAuthState();
             return throwError(() => refreshError);
           })
         );

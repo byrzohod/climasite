@@ -1,13 +1,15 @@
 import { Component, input, signal, computed, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { QuestionsService, Question, Answer, ProductQuestions } from '../../services/questions.service';
+import { AuthService } from '../../../../auth/services/auth.service';
 
 @Component({
   selector: 'app-product-qa',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslateModule],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule, TranslateModule],
   template: `
     <section class="product-qa">
       <div class="qa-header">
@@ -24,67 +26,64 @@ import { QuestionsService, Question, Answer, ProductQuestions } from '../../serv
 
       <!-- Ask Question Form -->
       <div class="ask-question-section">
-        <button
-          class="ask-question-toggle"
-          (click)="showAskForm.set(!showAskForm())"
-          [class.active]="showAskForm()">
-          <span class="icon">?</span>
-          {{ 'products.qa.askQuestion' | translate }}
-        </button>
-
-        <form
-          *ngIf="showAskForm()"
-          [formGroup]="questionForm"
-          (ngSubmit)="submitQuestion()"
-          class="question-form">
-          <div class="form-group">
-            <label for="questionText">{{ 'products.qa.yourQuestion' | translate }}</label>
-            <textarea
-              id="questionText"
-              formControlName="questionText"
-              [placeholder]="'products.qa.questionPlaceholder' | translate"
-              rows="3"
-              maxlength="2000">
-            </textarea>
-            <span class="char-count">{{ questionForm.get('questionText')?.value?.length || 0 }}/2000</span>
-            <span class="error" *ngIf="questionForm.get('questionText')?.errors?.['minlength']">
-              {{ 'products.qa.errors.questionTooShort' | translate }}
-            </span>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="askerName">{{ 'products.qa.yourName' | translate }}</label>
-              <input
-                type="text"
-                id="askerName"
-                formControlName="askerName"
-                [placeholder]="'products.qa.namePlaceholder' | translate"
-                maxlength="100">
-            </div>
-            <div class="form-group">
-              <label for="askerEmail">{{ 'products.qa.yourEmail' | translate }}</label>
-              <input
-                type="email"
-                id="askerEmail"
-                formControlName="askerEmail"
-                [placeholder]="'products.qa.emailPlaceholder' | translate">
-              <span class="hint">{{ 'products.qa.emailHint' | translate }}</span>
-            </div>
-          </div>
-
+        @if (isAuthenticated()) {
           <button
-            type="submit"
-            class="submit-question-btn"
-            [disabled]="questionForm.invalid || submittingQuestion()">
-            <span *ngIf="submittingQuestion()" class="spinner"></span>
-            {{ (submittingQuestion() ? 'products.qa.submitting' : 'products.qa.submitQuestion') | translate }}
+            class="ask-question-toggle"
+            (click)="showAskForm.set(!showAskForm())"
+            [class.active]="showAskForm()"
+            data-testid="ask-question-btn">
+            <span class="icon">?</span>
+            {{ 'products.qa.askQuestion' | translate }}
           </button>
 
-          <div class="success-message" *ngIf="questionSubmitted()">
-            {{ 'products.qa.questionSubmittedSuccess' | translate }}
+          <form
+            *ngIf="showAskForm()"
+            [formGroup]="questionForm"
+            (ngSubmit)="submitQuestion()"
+            class="question-form"
+            data-testid="question-form">
+            <div class="form-group">
+              <label for="questionText">{{ 'products.qa.yourQuestion' | translate }}</label>
+              <textarea
+                id="questionText"
+                formControlName="questionText"
+                [placeholder]="'products.qa.questionPlaceholder' | translate"
+                rows="3"
+                maxlength="2000"
+                data-testid="question-text">
+              </textarea>
+              <span class="char-count">{{ questionForm.get('questionText')?.value?.length || 0 }}/2000</span>
+              <span class="error" *ngIf="questionForm.get('questionText')?.errors?.['minlength']">
+                {{ 'products.qa.errors.questionTooShort' | translate }}
+              </span>
+            </div>
+
+            <button
+              type="submit"
+              class="submit-question-btn"
+              [disabled]="questionForm.invalid || submittingQuestion()"
+              data-testid="submit-question-btn">
+              <span *ngIf="submittingQuestion()" class="spinner"></span>
+              {{ (submittingQuestion() ? 'products.qa.submitting' : 'products.qa.submitQuestion') | translate }}
+            </button>
+
+            <div class="success-message" *ngIf="questionSubmitted()">
+              {{ 'products.qa.questionSubmittedSuccess' | translate }}
+            </div>
+
+            <div class="error-message" *ngIf="questionError()">
+              {{ questionError() }}
+            </div>
+          </form>
+        } @else {
+          <div class="login-prompt" data-testid="qa-login-prompt">
+            <span class="icon">?</span>
+            <span>{{ 'products.qa.loginToAsk' | translate }}</span>
+            <a [routerLink]="['/auth/login']" class="login-link" data-testid="qa-login-link">
+              {{ 'products.qa.loginNow' | translate }}
+            </a>
           </div>
-        </form>
+        }
       </div>
 
       <!-- Questions List -->
@@ -105,11 +104,18 @@ import { QuestionsService, Question, Answer, ProductQuestions } from '../../serv
                 <span class="thumb-icon">&#128077;</span>
                 {{ 'products.qa.helpful' | translate }} ({{ question.helpfulCount }})
               </button>
-              <button
-                class="answer-btn"
-                (click)="toggleAnswerForm(question.id)">
-                {{ 'products.qa.answer' | translate }}
-              </button>
+              @if (isAuthenticated()) {
+                <button
+                  class="answer-btn"
+                  (click)="toggleAnswerForm(question.id)"
+                  data-testid="answer-btn">
+                  {{ 'products.qa.answer' | translate }}
+                </button>
+              } @else {
+                <a [routerLink]="['/auth/login']" class="answer-btn login-to-answer" data-testid="login-to-answer">
+                  {{ 'products.qa.loginToAnswer' | translate }}
+                </a>
+              }
             </div>
           </div>
 
@@ -118,29 +124,35 @@ import { QuestionsService, Question, Answer, ProductQuestions } from '../../serv
             *ngIf="showAnswerFormFor() === question.id"
             [formGroup]="answerForm"
             (ngSubmit)="submitAnswer(question.id)"
-            class="answer-form">
+            class="answer-form"
+            data-testid="answer-form">
             <div class="form-group">
               <textarea
                 formControlName="answerText"
                 [placeholder]="'products.qa.answerPlaceholder' | translate"
                 rows="2"
-                maxlength="5000">
+                maxlength="5000"
+                data-testid="answer-text">
               </textarea>
             </div>
-            <div class="form-row">
-              <div class="form-group">
-                <input
-                  type="text"
-                  formControlName="answererName"
-                  [placeholder]="'products.qa.yourName' | translate"
-                  maxlength="100">
-              </div>
+            <div class="form-actions">
               <button
                 type="submit"
                 class="submit-answer-btn"
-                [disabled]="answerForm.invalid || submittingAnswer()">
+                [disabled]="answerForm.invalid || submittingAnswer()"
+                data-testid="submit-answer-btn">
+                <span *ngIf="submittingAnswer()" class="spinner"></span>
                 {{ 'products.qa.submitAnswer' | translate }}
               </button>
+              <button
+                type="button"
+                class="cancel-answer-btn"
+                (click)="showAnswerFormFor.set(null)">
+                {{ 'common.cancel' | translate }}
+              </button>
+            </div>
+            <div class="error-message" *ngIf="answerError()">
+              {{ answerError() }}
             </div>
           </form>
 
@@ -221,47 +233,50 @@ import { QuestionsService, Question, Answer, ProductQuestions } from '../../serv
   `,
   styles: [`
     .product-qa {
-      padding: var(--spacing-lg);
-      background: var(--color-surface);
-      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      background: var(--color-bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--color-border-primary);
     }
 
     .qa-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: var(--spacing-lg);
+      margin-bottom: 1.5rem;
       flex-wrap: wrap;
-      gap: var(--spacing-sm);
+      gap: 0.5rem;
 
       h2 {
-        font-size: var(--font-size-xl);
+        font-size: 1.25rem;
+        font-weight: 600;
         color: var(--color-text-primary);
         margin: 0;
       }
 
       .qa-stats {
         display: flex;
-        gap: var(--spacing-md);
-        font-size: var(--font-size-sm);
+        gap: 1rem;
+        font-size: 0.875rem;
         color: var(--color-text-secondary);
       }
     }
 
     .ask-question-section {
-      margin-bottom: var(--spacing-xl);
+      margin-bottom: 2rem;
     }
 
     .ask-question-toggle {
       display: flex;
       align-items: center;
-      gap: var(--spacing-sm);
-      padding: var(--spacing-md) var(--spacing-lg);
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
       background: var(--color-primary);
       color: white;
       border: none;
-      border-radius: var(--radius-md);
-      font-size: var(--font-size-md);
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
       cursor: pointer;
       transition: background 0.2s;
 
@@ -288,38 +303,43 @@ import { QuestionsService, Question, Answer, ProductQuestions } from '../../serv
 
     .question-form,
     .answer-form {
-      margin-top: var(--spacing-md);
-      padding: var(--spacing-lg);
-      background: var(--color-background);
-      border-radius: var(--radius-md);
-      border: 1px solid var(--color-border);
+      margin-top: 1rem;
+      padding: 1.5rem;
+      background: var(--color-bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--color-border-primary);
     }
 
     .form-group {
-      margin-bottom: var(--spacing-md);
+      margin-bottom: 1rem;
       position: relative;
 
       label {
         display: block;
-        margin-bottom: var(--spacing-xs);
+        margin-bottom: 0.375rem;
         font-weight: 500;
+        font-size: 0.875rem;
         color: var(--color-text-primary);
       }
 
       input,
       textarea {
         width: 100%;
-        padding: var(--spacing-sm) var(--spacing-md);
-        border: 1px solid var(--color-border);
-        border-radius: var(--radius-sm);
-        font-size: var(--font-size-md);
-        background: var(--color-surface);
+        padding: 0.625rem 0.875rem;
+        border: 1px solid var(--color-border-primary);
+        border-radius: 6px;
+        font-size: 0.875rem;
+        background: var(--color-bg-input);
         color: var(--color-text-primary);
 
         &:focus {
           outline: none;
           border-color: var(--color-primary);
-          box-shadow: 0 0 0 2px var(--color-primary-light);
+          box-shadow: 0 0 0 3px var(--color-primary-light);
+        }
+
+        &::placeholder {
+          color: var(--color-text-placeholder);
         }
       }
 
@@ -330,29 +350,29 @@ import { QuestionsService, Question, Answer, ProductQuestions } from '../../serv
 
       .char-count {
         position: absolute;
-        right: var(--spacing-sm);
-        bottom: var(--spacing-xs);
-        font-size: var(--font-size-xs);
+        right: 0.5rem;
+        bottom: 0.25rem;
+        font-size: 0.75rem;
         color: var(--color-text-tertiary);
       }
 
       .hint {
-        font-size: var(--font-size-xs);
+        font-size: 0.75rem;
         color: var(--color-text-tertiary);
-        margin-top: var(--spacing-xs);
+        margin-top: 0.25rem;
       }
 
       .error {
-        font-size: var(--font-size-xs);
+        font-size: 0.75rem;
         color: var(--color-error);
-        margin-top: var(--spacing-xs);
+        margin-top: 0.25rem;
       }
     }
 
     .form-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: var(--spacing-md);
+      gap: 1rem;
 
       @media (max-width: 600px) {
         grid-template-columns: 1fr;
@@ -361,12 +381,16 @@ import { QuestionsService, Question, Answer, ProductQuestions } from '../../serv
 
     .submit-question-btn,
     .submit-answer-btn {
-      padding: var(--spacing-sm) var(--spacing-lg);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1.25rem;
       background: var(--color-primary);
       color: white;
       border: none;
-      border-radius: var(--radius-sm);
-      font-size: var(--font-size-md);
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
       cursor: pointer;
       transition: background 0.2s;
 
@@ -381,33 +405,117 @@ import { QuestionsService, Question, Answer, ProductQuestions } from '../../serv
     }
 
     .success-message {
-      margin-top: var(--spacing-md);
-      padding: var(--spacing-md);
+      margin-top: 1rem;
+      padding: 1rem;
       background: var(--color-success-light);
-      color: var(--color-success);
-      border-radius: var(--radius-sm);
+      color: var(--color-success-dark);
+      border-radius: 6px;
       text-align: center;
+      font-size: 0.875rem;
+    }
+
+    .error-message {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: var(--color-error-light);
+      color: var(--color-error-dark);
+      border-radius: 6px;
+      text-align: center;
+      font-size: 0.875rem;
+    }
+
+    .login-prompt {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border-primary);
+      border-radius: 8px;
+      color: var(--color-text-secondary);
+
+      .icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background: var(--color-primary-light);
+        color: var(--color-primary);
+        border-radius: 50%;
+        font-weight: bold;
+        flex-shrink: 0;
+      }
+
+      .login-link {
+        margin-left: auto;
+        padding: 0.5rem 1rem;
+        background: var(--color-primary);
+        color: white;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.875rem;
+        transition: background 0.2s;
+
+        &:hover {
+          background: var(--color-primary-dark);
+        }
+      }
+    }
+
+    .login-to-answer {
+      text-decoration: none;
+      color: var(--color-primary) !important;
+      font-size: 0.875rem;
+      font-weight: 500;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .cancel-answer-btn {
+      padding: 0.5rem 1rem;
+      background: transparent;
+      color: var(--color-text-secondary);
+      border: 1px solid var(--color-border-primary);
+      border-radius: 6px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        border-color: var(--color-border-secondary);
+        color: var(--color-text-primary);
+      }
     }
 
     .questions-list {
       display: flex;
       flex-direction: column;
-      gap: var(--spacing-lg);
+      gap: 1.5rem;
     }
 
     .question-card {
-      padding: var(--spacing-lg);
-      background: var(--color-background);
-      border-radius: var(--radius-md);
-      border: 1px solid var(--color-border);
+      padding: 1.5rem;
+      background: var(--color-bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--color-border-primary);
     }
 
     .question-header,
     .answer-header {
       display: flex;
       align-items: center;
-      gap: var(--spacing-sm);
-      margin-bottom: var(--spacing-sm);
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
       flex-wrap: wrap;
     }
 
@@ -422,7 +530,7 @@ import { QuestionsService, Question, Answer, ProductQuestions } from '../../serv
       color: white;
       border-radius: 50%;
       font-weight: bold;
-      font-size: var(--font-size-sm);
+      font-size: 0.875rem;
 
       &.official {
         background: var(--color-success);
@@ -437,23 +545,23 @@ import { QuestionsService, Question, Answer, ProductQuestions } from '../../serv
 
     .question-date,
     .answer-date {
-      font-size: var(--font-size-sm);
+      font-size: 0.875rem;
       color: var(--color-text-tertiary);
       margin-left: auto;
     }
 
     .official-badge {
-      padding: var(--spacing-xs) var(--spacing-sm);
+      padding: 0.25rem 0.5rem;
       background: var(--color-success-light);
-      color: var(--color-success);
-      border-radius: var(--radius-sm);
-      font-size: var(--font-size-xs);
+      color: var(--color-success-dark);
+      border-radius: 4px;
+      font-size: 0.75rem;
       font-weight: 500;
     }
 
     .question-text,
     .answer-text {
-      margin: 0 0 var(--spacing-md);
+      margin: 0 0 1rem;
       color: var(--color-text-primary);
       line-height: 1.6;
     }
@@ -461,7 +569,7 @@ import { QuestionsService, Question, Answer, ProductQuestions } from '../../serv
     .question-actions,
     .answer-actions {
       display: flex;
-      gap: var(--spacing-md);
+      gap: 1rem;
     }
 
     .helpful-btn,
@@ -469,18 +577,18 @@ import { QuestionsService, Question, Answer, ProductQuestions } from '../../serv
     .vote-btn {
       display: flex;
       align-items: center;
-      gap: var(--spacing-xs);
-      padding: var(--spacing-xs) var(--spacing-sm);
+      gap: 0.25rem;
+      padding: 0.25rem 0.5rem;
       background: transparent;
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-sm);
-      font-size: var(--font-size-sm);
+      border: 1px solid var(--color-border-primary);
+      border-radius: 4px;
+      font-size: 0.875rem;
       color: var(--color-text-secondary);
       cursor: pointer;
       transition: all 0.2s;
 
       &:hover:not(:disabled) {
-        background: var(--color-background);
+        background: var(--color-bg-hover);
         border-color: var(--color-primary);
         color: var(--color-primary);
       }
@@ -491,21 +599,21 @@ import { QuestionsService, Question, Answer, ProductQuestions } from '../../serv
       }
 
       .thumb-icon {
-        font-size: var(--font-size-md);
+        font-size: 1rem;
       }
     }
 
     .answers-list {
-      margin-top: var(--spacing-lg);
-      padding-left: var(--spacing-xl);
-      border-left: 2px solid var(--color-border);
+      margin-top: 1.5rem;
+      padding-left: 2rem;
+      border-left: 2px solid var(--color-border-primary);
     }
 
     .answer-card {
-      padding: var(--spacing-md);
-      margin-bottom: var(--spacing-md);
-      background: var(--color-surface);
-      border-radius: var(--radius-sm);
+      padding: 1rem;
+      margin-bottom: 1rem;
+      background: var(--color-bg-card);
+      border-radius: 6px;
 
       &.official {
         background: var(--color-success-light);
@@ -518,8 +626,8 @@ import { QuestionsService, Question, Answer, ProductQuestions } from '../../serv
     }
 
     .no-answers {
-      margin-top: var(--spacing-md);
-      padding: var(--spacing-md);
+      margin-top: 1rem;
+      padding: 1rem;
       text-align: center;
       color: var(--color-text-tertiary);
       font-style: italic;
@@ -527,27 +635,27 @@ import { QuestionsService, Question, Answer, ProductQuestions } from '../../serv
       .icon {
         display: block;
         font-size: 24px;
-        margin-bottom: var(--spacing-xs);
+        margin-bottom: 0.25rem;
       }
     }
 
     .empty-state {
       text-align: center;
-      padding: var(--spacing-xl);
+      padding: 2rem;
       color: var(--color-text-secondary);
 
       .icon {
         font-size: 48px;
         display: block;
-        margin-bottom: var(--spacing-md);
+        margin-bottom: 1rem;
       }
 
       p {
-        margin: 0 0 var(--spacing-xs);
+        margin: 0 0 0.25rem;
       }
 
       .hint {
-        font-size: var(--font-size-sm);
+        font-size: 0.875rem;
         color: var(--color-text-tertiary);
       }
     }
@@ -556,18 +664,18 @@ import { QuestionsService, Question, Answer, ProductQuestions } from '../../serv
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: var(--spacing-xl);
+      padding: 2rem;
       color: var(--color-text-secondary);
     }
 
     .spinner {
       width: 24px;
       height: 24px;
-      border: 2px solid var(--color-border);
+      border: 2px solid var(--color-border-primary);
       border-top-color: var(--color-primary);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
-      margin-bottom: var(--spacing-sm);
+      margin-bottom: 0.5rem;
     }
 
     @keyframes spin {
@@ -578,17 +686,17 @@ import { QuestionsService, Question, Answer, ProductQuestions } from '../../serv
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: var(--spacing-md);
-      margin-top: var(--spacing-xl);
-      padding-top: var(--spacing-lg);
-      border-top: 1px solid var(--color-border);
+      gap: 1rem;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--color-border-primary);
     }
 
     .page-btn {
-      padding: var(--spacing-sm) var(--spacing-md);
-      background: var(--color-surface);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-sm);
+      padding: 0.5rem 1rem;
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border-primary);
+      border-radius: 6px;
       color: var(--color-text-primary);
       cursor: pointer;
       transition: all 0.2s;
@@ -605,7 +713,7 @@ import { QuestionsService, Question, Answer, ProductQuestions } from '../../serv
     }
 
     .page-info {
-      font-size: var(--font-size-sm);
+      font-size: 0.875rem;
       color: var(--color-text-secondary);
     }
   `]
@@ -615,6 +723,11 @@ export class ProductQaComponent {
 
   private readonly questionsService = inject(QuestionsService);
   private readonly fb = inject(FormBuilder);
+  private readonly authService = inject(AuthService);
+
+  // Auth state
+  isAuthenticated = computed(() => this.authService.isAuthenticated());
+  currentUser = computed(() => this.authService.user());
 
   questionsData = signal<ProductQuestions | null>(null);
   questions = computed(() => this.questionsData()?.questions || []);
@@ -631,6 +744,8 @@ export class ProductQaComponent {
   submittingQuestion = signal(false);
   submittingAnswer = signal(false);
   questionSubmitted = signal(false);
+  questionError = signal<string | null>(null);
+  answerError = signal<string | null>(null);
 
   votedQuestions = signal<Set<string>>(new Set());
   votedAnswers = signal<Set<string>>(new Set());
@@ -639,15 +754,13 @@ export class ProductQaComponent {
   answerForm: FormGroup;
 
   constructor() {
+    // Form for authenticated users - no name/email needed
     this.questionForm = this.fb.group({
-      questionText: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(2000)]],
-      askerName: ['', Validators.maxLength(100)],
-      askerEmail: ['', Validators.email]
+      questionText: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(2000)]]
     });
 
     this.answerForm = this.fb.group({
-      answerText: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(5000)]],
-      answererName: ['', Validators.maxLength(100)]
+      answerText: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(5000)]]
     });
 
     // Load voted items from localStorage
@@ -680,16 +793,18 @@ export class ProductQaComponent {
   }
 
   submitQuestion(): void {
-    if (this.questionForm.invalid) return;
+    if (this.questionForm.invalid || !this.isAuthenticated()) return;
 
     this.submittingQuestion.set(true);
     this.questionSubmitted.set(false);
+    this.questionError.set(null);
 
+    const user = this.currentUser();
     const request = {
       productId: this.productId(),
       questionText: this.questionForm.value.questionText,
-      askerName: this.questionForm.value.askerName || undefined,
-      askerEmail: this.questionForm.value.askerEmail || undefined
+      askerName: user ? `${user.firstName} ${user.lastName}`.trim() : undefined,
+      askerEmail: user?.email
     };
 
     this.questionsService.askQuestion(request).subscribe({
@@ -697,11 +812,17 @@ export class ProductQaComponent {
         this.submittingQuestion.set(false);
         this.questionSubmitted.set(true);
         this.questionForm.reset();
+        this.showAskForm.set(false);
         // Questions need approval, so don't reload immediately
         setTimeout(() => this.questionSubmitted.set(false), 5000);
       },
-      error: () => {
+      error: (err) => {
         this.submittingQuestion.set(false);
+        if (err.status === 401) {
+          this.questionError.set('Your session has expired. Please log in again.');
+        } else {
+          this.questionError.set(err.error?.message || 'Failed to submit question. Please try again.');
+        }
       }
     });
   }
@@ -716,13 +837,15 @@ export class ProductQaComponent {
   }
 
   submitAnswer(questionId: string): void {
-    if (this.answerForm.invalid) return;
+    if (this.answerForm.invalid || !this.isAuthenticated()) return;
 
     this.submittingAnswer.set(true);
+    this.answerError.set(null);
 
+    const user = this.currentUser();
     const request = {
       answerText: this.answerForm.value.answerText,
-      answererName: this.answerForm.value.answererName || undefined
+      answererName: user ? `${user.firstName} ${user.lastName}`.trim() : undefined
     };
 
     this.questionsService.answerQuestion(questionId, request).subscribe({
@@ -732,8 +855,13 @@ export class ProductQaComponent {
         this.answerForm.reset();
         // Answers need approval, so don't reload immediately
       },
-      error: () => {
+      error: (err) => {
         this.submittingAnswer.set(false);
+        if (err.status === 401) {
+          this.answerError.set('Your session has expired. Please log in again.');
+        } else {
+          this.answerError.set(err.error?.message || 'Failed to submit answer. Please try again.');
+        }
       }
     });
   }

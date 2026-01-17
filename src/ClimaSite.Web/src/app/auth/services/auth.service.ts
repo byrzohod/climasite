@@ -262,4 +262,13 @@ export class AuthService {
       localStorage.removeItem(this.TOKEN_KEY);
     }
   }
+
+  /**
+   * Clear auth state without navigating to login.
+   * Used by interceptor when token refresh fails to allow
+   * components to handle the error gracefully.
+   */
+  clearAuthState(): void {
+    this.clearAuth();
+  }
 }

@@ -3,10 +3,16 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
 import { Observable, of } from 'rxjs';
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ProductQaComponent } from './product-qa.component';
 import { QuestionsService, ProductQuestions, Question } from '../../services/questions.service';
+import { AuthService } from '../../../../auth/services/auth.service';
 import { environment } from '../../../../../environments/environment';
+
+class MockAuthService {
+  isAuthenticated = signal(true);
+  user = signal({ id: 'test-user-id', firstName: 'Test', lastName: 'User', email: 'test@test.com' });
+}
 
 class FakeTranslateLoader implements TranslateLoader {
   getTranslation(lang: string): Observable<Record<string, string>> {
@@ -36,6 +42,8 @@ class FakeTranslateLoader implements TranslateLoader {
       'products.qa.noAnswersYet': 'No answers yet. Be the first to help!',
       'products.qa.noQuestionsYet': 'No questions yet',
       'products.qa.beFirstToAsk': 'Be the first to ask about this product',
+      'products.qa.loginToAsk': 'Log in to ask a question',
+      'products.qa.loginNow': 'Log in now',
       'common.loading': 'Loading...',
       'common.previous': 'Previous',
       'common.next': 'Next',
@@ -114,6 +122,7 @@ describe('ProductQaComponent', () => {
       ],
       providers: [
         QuestionsService,
+        { provide: AuthService, useClass: MockAuthService },
         provideHttpClient(),
         provideHttpClientTesting()
       ]

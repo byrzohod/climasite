@@ -213,6 +213,7 @@ $color-info-950: #082f49;
   --color-primary-hover: #{$color-primary-600};
   --color-primary-active: #{$color-primary-700};
   --color-primary-light: #{$color-primary-100};
+  --color-primary-dark: #{$color-primary-700};
 
   --color-secondary: #{$color-secondary-500};
   --color-secondary-hover: #{$color-secondary-600};
@@ -250,6 +251,11 @@ $color-info-950: #082f49;
   // Ring/Focus Colors
   --color-ring: #{$color-primary-500};
   --color-ring-offset: #{$color-white};
+
+  // Backwards compatibility aliases
+  --color-border: var(--color-border-primary);
+  --color-surface: var(--color-bg-card);
+  --color-background: var(--color-bg-secondary);
 
   // Theme transition
   --theme-transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
@@ -292,6 +298,7 @@ $color-info-950: #082f49;
   --color-primary-hover: #{$color-primary-300};
   --color-primary-active: #{$color-primary-500};
   --color-primary-light: #{$color-primary-900};
+  --color-primary-dark: #{$color-primary-600};
 
   --color-accent: #{$color-accent-400};
   --color-accent-hover: #{$color-accent-300};
@@ -321,4 +328,9 @@ $color-info-950: #082f49;
   // Ring/Focus Colors
   --color-ring: #{$color-primary-400};
   --color-ring-offset: #{$color-gray-900};
+
+  // Backwards compatibility aliases
+  --color-border: var(--color-border-primary);
+  --color-surface: var(--color-bg-card);
+  --color-background: var(--color-bg-secondary);
 }
