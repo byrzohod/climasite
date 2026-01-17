@@ -35,6 +35,7 @@ public class DataSeeder
             await SeedCategoriesAsync();
             await SeedProductsAsync();
             await SeedPromotionsAsync();
+            await SeedProductRelationsAsync();
             _logger.LogInformation("Database seeding completed successfully");
         }
         catch (Exception ex)
@@ -739,5 +740,94 @@ public class DataSeeder
         promotion.SetThumbnailImageUrl($"https://placehold.co/400x200/0d9488/ffffff?text={Uri.EscapeDataString(name)}");
         promotion.SetBannerImageUrl($"https://placehold.co/1200x400/0d9488/ffffff?text={Uri.EscapeDataString(name)}");
         return promotion;
+    }
+
+    private async Task SeedProductRelationsAsync()
+    {
+        if (await _context.RelatedProducts.AnyAsync())
+        {
+            _logger.LogInformation("Product relations already seeded, skipping...");
+            return;
+        }
+
+        var products = await _context.Products.ToListAsync();
+        var productsBySlug = products.ToDictionary(p => p.Slug, p => p);
+
+        var relations = new List<RelatedProduct>();
+
+        // Similar products - Air conditioners are similar to each other
+        AddSimilarRelations(relations, productsBySlug, "dualzone-pro-12000", new[] { "arcticbreeze-9000", "coolmaster-18000", "portacool-14000" });
+        AddSimilarRelations(relations, productsBySlug, "arcticbreeze-9000", new[] { "dualzone-pro-12000", "mobilechill-10000" });
+        AddSimilarRelations(relations, productsBySlug, "coolmaster-18000", new[] { "dualzone-pro-12000", "portacool-14000" });
+        AddSimilarRelations(relations, productsBySlug, "portacool-14000", new[] { "mobilechill-10000", "dualzone-pro-12000" });
+        AddSimilarRelations(relations, productsBySlug, "mobilechill-10000", new[] { "portacool-14000", "arcticbreeze-9000" });
+
+        // Similar products - Heat pumps/heaters are similar to each other
+        AddSimilarRelations(relations, productsBySlug, "ecoheat-plus-24", new[] { "thermoflex-mini", "radiantmax-pro" });
+        AddSimilarRelations(relations, productsBySlug, "thermoflex-mini", new[] { "ecoheat-plus-24", "convectair-1500" });
+        AddSimilarRelations(relations, productsBySlug, "radiantmax-pro", new[] { "convectair-1500", "ecoheat-plus-24" });
+        AddSimilarRelations(relations, productsBySlug, "convectair-1500", new[] { "radiantmax-pro", "thermoflex-mini" });
+
+        // Similar products - Ventilation
+        AddSimilarRelations(relations, productsBySlug, "freshair-erv-200", new[] { "ventmax-exhaust-pro" });
+        AddSimilarRelations(relations, productsBySlug, "ventmax-exhaust-pro", new[] { "freshair-erv-200" });
+
+        // Accessories/Consumables - Smart thermostat works with all HVAC products
+        AddAccessoryRelations(relations, productsBySlug, "dualzone-pro-12000", new[] { "smartthermo-pro", "pureair-hepa-filter-pack", "coolline-copper-tubing-kit" });
+        AddAccessoryRelations(relations, productsBySlug, "arcticbreeze-9000", new[] { "smartthermo-pro", "pureair-hepa-filter-pack", "coolline-copper-tubing-kit" });
+        AddAccessoryRelations(relations, productsBySlug, "coolmaster-18000", new[] { "smartthermo-pro", "pureair-hepa-filter-pack", "coolline-copper-tubing-kit" });
+        AddAccessoryRelations(relations, productsBySlug, "ecoheat-plus-24", new[] { "smartthermo-pro", "pureair-hepa-filter-pack", "coolline-copper-tubing-kit" });
+        AddAccessoryRelations(relations, productsBySlug, "thermoflex-mini", new[] { "smartthermo-pro", "coolline-copper-tubing-kit" });
+        AddAccessoryRelations(relations, productsBySlug, "portacool-14000", new[] { "smartthermo-pro", "pureair-hepa-filter-pack" });
+        AddAccessoryRelations(relations, productsBySlug, "mobilechill-10000", new[] { "pureair-hepa-filter-pack" });
+        AddAccessoryRelations(relations, productsBySlug, "freshair-erv-200", new[] { "smartthermo-pro", "pureair-hepa-filter-pack" });
+
+        // Frequently bought together
+        AddFrequentlyBoughtTogetherRelations(relations, productsBySlug, "dualzone-pro-12000", new[] { "smartthermo-pro", "coolline-copper-tubing-kit" });
+        AddFrequentlyBoughtTogetherRelations(relations, productsBySlug, "ecoheat-plus-24", new[] { "smartthermo-pro" });
+
+        _context.RelatedProducts.AddRange(relations);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Seeded {Count} product relations", relations.Count);
+    }
+
+    private static void AddSimilarRelations(List<RelatedProduct> relations, Dictionary<string, Product> products, string productSlug, string[] relatedSlugs)
+    {
+        if (!products.TryGetValue(productSlug, out var product)) return;
+
+        foreach (var relatedSlug in relatedSlugs)
+        {
+            if (products.TryGetValue(relatedSlug, out var relatedProduct))
+            {
+                relations.Add(new RelatedProduct(product.Id, relatedProduct.Id, RelationType.Similar));
+            }
+        }
+    }
+
+    private static void AddAccessoryRelations(List<RelatedProduct> relations, Dictionary<string, Product> products, string productSlug, string[] accessorySlugs)
+    {
+        if (!products.TryGetValue(productSlug, out var product)) return;
+
+        foreach (var accessorySlug in accessorySlugs)
+        {
+            if (products.TryGetValue(accessorySlug, out var accessory))
+            {
+                relations.Add(new RelatedProduct(product.Id, accessory.Id, RelationType.Accessory));
+            }
+        }
+    }
+
+    private static void AddFrequentlyBoughtTogetherRelations(List<RelatedProduct> relations, Dictionary<string, Product> products, string productSlug, string[] relatedSlugs)
+    {
+        if (!products.TryGetValue(productSlug, out var product)) return;
+
+        foreach (var relatedSlug in relatedSlugs)
+        {
+            if (products.TryGetValue(relatedSlug, out var relatedProduct))
+            {
+                relations.Add(new RelatedProduct(product.Id, relatedProduct.Id, RelationType.FrequentlyBoughtTogether));
+            }
+        }
     }
 }

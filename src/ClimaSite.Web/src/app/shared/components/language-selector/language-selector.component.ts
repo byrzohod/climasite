@@ -7,7 +7,10 @@ import { LanguageService, SupportedLanguage, LanguageInfo } from '../../../core/
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="language-selector" data-testid="language-selector">
+    <div class="language-selector"
+         (mouseenter)="openDropdown()"
+         (mouseleave)="closeDropdown()"
+         data-testid="language-selector">
       <button
         type="button"
         class="language-toggle"
@@ -160,6 +163,10 @@ export class LanguageSelectorComponent {
 
   protected toggleDropdown(): void {
     this.isOpen.update(v => !v);
+  }
+
+  protected openDropdown(): void {
+    this.isOpen.set(true);
   }
 
   protected closeDropdown(): void {

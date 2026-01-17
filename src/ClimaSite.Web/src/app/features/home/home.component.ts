@@ -849,6 +849,7 @@ interface HeroSlide {
 
     .newsletter-input-wrapper {
       flex: 1;
+      min-width: 0;
       position: relative;
     }
 
@@ -860,6 +861,12 @@ interface HeroSlide {
       font-size: 1rem;
       outline: none;
       transition: border-color 0.2s, box-shadow 0.2s;
+      background-color: white;
+      color: #1f2937;
+
+      &::placeholder {
+        color: #9ca3af;
+      }
 
       &:focus {
         border-color: rgba(255,255,255,0.5);
