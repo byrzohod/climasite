@@ -1,10 +1,15 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { inject, Injector, runInInjectionContext } from '@angular/core';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const authService = inject(AuthService);
+  // Use Injector to lazily get AuthService to avoid circular dependency
+  // AuthService -> CartService -> HTTP -> authInterceptor -> AuthService
+  const injector = inject(Injector);
+  
+  // Lazy getter to avoid circular dependency at initialization time
+  const getAuthService = () => injector.get(AuthService);
 
   // Skip auth header for auth endpoints (except me, change-password)
   // Important: Include /auth/logout to prevent infinite loop when logout is called after token refresh fails
@@ -15,6 +20,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 
+  const authService = getAuthService();
   const token = authService.accessToken;
 
   if (token) {
@@ -29,9 +35,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401 && token) {
         // Try to refresh the token
-        return authService.refreshToken().pipe(
+        const authSvc = getAuthService();
+        return authSvc.refreshToken().pipe(
           switchMap(() => {
-            const newToken = authService.accessToken;
+            const newToken = authSvc.accessToken;
             const clonedReq = req.clone({
               setHeaders: {
                 Authorization: `Bearer ${newToken}`
@@ -43,7 +50,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
             // Refresh failed - clear auth state but don't navigate
             // This allows components to handle the error gracefully
             // and show a "session expired" message
-            authService.clearAuthState();
+            authSvc.clearAuthState();
             return throwError(() => refreshError);
           })
         );

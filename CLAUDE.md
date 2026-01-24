@@ -16,34 +16,29 @@ ClimaSite is a production-grade online shop specializing in air conditioners, he
 | Checkout & Orders | Complete | Stripe integration |
 | Admin Panel | Complete | CRUD, dashboard |
 | Reviews & Ratings | Complete | Q&A, verified purchases |
-| Translation Management | Complete | Admin UI for product translations |
-| Bug Fixes (Plan 18) | Complete | Category navigation, wishlist, auth timing, i18n, theme fixes |
-| **Saved Addresses** | **Complete** | Full CRUD for user addresses, checkout integration |
-| **Stripe Payments** | **Complete** | Payment intents, card input, bank transfer support |
-| **Product Search** | **Complete** | Frontend search wired to backend API |
-| **Reorder Feature** | **Complete** | Re-add previous order items to cart |
+| Search & Navigation | Complete | Full-text search, facets, filters |
+| Inventory Management | Complete | Stock tracking, reservations |
+| Notifications System | Partial | Email notifications implemented |
+| Wishlist | Partial | Basic implementation exists |
+| Motion/Animation System | Complete | AnimationService, flying cart, confetti, parallax |
+| Performance Optimizations | Complete | Core Web Vitals, lazy loading, preconnect hints |
 
 ### Recently Completed
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| Saved Addresses | Complete | AddressesController, AddressService, checkout saved address selector |
-| Stripe Integration | Complete | PaymentsController, PaymentService, Stripe Elements |
-| Product Search UI | Complete | Header search wired to product list filtering |
-| Reorder | Complete | E2E test enabled, existing implementation verified |
-| Mega Menu | Complete | Fixed flaky E2E test with proper waits |
-| **UI Improvement Plan** | **Complete** | 45+ issues fixed across 6 phases (see docs/plans/21-ui-improvement-plan.md) |
-| **Shared Components** | **Complete** | Alert, Modal, Toast, Breadcrumb components created |
-| **Accessibility (WCAG)** | **Complete** | Focus traps, ARIA roles, keyboard navigation, screen reader support |
-| **Performance** | **Complete** | Scroll throttling, lazy loading, memory leak fixes |
-| **Motion/Animation System** | **Complete** | AnimationService, reduced motion support, GPU-accelerated animations |
-| **Flying Cart Animation** | **Complete** | Product image flies to cart icon with arc trajectory |
-| **Confetti Celebration** | **Complete** | Canvas-based confetti on order confirmation |
-| **Parallax Effects** | **Complete** | Scroll and mouse-based parallax on hero sections |
-| **Toast Notifications** | **Complete** | Progress bar, hover pause, type-specific icons |
-| **Route Transitions** | **Complete** | Fade/slide page transitions |
-| **Product Gallery** | **Complete** | Lightbox, crossfade, zoom, slide animations |
-| **Performance Audit** | **Complete** | Core Web Vitals optimizations, preconnect hints |
+| Motion/Animation System | Complete | AnimationService, reduced motion support, GPU-accelerated animations |
+| Flying Cart Animation | Complete | Product image flies to cart icon with arc trajectory |
+| Confetti Celebration | Complete | Canvas-based confetti on order confirmation |
+| Parallax Effects | Complete | Scroll and mouse-based parallax on hero sections |
+| Toast Notifications | Complete | Progress bar, hover pause, type-specific icons |
+| Route Transitions | Complete | Fade/slide page transitions |
+| Product Gallery | Complete | Lightbox, crossfade, zoom, slide animations |
+| Performance Audit | Complete | Core Web Vitals optimizations, preconnect hints |
+| Circular Dependency Fix | Complete | Auth interceptor refactored to fix circular imports |
+| UI Improvement Plan | Complete | 45+ issues fixed across 6 phases |
+| Shared Components | Complete | Alert, Modal, Toast, Breadcrumb components created |
+| Accessibility (WCAG) | Complete | Focus traps, ARIA roles, keyboard navigation, screen reader support |
 
 ---
 
@@ -125,11 +120,11 @@ climasite/
 │   ├── ClimaSite.E2E/              # Playwright E2E tests
 │   │   ├── fixtures/               # Test data factory
 │   │   ├── helpers/                # Utility functions
-│   │   └── tests/                  # Test files by feature
+│   │   └── Tests/                  # Test files by feature
 │   └── ClimaSite.Web.Tests/        # Angular unit tests (karma.conf.js)
 │
 ├── docs/
-│   ├── plans/                      # Implementation plans (00-18)
+│   ├── plans/                      # Implementation plans (12, 13, 17 active)
 │   └── skills.md                   # Required skills documentation
 │
 └── scripts/                        # Build and deployment scripts
@@ -628,24 +623,28 @@ page.on('console', msg => console.log('PAGE LOG:', msg.text()));
 
 All feature implementation plans are in `docs/plans/`:
 
+### Archived Plans (Complete)
+
+Plans 01-11 have been completed and archived. They covered:
+- Design System & Theming (Plan 01)
+- Internationalization (Plan 02)
+- Authentication & User Management (Plan 03)
+- Product Catalog (Plan 04)
+- Shopping Cart (Plan 05)
+- Checkout & Orders (Plan 06)
+- Admin Panel (Plan 07)
+- Testing Infrastructure (Plan 08)
+- Inventory Management (Plan 09)
+- Search & Navigation (Plan 10)
+- Reviews & Ratings (Plan 11)
+
+### Active Plans
+
 | Plan | Task IDs | Description | Status |
 |------|----------|-------------|--------|
-| 00-master-overview.md | - | Project overview and phases | Reference |
-| 01-design-system-theming.md | DST-001 to DST-015 | Colors, themes, components | Complete |
-| 02-internationalization-i18n.md | I18N-001 to I18N-015 | Multi-language support | Complete |
-| 03-authentication-user-management.md | AUTH-001 to AUTH-027 | JWT auth, users, roles | Complete |
-| 04-product-catalog.md | CAT-001 to CAT-030 | Products, categories, variants | Complete |
-| 05-shopping-cart.md | CART-001 to CART-020 | Cart, guest carts, merging | Complete |
-| 06-checkout-orders.md | CHK-001 to CHK-035 | Checkout, Stripe, orders | Complete |
-| 07-admin-panel.md | ADM-001 to ADM-030 | Admin dashboard, CRUD | Complete |
-| 08-testing-infrastructure.md | TEST-001 to TEST-020 | Test setup, patterns | Complete |
-| 09-inventory-management.md | INV-001 to INV-020 | Stock, reservations | Complete |
-| 10-search-navigation.md | SRCH-001 to SRCH-024 | Search, facets, filters | Complete |
-| 11-reviews-ratings.md | REV-001 to REV-022 | Reviews, ratings, moderation | Complete |
 | 12-notifications-system.md | NOT-001 to NOT-020 | Email, in-app notifications | Partial |
-| 13-wishlist.md | WISH-001 to WISH-019 | Wishlist, sharing | Not Started |
+| 13-wishlist.md | WISH-001 to WISH-019 | Wishlist, sharing | Partial |
 | 17-future-enhancements.md | Various | Related products, translations | Complete |
-| **18-bug-fixes-and-enhancements.md** | NAV, AUTH, I18N, THEME, HOME, FILTER | **Bug fixes and improvements** | **Pending** |
 
 ---
 
@@ -690,6 +689,8 @@ A feature is ONLY complete when:
 | Confetti | `src/ClimaSite.Web/src/app/core/services/confetti.service.ts` |
 | Performance Audit | `docs/performance/performance-audit.md` |
 | Animation Directives | `src/ClimaSite.Web/src/app/shared/directives/` |
+| FloatingDirective | `src/ClimaSite.Web/src/app/shared/directives/floating.directive.ts` |
+| ParallaxDirective | `src/ClimaSite.Web/src/app/shared/directives/parallax.directive.ts` |
 
 ### Important URLs (Development)
 

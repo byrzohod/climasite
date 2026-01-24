@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Brand, BrandBrief, BrandListResponse } from '../models/brand.model';
 import { TranslateService } from '@ngx-translate/core';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -10,7 +11,7 @@ import { TranslateService } from '@ngx-translate/core';
 export class BrandService {
   private readonly http = inject(HttpClient);
   private readonly translate = inject(TranslateService);
-  private readonly apiUrl = '/api/brands';
+  private readonly apiUrl = `${environment.apiUrl}/api/brands`;
 
   getBrands(pageNumber = 1, pageSize = 24, featured?: boolean): Observable<BrandListResponse> {
     let params = new HttpParams()
