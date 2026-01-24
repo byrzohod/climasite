@@ -426,7 +426,14 @@
       "line2": "Reines Wasser",
       "subtitle": "Premium HLK-Systeme und Wasseraufbereitungslösungen für Ihr Zuhause und Unternehmen. Über 15 Jahre Erfahrung in Bulgarien.",
       "cta": "Produkte ansehen",
+      "cta.primary": "Alle Produkte ansehen",
+      "cta.secondary": "System finden",
       "secondaryCta": "Expertenberatung",
+      "searchPlaceholder": "Suche nach Produkten, Marken, Kategorien...",
+      "shopBy": "Einkaufen nach:",
+      "featuredBadge": "Empfohlen",
+      "featuredProduct": "Premium Split-Klimaanlage",
+      "featuredTagline": "Energieeffiziente Kühlung für jeden Raum",
       "badge": "Vertraut von über 10.000 Kunden",
       "scroll": "Scrollen zum Entdecken",
       "visualLabel": "Energieeinsparung",
@@ -524,6 +531,7 @@
     },
     "values": {
       "shipping": "Kostenloser Versand",
+      "shippingDetail": "Bei Bestellungen über 500€",
       "warranty": "5 Jahre Garantie",
       "support": "24/7 Support",
       "installation": "Profi-Installation"
@@ -558,6 +566,11 @@
       "button": "Alle Produkte ansehen"
     },
     "promo": {
+      "banner": {
+        "winter": "Winteraktion: Bis zu 30% Rabatt auf Heizsysteme",
+        "summer": "Sommeraktion: Tolle Ersparnisse bei Klimaanlagen",
+        "cta": "Jetzt einkaufen"
+      },
       "sale": {
         "title": "Winterschlussverkauf",
         "description": "Bis zu 30% Rabatt auf ausgewählte Artikel"

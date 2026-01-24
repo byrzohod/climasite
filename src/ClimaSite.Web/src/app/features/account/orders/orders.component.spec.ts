@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component, input } from '@angular/core';
 import { OrdersComponent } from './orders.component';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -6,6 +7,22 @@ import { TranslateModule } from '@ngx-translate/core';
 import { CheckoutService } from '../../../core/services/checkout.service';
 import { of, throwError } from 'rxjs';
 import { OrderBrief, PaginatedOrders } from '../../../core/models/order.model';
+import { EmptyStateComponent } from '../../../shared/components/empty-state';
+
+// Mock EmptyStateComponent to avoid Lucide icon registration issues
+@Component({
+  selector: 'app-empty-state',
+  template: '<div class="empty-state" data-testid="mock-empty-state"></div>',
+  standalone: true
+})
+class MockEmptyStateComponent {
+  readonly variant = input<string>('generic');
+  readonly title = input<string>('');
+  readonly description = input<string>('');
+  readonly actionLabel = input<string>('');
+  readonly actionRoute = input<string>('');
+  readonly showIcon = input<boolean>(true);
+}
 
 describe('OrdersComponent', () => {
   let component: OrdersComponent;
@@ -64,7 +81,13 @@ describe('OrdersComponent', () => {
       providers: [
         { provide: CheckoutService, useValue: checkoutServiceMock }
       ]
-    }).compileComponents();
+    })
+    // Override OrdersComponent to use mock EmptyStateComponent
+    .overrideComponent(OrdersComponent, {
+      remove: { imports: [EmptyStateComponent] },
+      add: { imports: [MockEmptyStateComponent] }
+    })
+    .compileComponents();
 
     fixture = TestBed.createComponent(OrdersComponent);
     component = fixture.componentInstance;
