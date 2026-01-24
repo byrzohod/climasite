@@ -90,6 +90,15 @@ export type LoadingSize = 'sm' | 'md' | 'lg' | 'xl';
       }
     }
 
+    /* COMP-11: Respect reduced motion preference */
+    @media (prefers-reduced-motion: reduce) {
+      .loading-spinner {
+        animation: none;
+        /* Show a static pulsing opacity instead */
+        opacity: 0.7;
+      }
+    }
+
     /* Sizes */
     .loading-sm {
       width: 1rem;

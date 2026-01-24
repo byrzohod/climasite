@@ -72,21 +72,32 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, Res
             .Where(p => productIds.Contains(p.Id))
             .ToListAsync(cancellationToken);
 
-        foreach (var item in order.Items)
+        // Use explicit transaction to ensure stock restoration and order status update are atomic
+        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        try
         {
-            var product = products.FirstOrDefault(p => p.Id == item.ProductId);
-            var variant = product?.Variants.FirstOrDefault(v => v.Id == item.VariantId);
-            if (variant != null)
+            foreach (var item in order.Items)
             {
-                variant.AdjustStock(item.Quantity); // Add back the stock
+                var product = products.FirstOrDefault(p => p.Id == item.ProductId);
+                var variant = product?.Variants.FirstOrDefault(v => v.Id == item.VariantId);
+                if (variant != null)
+                {
+                    variant.AdjustStock(item.Quantity); // Add back the stock
+                }
             }
+
+            // Set cancellation
+            order.SetCancellationReason(request.CancellationReason);
+            order.SetStatus(OrderStatus.Cancelled);
+
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
         }
-
-        // Set cancellation
-        order.SetCancellationReason(request.CancellationReason);
-        order.SetStatus(OrderStatus.Cancelled);
-
-        await _context.SaveChangesAsync(cancellationToken);
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
 
         return Result<OrderDto>.Success(MapToDto(order, products));
     }

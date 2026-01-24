@@ -14,7 +14,7 @@ public class PlaywrightFixture : IAsyncLifetime
     public PlaywrightFixture()
     {
         _baseUrl = Environment.GetEnvironmentVariable("E2E_BASE_URL") ?? "http://localhost:4200";
-        _apiUrl = Environment.GetEnvironmentVariable("E2E_API_URL") ?? "https://localhost:7008";
+        _apiUrl = Environment.GetEnvironmentVariable("E2E_API_URL") ?? "http://localhost:5029";
     }
 
     public string BaseUrl => _baseUrl;

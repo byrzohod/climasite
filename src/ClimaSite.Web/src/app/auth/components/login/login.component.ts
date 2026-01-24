@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../services/auth.service';
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
@@ -39,6 +39,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
             [label]="'auth.login.email' | translate"
             [placeholder]="'auth.login.email' | translate"
             [error]="getEmailError()"
+            autocomplete="email"
             data-testid="login-email"
           />
 
@@ -48,6 +49,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
             [label]="'auth.login.password' | translate"
             [placeholder]="'auth.login.password' | translate"
             [error]="getPasswordError()"
+            autocomplete="current-password"
             data-testid="login-password"
           />
 
@@ -140,16 +142,75 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
     }
 
     .checkbox-label {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 0.5rem;
       cursor: pointer;
       color: var(--color-text-secondary);
+      user-select: none;
 
       input[type="checkbox"] {
-        width: 1rem;
-        height: 1rem;
+        position: relative;
+        width: 1.125rem;
+        height: 1.125rem;
         accent-color: var(--color-primary);
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        background-color: var(--color-bg-input);
+        border: 2px solid var(--color-border-primary);
+        border-radius: 0.25rem;
+        transition: background-color 0.2s ease-out, border-color 0.2s ease-out, transform 0.15s ease-out;
+
+        &:hover {
+          border-color: var(--color-primary);
+        }
+
+        &:checked {
+          background-color: var(--color-primary);
+          border-color: var(--color-primary);
+        }
+
+        &:checked::after {
+          content: '';
+          position: absolute;
+          left: 0.25rem;
+          top: 0.0625rem;
+          width: 0.375rem;
+          height: 0.625rem;
+          border: solid var(--color-text-inverse);
+          border-width: 0 2px 2px 0;
+          transform: rotate(45deg);
+          animation: checkboxPop 0.2s ease-out forwards;
+        }
+
+        &:focus-visible {
+          outline: 2px solid var(--color-primary);
+          outline-offset: 2px;
+          box-shadow: 0 0 0 3px var(--color-primary-light);
+        }
+
+        &:active {
+          transform: scale(0.9);
+        }
+      }
+
+      @keyframes checkboxPop {
+        0% { opacity: 0; transform: rotate(45deg) scale(0); }
+        60% { transform: rotate(45deg) scale(1.2); }
+        100% { opacity: 1; transform: rotate(45deg) scale(1); }
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .checkbox-label input[type="checkbox"] {
+        transition: none !important;
+
+        &:checked::after {
+          animation: none !important;
+          opacity: 1;
+          transform: rotate(45deg) scale(1);
+        }
       }
     }
 
@@ -191,12 +252,13 @@ export class LoginComponent {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
+  private readonly translate = inject(TranslateService);
 
   readonly errorMessage = signal<string | null>(null);
 
   loginForm: FormGroup = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(6)]],
+    password: ['', [Validators.required]],
     rememberMe: [false]
   });
 
@@ -223,8 +285,8 @@ export class LoginComponent {
   getEmailError(): string {
     const email = this.loginForm.get('email');
     if (email?.touched && email?.errors) {
-      if (email.errors['required']) return 'Email is required';
-      if (email.errors['email']) return 'Please enter a valid email';
+      if (email.errors['required']) return this.translate.instant('auth.validation.emailRequired');
+      if (email.errors['email']) return this.translate.instant('auth.validation.emailInvalid');
     }
     return '';
   }
@@ -232,8 +294,7 @@ export class LoginComponent {
   getPasswordError(): string {
     const password = this.loginForm.get('password');
     if (password?.touched && password?.errors) {
-      if (password.errors['required']) return 'Password is required';
-      if (password.errors['minlength']) return 'Password must be at least 6 characters';
+      if (password.errors['required']) return this.translate.instant('auth.validation.passwordRequired');
     }
     return '';
   }

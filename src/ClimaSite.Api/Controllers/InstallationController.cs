@@ -51,7 +51,8 @@ public class InstallationController : ControllerBase
         };
 
         var result = await _mediator.Send(command);
-        return CreatedAtAction(nameof(GetInstallationOptions), new { productId = request.ProductId }, result);
+        // Return Created with the request ID in the location header
+        return Created($"/api/installation/requests/{result.Id}", result);
     }
 }
 

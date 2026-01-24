@@ -149,7 +149,7 @@ import { TranslateModule } from '@ngx-translate/core';
                 marginheight="0"
                 marginwidth="0"
                 src="https://www.openstreetmap.org/export/embed.html?bbox=23.30%2C42.68%2C23.35%2C42.72&layer=mapnik&marker=42.6977%2C23.3219"
-                title="ClimaSite Location"
+                [title]="'common.aria.mapLocation' | translate"
                 loading="lazy">
               </iframe>
               <a href="https://www.openstreetmap.org/?mlat=42.6977&mlon=23.3219#map=15/42.6977/23.3219"
@@ -247,7 +247,7 @@ import { TranslateModule } from '@ngx-translate/core';
       width: 100%;
       padding: 1rem;
       background: var(--color-primary);
-      color: white;
+      color: var(--color-text-inverse);
       border: none;
       border-radius: 8px;
       font-size: 1rem;

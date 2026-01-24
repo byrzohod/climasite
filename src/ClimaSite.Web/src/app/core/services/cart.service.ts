@@ -4,6 +4,10 @@ import { Observable, tap, catchError, of, BehaviorSubject } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Cart, CartItem, AddToCartRequest, UpdateCartItemRequest, CartSummary } from '../models/cart.model';
 
+// TODO: SVC-001 - Error messages in this service are hardcoded (e.g., 'Failed to add item to cart').
+// These should be replaced with translation keys and use TranslateService for i18n support.
+// Example: this._error.set(this.translate.instant('cart.errors.addFailed'));
+
 @Injectable({
   providedIn: 'root'
 })

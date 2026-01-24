@@ -555,10 +555,25 @@ import { SavedAddress } from '../../core/models/address.model';
         background: var(--color-bg-secondary);
         color: var(--color-text-primary);
         font-size: 1rem;
+        transition: border-color 0.2s ease-out, box-shadow 0.2s ease-out, background-color 0.2s ease-out;
+
+        &:hover:not(:disabled):not(:focus) {
+          border-color: var(--color-border-secondary);
+        }
 
         &:focus {
           outline: none;
           border-color: var(--color-primary);
+          box-shadow: 0 0 0 3px var(--color-primary-light);
+        }
+
+        &.invalid {
+          border-color: var(--color-error);
+          animation: inputShake 0.4s ease-out;
+
+          &:focus {
+            box-shadow: 0 0 0 3px var(--color-error-light);
+          }
         }
       }
 
@@ -570,6 +585,33 @@ import { SavedAddress } from '../../core/models/address.model';
         background-repeat: no-repeat;
         background-size: 1.25em 1.25em;
         padding-right: 2.5rem;
+      }
+
+      .field-error {
+        display: block;
+        color: var(--color-error);
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+        animation: errorSlideIn 0.2s ease-out forwards;
+      }
+    }
+
+    @keyframes inputShake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+
+    @keyframes errorSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-5px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
       }
     }
 
@@ -588,15 +630,29 @@ import { SavedAddress } from '../../core/models/address.model';
       border: 2px solid var(--color-border);
       border-radius: 8px;
       cursor: pointer;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s ease-out, background-color 0.2s ease-out, transform 0.15s ease-out, box-shadow 0.2s ease-out;
 
       &:hover {
         border-color: var(--color-primary);
+        transform: translateY(-1px);
+      }
+
+      &:active {
+        transform: translateY(0) scale(0.99);
       }
 
       &.selected {
         border-color: var(--color-primary);
         background: var(--color-primary-light);
+        box-shadow: 0 0 0 1px var(--color-primary);
+      }
+
+      .payment-icon {
+        transition: transform 0.2s ease-out;
+      }
+
+      &:hover .payment-icon {
+        transform: scale(1.1);
       }
 
       input {
@@ -913,6 +969,31 @@ import { SavedAddress } from '../../core/models/address.model';
 
       .form-row {
         grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .form-group input,
+      .form-group select,
+      .form-group .field-error,
+      .payment-option,
+      .payment-option .payment-icon {
+        transition: none !important;
+        animation: none !important;
+      }
+
+      .form-group input.invalid {
+        border-color: var(--color-error);
+      }
+
+      .form-group .field-error {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .payment-option:hover,
+      .payment-option:active {
+        transform: none !important;
       }
     }
   `]

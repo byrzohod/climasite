@@ -1,7 +1,7 @@
 {
   "common": {
-    "appName": "ClimaSite",
-    "tagline": "Ihr Partner für HLK-Lösungen",
+    "appName": "CDL",
+    "tagline": "Klimatisierung & Wasseraufbereitung",
     "loading": "Laden...",
     "error": "Ein Fehler ist aufgetreten",
     "retry": "Erneut versuchen",
@@ -11,6 +11,7 @@
     "edit": "Bearbeiten",
     "add": "Hinzufügen",
     "added": "Hinzugefügt",
+    "undo": "Rückgängig",
     "search": "Suchen",
     "filter": "Filtern",
     "sort": "Sortieren",
@@ -22,12 +23,29 @@
     "yes": "Ja",
     "no": "Nein",
     "close": "Schließen",
+    "dismiss": "Verwerfen",
     "viewAll": "Alle anzeigen",
     "showMore": "Mehr anzeigen",
     "showLess": "Weniger anzeigen",
     "currency": "{{amount}} €",
     "copyToClipboard": "In Zwischenablage kopieren",
-    "noAddress": "Keine Adresse angegeben"
+    "noAddress": "Keine Adresse angegeben",
+    "aria": {
+      "previous": "Zurück",
+      "next": "Weiter",
+      "search": "Suchen",
+      "toggleMenu": "Menü umschalten",
+      "zoomImage": "Bild vergrößern",
+      "previousImage": "Vorheriges Bild",
+      "nextImage": "Nächstes Bild",
+      "closeFullscreen": "Vollbild schließen",
+      "breadcrumb": "Breadcrumb-Navigation",
+      "dragToReorder": "Zum Neuordnen ziehen",
+      "moveUp": "Nach oben",
+      "moveDown": "Nach unten",
+      "removeRelation": "Beziehung entfernen",
+      "mapLocation": "Karte mit Standort"
+    }
   },
   "nav": {
     "home": "Startseite",
@@ -50,9 +68,12 @@
     "settings": "Einstellungen",
     "logout": "Abmelden",
     "login": "Anmelden",
-    "register": "Registrieren"
+    "register": "Registrieren",
+    "mobile_menu": "Navigationsmenü"
   },
-  "auth": {
+"auth": {
+    "showPassword": "Passwort anzeigen",
+    "hidePassword": "Passwort verbergen",
     "login": {
       "title": "Willkommen zurück",
       "subtitle": "Melden Sie sich bei Ihrem Konto an",
@@ -64,6 +85,12 @@
       "noAccount": "Sie haben noch kein Konto?",
       "signUp": "Registrieren"
     },
+    "validation": {
+      "emailRequired": "E-Mail ist erforderlich",
+      "emailInvalid": "Bitte geben Sie eine gültige E-Mail ein",
+      "passwordRequired": "Passwort ist erforderlich",
+      "passwordMinLength": "Passwort muss mindestens 6 Zeichen lang sein"
+    },
     "register": {
       "title": "Konto erstellen",
       "subtitle": "Werden Sie heute Teil von ClimaSite",
@@ -72,28 +99,45 @@
       "email": "E-Mail-Adresse",
       "password": "Passwort",
       "confirmPassword": "Passwort bestätigen",
+      "passwordRequirements": "Passwort muss mindestens 8 Zeichen lang sein",
       "terms": "Ich stimme den Nutzungsbedingungen und der Datenschutzerklärung zu",
       "submit": "Konto erstellen",
       "hasAccount": "Sie haben bereits ein Konto?",
-      "signIn": "Anmelden"
+      "signIn": "Anmelden",
+      "success": "Registrierung erfolgreich! Bitte überprüfen Sie Ihre E-Mail, um Ihr Konto zu bestätigen.",
+      "error": "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut."
     },
     "forgotPassword": {
       "title": "Passwort zurücksetzen",
       "subtitle": "Geben Sie Ihre E-Mail-Adresse ein, um einen Reset-Link zu erhalten",
       "email": "E-Mail-Adresse",
       "submit": "Reset-Link senden",
-      "backToLogin": "Zurück zur Anmeldung"
+      "backToLogin": "Zurück zur Anmeldung",
+      "success": "Falls die E-Mail existiert, wurde ein Link zum Zurücksetzen des Passworts gesendet."
+    },
+    "resetPassword": {
+      "title": "Passwort zurücksetzen",
+      "newPassword": "Neues Passwort",
+      "confirmNewPassword": "Neues Passwort bestätigen",
+      "reset": "Passwort zurücksetzen",
+      "success": "Passwort wurde erfolgreich zurückgesetzt. Weiterleitung zur Anmeldung...",
+      "error": "Passwort konnte nicht zurückgesetzt werden. Bitte versuchen Sie es erneut."
     },
     "logout": "Abmelden"
   },
   "products": {
     "title": "Produkte",
+    "filter_sidebar": "Produktfilter",
     "all": "Alle Produkte",
     "featured": "Empfohlene Produkte",
     "newArrivals": "Neuheiten",
     "onSale": "Im Angebot",
     "bestsellers": "Bestseller",
     "noProducts": "Keine Produkte gefunden",
+    "error": {
+      "loadFailed": "Produkte konnten nicht geladen werden",
+      "tryAgain": "Bitte versuchen Sie es später erneut"
+    },
     "itemsFound": "{{count}} Produkte gefunden",
     "searchResults": "Suchergebnisse für",
     "noImage": "Kein Bild",
@@ -113,9 +157,18 @@
       "brand": "Marke",
       "price": "Preis",
       "priceRange": "Preisbereich",
+      "minPrice": "Min",
+      "maxPrice": "Max",
+      "minPriceLabel": "Mindestpreis",
+      "maxPriceLabel": "Höchstpreis",
+      "priceFilterHint": "Geben Sie einen Preisbereich ein, um Produkte zu filtern",
       "rating": "Bewertung",
       "inStock": "Nur verfügbare",
       "clearAll": "Alle löschen"
+    },
+    "view": {
+      "grid": "Rasteransicht",
+      "list": "Listenansicht"
     },
     "sort": {
       "title": "Sortieren nach",
@@ -204,6 +257,11 @@
       "morning": "Morgen",
       "afternoon": "Nachmittag",
       "evening": "Abend",
+      "timeSlots": {
+        "morning": "(8:00 - 12:00)",
+        "afternoon": "(12:00 - 17:00)",
+        "evening": "(17:00 - 20:00)"
+      },
       "notes": "Zusätzliche Hinweise",
       "notesPlaceholder": "Besondere Anweisungen oder Zugangsinformationen",
       "selectedService": "Ausgewählter Service",
@@ -352,10 +410,26 @@
       "placeholder": "Code eingeben",
       "apply": "Einlösen",
       "applied": "Code eingelöst!"
-    }
+    },
+    "confirmRemove": "Möchten Sie diesen Artikel wirklich aus dem Warenkorb entfernen?",
+    "decrease_quantity": "Menge verringern für",
+    "increase_quantity": "Menge erhöhen für",
+    "quantity_for": "Menge für",
+    "update_failed": "Menge konnte nicht aktualisiert werden",
+    "item_removed": "{{name}} aus dem Warenkorb entfernt",
+    "item_restored": "Artikel im Warenkorb wiederhergestellt",
+    "remove_failed": "Artikel konnte nicht entfernt werden",
+    "restore_failed": "Artikel konnte nicht wiederhergestellt werden"
   },
-  "checkout": {
+"checkout": {
     "title": "Kasse",
+    "progress_navigation": "Bestellfortschritt",
+    "step_completed": "Abgeschlossen",
+    "step_current": "Aktueller Schritt",
+    "processing_order": "Ihre Bestellung wird verarbeitet",
+    "secure_checkout": "Sichere Zahlung",
+    "ssl_encrypted": "SSL-verschlüsselt",
+    "accepted_payments": "Wir akzeptieren",
     "steps": {
       "shipping": "Versand",
       "payment": "Zahlung",
@@ -403,6 +477,7 @@
       "paymentMethod": "Zahlungsmethode"
     },
     "placeOrder": "Bestellung aufgeben",
+    "processing": "Ihre Bestellung wird bearbeitet...",
     "backToCart": "Zurück zum Warenkorb",
     "orderComplete": {
       "title": "Bestellung bestätigt!",
@@ -492,7 +567,8 @@
         "success": "{{count}} Artikel zum Warenkorb hinzugefügt",
         "partial": "{{added}} Artikel hinzugefügt, {{skipped}} Artikel übersprungen (nicht verfügbar)",
         "error": "Artikel konnten nicht zum Warenkorb hinzugefügt werden"
-      }
+      },
+      "notes": "Notizen"
     },
     "addresses": {
       "title": "Gespeicherte Adressen",
@@ -542,6 +618,7 @@
       "airConditioners": "Klimaanlagen",
       "heatingSystems": "Heizsysteme",
       "ventilation": "Lüftung",
+      "waterPurification": "Wasseraufbereitung",
       "accessories": "Zubehör"
     },
     "support": {
@@ -563,7 +640,9 @@
       "placeholder": "Ihre E-Mail-Adresse",
       "subscribe": "Abonnieren"
     },
-    "copyright": "© {{year}} ClimaSite. Alle Rechte vorbehalten."
+    "copyright": "© {{year}} ClimaSite. Alle Rechte vorbehalten.",
+    "phone": "0898 56 75 04",
+    "address": "Bulgarien"
   },
   "errors": {
     "required": "Dieses Feld ist erforderlich",
@@ -578,72 +657,94 @@
   },
   "home": {
     "hero": {
-      "title": "Exzellente Klimakontrolle",
-      "subtitle": "Entdecken Sie hochwertige HLK-Lösungen für Ihr Zuhause und Unternehmen",
-      "cta": "Jetzt einkaufen"
+      "title": "Klimatisierung & Wasseraufbereitung",
+      "titleLine1": "Perfektes Klima,",
+      "titleLine2": "Reines Wasser",
+      "eyebrow": "CDL - Ihr Komfort-Partner",
+      "title1": "Klimatisierung",
+      "title2": "& Wasseraufbereitung",
+      "line1": "Perfektes Klima,",
+      "line2": "Reines Wasser",
+      "subtitle": "Premium HLK-Systeme und Wasseraufbereitungslösungen für Ihr Zuhause und Unternehmen. Über 15 Jahre Erfahrung in Bulgarien.",
+      "cta": "Produkte ansehen",
+      "secondaryCta": "Expertenberatung",
+      "badge": "Vertraut von über 10.000 Kunden",
+      "scroll": "Scrollen zum Entdecken",
+      "visualLabel": "Energieeinsparung",
+      "visualValue": "Bis zu 40%",
+      "cooling": "Kühlung",
+      "heating": "Heizung",
+      "ventilation": "Belüftung"
     },
     "slides": {
-      "slide1": {
-        "title": "Premium Klimaanlagen",
-        "subtitle": "Energieeffiziente Kühlung für Ihr Zuhause mit modernster Inverter-Technologie",
-        "cta": "Klimaanlagen Entdecken"
+      "summer": {
+        "title": "Bleiben Sie diesen Sommer kühl",
+        "subtitle": "Premium-Klimaanlagen mit energieeffizienter Technologie. Besiegen Sie die Hitze mit Systemen, die Geld sparen.",
+        "cta": "Klimaanlagen ansehen"
       },
-      "slide2": {
-        "title": "Professionelle Installation",
-        "subtitle": "Experteninstallation durch zertifizierte Techniker mit Garantie",
-        "cta": "Mehr Erfahren"
-      },
-      "slide3": {
-        "title": "Winterangebote",
-        "subtitle": "Bis zu 30% Rabatt auf ausgewählte Heizsysteme und Wärmepumpen",
-        "cta": "Angebote Ansehen"
+      "winter": {
+        "title": "Wärmen Sie Ihr Zuhause",
+        "subtitle": "Effiziente Heizsysteme für die kältesten Tage. Bleiben Sie gemütlich bei niedrigen Energiekosten.",
+        "cta": "Heizsysteme ansehen"
+      }
+    },
+    "brands": {
+      "trustedBy": "Vertraut von führenden HLK-Profis weltweit",
+      "label": "Vertraut von führenden Marken"
+    },
+    "stats": {
+      "title": "Warum Tausende ClimaSite wählen",
+      "subtitle": "Werden Sie Teil unserer Gemeinschaft zufriedener Kunden, die uns für ihre Klimakontrolle vertrauen",
+      "customers": "Zufriedene Kunden",
+      "products": "Verfügbare Produkte",
+      "experience": "Jahre Erfahrung",
+      "years": "Jahre Erfahrung",
+      "rating": "Kundenbewertung"
+    },
+    "marquee": {
+      "text": "Kostenloser Versand ab 500€ • 5 Jahre Garantie • Professionelle Installation • 24/7 Support"
+    },
+    "howItWorks": {
+      "label": "So funktioniert's",
+      "title": "So funktioniert's",
+      "subtitle": "Vom Durchsuchen bis zur Installation in 4 einfachen Schritten",
+      "steps": {
+        "browse": {
+          "title": "Durchsuchen",
+          "desc": "Erkunden Sie unseren Katalog an HLK-Geräten"
+        },
+        "compare": {
+          "title": "Vergleichen",
+          "desc": "Vergleichen Sie Spezifikationen und Preise"
+        },
+        "order": {
+          "title": "Bestellen",
+          "desc": "Sicherer Checkout mit schneller Lieferung"
+        },
+        "install": {
+          "title": "Installieren",
+          "desc": "Professionelle Installation durch Techniker"
+        }
       }
     },
     "featured": {
+      "label": "Top-Auswahl",
       "title": "Empfohlene Produkte",
-      "viewAll": "Alle Produkte anzeigen"
+      "subtitle": "Handverlesene Auswahl unserer meistverkauften Klimalösungen",
+      "viewAll": "Alle ansehen"
     },
     "categories": {
-      "title": "Nach Kategorie einkaufen",
-      "viewProducts": "Produkte Anzeigen"
-    },
-    "promo": {
-      "delivery": {
-        "title": "Kostenlose Lieferung",
-        "description": "Kostenloser Versand bei Bestellungen über 500€"
-      },
-      "support": {
-        "title": "24/7 Support",
-        "description": "Rund um die Uhr verfügbare Expertenunterstützung"
-      },
-      "warranty": {
-        "title": "5 Jahre Garantie",
-        "description": "Erweiterte Garantie auf alle Produkte"
-      },
-      "installation": {
-        "title": "Profi-Installation",
-        "description": "Zertifizierte Techniker für die Einrichtung"
-      }
-    },
-    "newsletter": {
-      "title": "Auf dem Laufenden bleiben",
-      "subtitle": "Abonnieren Sie unseren Newsletter für exklusive Angebote und HLK-Tipps",
-      "placeholder": "Ihre E-Mail-Adresse eingeben",
-      "subscribe": "Abonnieren",
-      "success": "Vielen Dank für Ihr Abonnement!",
-      "errorRequired": "Bitte geben Sie Ihre E-Mail-Adresse ein",
-      "errorInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein"
-    },
-    "trust": {
-      "title": "Warum uns Kunden Vertrauen",
-      "reviews": "Kundenbewertungen",
-      "reviewsCount": "Über 10.000 zufriedene Kunden",
-      "guarantee": "Geld-zurück-Garantie",
-      "guaranteeText": "30 Tage Rückgaberecht",
-      "secure": "Sicheres Einkaufen",
-      "secureText": "SSL-verschlüsselte Zahlung",
-      "delivery": "Schnelle Lieferung",
-      "deliveryText": "2-5 Werktage deutschlandweit"
+      "label": "Nach Kategorie einkaufen",
+      "title": "Finden Sie Ihre perfekte Klimalösung",
+      "subtitle": "Durchsuchen Sie unsere kuratierte Auswahl an HLK-Geräten für jeden Bedarf",
+      "viewProducts": "Produkte Anzeigen",
+      "explore": "Entdecken",
+      "popular": "Am beliebtesten",
+      "productsLabel": "Produkte",
+      "coolingDesc": "Energieeffiziente Klimaanlagen und Kühlsysteme für maximalen Komfort in heißen Sommermonaten.",
+      "heatingDesc": "Halten Sie Ihren Raum warm mit unserer Auswahl an Heizlösungen.",
+      "ventilationDesc": "Frischluftzirkulationssysteme für eine gesündere Innenumgebung.",
+      "accessoriesDesc": "Wichtige Teile, Filter und Zubehör für Ihre HLK-Systeme."
     },
     "benefits": {
       "title": "Warum ClimaSite wählen",
@@ -656,9 +757,98 @@
       "installation": "Professionelle Installation",
       "installationDesc": "Von zertifizierten Technikern"
     },
+    "values": {
+      "shipping": "Kostenloser Versand",
+      "warranty": "5 Jahre Garantie",
+      "support": "24/7 Support",
+      "installation": "Profi-Installation"
+    },
+    "process": {
+      "title": "So funktioniert es",
+      "subtitle": "Vom Durchsuchen bis zur Installation in 4 einfachen Schritten",
+      "step1": {
+        "title": "Produkte durchsuchen",
+        "desc": "Erkunden Sie unseren Katalog hochwertiger HLK-Geräte"
+      },
+      "step2": {
+        "title": "Vergleichen & wählen",
+        "desc": "Vergleichen Sie Spezifikationen, Energieklassen und Preise"
+      },
+      "step3": {
+        "title": "Bestellen Sie",
+        "desc": "Sicherer Checkout mit mehreren Zahlungsoptionen"
+      },
+      "step4": {
+        "title": "Professionelle Installation",
+        "desc": "Fachkundige Installation durch zertifizierte Techniker"
+      }
+    },
+    "products": {
+      "title": "Empfohlene Produkte",
+      "subtitle": "Handverlesene Auswahl unserer meistverkauften Klimalösungen",
+      "viewAll": "Alle Produkte ansehen"
+    },
+    "cta": {
+      "title": "Bereit, Ihr Klima zu transformieren?",
+      "button": "Alle Produkte ansehen"
+    },
+    "promo": {
+      "sale": {
+        "title": "Winterschlussverkauf",
+        "description": "Bis zu 30% Rabatt auf ausgewählte Artikel"
+      },
+      "new": {
+        "title": "Neuheiten",
+        "description": "Entdecken Sie die neuesten Produkte"
+      },
+      "bundle": {
+        "title": "Paketangebote",
+        "description": "Sparen Sie mehr beim gemeinsamen Kauf"
+      }
+    },
+    "newsletter": {
+      "title": "Auf dem Laufenden bleiben",
+      "subtitle": "Abonnieren Sie unseren Newsletter für exklusive Angebote, Energiespartipps und Produktneuheiten",
+      "placeholder": "Geben Sie Ihre E-Mail-Adresse ein",
+      "subscribe": "Newsletter abonnieren",
+      "button": "Abonnieren",
+      "success": "Vielen Dank für Ihr Abonnement!",
+      "errorRequired": "Bitte geben Sie Ihre E-Mail-Adresse ein",
+      "errorInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+      "disclaimer": "Wir respektieren Ihre Privatsphäre. Jederzeit abmeldbar."
+    },
+    "trust": {
+      "customers": "Zufriedene Kunden",
+      "products": "Produkte",
+      "years": "Jahre Erfahrung",
+      "rating": "Kundenbewertung"
+    },
     "testimonials": {
       "title": "Was unsere Kunden sagen",
-      "subtitle": "Echte Bewertungen von zufriedenen Kunden"
+      "subtitle": "Echte Bewertungen von zufriedenen Kunden",
+      "items": {
+        "1": {
+          "name": "Maria Petrova",
+          "location": "Sofia, Bulgarien",
+          "text": "Das Installationsteam war sehr professionell und die Klimaanlage funktioniert perfekt. Ich empfehle CDL jedem!"
+        },
+        "2": {
+          "name": "Georg Dimitrov",
+          "location": "Plovdiv, Bulgarien",
+          "text": "Das Wasseraufbereitungssystem hat unser Leben verändert. Das Wasser zu Hause hat jetzt einen ausgezeichneten Geschmack und Qualität."
+        },
+        "3": {
+          "name": "Stefan Ivanov",
+          "location": "Varna, Bulgarien",
+          "text": "Ausgezeichnete Preise und schnelle Lieferung. Die 5-Jahres-Garantie gibt mir Sicherheit. Danke!"
+        }
+      }
+    },
+    "finalCta": {
+      "title": "Bereit, Ihr Klima zu transformieren?",
+      "subtitle": "Durchsuchen Sie unser komplettes Sortiment an HLK-Lösungen und finden Sie das perfekte System für Ihren Raum. Expertenunterstützung 24/7.",
+      "shopNow": "Alle Produkte ansehen",
+      "contactExpert": "Mit einem Experten sprechen"
     }
   },
   "contact": {
@@ -797,7 +987,8 @@
       "approve": "Genehmigen",
       "reject": "Ablehnen",
       "approveAsOfficial": "Als offiziell genehmigen",
-      "flag": "Zur Überprüfung markieren"
+      "flag": "Zur Überprüfung markieren",
+      "official": "Offiziell"
     }
   },
   "promotions": {
@@ -927,12 +1118,11 @@
     "windowAirConditioners": "Fenster-Klimaanlagen",
     "portableAirConditioners": "Mobile Klimaanlagen",
     "centralAirConditioning": "Zentrale Klimaanlage",
-    "wallMountedAc": "Wandklimaanlagen",
     "wallMountedAC": "Wandklimaanlagen",
     "multiSplit": "Multi-Split-Systeme",
-    "floorAc": "Bodenklimaanlagen",
-    "cassetteAc": "Kassettenklimaanlagen",
-    "ductedAc": "Kanalklimaanlagen",
+    "floorAC": "Bodenklimaanlagen",
+    "cassetteAC": "Kassettenklimaanlagen",
+    "ductedAC": "Kanalklimaanlagen",
     "heatPumps": "Wärmepumpen",
     "airPurifiers": "Luftreiniger",
     "dehumidifiers": "Entfeuchter",
@@ -983,10 +1173,28 @@
     "phonePlaceholder": "Telefonnummer eingeben",
     "emailHint": "E-Mail kann nicht geändert werden",
     "updateSuccess": "Profil erfolgreich aktualisiert",
+    "preferencesSuccess": "Einstellungen erfolgreich aktualisiert",
     "currentPassword": "Aktuelles Passwort",
     "newPassword": "Neues Passwort",
     "updatePassword": "Passwort ändern",
     "passwordSuccess": "Passwort erfolgreich geändert"
+  },
+  "countries": {
+    "austria": "Österreich",
+    "belgium": "Belgien",
+    "bulgaria": "Bulgarien",
+    "czechRepublic": "Tschechien",
+    "france": "Frankreich",
+    "germany": "Deutschland",
+    "greece": "Griechenland",
+    "hungary": "Ungarn",
+    "italy": "Italien",
+    "netherlands": "Niederlande",
+    "poland": "Polen",
+    "portugal": "Portugal",
+    "romania": "Rumänien",
+    "spain": "Spanien",
+    "sweden": "Schweden"
   },
   "specs": {
     "cooling_capacity": "Kühlleistung",

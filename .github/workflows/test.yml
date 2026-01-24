@@ -128,10 +128,126 @@ jobs:
           npm ci
           npm run build
 
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, frontend-tests]
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: climasite_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: src/ClimaSite.Web/package-lock.json
+
+      - name: Restore .NET dependencies
+        run: dotnet restore
+
+      - name: Build Backend
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Install Frontend dependencies
+        run: npm ci
+        working-directory: src/ClimaSite.Web
+
+      - name: Build Frontend
+        run: npm run build
+        working-directory: src/ClimaSite.Web
+
+      - name: Install Playwright Browsers
+        run: |
+          dotnet build tests/ClimaSite.E2E
+          pwsh tests/ClimaSite.E2E/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium
+
+      - name: Start API Server
+        run: |
+          dotnet run --project src/ClimaSite.Api --configuration Release --no-build &
+          echo "Waiting for API to start..."
+          timeout 60 bash -c 'until curl -s http://localhost:5000/health > /dev/null 2>&1; do sleep 2; done'
+          echo "API is ready!"
+        env:
+          ASPNETCORE_ENVIRONMENT: Testing
+          ASPNETCORE_URLS: http://localhost:5000
+          DATABASE_URL: "Host=localhost;Database=climasite_e2e;Username=test;Password=test"
+          REDIS_URL: "localhost:6379"
+          JWT_SECRET: "e2e-test-secret-key-that-is-at-least-32-characters-long"
+          JWT_ISSUER: "http://localhost:5000"
+          JWT_AUDIENCE: "http://localhost:4200"
+
+      - name: Start Angular Dev Server
+        run: |
+          npm run start -- --configuration=production --port=4200 &
+          echo "Waiting for Angular to start..."
+          timeout 120 bash -c 'until curl -s http://localhost:4200 > /dev/null 2>&1; do sleep 2; done'
+          echo "Angular is ready!"
+        working-directory: src/ClimaSite.Web
+        env:
+          CI: true
+
+      - name: Run E2E Tests
+        run: dotnet test tests/ClimaSite.E2E --configuration Release --logger "trx;LogFileName=e2e-results.trx" --logger "console;verbosity=detailed"
+        env:
+          BASE_URL: http://localhost:4200
+          API_URL: http://localhost:5000
+          PLAYWRIGHT_BROWSERS_PATH: 0
+          CI: true
+
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            tests/ClimaSite.E2E/test-results/
+            tests/ClimaSite.E2E/playwright-report/
+          retention-days: 7
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-test-results
+          path: tests/ClimaSite.E2E/TestResults/
+          retention-days: 7
+
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
-    needs: [unit-tests, integration-tests, frontend-tests, build]
+    needs: [unit-tests, integration-tests, frontend-tests, build, e2e-tests]
     if: always()
 
     steps:
@@ -140,7 +256,8 @@ jobs:
           if [ "${{ needs.unit-tests.result }}" != "success" ] || \
              [ "${{ needs.integration-tests.result }}" != "success" ] || \
              [ "${{ needs.frontend-tests.result }}" != "success" ] || \
-             [ "${{ needs.build.result }}" != "success" ]; then
+             [ "${{ needs.build.result }}" != "success" ] || \
+             [ "${{ needs.e2e-tests.result }}" != "success" ]; then
             echo "One or more test jobs failed"
             exit 1
           fi

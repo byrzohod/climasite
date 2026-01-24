@@ -1,7 +1,9 @@
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Core.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.EntityFrameworkCore.Storage;
 using Moq;
 
 namespace ClimaSite.Application.Tests.TestHelpers;
@@ -29,6 +31,24 @@ public class MockDbContext : IApplicationDbContext
     private readonly List<ApplicationUser> _users = [];
     private readonly List<Notification> _notifications = [];
     private readonly List<ProductTranslation> _productTranslations = [];
+    private readonly List<Promotion> _promotions = [];
+    private readonly List<PromotionProduct> _promotionProducts = [];
+    private readonly List<PromotionTranslation> _promotionTranslations = [];
+    private readonly List<Brand> _brands = [];
+    private readonly List<BrandTranslation> _brandTranslations = [];
+    private readonly List<CategoryTranslation> _categoryTranslations = [];
+    private readonly List<ProductQuestion> _productQuestions = [];
+    private readonly List<ProductAnswer> _productAnswers = [];
+    private readonly List<InstallationRequest> _installationRequests = [];
+    private readonly List<ProductPriceHistory> _productPriceHistory = [];
+    private readonly List<ReviewVote> _reviewVotes = [];
+
+    public DatabaseFacade Database { get; }
+
+    public MockDbContext()
+    {
+        Database = CreateMockDatabaseFacade();
+    }
 
     public DbSet<Product> Products => CreateMockDbSet(_products);
     public DbSet<ProductVariant> ProductVariants => CreateMockDbSet(_productVariants);
@@ -40,6 +60,7 @@ public class MockDbContext : IApplicationDbContext
     public DbSet<OrderItem> OrderItems => CreateMockDbSet(_orderItems);
     public DbSet<OrderEvent> OrderEvents => CreateMockDbSet(_orderEvents);
     public DbSet<Review> Reviews => CreateMockDbSet(_reviews);
+    public DbSet<ReviewVote> ReviewVotes => CreateMockDbSet(_reviewVotes);
     public DbSet<Wishlist> Wishlists => CreateMockDbSet(_wishlists);
     public DbSet<WishlistItem> WishlistItems => CreateMockDbSet(_wishlistItems);
     public DbSet<Address> Addresses => CreateMockDbSet(_addresses);
@@ -47,6 +68,16 @@ public class MockDbContext : IApplicationDbContext
     public DbSet<ApplicationUser> Users => CreateMockDbSet(_users);
     public DbSet<Notification> Notifications => CreateMockDbSet(_notifications);
     public DbSet<ProductTranslation> ProductTranslations => CreateMockDbSet(_productTranslations);
+    public DbSet<Promotion> Promotions => CreateMockDbSet(_promotions);
+    public DbSet<PromotionProduct> PromotionProducts => CreateMockDbSet(_promotionProducts);
+    public DbSet<PromotionTranslation> PromotionTranslations => CreateMockDbSet(_promotionTranslations);
+    public DbSet<Brand> Brands => CreateMockDbSet(_brands);
+    public DbSet<BrandTranslation> BrandTranslations => CreateMockDbSet(_brandTranslations);
+    public DbSet<CategoryTranslation> CategoryTranslations => CreateMockDbSet(_categoryTranslations);
+    public DbSet<ProductQuestion> ProductQuestions => CreateMockDbSet(_productQuestions);
+    public DbSet<ProductAnswer> ProductAnswers => CreateMockDbSet(_productAnswers);
+    public DbSet<InstallationRequest> InstallationRequests => CreateMockDbSet(_installationRequests);
+    public DbSet<ProductPriceHistory> ProductPriceHistory => CreateMockDbSet(_productPriceHistory);
 
     public void AddProduct(Product product)
     {
@@ -114,6 +145,24 @@ public class MockDbContext : IApplicationDbContext
         }
 
         return Task.FromResult(1);
+    }
+
+    private static DatabaseFacade CreateMockDatabaseFacade()
+    {
+        var mockTransaction = new Mock<IDbContextTransaction>();
+        mockTransaction.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        mockTransaction.Setup(t => t.RollbackAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        mockTransaction.Setup(t => t.DisposeAsync())
+            .Returns(ValueTask.CompletedTask);
+
+        var mockDbContext = new Mock<DbContext>();
+        var mockFacade = new Mock<DatabaseFacade>(mockDbContext.Object);
+        mockFacade.Setup(f => f.BeginTransactionAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mockTransaction.Object);
+
+        return mockFacade.Object;
     }
 
     private static DbSet<T> CreateMockDbSet<T>(List<T> data) where T : class

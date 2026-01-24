@@ -69,6 +69,7 @@ public class AdminProductsController : ControllerBase
             return BadRequest(new { message = result.Error });
         }
 
+        // TODO: Consider returning the slug from the command handler to avoid duplicating slug generation logic
         // Generate slug for response (same logic as in handler)
         var slug = command.Name.ToLowerInvariant()
             .Replace(" ", "-")

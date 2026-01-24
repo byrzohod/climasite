@@ -126,14 +126,22 @@ public class AdminReviewsController : ControllerBase
     }
 
     /// <summary>
-    /// Bulk approve reviews
+    /// Bulk approve reviews.
     /// </summary>
+    /// <remarks>
+    /// TODO: API-009 - This endpoint has an N+1 query problem. Each review moderation triggers
+    /// a separate database call. For better performance with large datasets, implement a
+    /// BulkModerateReviewsCommand that updates all reviews in a single transaction using
+    /// ExecuteUpdateAsync or similar batch operation.
+    /// </remarks>
     [HttpPost("bulk-approve")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> BulkApproveReviews([FromBody] BulkModerationRequest request)
     {
         var approved = 0;
         var failed = 0;
 
+        // TODO: Replace with batch update command for better performance
         foreach (var id in request.Ids)
         {
             var command = new ModerateReviewCommand

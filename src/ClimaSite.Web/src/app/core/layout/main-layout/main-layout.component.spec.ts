@@ -5,6 +5,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { PLATFORM_ID } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 
 describe('MainLayoutComponent', () => {
   let component: MainLayoutComponent;
@@ -22,7 +23,8 @@ describe('MainLayoutComponent', () => {
       providers: [
         { provide: PLATFORM_ID, useValue: 'browser' },
         provideHttpClient(),
-        provideHttpClientTesting()
+        provideHttpClientTesting(),
+        provideNoopAnimations()
       ]
     }).compileComponents();
 

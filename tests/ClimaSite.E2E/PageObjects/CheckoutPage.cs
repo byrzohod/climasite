@@ -197,8 +197,41 @@ public class CheckoutPage : BasePage
     public async Task<decimal> GetOrderTotalAsync()
     {
         var totalText = await GetTextAsync("[data-testid='order-total']");
-        var cleanedText = totalText.Replace("$", "").Replace(",", "").Trim();
-        return decimal.TryParse(cleanedText, out var total) ? total : 0;
+        // Remove currency symbols and formatting (supports $, €, EUR, BGN, etc.)
+        var cleanedText = System.Text.RegularExpressions.Regex.Replace(totalText, @"[^\d.,]", "").Trim();
+        // Handle European number format (1.234,56) vs US format (1,234.56)
+        // If both comma and dot exist, determine which is decimal separator
+        if (cleanedText.Contains(",") && cleanedText.Contains("."))
+        {
+            // Last separator is the decimal separator
+            var lastComma = cleanedText.LastIndexOf(',');
+            var lastDot = cleanedText.LastIndexOf('.');
+            if (lastComma > lastDot)
+            {
+                // European format: 1.234,56
+                cleanedText = cleanedText.Replace(".", "").Replace(",", ".");
+            }
+            else
+            {
+                // US format: 1,234.56
+                cleanedText = cleanedText.Replace(",", "");
+            }
+        }
+        else if (cleanedText.Contains(","))
+        {
+            // Could be European decimal (123,45) or US thousands (1,234)
+            // If comma has exactly 2 digits after it at the end, treat as decimal
+            var commaIdx = cleanedText.LastIndexOf(',');
+            if (commaIdx >= 0 && cleanedText.Length - commaIdx - 1 == 2)
+            {
+                cleanedText = cleanedText.Replace(",", ".");
+            }
+            else
+            {
+                cleanedText = cleanedText.Replace(",", "");
+            }
+        }
+        return decimal.TryParse(cleanedText, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var total) ? total : 0;
     }
 
     public async Task GoBackToCartAsync()

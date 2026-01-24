@@ -123,6 +123,9 @@ export type OrderStatus =
   | 'Refunded'
   | 'Returned';
 
+// TODO: Move these colors to CSS variables for better theme support
+// Currently using hardcoded values for status badge colors as they represent
+// semantic states (warning, success, info, error) that are consistent across themes
 export const ORDER_STATUS_CONFIG: Record<OrderStatus, { label: string; color: string; bgColor: string }> = {
   Pending: { label: 'Pending', color: '#92400e', bgColor: '#fef3c7' },
   Paid: { label: 'Paid', color: '#166534', bgColor: '#dcfce7' },

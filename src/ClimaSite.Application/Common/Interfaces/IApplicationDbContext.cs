@@ -1,10 +1,12 @@
 using ClimaSite.Core.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace ClimaSite.Application.Common.Interfaces;
 
 public interface IApplicationDbContext
 {
+    DatabaseFacade Database { get; }
     DbSet<Product> Products { get; }
     DbSet<ProductVariant> ProductVariants { get; }
     DbSet<ProductImage> ProductImages { get; }
@@ -15,6 +17,7 @@ public interface IApplicationDbContext
     DbSet<OrderItem> OrderItems { get; }
     DbSet<OrderEvent> OrderEvents { get; }
     DbSet<Review> Reviews { get; }
+    DbSet<ReviewVote> ReviewVotes { get; }
     DbSet<Wishlist> Wishlists { get; }
     DbSet<WishlistItem> WishlistItems { get; }
     DbSet<Address> Addresses { get; }

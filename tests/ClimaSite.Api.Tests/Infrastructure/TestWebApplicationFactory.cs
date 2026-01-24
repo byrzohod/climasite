@@ -41,6 +41,7 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
                 options.UseNpgsql(ConnectionString));
         });
 
+        // Set environment to Testing to disable rate limiting
         builder.UseEnvironment("Testing");
     }
 

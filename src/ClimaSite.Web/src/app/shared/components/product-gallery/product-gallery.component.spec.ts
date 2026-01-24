@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { ProductGalleryComponent, ProductImage } from './product-gallery.component';
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -32,16 +32,18 @@ describe('ProductGalleryComponent', () => {
     expect(component.selectedImage()).toEqual(mockImages[0]);
   });
 
-  it('should change selected image when thumbnail clicked', () => {
+  it('should change selected image when thumbnail clicked', fakeAsync(() => {
     component.selectImage(mockImages[1]);
+    tick(200); // Wait for crossfade transition timeout
     expect(component.selectedImage()).toEqual(mockImages[1]);
-  });
+  }));
 
-  it('should calculate current index correctly', () => {
+  it('should calculate current index correctly', fakeAsync(() => {
     expect(component.currentIndex()).toBe(0);
     component.selectImage(mockImages[1]);
+    tick(200); // Wait for crossfade transition
     expect(component.currentIndex()).toBe(1);
-  });
+  }));
 
   it('should navigate to next image', () => {
     expect(component.currentIndex()).toBe(0);
@@ -49,12 +51,14 @@ describe('ProductGalleryComponent', () => {
     expect(component.currentIndex()).toBe(1);
   });
 
-  it('should navigate to previous image', () => {
+  it('should navigate to previous image', fakeAsync(() => {
     component.selectImage(mockImages[2]);
+    tick(200); // Wait for crossfade transition
     expect(component.currentIndex()).toBe(2);
     component.prevImage();
+    tick(350); // Wait for slide animation
     expect(component.currentIndex()).toBe(1);
-  });
+  }));
 
   it('should not go past first image', () => {
     expect(component.currentIndex()).toBe(0);
@@ -62,12 +66,14 @@ describe('ProductGalleryComponent', () => {
     expect(component.currentIndex()).toBe(0);
   });
 
-  it('should not go past last image', () => {
+  it('should not go past last image', fakeAsync(() => {
     component.selectImage(mockImages[2]);
+    tick(200); // Wait for crossfade transition
     expect(component.currentIndex()).toBe(2);
     component.nextImage();
+    tick(350); // Wait for potential slide animation
     expect(component.currentIndex()).toBe(2);
-  });
+  }));
 
   it('should open fullscreen mode', () => {
     expect(component.isFullscreen()).toBeFalse();
@@ -75,37 +81,42 @@ describe('ProductGalleryComponent', () => {
     expect(component.isFullscreen()).toBeTrue();
   });
 
-  it('should close fullscreen mode', () => {
+  it('should close fullscreen mode', fakeAsync(() => {
     component.openFullscreen();
     expect(component.isFullscreen()).toBeTrue();
     component.closeFullscreen();
+    tick(250); // Wait for close animation
     expect(component.isFullscreen()).toBeFalse();
-  });
+  }));
 
-  it('should reset zoom state on close', () => {
+  it('should reset zoom state on close', fakeAsync(() => {
     component.openFullscreen();
     component.closeFullscreen();
+    tick(250); // Wait for close animation
     expect(component.isFullscreen()).toBeFalse();
-  });
+  }));
 
-  it('should handle keyboard navigation in fullscreen', () => {
+  it('should handle keyboard navigation in fullscreen', fakeAsync(() => {
     component.openFullscreen();
 
     // Arrow right should go to next image
     const rightEvent = new KeyboardEvent('keydown', { key: 'ArrowRight' });
     component.onKeyDown(rightEvent);
+    tick(350); // Wait for slide animation
     expect(component.currentIndex()).toBe(1);
 
     // Arrow left should go to previous image
     const leftEvent = new KeyboardEvent('keydown', { key: 'ArrowLeft' });
     component.onKeyDown(leftEvent);
+    tick(350); // Wait for slide animation
     expect(component.currentIndex()).toBe(0);
 
     // Escape should close fullscreen
     const escapeEvent = new KeyboardEvent('keydown', { key: 'Escape' });
     component.onKeyDown(escapeEvent);
+    tick(250); // Wait for close animation
     expect(component.isFullscreen()).toBeFalse();
-  });
+  }));
 
   it('should not respond to keyboard when not in fullscreen', () => {
     const rightEvent = new KeyboardEvent('keydown', { key: 'ArrowRight' });

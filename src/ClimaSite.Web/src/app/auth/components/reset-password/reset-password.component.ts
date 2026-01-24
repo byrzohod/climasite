@@ -2,7 +2,7 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../services/auth.service';
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
@@ -72,6 +72,7 @@ export class ResetPasswordComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly translate = inject(TranslateService);
 
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
@@ -112,12 +113,16 @@ export class ResetPasswordComponent implements OnInit {
     this.authService.resetPassword(this.token, this.email, this.form.value.newPassword).subscribe({
       next: () => {
         this.isLoading.set(false);
-        this.successMessage.set('Password has been reset successfully. Redirecting to login...');
+        this.translate.get('auth.resetPassword.success').subscribe(msg => {
+          this.successMessage.set(msg);
+        });
         setTimeout(() => this.router.navigate(['/login']), 3000);
       },
       error: (error) => {
         this.isLoading.set(false);
-        this.errorMessage.set(error.error?.message || 'Failed to reset password. Please try again.');
+        this.translate.get('auth.resetPassword.error').subscribe(defaultMsg => {
+          this.errorMessage.set(error.error?.message || defaultMsg);
+        });
       }
     });
   }

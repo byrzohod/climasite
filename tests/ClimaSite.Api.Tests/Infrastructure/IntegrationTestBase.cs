@@ -84,7 +84,10 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         Client.DefaultRequestHeaders.Authorization = null;
     }
 
-    private record AuthResponse(string Token);
+    private record AuthResponse(string AccessToken)
+    {
+        public string Token => AccessToken;
+    }
 }
 
 [CollectionDefinition("Integration")]

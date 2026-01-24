@@ -234,7 +234,7 @@ import { AddressCardComponent } from '../../../shared/components/address-card/ad
             <!-- Order Notes -->
             @if (order()!.notes) {
               <div class="section notes-section">
-                <h2>Notes</h2>
+                <h2>{{ 'account.orders.notes' | translate }}</h2>
                 <p class="notes-content">{{ order()!.notes }}</p>
               </div>
             }

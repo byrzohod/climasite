@@ -40,9 +40,17 @@ public class QuestionsController : ControllerBase
     }
 
     /// <summary>
-    /// Ask a new question about a product
+    /// Ask a new question about a product.
     /// </summary>
+    /// <remarks>
+    /// This endpoint allows anonymous users to submit questions.
+    /// TODO: Add rate limiting middleware to prevent spam (e.g., max 5 questions per IP per hour).
+    /// Consider implementing: app.UseRateLimiter() with a sliding window policy for this endpoint.
+    /// </remarks>
     [HttpPost]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> AskQuestion([FromBody] AskQuestionRequest request)
     {
         var command = new AskQuestionCommand

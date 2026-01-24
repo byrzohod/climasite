@@ -1,0 +1,189 @@
+// =============================================================================
+// CLIMASITE SHADOW SYSTEM
+// =============================================================================
+// Elevation-based shadows for depth and hierarchy
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// SHADOW DEFINITIONS
+// -----------------------------------------------------------------------------
+$shadows: (
+  'none': none,
+  'xs': 0 1px 2px 0 var(--shadow-color),
+  'sm': (
+    0 1px 2px 0 var(--shadow-color),
+    0 1px 3px 0 var(--shadow-color)
+  ),
+  'DEFAULT': (
+    0 1px 3px 0 var(--shadow-color),
+    0 2px 6px 0 var(--shadow-color)
+  ),
+  'md': (
+    0 2px 4px -1px var(--shadow-color),
+    0 4px 8px -1px var(--shadow-color-lg)
+  ),
+  'lg': (
+    0 4px 6px -2px var(--shadow-color),
+    0 10px 20px -3px var(--shadow-color-lg)
+  ),
+  'xl': (
+    0 8px 10px -4px var(--shadow-color),
+    0 20px 40px -4px var(--shadow-color-xl)
+  ),
+  '2xl': (
+    0 12px 16px -6px var(--shadow-color-lg),
+    0 25px 50px -6px var(--shadow-color-xl)
+  ),
+  '3xl': (
+    0 16px 24px -8px var(--shadow-color-lg),
+    0 35px 60px -8px var(--shadow-color-xl)
+  ),
+  'inner': inset 0 2px 4px 0 var(--shadow-color),
+  'inner-lg': inset 0 4px 8px 0 var(--shadow-color-lg),
+);
+
+// -----------------------------------------------------------------------------
+// GLOW SHADOWS (For CTAs and interactive elements)
+// -----------------------------------------------------------------------------
+$glow-shadows: (
+  'primary': 0 0 20px var(--glow-primary),
+  'primary-lg': 0 0 40px var(--glow-primary),
+  'accent': 0 0 20px var(--glow-accent),
+  'accent-lg': 0 0 40px var(--glow-accent),
+  'warm': 0 0 20px var(--glow-warm),
+  'warm-lg': 0 0 40px var(--glow-warm),
+  'ember': 0 0 20px var(--glow-ember),
+  'aurora': 0 0 20px var(--glow-aurora),
+  'success': 0 0 20px var(--glow-success),
+  'error': 0 0 20px var(--glow-error),
+);
+
+// -----------------------------------------------------------------------------
+// CSS CUSTOM PROPERTIES
+// -----------------------------------------------------------------------------
+:root {
+  // Standard Shadows
+  --shadow-none: none;
+  --shadow-xs: 0 1px 2px 0 var(--shadow-color);
+  --shadow-sm: 0 1px 2px 0 var(--shadow-color), 0 1px 3px 0 var(--shadow-color);
+  --shadow: 0 1px 3px 0 var(--shadow-color), 0 2px 6px 0 var(--shadow-color);
+  --shadow-md: 0 2px 4px -1px var(--shadow-color), 0 4px 8px -1px var(--shadow-color-lg);
+  --shadow-lg: 0 4px 6px -2px var(--shadow-color), 0 10px 20px -3px var(--shadow-color-lg);
+  --shadow-xl: 0 8px 10px -4px var(--shadow-color), 0 20px 40px -4px var(--shadow-color-xl);
+  --shadow-2xl: 0 12px 16px -6px var(--shadow-color-lg), 0 25px 50px -6px var(--shadow-color-xl);
+  --shadow-3xl: 0 16px 24px -8px var(--shadow-color-lg), 0 35px 60px -8px var(--shadow-color-xl);
+  --shadow-inner: inset 0 2px 4px 0 var(--shadow-color);
+  --shadow-inner-lg: inset 0 4px 8px 0 var(--shadow-color-lg);
+  
+  // Glow Shadows
+  --glow-sm-primary: 0 0 10px var(--glow-primary);
+  --glow-primary: 0 0 20px var(--glow-primary);
+  --glow-lg-primary: 0 0 40px var(--glow-primary);
+  
+  --glow-sm-accent: 0 0 10px var(--glow-accent);
+  --glow-accent: 0 0 20px var(--glow-accent);
+  --glow-lg-accent: 0 0 40px var(--glow-accent);
+  
+  --glow-sm-warm: 0 0 10px var(--glow-warm);
+  --glow-warm: 0 0 20px var(--glow-warm);
+  --glow-lg-warm: 0 0 40px var(--glow-warm);
+  
+  --glow-ember: 0 0 20px var(--glow-ember);
+  --glow-aurora: 0 0 20px var(--glow-aurora);
+  --glow-success: 0 0 20px var(--glow-success);
+  --glow-error: 0 0 20px var(--glow-error);
+  
+  // Card-specific Shadows
+  --shadow-card: var(--shadow-sm);
+  --shadow-card-hover: var(--shadow-lg);
+  --shadow-card-active: var(--shadow-md);
+  
+  // Dropdown/Popover Shadows
+  --shadow-dropdown: var(--shadow-lg);
+  --shadow-modal: var(--shadow-2xl);
+  --shadow-tooltip: var(--shadow-md);
+  
+  // Button Shadows
+  --shadow-btn: var(--shadow-sm);
+  --shadow-btn-hover: var(--shadow-md);
+  --shadow-btn-active: var(--shadow-xs);
+}
+
+// -----------------------------------------------------------------------------
+// UTILITY CLASSES
+// -----------------------------------------------------------------------------
+@layer utilities {
+  // Standard shadows
+  .shadow-none { box-shadow: var(--shadow-none); }
+  .shadow-xs { box-shadow: var(--shadow-xs); }
+  .shadow-sm { box-shadow: var(--shadow-sm); }
+  .shadow { box-shadow: var(--shadow); }
+  .shadow-md { box-shadow: var(--shadow-md); }
+  .shadow-lg { box-shadow: var(--shadow-lg); }
+  .shadow-xl { box-shadow: var(--shadow-xl); }
+  .shadow-2xl { box-shadow: var(--shadow-2xl); }
+  .shadow-3xl { box-shadow: var(--shadow-3xl); }
+  .shadow-inner { box-shadow: var(--shadow-inner); }
+  .shadow-inner-lg { box-shadow: var(--shadow-inner-lg); }
+  
+  // Glow effects
+  .glow-primary { box-shadow: var(--glow-primary); }
+  .glow-primary-lg { box-shadow: var(--glow-lg-primary); }
+  .glow-accent { box-shadow: var(--glow-accent); }
+  .glow-accent-lg { box-shadow: var(--glow-lg-accent); }
+  .glow-warm { box-shadow: var(--glow-warm); }
+  .glow-warm-lg { box-shadow: var(--glow-lg-warm); }
+  .glow-ember { box-shadow: var(--glow-ember); }
+  .glow-aurora { box-shadow: var(--glow-aurora); }
+  .glow-success { box-shadow: var(--glow-success); }
+  .glow-error { box-shadow: var(--glow-error); }
+  
+  // Combined shadow + glow for CTAs
+  .shadow-glow-primary {
+    box-shadow: var(--shadow-lg), var(--glow-primary);
+  }
+  
+  .shadow-glow-accent {
+    box-shadow: var(--shadow-lg), var(--glow-accent);
+  }
+  
+  .shadow-glow-warm {
+    box-shadow: var(--shadow-lg), var(--glow-warm);
+  }
+  
+  // Interactive shadow transitions
+  .shadow-interactive {
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.2s ease;
+    
+    &:hover {
+      box-shadow: var(--shadow-card-hover);
+    }
+    
+    &:active {
+      box-shadow: var(--shadow-card-active);
+    }
+  }
+  
+  // Lift effect on hover
+  .shadow-lift {
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    
+    &:hover {
+      box-shadow: var(--shadow-xl);
+      transform: translateY(-4px);
+    }
+  }
+  
+  // Float effect (subtle)
+  .shadow-float {
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    
+    &:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-2px);
+    }
+  }
+}

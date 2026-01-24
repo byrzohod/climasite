@@ -145,7 +145,7 @@ type TabType = 'questions' | 'answers' | 'reviews';
               <span *ngIf="answer.answererName">
                 <strong>{{ 'admin.moderation.answeredBy' | translate }}:</strong> {{ answer.answererName }}
               </span>
-              <span class="official-badge" *ngIf="answer.isOfficial">Official</span>
+              <span class="official-badge" *ngIf="answer.isOfficial">{{ 'admin.moderation.official' | translate }}</span>
             </div>
           </div>
 

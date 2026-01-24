@@ -22,10 +22,10 @@ import { TranslateModule } from '@ngx-translate/core';
           <div class="footer-section">
             <h3 class="footer-title">{{ 'footer.shop.title' | translate }}</h3>
             <ul class="footer-links">
-              <li><a routerLink="/products/air-conditioners">{{ 'footer.shop.airConditioners' | translate }}</a></li>
-              <li><a routerLink="/products/heating-systems">{{ 'footer.shop.heatingSystems' | translate }}</a></li>
-              <li><a routerLink="/products/ventilation">{{ 'footer.shop.ventilation' | translate }}</a></li>
-              <li><a routerLink="/products/accessories">{{ 'footer.shop.accessories' | translate }}</a></li>
+              <li><a routerLink="/products/category/air-conditioners">{{ 'footer.shop.airConditioners' | translate }}</a></li>
+              <li><a routerLink="/products/category/water-purification">{{ 'footer.shop.waterPurification' | translate }}</a></li>
+              <li><a routerLink="/products/category/heating-systems">{{ 'footer.shop.heatingSystems' | translate }}</a></li>
+              <li><a routerLink="/products/category/ventilation">{{ 'footer.shop.ventilation' | translate }}</a></li>
             </ul>
           </div>
 
@@ -58,6 +58,7 @@ import { TranslateModule } from '@ngx-translate/core';
               <input
                 type="email"
                 [placeholder]="'footer.newsletter.placeholder' | translate"
+                [attr.aria-label]="'footer.newsletter.placeholder' | translate"
                 class="newsletter-input"
                 data-testid="newsletter-input"
               />
@@ -203,7 +204,7 @@ import { TranslateModule } from '@ngx-translate/core';
     .newsletter-btn {
       padding: 0.625rem 1rem;
       background-color: var(--color-primary);
-      color: white;
+      color: var(--color-text-inverse);
       border: none;
       border-radius: 0.375rem;
       font-size: 0.875rem;

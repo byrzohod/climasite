@@ -1,4 +1,5 @@
 using ClimaSite.Application.Features.Cart.Commands;
+using ClimaSite.Application.Features.Cart.DTOs;
 using ClimaSite.Application.Features.Cart.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -10,6 +11,7 @@ namespace ClimaSite.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [OutputCache(NoStore = true)]  // Cart data is user-specific, don't cache
+[Produces("application/json")]
 public class CartController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -19,7 +21,11 @@ public class CartController : ControllerBase
         _mediator = mediator;
     }
 
+    /// <summary>
+    /// Get the current user's cart or guest cart.
+    /// </summary>
     [HttpGet]
+    [ProducesResponseType(typeof(CartDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCart([FromQuery] string? guestSessionId = null)
     {
         var userId = GetUserId();
@@ -33,7 +39,12 @@ public class CartController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>
+    /// Add an item to the cart.
+    /// </summary>
     [HttpPost("items")]
+    [ProducesResponseType(typeof(CartDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> AddToCart([FromBody] AddToCartCommand command)
     {
         var result = await _mediator.Send(command);

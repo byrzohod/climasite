@@ -18,13 +18,19 @@ export interface ProductImage {
       <!-- Main Image Container -->
       <div class="main-image-container"
            #mainImageContainer
+           [class.zooming]="isZooming() && !isTouchDevice()"
            (mousemove)="onMouseMove($event)"
            (mouseleave)="onMouseLeave()"
            (click)="openFullscreen()">
+        @if (isImageLoading()) {
+          <div class="image-loading" data-testid="image-loading"></div>
+        }
         @if (selectedImage()) {
           <img [src]="selectedImage()!.url"
                [alt]="selectedImage()!.altText || 'Product image'"
                class="main-image"
+               [class.changing]="isTransitioning()"
+               [class.loaded]="!isImageLoading()"
                data-testid="gallery-main-image"
                (load)="onImageLoad()" />
 
@@ -39,7 +45,7 @@ export interface ProductImage {
           }
 
           <!-- Zoom magnifier icon -->
-          <button class="zoom-hint" aria-label="Zoom image">
+          <button class="zoom-hint" [attr.aria-label]="'common.aria.zoomImage' | translate">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="8"></circle>
               <path d="m21 21-4.35-4.35"></path>
@@ -77,9 +83,10 @@ export interface ProductImage {
         </div>
       }
 
-      <!-- Fullscreen Modal -->
+      <!-- Fullscreen Modal / Lightbox -->
       @if (isFullscreen()) {
         <div class="fullscreen-overlay"
+             [class.closing]="isClosingFullscreen()"
              data-testid="gallery-fullscreen"
              (click)="closeFullscreen()"
              role="dialog"
@@ -89,7 +96,7 @@ export interface ProductImage {
             <button class="nav-btn prev"
                     [disabled]="currentIndex() === 0"
                     (click)="prevImage($event)"
-                    aria-label="Previous image">
+                    [attr.aria-label]="'common.aria.previousImage' | translate">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="m15 18-6-6 6-6"/>
               </svg>
@@ -104,13 +111,15 @@ export interface ProductImage {
               <img [src]="selectedImage()!.url"
                    [alt]="selectedImage()!.altText || 'Product image'"
                    class="fullscreen-image"
+                   [class.slide-in-left]="slideDirection() === 'left'"
+                   [class.slide-in-right]="slideDirection() === 'right'"
                    [style.transform]="fullscreenTransform()" />
             </div>
 
             <button class="nav-btn next"
                     [disabled]="currentIndex() === images().length - 1"
                     (click)="nextImage($event)"
-                    aria-label="Next image">
+                    [attr.aria-label]="'common.aria.nextImage' | translate">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="m9 18 6-6-6-6"/>
               </svg>
@@ -119,7 +128,7 @@ export interface ProductImage {
             <!-- Close button -->
             <button class="close-btn"
                     (click)="closeFullscreen()"
-                    aria-label="Close fullscreen">
+                    [attr.aria-label]="'common.aria.closeFullscreen' | translate">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 6 6 18"/>
                 <path d="m6 6 12 12"/>
@@ -143,6 +152,7 @@ export interface ProductImage {
       position: relative;
     }
 
+    /* Main Image Container with zoom effect on hover */
     .main-image-container {
       position: relative;
       aspect-ratio: 1;
@@ -155,7 +165,22 @@ export interface ProductImage {
         width: 100%;
         height: 100%;
         object-fit: contain;
-        transition: opacity 0.2s;
+        opacity: 0;
+        transition: opacity 0.3s ease-out, transform 0.4s ease-out;
+
+        &.loaded {
+          opacity: 1;
+        }
+
+        /* Crossfade transition when changing images */
+        &.changing {
+          opacity: 0;
+        }
+      }
+
+      /* Image zoom effect on hover */
+      &.zooming .main-image {
+        transform: scale(1.1);
       }
 
       .no-image {
@@ -169,6 +194,29 @@ export interface ProductImage {
       }
     }
 
+    /* Loading shimmer animation */
+    .image-loading {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg,
+        var(--color-bg-secondary) 25%,
+        var(--color-bg-tertiary, var(--color-bg-primary)) 50%,
+        var(--color-bg-secondary) 75%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 12px;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: 200% 0;
+      }
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
     .zoom-lens {
       position: absolute;
       border: 2px solid var(--color-primary);
@@ -176,6 +224,7 @@ export interface ProductImage {
       pointer-events: none;
       border-radius: 4px;
       z-index: 1;
+      transition: opacity 0.15s ease-out;
     }
 
     .zoom-hint {
@@ -193,16 +242,22 @@ export interface ProductImage {
       align-items: center;
       justify-content: center;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      transition: all 0.2s;
+      transition: all 0.2s ease-out;
 
       svg {
         width: 20px;
         height: 20px;
+        transition: transform 0.2s ease-out;
       }
 
       &:hover {
         background: var(--color-primary);
         color: white;
+        transform: scale(1.1);
+
+        svg {
+          transform: scale(1.1);
+        }
       }
     }
 
@@ -218,6 +273,18 @@ export interface ProductImage {
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
       z-index: 100;
       pointer-events: none;
+      animation: zoomResultFadeIn 0.2s ease-out;
+    }
+
+    @keyframes zoomResultFadeIn {
+      from {
+        opacity: 0;
+        transform: translateX(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
     }
 
     .thumbnails {
@@ -226,33 +293,42 @@ export interface ProductImage {
       flex-wrap: wrap;
     }
 
+    /* Thumbnail with enhanced animations */
     .thumbnail {
       width: 80px;
       height: 80px;
       padding: 0;
-      border: 2px solid var(--color-border);
+      border: 2px solid transparent;
       border-radius: 8px;
       overflow: hidden;
       cursor: pointer;
       background: var(--color-bg-secondary);
-      transition: border-color 0.2s;
+      transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, border-color 0.2s ease-out;
 
       &:hover {
+        transform: scale(1.05);
         border-color: var(--color-primary-light);
       }
 
       &.active {
         border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px var(--color-primary-light, rgba(59, 130, 246, 0.3));
+        transform: scale(1.02);
       }
 
       img {
         width: 100%;
         height: 100%;
         object-fit: contain;
+        transition: transform 0.2s ease-out;
+      }
+
+      &:hover img {
+        transform: scale(1.05);
       }
     }
 
-    /* Fullscreen Modal */
+    /* Fullscreen Modal / Lightbox with scale animation */
     .fullscreen-overlay {
       position: fixed;
       inset: 0;
@@ -261,12 +337,33 @@ export interface ProductImage {
       display: flex;
       align-items: center;
       justify-content: center;
-      animation: fadeIn 0.2s ease-out;
+      animation: lightboxOpen 0.3s ease-out forwards;
+
+      &.closing {
+        animation: lightboxClose 0.2s ease-in forwards;
+      }
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+    @keyframes lightboxOpen {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes lightboxClose {
+      from {
+        opacity: 1;
+        transform: scale(1);
+      }
+      to {
+        opacity: 0;
+        transform: scale(0.9);
+      }
     }
 
     .fullscreen-content {
@@ -285,6 +382,7 @@ export interface ProductImage {
       align-items: center;
       justify-content: center;
       touch-action: none;
+      overflow: hidden;
     }
 
     .fullscreen-image {
@@ -292,6 +390,37 @@ export interface ProductImage {
       max-height: 90vh;
       object-fit: contain;
       transition: transform 0.1s ease-out;
+
+      /* Slide animations for image navigation */
+      &.slide-in-left {
+        animation: slideInLeft 0.3s ease-out forwards;
+      }
+
+      &.slide-in-right {
+        animation: slideInRight 0.3s ease-out forwards;
+      }
+    }
+
+    @keyframes slideInLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
     }
 
     .nav-btn {
@@ -308,16 +437,26 @@ export interface ProductImage {
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.2s;
+      transition: all 0.2s ease-out;
       z-index: 10;
 
       svg {
         width: 24px;
         height: 24px;
+        transition: transform 0.2s ease-out;
       }
 
       &:hover:not(:disabled) {
         background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-50%) scale(1.1);
+
+        svg {
+          transform: scale(1.1);
+        }
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(-50%) scale(0.95);
       }
 
       &:disabled {
@@ -327,10 +466,18 @@ export interface ProductImage {
 
       &.prev {
         left: 1rem;
+
+        &:hover:not(:disabled) svg {
+          transform: translateX(-3px);
+        }
       }
 
       &.next {
         right: 1rem;
+
+        &:hover:not(:disabled) svg {
+          transform: translateX(3px);
+        }
       }
     }
 
@@ -348,16 +495,22 @@ export interface ProductImage {
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.2s;
+      transition: all 0.2s ease-out;
       z-index: 10;
 
       svg {
         width: 24px;
         height: 24px;
+        transition: transform 0.2s ease-out;
       }
 
       &:hover {
         background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.1) rotate(90deg);
+      }
+
+      &:active {
+        transform: scale(0.95);
       }
     }
 
@@ -371,6 +524,18 @@ export interface ProductImage {
       color: white;
       border-radius: 20px;
       font-size: 0.875rem;
+      animation: fadeInUp 0.3s ease-out 0.1s backwards;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
     }
 
     /* Responsive */
@@ -410,6 +575,33 @@ export interface ProductImage {
         }
       }
     }
+
+    /* Reduced motion support */
+    @media (prefers-reduced-motion: reduce) {
+      .main-image,
+      .thumbnail,
+      .fullscreen-overlay,
+      .fullscreen-image,
+      .zoom-hint,
+      .zoom-lens,
+      .zoom-result,
+      .nav-btn,
+      .close-btn,
+      .image-counter {
+        transition: none !important;
+        animation: none !important;
+      }
+
+      .image-loading {
+        animation: none !important;
+        background: var(--color-bg-secondary);
+      }
+
+      /* For reduced motion, just show/hide without animations */
+      .main-image.changing {
+        opacity: 1;
+      }
+    }
   `]
 })
 export class ProductGalleryComponent {
@@ -423,6 +615,10 @@ export class ProductGalleryComponent {
   selectedImage = signal<ProductImage | null>(null);
   isZooming = signal(false);
   isFullscreen = signal(false);
+  isClosingFullscreen = signal(false);
+  isTransitioning = signal(false);
+  isImageLoading = signal(true);
+  slideDirection = signal<'left' | 'right' | null>(null);
 
   // Zoom calculations
   lensSize = 150;
@@ -435,6 +631,10 @@ export class ProductGalleryComponent {
   private initialPinchDistance = 0;
   private pinchScale = signal(1);
   private pinchTranslate = signal({ x: 0, y: 0 });
+
+  // Animation timeouts
+  private transitionTimeout: ReturnType<typeof setTimeout> | null = null;
+  private slideTimeout: ReturnType<typeof setTimeout> | null = null;
 
   // Computed
   currentIndex = computed(() => {
@@ -498,10 +698,28 @@ export class ProductGalleryComponent {
   }
 
   selectImage(image: ProductImage): void {
-    this.selectedImage.set(image);
+    // Skip if already selected
+    if (this.selectedImage()?.id === image.id) return;
+
+    // Start crossfade transition
+    this.isTransitioning.set(true);
+    this.isImageLoading.set(true);
+
+    // Clear any existing timeout
+    if (this.transitionTimeout) {
+      clearTimeout(this.transitionTimeout);
+    }
+
+    // After fade out, change the image
+    this.transitionTimeout = setTimeout(() => {
+      this.selectedImage.set(image);
+      this.isTransitioning.set(false);
+    }, 150); // Half of the 0.3s transition
   }
 
   onImageLoad(): void {
+    this.isImageLoading.set(false);
+
     if (this.mainImageContainer?.nativeElement) {
       const img = this.mainImageContainer.nativeElement.querySelector('img');
       if (img) {
@@ -546,16 +764,24 @@ export class ProductGalleryComponent {
   }
 
   closeFullscreen(): void {
-    this.isFullscreen.set(false);
-    this.pinchScale.set(1);
-    this.pinchTranslate.set({ x: 0, y: 0 });
-    document.body.style.overflow = '';
+    // Trigger closing animation
+    this.isClosingFullscreen.set(true);
+
+    // Wait for animation to complete before hiding
+    setTimeout(() => {
+      this.isFullscreen.set(false);
+      this.isClosingFullscreen.set(false);
+      this.pinchScale.set(1);
+      this.pinchTranslate.set({ x: 0, y: 0 });
+      document.body.style.overflow = '';
+    }, 200); // Match lightboxClose animation duration
   }
 
   prevImage(event?: Event): void {
     event?.stopPropagation();
     const idx = this.currentIndex();
     if (idx > 0) {
+      this.triggerSlideAnimation('right');
       this.selectedImage.set(this.images()[idx - 1]);
     }
   }
@@ -564,8 +790,23 @@ export class ProductGalleryComponent {
     event?.stopPropagation();
     const idx = this.currentIndex();
     if (idx < this.images().length - 1) {
+      this.triggerSlideAnimation('left');
       this.selectedImage.set(this.images()[idx + 1]);
     }
+  }
+
+  private triggerSlideAnimation(direction: 'left' | 'right'): void {
+    // Clear any existing slide timeout
+    if (this.slideTimeout) {
+      clearTimeout(this.slideTimeout);
+    }
+
+    this.slideDirection.set(direction);
+
+    // Reset after animation completes
+    this.slideTimeout = setTimeout(() => {
+      this.slideDirection.set(null);
+    }, 300); // Match slide animation duration
   }
 
   // Touch handlers for pinch zoom

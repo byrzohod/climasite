@@ -7,6 +7,7 @@ namespace ClimaSite.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class PaymentsController : ControllerBase
 {
     private readonly IPaymentService _paymentService;
@@ -26,6 +27,7 @@ public class PaymentsController : ControllerBase
     /// <summary>
     /// Get the Stripe publishable key for frontend use
     /// </summary>
+    [AllowAnonymous]
     [HttpGet("config")]
     public IActionResult GetConfig()
     {

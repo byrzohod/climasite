@@ -81,6 +81,24 @@ public class Review : BaseEntity
         SetUpdatedAt();
     }
 
+    public void RemoveHelpfulVote()
+    {
+        if (HelpfulCount > 0)
+        {
+            HelpfulCount--;
+            SetUpdatedAt();
+        }
+    }
+
+    public void RemoveUnhelpfulVote()
+    {
+        if (UnhelpfulCount > 0)
+        {
+            UnhelpfulCount--;
+            SetUpdatedAt();
+        }
+    }
+
     public void SetAdminResponse(string response)
     {
         if (string.IsNullOrWhiteSpace(response))

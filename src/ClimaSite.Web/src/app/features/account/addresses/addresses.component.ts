@@ -92,7 +92,7 @@ import { SavedAddress, CreateAddressRequest, AddressType } from '../../../core/m
           <div class="modal-content" (click)="$event.stopPropagation()" data-testid="address-modal">
             <div class="modal-header">
               <h2>{{ editingAddress() ? ('account.addresses.editAddress' | translate) : ('account.addresses.addAddress' | translate) }}</h2>
-              <button class="close-btn" (click)="closeModal()">&times;</button>
+              <button class="close-btn" (click)="closeModal()" aria-label="Close">&times;</button>
             </div>
             <form (ngSubmit)="saveAddress()" #addressForm="ngForm">
               <div class="form-grid">

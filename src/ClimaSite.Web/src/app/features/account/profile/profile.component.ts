@@ -65,6 +65,7 @@ import { AuthService, User, UpdateProfileRequest } from '../../../auth/services/
             <span class="hint">{{ 'profile.emailHint' | translate }}</span>
           </div>
 
+          <!-- TODO: Consider adding phone validation pattern if stricter validation is required -->
           <div class="form-group">
             <label for="phone">{{ 'profile.phone' | translate }}</label>
             <input
@@ -95,6 +96,18 @@ import { AuthService, User, UpdateProfileRequest } from '../../../auth/services/
       <section class="profile-section">
         <h2>{{ 'account.profile.preferences' | translate }}</h2>
 
+        @if (preferencesSuccess()) {
+          <div class="success-message" data-testid="preferences-success">
+            {{ 'profile.preferencesSuccess' | translate }}
+          </div>
+        }
+
+        @if (preferencesError()) {
+          <div class="error-message" data-testid="preferences-error">
+            {{ preferencesError() }}
+          </div>
+        }
+
         <form [formGroup]="preferencesForm" (ngSubmit)="updatePreferences()">
           <div class="form-row">
             <div class="form-group">
@@ -110,6 +123,7 @@ import { AuthService, User, UpdateProfileRequest } from '../../../auth/services/
               </select>
             </div>
 
+            <!-- Currency labels use universal symbols (€, лв, $) - no translation needed -->
             <div class="form-group">
               <label for="currency">{{ 'account.profile.currency' | translate }}</label>
               <select
@@ -307,7 +321,7 @@ import { AuthService, User, UpdateProfileRequest } from '../../../auth/services/
     .btn-primary {
       padding: 0.75rem 1.5rem;
       background: var(--color-primary);
-      color: white;
+      color: var(--color-text-inverse);
       border: none;
       border-radius: 8px;
       font-size: 1rem;
@@ -326,16 +340,16 @@ import { AuthService, User, UpdateProfileRequest } from '../../../auth/services/
     }
 
     .success-message {
-      background: var(--color-success-bg, #d4edda);
-      color: var(--color-success, #155724);
+      background: var(--color-success-bg);
+      color: var(--color-success);
       padding: 1rem;
       border-radius: 8px;
       margin-bottom: 1.5rem;
     }
 
     .error-message {
-      background: var(--color-error-bg, #f8d7da);
-      color: var(--color-error, #721c24);
+      background: var(--color-error-bg);
+      color: var(--color-error);
       padding: 1rem;
       border-radius: 8px;
       margin-bottom: 1.5rem;
@@ -359,6 +373,8 @@ export class ProfileComponent implements OnInit {
 
   profileSuccess = signal(false);
   profileError = signal<string | null>(null);
+  preferencesSuccess = signal(false);
+  preferencesError = signal<string | null>(null);
   passwordSuccess = signal(false);
   passwordError = signal<string | null>(null);
 
@@ -451,11 +467,16 @@ export class ProfileComponent implements OnInit {
     this.authService.updateProfile(data).subscribe({
       next: () => {
         this.isUpdatingPreferences.set(false);
+        this.preferencesSuccess.set(true);
+        this.preferencesError.set(null);
         // Apply language change immediately
         this.translateService.use(data.preferredLanguage!);
+        setTimeout(() => this.preferencesSuccess.set(false), 3000);
       },
-      error: () => {
+      error: (err) => {
         this.isUpdatingPreferences.set(false);
+        this.preferencesSuccess.set(false);
+        this.preferencesError.set(err.error?.message || 'Failed to update preferences');
       }
     });
   }

@@ -288,4 +288,60 @@ public class ReviewTests
         act.Should().Throw<ArgumentException>()
            .WithMessage("*Admin response cannot be empty*");
     }
+
+    [Fact]
+    public void RemoveHelpfulVote_DecrementsHelpfulCount()
+    {
+        // Arrange
+        var review = new Review(_productId, _userId, 4);
+        review.AddHelpfulVote();
+        review.AddHelpfulVote();
+
+        // Act
+        review.RemoveHelpfulVote();
+
+        // Assert
+        review.HelpfulCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void RemoveHelpfulVote_DoesNotGoBelowZero()
+    {
+        // Arrange
+        var review = new Review(_productId, _userId, 4);
+
+        // Act
+        review.RemoveHelpfulVote();
+
+        // Assert
+        review.HelpfulCount.Should().Be(0);
+    }
+
+    [Fact]
+    public void RemoveUnhelpfulVote_DecrementsUnhelpfulCount()
+    {
+        // Arrange
+        var review = new Review(_productId, _userId, 4);
+        review.AddUnhelpfulVote();
+        review.AddUnhelpfulVote();
+
+        // Act
+        review.RemoveUnhelpfulVote();
+
+        // Assert
+        review.UnhelpfulCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void RemoveUnhelpfulVote_DoesNotGoBelowZero()
+    {
+        // Arrange
+        var review = new Review(_productId, _userId, 4);
+
+        // Act
+        review.RemoveUnhelpfulVote();
+
+        // Assert
+        review.UnhelpfulCount.Should().Be(0);
+    }
 }

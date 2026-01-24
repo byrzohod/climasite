@@ -113,6 +113,19 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
             return Result.Failure("Product not found");
         }
 
+        // Check if price changed and record history
+        var priceChanged = product.BasePrice != request.BasePrice || product.CompareAtPrice != request.CompareAtPrice;
+        if (priceChanged)
+        {
+            var priceHistory = Core.Entities.ProductPriceHistory.Create(
+                product.Id,
+                request.BasePrice,
+                request.CompareAtPrice,
+                Core.Entities.PriceChangeReason.PriceChange,
+                $"Price changed from {product.BasePrice:C} to {request.BasePrice:C}");
+            _context.ProductPriceHistory.Add(priceHistory);
+        }
+
         product.SetName(request.Name);
         product.SetSku(request.Sku);
         product.SetSlug(request.Slug);

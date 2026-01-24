@@ -29,7 +29,15 @@ public class CartPage : BasePage
     public async Task<decimal> GetTotalAsync()
     {
         var totalText = await GetTextAsync(CartTotal);
-        return decimal.Parse(totalText.Replace("$", "").Replace(",", "").Trim());
+        // Handle various currency formats: $360.00, €360.00, EUR360.00, 360.00 EUR, etc.
+        var cleaned = totalText
+            .Replace("$", "")
+            .Replace("€", "")
+            .Replace("EUR", "")
+            .Replace("BGN", "")
+            .Replace(",", "")
+            .Trim();
+        return decimal.Parse(cleaned, System.Globalization.CultureInfo.InvariantCulture);
     }
 
     public async Task<int> GetItemCountAsync()
@@ -65,6 +73,9 @@ public class CartPage : BasePage
         var removeButtons = await Page.QuerySelectorAllAsync(RemoveItemButton);
         if (removeButtons.Count > index)
         {
+            // Set up dialog handler to accept the confirmation before clicking
+            Page.Dialog += async (_, dialog) => await dialog.AcceptAsync();
+
             await removeButtons[index].ClickAsync();
 
             // Wait for item count to decrease or for empty cart message

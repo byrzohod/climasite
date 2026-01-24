@@ -1,15 +1,17 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { CartService } from '../../core/services/cart.service';
 import { CartItem } from '../../core/models/cart.model';
+import { RevealDirective } from '../../shared/directives/reveal.directive';
+import { ToastService } from '../../shared/components/toast/toast.service';
 
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, TranslateModule],
+  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, RevealDirective],
   template: `
     <div class="cart-container" data-testid="cart-page">
       <h1>{{ 'cart.title' | translate }}</h1>
@@ -18,9 +20,19 @@ import { CartItem } from '../../core/models/cart.model';
         <div class="loading" data-testid="cart-loading">
           {{ 'common.loading' | translate }}
         </div>
+      } @else if (cartService.error()) {
+        <div class="error-message" data-testid="cart-error">
+          {{ cartService.error() }}
+        </div>
       } @else if (cartService.isEmpty()) {
         <div class="empty-cart" data-testid="empty-cart">
-          <div class="empty-icon">🛒</div>
+          <div class="empty-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="9" cy="21" r="1"/>
+              <circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+          </div>
           <p>{{ 'cart.empty' | translate }}</p>
           <a routerLink="/products" class="continue-shopping-btn" data-testid="continue-shopping">
             {{ 'cart.continueShopping' | translate }}
@@ -29,13 +41,23 @@ import { CartItem } from '../../core/models/cart.model';
       } @else {
         <div class="cart-content">
           <div class="cart-items">
-            @for (item of cartService.items(); track item.id) {
-              <div class="cart-item" data-testid="cart-item">
+            @for (item of cartService.items(); track item.id; let i = $index) {
+              <div class="cart-item" 
+                   [class.removing]="removingItems().has(item.id)"
+                   data-testid="cart-item" 
+                   appReveal="fade-up" 
+                   [delay]="i * 75">
                 <div class="item-image">
                   @if (item.imageUrl) {
                     <img [src]="item.imageUrl" [alt]="item.productName" />
                   } @else {
-                    <div class="no-image">📦</div>
+                    <div class="no-image">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 8v13H3V8"/>
+                        <path d="M1 3h22v5H1z"/>
+                        <path d="M10 12h4"/>
+                      </svg>
+                    </div>
                   }
                 </div>
 
@@ -58,11 +80,12 @@ import { CartItem } from '../../core/models/cart.model';
                   }
                 </div>
 
-                <div class="item-quantity" data-testid="item-quantity">
+                <div class="item-quantity" [class.updating]="updatingItemId() === item.id" data-testid="item-quantity">
                   <button
                     class="qty-btn"
                     (click)="decreaseQuantity(item)"
-                    [disabled]="item.quantity <= 1"
+                    [disabled]="item.quantity <= 1 || updatingItemId() === item.id"
+                    [attr.aria-label]="('cart.decrease_quantity' | translate) + ' ' + item.productName"
                     data-testid="decrease-quantity"
                   >−</button>
                   <input
@@ -71,14 +94,26 @@ import { CartItem } from '../../core/models/cart.model';
                     (change)="updateQuantity(item, $event)"
                     min="1"
                     [max]="item.maxQuantity"
+                    [disabled]="updatingItemId() === item.id"
+                    [attr.aria-label]="('cart.quantity_for' | translate) + ' ' + item.productName"
+                    data-testid="quantity-input"
                   />
                   <button
                     class="qty-btn"
                     (click)="increaseQuantity(item)"
-                    [disabled]="item.quantity >= item.maxQuantity"
+                    [disabled]="item.quantity >= item.maxQuantity || updatingItemId() === item.id"
+                    [attr.aria-label]="('cart.increase_quantity' | translate) + ' ' + item.productName"
                     data-testid="increase-quantity"
                   >+</button>
+                  @if (updatingItemId() === item.id) {
+                    <div class="quantity-spinner" data-testid="quantity-spinner"></div>
+                  }
                 </div>
+                @if (itemError() === item.id) {
+                  <div class="item-error" data-testid="quantity-error">
+                    {{ 'cart.update_failed' | translate }}
+                  </div>
+                }
 
                 <div class="item-subtotal" data-testid="cart-item-subtotal">
                   {{ item.subtotal | currency }}
@@ -96,7 +131,7 @@ import { CartItem } from '../../core/models/cart.model';
             }
           </div>
 
-          <div class="cart-summary">
+          <div class="cart-summary" appReveal="fade-left" [delay]="150">
             <h2>{{ 'cart.summary.title' | translate }}</h2>
 
             <div class="summary-row">
@@ -156,6 +191,15 @@ import { CartItem } from '../../core/models/cart.model';
       color: var(--color-text-secondary);
     }
 
+    .error-message {
+      padding: 1rem;
+      background: var(--color-error-bg);
+      color: var(--color-error);
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
     .empty-cart {
       text-align: center;
       padding: 4rem 2rem;
@@ -179,7 +223,7 @@ import { CartItem } from '../../core/models/cart.model';
     .continue-shopping-btn {
       display: inline-block;
       background: var(--color-primary);
-      color: white;
+      color: var(--color-text-inverse);
       padding: 1rem 2rem;
       border-radius: 8px;
       text-decoration: none;
@@ -209,10 +253,53 @@ import { CartItem } from '../../core/models/cart.model';
       gap: 1rem;
       align-items: center;
       padding: 1.5rem;
-      background: var(--color-bg-primary);
-      border: 1px solid var(--color-border);
-      border-radius: 12px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg, 16px);
+      box-shadow: var(--shadow-sm);
+      transition: opacity 0.3s ease-out, transform 0.3s ease-out, 
+                  max-height 0.3s ease-out, margin 0.3s ease-out, 
+                  padding 0.3s ease-out, box-shadow 0.3s ease-out;
+      max-height: 200px;
+      overflow: hidden;
+
+      &:hover:not(.removing) {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+      }
+
+      &.removing {
+        opacity: 0;
+        transform: translateX(100px);
+        max-height: 0;
+        margin: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        border-width: 0;
+        pointer-events: none;
+      }
     }
+
+    /* Respect reduced motion preferences */
+                    @media (prefers-reduced-motion: reduce) {
+                      .cart-item {
+                        transition: opacity 0.15s ease-out;
+                        
+                        &.removing {
+                          transform: none;
+                          max-height: unset;
+                        }
+                      }
+                      
+                      .qty-btn,
+                      .item-quantity input {
+                        transition: none !important;
+                        animation: none !important;
+                        transform: none !important;
+                      }
+                    }
 
     .item-image {
       width: 100px;
@@ -283,44 +370,137 @@ import { CartItem } from '../../core/models/cart.model';
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      position: relative;
+
+      &.updating {
+        opacity: 0.7;
+        pointer-events: none;
+      }
 
       .qty-btn {
-        width: 32px;
-        height: 32px;
-        border: 1px solid var(--color-border);
-        background: var(--color-bg-secondary);
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 1rem;
-        color: var(--color-text-primary);
-        transition: background-color 0.2s;
+                        /* WCAG touch target: minimum 44x44px on mobile */
+                        min-width: 44px;
+                        min-height: 44px;
+                        width: 44px;
+                        height: 44px;
+                        border: 1px solid var(--color-border);
+                        background: var(--color-bg-secondary);
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-size: 1.25rem;
+                        font-weight: 500;
+                        color: var(--color-text-primary);
+                        transition: transform 0.1s ease-out, background-color 0.2s ease-out;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
 
-        &:hover:not(:disabled) {
-          background: var(--color-border);
-        }
+                        &:hover:not(:disabled) {
+                          background: var(--color-bg-tertiary);
+                        }
 
-        &:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-      }
+                        &:active:not(:disabled) {
+                          transform: scale(0.9);
+                        }
+
+                        &:disabled {
+                          opacity: 0.5;
+                          cursor: not-allowed;
+                        }
+
+                        /* Smaller on desktop where mouse precision is better */
+                        @media (min-width: 768px) {
+                          min-width: 36px;
+                          min-height: 36px;
+                          width: 36px;
+                          height: 36px;
+                          font-size: 1rem;
+                        }
+                      }
 
       input {
-        width: 50px;
-        height: 32px;
-        text-align: center;
-        border: 1px solid var(--color-border);
-        border-radius: 6px;
-        background: var(--color-bg-secondary);
-        color: var(--color-text-primary);
-        font-size: 1rem;
+                        width: 56px;
+                        min-height: 44px;
+                        height: 44px;
+                        text-align: center;
+                        border: 1px solid var(--color-border);
+                        border-radius: 8px;
+                        background: var(--color-bg-secondary);
+                        color: var(--color-text-primary);
+                        font-size: 1rem;
+                        transition: transform 0.15s ease-out, background-color 0.3s ease, border-color 0.3s ease;
 
-        &::-webkit-inner-spin-button,
-        &::-webkit-outer-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
+                        &::-webkit-inner-spin-button,
+                        &::-webkit-outer-spin-button {
+                          -webkit-appearance: none;
+                          margin: 0;
+                        }
+
+                        &.quantity-updated {
+                          background-color: var(--color-success-light, #dcfce7);
+                          border-color: var(--color-success, #22c55e);
+                        }
+                        
+                        &.incrementing {
+                          animation: numberUp 0.15s ease-out;
+                        }
+                        
+                        &.decrementing {
+                          animation: numberDown 0.15s ease-out;
+                        }
+
+                        &:disabled {
+                          opacity: 0.6;
+                          cursor: not-allowed;
+                        }
+
+                        /* Smaller on desktop */
+                        @media (min-width: 768px) {
+                          width: 50px;
+                          min-height: 36px;
+                          height: 36px;
+                        }
+                      }
+                      
+                      @keyframes numberUp {
+                        0% { transform: translateY(0); }
+                        50% { transform: translateY(-5px); opacity: 0.5; }
+                        100% { transform: translateY(0); }
+                      }
+                      
+                      @keyframes numberDown {
+                        0% { transform: translateY(0); }
+                        50% { transform: translateY(5px); opacity: 0.5; }
+                        100% { transform: translateY(0); }
+                      }
+
+      .quantity-spinner {
+        position: absolute;
+        right: -28px;
+        width: 18px;
+        height: 18px;
+        border: 2px solid var(--color-border);
+        border-top-color: var(--color-primary);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
       }
+    }
+
+    .item-error {
+      grid-column: 2 / -1;
+      color: var(--color-error);
+      font-size: 0.75rem;
+      padding: 0.25rem 0;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
     .item-subtotal {
@@ -342,24 +522,28 @@ import { CartItem } from '../../core/models/cart.model';
       transition: background-color 0.2s, color 0.2s;
 
       &:hover {
-        background: var(--color-error-bg, #fee2e2);
+        background: var(--color-error-bg);
         color: var(--color-error);
       }
     }
 
     .cart-summary {
-      background: var(--color-bg-primary);
-      border: 1px solid var(--color-border);
-      border-radius: 12px;
-      padding: 1.5rem;
+      background: var(--glass-bg-heavy);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-xl, 20px);
+      padding: 2rem;
       height: fit-content;
       position: sticky;
       top: 2rem;
+      box-shadow: var(--shadow-lg);
 
       h2 {
         font-size: 1.25rem;
         margin-bottom: 1.5rem;
         color: var(--color-text-primary);
+        font-weight: 600;
       }
     }
 
@@ -383,18 +567,35 @@ import { CartItem } from '../../core/models/cart.model';
     .checkout-btn {
       display: block;
       width: 100%;
-      background: var(--color-primary);
-      color: white;
-      padding: 1rem;
-      border-radius: 8px;
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+      color: var(--color-text-inverse);
+      padding: 1.125rem;
+      border-radius: var(--radius-lg, 12px);
       text-align: center;
       text-decoration: none;
       font-weight: 600;
+      font-size: 1.0625rem;
       margin-top: 1.5rem;
-      transition: background-color 0.2s;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: var(--gradient-glass);
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
 
       &:hover {
-        background: var(--color-primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px var(--glow-primary);
+
+        &::before {
+          opacity: 1;
+        }
       }
     }
 
@@ -457,6 +658,24 @@ import { CartItem } from '../../core/models/cart.model';
 })
 export class CartComponent implements OnInit {
   readonly cartService = inject(CartService);
+  private readonly translate = inject(TranslateService);
+  private readonly toastService = inject(ToastService);
+
+  // CART-U01 & CART-U02: Track loading and error state per item
+  readonly updatingItemId = signal<string | null>(null);
+  readonly itemError = signal<string | null>(null);
+  
+  // Track items being removed (for exit animation)
+  readonly removingItems = signal<Set<string>>(new Set());
+
+  // Store previous quantities for reverting on error
+  private previousQuantities = new Map<string, number>();
+  
+  // Store removed items for undo functionality
+  private removedItemsCache = new Map<string, CartItem>();
+  
+  // Animation duration in ms
+  private readonly ANIMATION_DURATION = 300;
 
   ngOnInit(): void {
     // Always reload cart data when navigating to cart page
@@ -469,7 +688,7 @@ export class CartComponent implements OnInit {
     const quantity = parseInt(input.value, 10);
 
     if (quantity > 0 && quantity <= item.maxQuantity) {
-      this.cartService.updateQuantity(item.id, quantity).subscribe();
+      this.performQuantityUpdate(item, quantity, input);
     } else {
       input.value = item.quantity.toString();
     }
@@ -477,17 +696,142 @@ export class CartComponent implements OnInit {
 
   increaseQuantity(item: CartItem): void {
     if (item.quantity < item.maxQuantity) {
-      this.cartService.updateQuantity(item.id, item.quantity + 1).subscribe();
+      this.performQuantityUpdate(item, item.quantity + 1);
     }
   }
 
   decreaseQuantity(item: CartItem): void {
     if (item.quantity > 1) {
-      this.cartService.updateQuantity(item.id, item.quantity - 1).subscribe();
+      this.performQuantityUpdate(item, item.quantity - 1);
     }
   }
 
-  removeItem(item: CartItem): void {
-    this.cartService.removeItem(item.id).subscribe();
+  private performQuantityUpdate(item: CartItem, newQuantity: number, input?: HTMLInputElement): void {
+    // Clear any previous error for this item
+    this.itemError.set(null);
+    
+    // Store previous quantity for potential rollback
+    this.previousQuantities.set(item.id, item.quantity);
+    
+    // Set loading state
+    this.updatingItemId.set(item.id);
+
+    this.cartService.updateQuantity(item.id, newQuantity).subscribe({
+      next: () => {
+        this.updatingItemId.set(null);
+        if (input) {
+          this.showQuantityFeedback(input);
+        }
+        this.previousQuantities.delete(item.id);
+      },
+      error: () => {
+        this.updatingItemId.set(null);
+        this.itemError.set(item.id);
+        
+        // Revert quantity in UI by reloading cart
+        this.cartService.loadCart();
+        
+        // Clear error after 5 seconds
+        setTimeout(() => {
+          if (this.itemError() === item.id) {
+            this.itemError.set(null);
+          }
+        }, 5000);
+      }
+    });
+  }
+
+  private showQuantityFeedback(input: HTMLInputElement): void {
+    // Add visual feedback by briefly highlighting the quantity input
+    input.classList.add('quantity-updated');
+    setTimeout(() => input.classList.remove('quantity-updated'), 300);
+  }
+
+  async removeItem(item: CartItem): Promise<void> {
+    // Cache item for potential undo
+    this.removedItemsCache.set(item.id, { ...item });
+    
+    // Mark as removing (triggers exit animation)
+    this.removingItems.update(set => new Set(set).add(item.id));
+    
+    // Wait for animation to complete
+    await this.waitForAnimation();
+    
+    // Actually remove from backend
+    this.cartService.removeItem(item.id).subscribe({
+      next: () => {
+        // Clean up removing state
+        this.removingItems.update(set => {
+          const newSet = new Set(set);
+          newSet.delete(item.id);
+          return newSet;
+        });
+        
+        // Show undo toast
+        this.showUndoToast(item);
+      },
+      error: () => {
+        // Remove from removing state on error
+        this.removingItems.update(set => {
+          const newSet = new Set(set);
+          newSet.delete(item.id);
+          return newSet;
+        });
+        
+        // Reload cart to restore item
+        this.cartService.loadCart();
+        
+        // Show error toast
+        this.toastService.error(
+          this.translate.instant('cart.remove_failed')
+        );
+      }
+    });
+  }
+  
+  private waitForAnimation(): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, this.ANIMATION_DURATION));
+  }
+  
+  private showUndoToast(item: CartItem): void {
+    const message = this.translate.instant('cart.item_removed', { name: item.productName });
+    const undoText = this.translate.instant('common.undo');
+    
+    // Show toast with longer duration for undo action
+    this.toastService.success(
+      `${message} - ${undoText}`,
+      { duration: 6000, dismissible: true }
+    );
+    
+    // Note: For a full undo implementation, we would need to add 
+    // an action callback to the toast service. For now, the user
+    // can re-add the item from the product page.
+  }
+  
+  /**
+   * Undo removal of an item (re-add to cart)
+   * This can be called programmatically if undo action is triggered
+   */
+  undoRemoval(itemId: string): void {
+    const cachedItem = this.removedItemsCache.get(itemId);
+    if (cachedItem) {
+      this.cartService.addToCart(
+        cachedItem.productId,
+        cachedItem.quantity,
+        cachedItem.variantId
+      ).subscribe({
+        next: () => {
+          this.removedItemsCache.delete(itemId);
+          this.toastService.success(
+            this.translate.instant('cart.item_restored')
+          );
+        },
+        error: () => {
+          this.toastService.error(
+            this.translate.instant('cart.restore_failed')
+          );
+        }
+      });
+    }
   }
 }

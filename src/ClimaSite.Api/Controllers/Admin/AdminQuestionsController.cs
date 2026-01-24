@@ -195,14 +195,21 @@ public class AdminQuestionsController : ControllerBase
     }
 
     /// <summary>
-    /// Bulk approve questions
+    /// Bulk approve questions.
     /// </summary>
+    /// <remarks>
+    /// TODO: API-010 - This endpoint has an N+1 query problem. Each question moderation triggers
+    /// a separate database call. For better performance with large datasets, implement a
+    /// BulkModerateQuestionsCommand that updates all questions in a single transaction.
+    /// </remarks>
     [HttpPost("bulk-approve")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> BulkApproveQuestions([FromBody] BulkModerationRequest request)
     {
         var approved = 0;
         var failed = 0;
 
+        // TODO: Replace with batch update command for better performance
         foreach (var id in request.Ids)
         {
             var command = new ModerateQuestionCommand
@@ -222,14 +229,21 @@ public class AdminQuestionsController : ControllerBase
     }
 
     /// <summary>
-    /// Bulk approve answers
+    /// Bulk approve answers.
     /// </summary>
+    /// <remarks>
+    /// TODO: API-010 - This endpoint has an N+1 query problem. Each answer moderation triggers
+    /// a separate database call. For better performance with large datasets, implement a
+    /// BulkModerateAnswersCommand that updates all answers in a single transaction.
+    /// </remarks>
     [HttpPost("answers/bulk-approve")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> BulkApproveAnswers([FromBody] BulkModerationRequest request)
     {
         var approved = 0;
         var failed = 0;
 
+        // TODO: Replace with batch update command for better performance
         foreach (var id in request.Ids)
         {
             var command = new ModerateAnswerCommand

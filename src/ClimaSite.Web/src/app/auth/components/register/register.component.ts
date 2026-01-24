@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../services/auth.service';
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
@@ -44,6 +44,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
               formControlName="firstName"
               [label]="'auth.register.firstName' | translate"
               [placeholder]="'auth.register.firstName' | translate"
+              autocomplete="given-name"
               data-testid="register-firstname"
             />
 
@@ -51,6 +52,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
               formControlName="lastName"
               [label]="'auth.register.lastName' | translate"
               [placeholder]="'auth.register.lastName' | translate"
+              autocomplete="family-name"
               data-testid="register-lastname"
             />
           </div>
@@ -60,6 +62,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
             type="email"
             [label]="'auth.register.email' | translate"
             [placeholder]="'auth.register.email' | translate"
+            autocomplete="email"
             data-testid="register-email"
           />
 
@@ -68,14 +71,17 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
             type="password"
             [label]="'auth.register.password' | translate"
             [placeholder]="'auth.register.password' | translate"
+            autocomplete="new-password"
             data-testid="register-password"
           />
+          <p class="password-hint">{{ 'auth.register.passwordRequirements' | translate }}</p>
 
           <app-input
             formControlName="confirmPassword"
             type="password"
             [label]="'auth.register.confirmPassword' | translate"
             [placeholder]="'auth.register.confirmPassword' | translate"
+            autocomplete="new-password"
             data-testid="register-confirm-password"
           />
 
@@ -177,19 +183,79 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
     }
 
     .checkbox-label {
-      display: flex;
+      display: inline-flex;
       align-items: flex-start;
       gap: 0.5rem;
       cursor: pointer;
       color: var(--color-text-secondary);
       font-size: 0.875rem;
       line-height: 1.4;
+      user-select: none;
 
       input[type="checkbox"] {
-        width: 1rem;
-        height: 1rem;
+        position: relative;
+        width: 1.125rem;
+        height: 1.125rem;
         accent-color: var(--color-primary);
         margin-top: 0.125rem;
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        background-color: var(--color-bg-input);
+        border: 2px solid var(--color-border-primary);
+        border-radius: 0.25rem;
+        flex-shrink: 0;
+        transition: background-color 0.2s ease-out, border-color 0.2s ease-out, transform 0.15s ease-out;
+
+        &:hover {
+          border-color: var(--color-primary);
+        }
+
+        &:checked {
+          background-color: var(--color-primary);
+          border-color: var(--color-primary);
+        }
+
+        &:checked::after {
+          content: '';
+          position: absolute;
+          left: 0.25rem;
+          top: 0.0625rem;
+          width: 0.375rem;
+          height: 0.625rem;
+          border: solid var(--color-text-inverse);
+          border-width: 0 2px 2px 0;
+          transform: rotate(45deg);
+          animation: checkboxPop 0.2s ease-out forwards;
+        }
+
+        &:focus-visible {
+          outline: 2px solid var(--color-primary);
+          outline-offset: 2px;
+          box-shadow: 0 0 0 3px var(--color-primary-light);
+        }
+
+        &:active {
+          transform: scale(0.9);
+        }
+      }
+
+      @keyframes checkboxPop {
+        0% { opacity: 0; transform: rotate(45deg) scale(0); }
+        60% { transform: rotate(45deg) scale(1.2); }
+        100% { opacity: 1; transform: rotate(45deg) scale(1); }
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .checkbox-label input[type="checkbox"] {
+        transition: none !important;
+
+        &:checked::after {
+          animation: none !important;
+          opacity: 1;
+          transform: rotate(45deg) scale(1);
+        }
       }
     }
 
@@ -197,6 +263,24 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
       color: var(--color-error);
       font-size: 0.75rem;
       margin-top: -0.5rem;
+      animation: errorSlideIn 0.2s ease-out forwards;
+    }
+
+    @keyframes errorSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-5px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .password-hint {
+      font-size: 0.75rem;
+      color: var(--color-text-secondary);
+      margin: -0.5rem 0 0 0;
     }
 
     .auth-footer {
@@ -232,6 +316,7 @@ export class RegisterComponent {
   readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
+  private readonly translate = inject(TranslateService);
 
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
@@ -263,13 +348,17 @@ export class RegisterComponent {
 
     this.authService.register({ firstName, lastName, email, password }).subscribe({
       next: () => {
-        this.successMessage.set('Registration successful! Please check your email to verify your account.');
+        this.translate.get('auth.register.success').subscribe(msg => {
+          this.successMessage.set(msg);
+        });
         setTimeout(() => {
           this.router.navigate(['/login']);
         }, 3000);
       },
       error: (error) => {
-        this.errorMessage.set(error.error?.message || 'Registration failed. Please try again.');
+        this.translate.get('auth.register.error').subscribe(defaultMsg => {
+          this.errorMessage.set(error.error?.message || defaultMsg);
+        });
       }
     });
   }

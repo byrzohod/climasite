@@ -136,6 +136,9 @@ public class AddToCartCommandHandler : IRequestHandler<AddToCartCommand, Result<
 
         if (cart == null)
         {
+            // TODO: Implement guest cart expiration/cleanup job
+            // Guest carts should be cleaned up after a configurable period (e.g., 30 days)
+            // to prevent database bloat from abandoned sessions
             cart = new Core.Entities.Cart(userId, guestSessionId);
             _context.Carts.Add(cart);
         }
@@ -179,6 +182,7 @@ public class AddToCartCommandHandler : IRequestHandler<AddToCartCommand, Result<
         }).ToList();
 
         var subtotal = items.Sum(i => i.LineTotal);
+        // TODO: Make VAT rate configurable per country (currently using 20% EU average)
         var tax = Math.Round(subtotal * 0.20m, 2); // 20% VAT
 
         return new CartDto

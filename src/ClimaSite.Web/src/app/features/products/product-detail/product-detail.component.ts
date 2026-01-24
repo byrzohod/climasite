@@ -17,11 +17,12 @@ import { ProductReviewsComponent } from '../../../shared/components/product-revi
 import { ProductQaComponent } from '../components/product-qa/product-qa.component';
 import { InstallationServiceComponent } from '../components/installation-service/installation-service.component';
 import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
+import { RevealDirective } from '../../../shared/directives/reveal.directive';
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, ProductConsumablesComponent, SimilarProductsComponent, ProductGalleryComponent, EnergyRatingComponent, WarrantyBadgeComponent, ProductReviewsComponent, ProductQaComponent, InstallationServiceComponent, SpecKeyPipe],
+  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, ProductConsumablesComponent, SimilarProductsComponent, ProductGalleryComponent, EnergyRatingComponent, WarrantyBadgeComponent, ProductReviewsComponent, ProductQaComponent, InstallationServiceComponent, SpecKeyPipe, RevealDirective],
   template: `
     <div class="product-detail-container" data-testid="product-detail">
       @if (isLoading()) {
@@ -53,14 +54,14 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
 
           <div class="product-main">
             <!-- Image Gallery with Zoom -->
-            <div class="product-gallery-wrapper">
+            <div class="product-gallery-wrapper" appReveal="fade-right" [duration]="500">
               <app-product-gallery
                 [images]="galleryImages()"
                 [productName]="product()?.name || ''" />
             </div>
 
             <!-- Product Info -->
-            <div class="product-info">
+            <div class="product-info" appReveal="fade-left" [delay]="100" [duration]="500">
               @if (product()?.brand) {
                 <span class="product-brand">{{ product()?.brand }}</span>
               }
@@ -82,8 +83,8 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
 
               <div class="product-price" data-testid="product-price">
                 @if (product()?.isOnSale && product()?.salePrice) {
-                  <span class="original-price">{{ product()?.salePrice | currency:'EUR' }}</span>
-                  <span class="sale-price">{{ product()?.basePrice | currency:'EUR' }}</span>
+                  <span class="original-price">{{ product()?.basePrice | currency:'EUR' }}</span>
+                  <span class="sale-price">{{ product()?.salePrice | currency:'EUR' }}</span>
                   <span class="discount-badge">-{{ product()?.discountPercentage }}%</span>
                 } @else {
                   <span class="current-price">{{ product()?.basePrice | currency:'EUR' }}</span>
@@ -128,18 +129,23 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
 
               <!-- Add to Cart Section -->
               <div class="add-to-cart-section">
-                <div class="quantity-wrapper" data-testid="quantity-input">
-                  <label>{{ 'products.details.quantity' | translate }}:</label>
+              <div class="quantity-wrapper" data-testid="quantity-input">
+                  <label id="quantity-label">{{ 'products.details.quantity' | translate }}:</label>
                   <div class="quantity-controls">
-                    <button type="button" (click)="decreaseQuantity()" [disabled]="quantity() <= 1">−</button>
+                    <button type="button" (click)="decreaseQuantity()" [disabled]="quantity() <= 1" aria-label="Decrease quantity">−</button>
                     <input
                       type="number"
                       [value]="quantity()"
                       (change)="onQuantityChange($event)"
                       min="1"
                       max="99"
+                      role="spinbutton"
+                      aria-valuemin="1"
+                      aria-valuemax="99"
+                      [attr.aria-valuenow]="quantity()"
+                      aria-labelledby="quantity-label"
                     />
-                    <button type="button" (click)="increaseQuantity()">+</button>
+                    <button type="button" (click)="increaseQuantity()" aria-label="Increase quantity">+</button>
                   </div>
                 </div>
 
@@ -192,12 +198,13 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
           </div>
 
           <!-- Product Details Tabs -->
-          <div class="product-tabs">
+          <div class="product-tabs" appReveal="fade-up" [delay]="200">
             <div class="tab-headers">
               <button
                 class="tab-header"
                 [class.active]="activeTab() === 'description'"
                 (click)="setActiveTab('description')"
+                data-testid="tab-description"
               >
                 {{ 'products.details.description' | translate }}
               </button>
@@ -205,6 +212,7 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
                 class="tab-header"
                 [class.active]="activeTab() === 'specifications'"
                 (click)="setActiveTab('specifications')"
+                data-testid="tab-specifications"
               >
                 {{ 'products.details.specifications' | translate }}
               </button>
@@ -212,6 +220,7 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
                 class="tab-header"
                 [class.active]="activeTab() === 'reviews'"
                 (click)="setActiveTab('reviews')"
+                data-testid="tab-reviews"
               >
                 {{ 'products.details.reviews' | translate }} ({{ product()?.reviewCount || 0 }})
               </button>
@@ -219,6 +228,7 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
                 class="tab-header"
                 [class.active]="activeTab() === 'qa'"
                 (click)="setActiveTab('qa')"
+                data-testid="tab-qa"
               >
                 {{ 'products.qa.title' | translate }}
               </button>
@@ -388,7 +398,7 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
           font-size: 1rem;
 
           &.filled {
-            color: #ffc107;
+            color: var(--color-warning-400);
           }
         }
 
@@ -423,7 +433,7 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
         .discount-badge {
           padding: 0.25rem 0.5rem;
           background: var(--color-error);
-          color: white;
+          color: var(--color-text-inverse);
           font-size: 0.875rem;
           font-weight: 600;
           border-radius: 4px;
@@ -478,64 +488,110 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
       }
 
       .quantity-controls {
-        display: flex;
-        align-items: center;
-        border: 1px solid var(--color-border);
-        border-radius: 8px;
-        overflow: hidden;
+                        display: flex;
+                        align-items: center;
+                        border: 1px solid var(--color-border);
+                        border-radius: 8px;
+                        overflow: hidden;
 
-        button {
-          width: 40px;
-          height: 40px;
-          border: none;
-          background: var(--color-bg-secondary);
-          color: var(--color-text-primary);
-          font-size: 1.25rem;
-          cursor: pointer;
+                        button {
+                          width: 40px;
+                          height: 40px;
+                          border: none;
+                          background: var(--color-bg-secondary);
+                          color: var(--color-text-primary);
+                          font-size: 1.25rem;
+                          cursor: pointer;
+                          transition: transform 0.1s ease-out, background-color 0.2s ease-out;
 
-          &:hover:not(:disabled) {
-            background: var(--color-border);
-          }
+                          &:hover:not(:disabled) {
+                            background: var(--color-bg-tertiary);
+                          }
 
-          &:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-          }
-        }
+                          &:active:not(:disabled) {
+                            transform: scale(0.9);
+                          }
 
-        input {
-          width: 60px;
-          height: 40px;
-          border: none;
-          border-left: 1px solid var(--color-border);
-          border-right: 1px solid var(--color-border);
-          text-align: center;
-          font-size: 1rem;
-          background: var(--color-bg-primary);
-          color: var(--color-text-primary);
+                          &:disabled {
+                            opacity: 0.5;
+                            cursor: not-allowed;
+                          }
+                        }
 
-          &::-webkit-inner-spin-button,
-          &::-webkit-outer-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-          }
-        }
-      }
-    }
+                        input {
+                          width: 60px;
+                          height: 40px;
+                          border: none;
+                          border-left: 1px solid var(--color-border);
+                          border-right: 1px solid var(--color-border);
+                          text-align: center;
+                          font-size: 1rem;
+                          background: var(--color-bg-primary);
+                          color: var(--color-text-primary);
+                          transition: transform 0.15s ease-out;
+
+                          &::-webkit-inner-spin-button,
+                          &::-webkit-outer-spin-button {
+                            -webkit-appearance: none;
+                            margin: 0;
+                          }
+                          
+                          &.incrementing {
+                            animation: numberUp 0.15s ease-out;
+                          }
+                          
+                          &.decrementing {
+                            animation: numberDown 0.15s ease-out;
+                          }
+                        }
+                      }
+                      
+                      @keyframes numberUp {
+                        0% { transform: translateY(0); }
+                        50% { transform: translateY(-5px); opacity: 0.5; }
+                        100% { transform: translateY(0); }
+                      }
+                      
+                      @keyframes numberDown {
+                        0% { transform: translateY(0); }
+                        50% { transform: translateY(5px); opacity: 0.5; }
+                        100% { transform: translateY(0); }
+                      }
+                    }
 
     .btn-add-to-cart {
       padding: 1rem 2rem;
-      background: var(--color-primary);
-      color: white;
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+      color: var(--color-text-inverse);
       border: none;
-      border-radius: 8px;
+      border-radius: var(--radius-lg, 12px);
       font-size: 1.125rem;
       font-weight: 600;
       cursor: pointer;
-      transition: background-color 0.2s;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: var(--gradient-glass);
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
 
       &:hover:not(:disabled) {
-        background: var(--color-primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px var(--glow-primary);
+
+        &::before {
+          opacity: 1;
+        }
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0);
       }
 
       &:disabled {
@@ -544,7 +600,7 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
       }
 
       &.added {
-        background: var(--color-success, #22c55e);
+        background: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-dark) 100%);
       }
     }
 
@@ -600,63 +656,101 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
 
     .cart-notification {
       padding: 1rem;
-      background: var(--color-success-bg, #dcfce7);
-      color: var(--color-success, #22c55e);
+      background: var(--color-success-bg);
+      color: var(--color-success);
       border-radius: 8px;
       font-weight: 500;
       text-align: center;
     }
 
     .product-tabs {
-      background: var(--color-bg-primary);
-      border: 1px solid var(--color-border);
-      border-radius: 12px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-xl, 20px);
       overflow: hidden;
+      box-shadow: var(--shadow-lg);
 
       .tab-headers {
-        display: flex;
-        border-bottom: 1px solid var(--color-border);
-      }
+                        display: flex;
+                        border-bottom: 1px solid var(--color-border);
+                        background: var(--color-bg-secondary);
+                        position: relative;
+                      }
 
-      .tab-header {
-        flex: 1;
-        padding: 1rem;
-        background: transparent;
-        border: none;
-        color: var(--color-text-secondary);
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s;
+                      .tab-header {
+                        flex: 1;
+                        padding: 1.25rem 1rem;
+                        background: transparent;
+                        border: none;
+                        color: var(--color-text-secondary);
+                        font-weight: 500;
+                        cursor: pointer;
+                        transition: color 0.2s ease-out, background-color 0.2s ease-out;
+                        position: relative;
 
-        &:hover {
-          color: var(--color-text-primary);
-        }
+                        &::after {
+                          content: '';
+                          position: absolute;
+                          bottom: 0;
+                          left: 50%;
+                          width: 0;
+                          height: 3px;
+                          background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+                          border-radius: 3px 3px 0 0;
+                          transition: width 0.3s ease-out, left 0.3s ease-out;
+                          transform: translateX(-50%);
+                        }
 
-        &.active {
-          color: var(--color-primary);
-          border-bottom: 2px solid var(--color-primary);
-          margin-bottom: -1px;
-        }
-      }
+                        &:hover {
+                          color: var(--color-text-primary);
+                          background: var(--color-primary-light);
+                        }
 
-      .tab-content {
-        padding: 2rem;
-      }
+                        &.active {
+                          color: var(--color-primary);
+                          background: var(--color-bg-primary);
+
+                          &::after {
+                            width: 60%;
+                          }
+                        }
+                      }
+
+                      .tab-content {
+                        padding: 2rem;
+                      }
+                      
+                      .tab-panel {
+                        animation: tabContentEnter 0.3s ease-out forwards;
+                      }
+                      
+                      @keyframes tabContentEnter {
+                        from { opacity: 0; transform: translateY(10px); }
+                        to { opacity: 1; transform: translateY(0); }
+                      }
 
       .tab-panel {
         color: var(--color-text-secondary);
-        line-height: 1.6;
+        line-height: 1.7;
 
         h4 {
           color: var(--color-text-primary);
           margin: 1.5rem 0 1rem;
+          font-weight: 600;
         }
 
         .features-list {
           padding-left: 1.5rem;
 
           li {
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
+            position: relative;
+
+            &::marker {
+              color: var(--color-primary);
+            }
           }
         }
       }
@@ -690,26 +784,38 @@ import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
     }
 
     @media (max-width: 768px) {
-      .product-main {
-        grid-template-columns: 1fr;
-        gap: 2rem;
-      }
+                      .product-main {
+                        grid-template-columns: 1fr;
+                        gap: 2rem;
+                      }
 
-      .product-info .product-title {
-        font-size: 1.5rem;
-      }
+                      .product-info .product-title {
+                        font-size: 1.5rem;
+                      }
 
-      .product-info .product-price {
-        .current-price, .sale-price {
-          font-size: 1.5rem;
-        }
-      }
+                      .product-info .product-price {
+                        .current-price, .sale-price {
+                          font-size: 1.5rem;
+                        }
+                      }
 
-      .tab-headers {
-        flex-direction: column;
-      }
-    }
-  `]
+                      .tab-headers {
+                        flex-direction: column;
+                      }
+                    }
+                    
+                    /* Reduced motion support */
+                    @media (prefers-reduced-motion: reduce) {
+                      .quantity-controls button,
+                      .quantity-controls input,
+                      .tab-header,
+                      .tab-panel {
+                        transition: none !important;
+                        animation: none !important;
+                        transform: none !important;
+                      }
+                    }
+                  `]
 })
 export class ProductDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
@@ -793,8 +899,9 @@ export class ProductDetailComponent implements OnInit {
         this.product.set(product);
         this.isLoading.set(false);
       },
-      error: (err) => {
-        console.error('Failed to load product:', err);
+      error: () => {
+        // Error details are intentionally not logged in production
+        // Consider implementing a logging service for production error tracking
         this.error.set('Failed to load product. Please try again.');
         this.isLoading.set(false);
       }

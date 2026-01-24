@@ -32,6 +32,10 @@ ClimaSite is a production-grade online shop specializing in air conditioners, he
 | Product Search UI | Complete | Header search wired to product list filtering |
 | Reorder | Complete | E2E test enabled, existing implementation verified |
 | Mega Menu | Complete | Fixed flaky E2E test with proper waits |
+| **UI Improvement Plan** | **Complete** | 45+ issues fixed across 6 phases (see docs/plans/21-ui-improvement-plan.md) |
+| **Shared Components** | **Complete** | Alert, Modal, Toast, Breadcrumb components created |
+| **Accessibility (WCAG)** | **Complete** | Focus traps, ARIA roles, keyboard navigation, screen reader support |
+| **Performance** | **Complete** | Scroll throttling, lazy loading, memory leak fixes |
 
 ---
 
@@ -261,6 +265,42 @@ test('user can complete checkout', async ({ page, request }) => {
    ```
 
 **This workflow is NON-NEGOTIABLE. Never skip these steps.**
+
+---
+
+## Agent Usage Guidelines (CRITICAL)
+
+### Use Subagents for All Complex Tasks
+
+**ALWAYS use the Task tool with subagents when:**
+
+1. **Multiple files need to be read or modified** - Launch explore agents to gather context
+2. **Fixing multiple related issues** - Use general agents to fix issue batches in parallel
+3. **Code exploration needed** - Use explore agents instead of manual grep/glob sequences
+4. **Independent work can be parallelized** - Launch multiple agents simultaneously
+5. **Context is getting long** - Offload work to fresh agents to maintain performance
+
+**Benefits of using subagents:**
+- Keeps main conversation context fresh and responsive
+- Enables parallel execution of independent tasks
+- Each agent has full context for its specific task
+- Reduces token usage in main conversation
+- Better error isolation
+
+**Example patterns:**
+```
+# Good: Use explore agent for codebase questions
+Task(subagent_type="explore", prompt="Find all components using hardcoded colors...")
+
+# Good: Use general agent for batch fixes
+Task(subagent_type="general", prompt="Fix all i18n issues in auth components...")
+
+# Good: Parallel agents for independent fixes
+[Agent 1: Fix UI issues] + [Agent 2: Fix i18n issues] + [Agent 3: Fix API issues]
+
+# Bad: Manually reading 20 files in main conversation
+# Bad: Fixing 50 issues one-by-one in main conversation
+```
 
 ---
 

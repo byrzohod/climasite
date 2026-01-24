@@ -107,14 +107,15 @@ public class Order : BaseEntity
     {
         var validTransitions = new Dictionary<OrderStatus, OrderStatus[]>
         {
-            [OrderStatus.Pending] = [OrderStatus.Paid, OrderStatus.Cancelled],
+            [OrderStatus.Pending] = [OrderStatus.Paid, OrderStatus.Cancelled, OrderStatus.PaymentFailed],
             [OrderStatus.Paid] = [OrderStatus.Processing, OrderStatus.Refunded, OrderStatus.Cancelled],
             [OrderStatus.Processing] = [OrderStatus.Shipped, OrderStatus.Refunded, OrderStatus.Cancelled],
             [OrderStatus.Shipped] = [OrderStatus.Delivered, OrderStatus.Returned],
             [OrderStatus.Delivered] = [OrderStatus.Returned],
             [OrderStatus.Cancelled] = [],
             [OrderStatus.Refunded] = [],
-            [OrderStatus.Returned] = [OrderStatus.Refunded]
+            [OrderStatus.Returned] = [OrderStatus.Refunded],
+            [OrderStatus.PaymentFailed] = [OrderStatus.Paid, OrderStatus.Cancelled]
         };
 
         if (!validTransitions.TryGetValue(Status, out var allowed) || !allowed.Contains(newStatus))
@@ -231,5 +232,6 @@ public enum OrderStatus
     Delivered,
     Cancelled,
     Refunded,
-    Returned
+    Returned,
+    PaymentFailed
 }

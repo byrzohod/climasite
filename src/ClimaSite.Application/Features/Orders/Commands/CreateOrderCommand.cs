@@ -1,3 +1,4 @@
+using System.Data;
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Models;
 using ClimaSite.Application.Features.Orders.DTOs;
@@ -59,6 +60,8 @@ public class CreateOrderCommandValidator : AbstractValidator<CreateOrderCommand>
     }
 }
 
+// TODO: Add ILogger<CreateOrderCommandHandler> for structured logging of order creation events
+// This would help with debugging, auditing, and monitoring order flow in production
 public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Result<OrderDto>>
 {
     private readonly IApplicationDbContext _context;
@@ -77,6 +80,12 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
         CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId;
+
+        // Validate user context - either authenticated user OR guest session required
+        if (!userId.HasValue && string.IsNullOrEmpty(request.GuestSessionId))
+        {
+            return Result<OrderDto>.Failure("Either user authentication or guest session ID is required");
+        }
 
         // Get cart
         Core.Entities.Cart? cart = null;
@@ -126,73 +135,93 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
             }
         }
 
-        // Generate order number
-        var orderNumber = await GenerateOrderNumberAsync(cancellationToken);
-
-        // Create order
-        var order = new Order(orderNumber, request.CustomerEmail);
-        order.SetUser(userId);
-        order.SetCustomerPhone(request.CustomerPhone);
-        order.SetShippingAddress(ConvertAddressToDict(request.ShippingAddress));
-        if (request.BillingAddress != null)
+        // Use explicit transaction with proper isolation to ensure data integrity
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        try
         {
-            order.SetBillingAddress(ConvertAddressToDict(request.BillingAddress));
+            // Generate order number using timestamp + random suffix for uniqueness (race-condition safe)
+            var orderNumber = GenerateUniqueOrderNumber();
+
+            // Create order
+            var order = new Order(orderNumber, request.CustomerEmail);
+            order.SetUser(userId);
+            order.SetCustomerPhone(request.CustomerPhone);
+            order.SetShippingAddress(ConvertAddressToDict(request.ShippingAddress));
+            if (request.BillingAddress != null)
+            {
+                order.SetBillingAddress(ConvertAddressToDict(request.BillingAddress));
+            }
+            order.SetShippingMethod(request.ShippingMethod);
+            order.SetNotes(request.Notes);
+            // TODO: Currency should come from store configuration or be determined by shipping country
+            order.SetCurrency("EUR");
+
+            // Add order items
+            foreach (var cartItem in cart.Items)
+            {
+                var product = products.First(p => p.Id == cartItem.ProductId);
+                var variant = product.Variants.First(v => v.Id == cartItem.VariantId);
+
+                order.AddItem(
+                    cartItem.ProductId,
+                    cartItem.VariantId,
+                    product.Name,
+                    variant.Name ?? "",
+                    variant.Sku,
+                    cartItem.Quantity,
+                    cartItem.UnitPrice
+                );
+
+                // Reduce stock
+                variant.AdjustStock(-cartItem.Quantity);
+            }
+
+            // TODO: API-014 - Shipping costs are hardcoded here. These should be:
+            // 1. Configurable via admin panel or appsettings.json
+            // 2. Based on shipping zone/country (e.g., EU vs non-EU rates)
+            // 3. Calculated based on order weight/volume for accurate pricing
+            // 4. Retrieved from a ShippingService that integrates with carrier APIs
+            var shippingCost = request.ShippingMethod switch
+            {
+                "express" => 15.99m,
+                "standard" => 5.99m,
+                "free" => 0m,
+                _ => 9.99m
+            };
+            order.SetShippingCost(shippingCost);
+
+            // Calculate tax (20% VAT - EU average rate)
+            // TODO: Make tax rate configurable per shipping country (VAT rates vary: DE=19%, BG=20%, etc.)
+            var taxAmount = Math.Round(order.Subtotal * 0.20m, 2);
+            order.SetTaxAmount(taxAmount);
+
+            _context.Orders.Add(order);
+
+            // Clear cart
+            cart.Clear();
+
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+
+            return Result<OrderDto>.Success(MapToDto(order, products));
         }
-        order.SetShippingMethod(request.ShippingMethod);
-        order.SetNotes(request.Notes);
-        order.SetCurrency("EUR");
-
-        // Add order items
-        foreach (var cartItem in cart.Items)
+        catch
         {
-            var product = products.First(p => p.Id == cartItem.ProductId);
-            var variant = product.Variants.First(v => v.Id == cartItem.VariantId);
-
-            order.AddItem(
-                cartItem.ProductId,
-                cartItem.VariantId,
-                product.Name,
-                variant.Name ?? "",
-                variant.Sku,
-                cartItem.Quantity,
-                cartItem.UnitPrice
-            );
-
-            // Reduce stock
-            variant.AdjustStock(-cartItem.Quantity);
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
         }
-
-        // Calculate shipping cost (simplified)
-        var shippingCost = request.ShippingMethod switch
-        {
-            "express" => 15.99m,
-            "standard" => 5.99m,
-            "free" => 0m,
-            _ => 9.99m
-        };
-        order.SetShippingCost(shippingCost);
-
-        // Calculate tax (20% VAT)
-        var taxAmount = Math.Round(order.Subtotal * 0.20m, 2);
-        order.SetTaxAmount(taxAmount);
-
-        _context.Orders.Add(order);
-
-        // Clear cart
-        cart.Clear();
-
-        await _context.SaveChangesAsync(cancellationToken);
-
-        return Result<OrderDto>.Success(MapToDto(order, products));
     }
 
-    private async Task<string> GenerateOrderNumberAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// Generates a unique order number using timestamp + random suffix.
+    /// Format: ORD-YYYYMMDD-HHMMSS-XXXX where XXXX is a random alphanumeric suffix.
+    /// This approach is race-condition safe as it doesn't rely on counting existing orders.
+    /// </summary>
+    private static string GenerateUniqueOrderNumber()
     {
-        var year = DateTime.UtcNow.Year;
-        var count = await _context.Orders
-            .CountAsync(o => o.CreatedAt.Year == year, cancellationToken);
-
-        return $"ORD-{year}-{(count + 1):D6}";
+        var now = DateTime.UtcNow;
+        var randomSuffix = Guid.NewGuid().ToString("N")[..4].ToUpperInvariant();
+        return $"ORD-{now:yyyyMMdd}-{now:HHmmss}-{randomSuffix}";
     }
 
     private static Dictionary<string, object> ConvertAddressToDict(AddressDto address)

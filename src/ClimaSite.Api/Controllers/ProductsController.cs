@@ -1,3 +1,5 @@
+using ClimaSite.Application.Common.Models;
+using ClimaSite.Application.Features.Products.DTOs;
 using ClimaSite.Application.Features.Products.Queries;
 using ClimaSite.Core.Entities;
 using MediatR;
@@ -7,6 +9,7 @@ namespace ClimaSite.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Produces("application/json")]
 public class ProductsController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -16,7 +19,11 @@ public class ProductsController : ControllerBase
         _mediator = mediator;
     }
 
+    /// <summary>
+    /// Get paginated list of products with optional filtering and sorting.
+    /// </summary>
     [HttpGet]
+    [ProducesResponseType(typeof(PaginatedList<ProductBriefDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetProducts(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 12,
@@ -53,15 +60,26 @@ public class ProductsController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>
+    /// Get a product by its URL slug.
+    /// </summary>
     [HttpGet("{slug}")]
+    [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProductBySlug(string slug, [FromQuery] string? lang = null)
     {
         var query = new GetProductBySlugQuery { Slug = slug, LanguageCode = lang };
         var result = await _mediator.Send(query);
+        if (result == null)
+            return NotFound(new { message = "Product not found" });
         return Ok(result);
     }
 
+    /// <summary>
+    /// Get featured products for homepage display.
+    /// </summary>
     [HttpGet("featured")]
+    [ProducesResponseType(typeof(List<ProductBriefDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetFeaturedProducts(
         [FromQuery] int count = 8,
         [FromQuery] string? lang = null)
@@ -71,7 +89,12 @@ public class ProductsController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>
+    /// Search products by query string with optional filters.
+    /// </summary>
     [HttpGet("search")]
+    [ProducesResponseType(typeof(PaginatedList<ProductBriefDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> SearchProducts(
         [FromQuery] string q,
         [FromQuery] int pageNumber = 1,
@@ -103,7 +126,11 @@ public class ProductsController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>
+    /// Get related products for a given product.
+    /// </summary>
     [HttpGet("{id:guid}/related")]
+    [ProducesResponseType(typeof(List<ProductBriefDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetRelatedProducts(
         Guid id,
         [FromQuery] int count = 8,
@@ -174,7 +201,11 @@ public class ProductsController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>
+    /// Get available filter options for products.
+    /// </summary>
     [HttpGet("filters")]
+    [ProducesResponseType(typeof(FilterOptionsDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetFilterOptions([FromQuery] string? categorySlug = null)
     {
         var query = new GetFilterOptionsQuery { CategorySlug = categorySlug };

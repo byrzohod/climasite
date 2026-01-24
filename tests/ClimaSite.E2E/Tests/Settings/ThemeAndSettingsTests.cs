@@ -128,14 +128,17 @@ public class ThemeAndSettingsTests : IAsyncLifetime
         await _page.GotoAsync("/");
         await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-        // Act - Look for language selector
-        var langSelector = _page.Locator("[data-testid='language-selector'], [data-testid='lang-selector']");
+        // Act - Hover on the language selector to open dropdown (uses mouseenter event)
+        var langSelector = _page.Locator("[data-testid='language-selector']");
         if (await langSelector.IsVisibleAsync())
         {
-            await langSelector.ClickAsync();
+            await langSelector.HoverAsync();
 
-            // Assert - Language options visible
-            var langOptions = _page.Locator("[data-testid='language-option'], .language-option");
+            // Wait for dropdown to appear
+            await _page.WaitForSelectorAsync("[data-testid='language-dropdown']", new PageWaitForSelectorOptions { Timeout = 5000 });
+
+            // Assert - Language options visible (en, bg, de)
+            var langOptions = _page.Locator("[data-testid='language-dropdown'] button[data-testid^='language-']");
             var count = await langOptions.CountAsync();
             count.Should().BeGreaterThan(0, "Should show language options");
         }
@@ -157,7 +160,7 @@ public class ThemeAndSettingsTests : IAsyncLifetime
         if (await langSelector.IsVisibleAsync())
         {
             await langSelector.ClickAsync();
-            var bgOption = _page.Locator("[data-testid='language-option-bg'], [data-value='bg']");
+            var bgOption = _page.Locator("[data-testid='language-bg']");
             if (await bgOption.IsVisibleAsync())
             {
                 await bgOption.ClickAsync();

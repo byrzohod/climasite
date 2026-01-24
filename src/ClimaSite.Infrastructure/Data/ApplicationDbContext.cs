@@ -35,6 +35,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<OrderEvent> OrderEvents => Set<OrderEvent>();
     public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<ReviewVote> ReviewVotes => Set<ReviewVote>();
     public DbSet<Wishlist> Wishlists => Set<Wishlist>();
     public DbSet<WishlistItem> WishlistItems => Set<WishlistItem>();
     public DbSet<Notification> Notifications => Set<Notification>();

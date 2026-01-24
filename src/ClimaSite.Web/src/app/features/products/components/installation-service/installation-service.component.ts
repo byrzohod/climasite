@@ -123,11 +123,11 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
             <label for="country">{{ 'products.installation.country' | translate }} *</label>
             <select id="country" formControlName="country">
               <option value="">{{ 'products.installation.selectCountry' | translate }}</option>
-              <option value="Bulgaria">Bulgaria</option>
-              <option value="Germany">Germany</option>
-              <option value="Austria">Austria</option>
-              <option value="Romania">Romania</option>
-              <option value="Greece">Greece</option>
+              <option value="Bulgaria">{{ 'countries.bulgaria' | translate }}</option>
+              <option value="Germany">{{ 'countries.germany' | translate }}</option>
+              <option value="Austria">{{ 'countries.austria' | translate }}</option>
+              <option value="Romania">{{ 'countries.romania' | translate }}</option>
+              <option value="Greece">{{ 'countries.greece' | translate }}</option>
             </select>
           </div>
 
@@ -144,9 +144,9 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
               <label for="preferredTimeSlot">{{ 'products.installation.preferredTime' | translate }}</label>
               <select id="preferredTimeSlot" formControlName="preferredTimeSlot">
                 <option value="">{{ 'products.installation.anyTime' | translate }}</option>
-                <option value="morning">{{ 'products.installation.morning' | translate }} (8:00 - 12:00)</option>
-                <option value="afternoon">{{ 'products.installation.afternoon' | translate }} (12:00 - 17:00)</option>
-                <option value="evening">{{ 'products.installation.evening' | translate }} (17:00 - 20:00)</option>
+                <option value="morning">{{ 'products.installation.morning' | translate }} {{ 'products.installation.timeSlots.morning' | translate }}</option>
+                <option value="afternoon">{{ 'products.installation.afternoon' | translate }} {{ 'products.installation.timeSlots.afternoon' | translate }}</option>
+                <option value="evening">{{ 'products.installation.evening' | translate }} {{ 'products.installation.timeSlots.evening' | translate }}</option>
               </select>
             </div>
           </div>
@@ -264,7 +264,7 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
       right: 1rem;
       padding: 0.5rem 0.75rem;
       background: var(--color-success);
-      color: white;
+      color: var(--color-text-inverse);
       font-size: 0.75rem;
       font-weight: 600;
       border-radius: 4px;
@@ -335,12 +335,12 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
 
       &:hover {
         background: var(--color-primary);
-        color: white;
+        color: var(--color-text-inverse);
       }
 
       &.selected {
         background: var(--color-primary);
-        color: white;
+        color: var(--color-text-inverse);
       }
     }
 
@@ -442,7 +442,7 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
       width: 100%;
       padding: 1rem;
       background: var(--color-primary);
-      color: white;
+      color: var(--color-text-inverse);
       border: none;
       border-radius: 8px;
       font-size: 1rem;
@@ -479,7 +479,7 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
         height: 48px;
         margin: 0 auto 1rem;
         background: var(--color-success);
-        color: white;
+        color: var(--color-text-inverse);
         border-radius: 50%;
         font-size: 24px;
       }

@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../services/auth.service';
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
@@ -59,6 +59,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 export class ForgotPasswordComponent {
   private readonly authService = inject(AuthService);
   private readonly fb = inject(FormBuilder);
+  private readonly translate = inject(TranslateService);
 
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
@@ -78,11 +79,15 @@ export class ForgotPasswordComponent {
     this.authService.forgotPassword(this.form.value.email).subscribe({
       next: () => {
         this.isLoading.set(false);
-        this.successMessage.set('If the email exists, a password reset link has been sent.');
+        this.translate.get('auth.forgotPassword.success').subscribe(msg => {
+          this.successMessage.set(msg);
+        });
       },
       error: () => {
         this.isLoading.set(false);
-        this.successMessage.set('If the email exists, a password reset link has been sent.');
+        this.translate.get('auth.forgotPassword.success').subscribe(msg => {
+          this.successMessage.set(msg);
+        });
       }
     });
   }

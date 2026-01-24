@@ -2,8 +2,9 @@ import { Injectable, inject, signal, computed, PLATFORM_ID } from '@angular/core
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { catchError, tap, throwError } from 'rxjs';
+import { catchError, tap, throwError, switchMap, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { CartService } from '../../core/services/cart.service';
 
 export interface User {
   id: string;
@@ -45,6 +46,33 @@ export interface UpdateProfileRequest {
   preferredCurrency?: string;
 }
 
+/**
+ * Authentication Service
+ *
+ * SECURITY NOTES:
+ *
+ * AUTH-017: Token Storage Security
+ * Currently, access tokens are stored in localStorage for persistence across page reloads.
+ * This is a security tradeoff:
+ * - Pros: Better UX (user stays logged in), simpler implementation
+ * - Cons: Vulnerable to XSS attacks (malicious scripts can access localStorage)
+ *
+ * Mitigations in place:
+ * 1. Refresh tokens are stored in httpOnly cookies (set by backend), not accessible to JS
+ * 2. Access tokens have short expiry (15 minutes)
+ * 3. CSP headers should be configured to prevent XSS
+ * 4. All user input is sanitized by Angular
+ *
+ * Future consideration: Move access token to memory-only storage and rely on
+ * refresh token cookie for session restoration. This would require additional
+ * backend changes to support silent refresh on page load.
+ *
+ * AUTH-015: Session Timeout Handling
+ * TODO: Implement user-facing session expiration warnings. The token refresh
+ * mechanism handles automatic renewal, but users should be notified before
+ * their session expires (e.g., show a modal 5 minutes before expiry with
+ * option to extend session).
+ */
 @Injectable({
   providedIn: 'root'
 })
@@ -52,10 +80,12 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly cartService = inject(CartService);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
 
   private readonly apiUrl = environment.apiUrl;
   private readonly TOKEN_KEY = 'climasite_token';
+  private readonly GUEST_SESSION_KEY = 'climasite_session_id';
 
   private readonly _user = signal<User | null>(null);
   private readonly _isLoading = signal(false);
@@ -97,7 +127,25 @@ export class AuthService {
         this._hasToken.set(true);
         this._user.set(response.user);
         this.storeToken(response.accessToken);
+      }),
+      // Merge guest cart with user cart after successful login
+      switchMap(response => {
+        const guestSessionId = this.isBrowser ? localStorage.getItem(this.GUEST_SESSION_KEY) : null;
+        if (guestSessionId) {
+          return this.cartService.mergeCart(response.user.id).pipe(
+            // Return the original login response regardless of merge result
+            tap(() => this._isLoading.set(false)),
+            catchError(() => {
+              // Don't fail login if cart merge fails, just log and continue
+              console.warn('Failed to merge guest cart, continuing with login');
+              this._isLoading.set(false);
+              return of(null);
+            }),
+            switchMap(() => of(response))
+          );
+        }
         this._isLoading.set(false);
+        return of(response);
       }),
       catchError((error: HttpErrorResponse) => {
         this._isLoading.set(false);

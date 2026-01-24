@@ -1,9 +1,11 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using ClimaSite.Application;
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Infrastructure;
 using ClimaSite.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using ClimaSite.Api.Middleware;
@@ -104,6 +106,10 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     });
 
     // Controllers
+    // TODO: API-012 - Consider implementing RFC 7807 ProblemDetails for standardized error responses.
+    // Currently, error responses use { message: "..." } format which is consistent but not standards-compliant.
+    // Migration to ProblemDetails would improve API documentation and client error handling.
+    // See: https://learn.microsoft.com/en-us/aspnet/core/web-api/handle-errors
     services.AddControllers()
         .AddJsonOptions(options =>
         {
@@ -187,6 +193,55 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     // Response caching
     services.AddResponseCaching();
 
+    // Rate limiting
+    services.AddRateLimiter(options =>
+    {
+        // Return 429 Too Many Requests with proper message
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        options.OnRejected = async (context, cancellationToken) =>
+        {
+            context.HttpContext.Response.ContentType = "application/json";
+            var response = new { message = "Too many requests. Please try again later." };
+            await context.HttpContext.Response.WriteAsJsonAsync(response, cancellationToken);
+        };
+
+        // Global rate limiter: 100 requests per minute per IP
+        options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 100,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0
+                }));
+
+        // Auth policy: 10 requests per minute per IP (prevent brute force)
+        options.AddPolicy("auth", context =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 10,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0
+                }));
+
+        // Strict policy for sensitive operations: 5 requests per minute per IP
+        options.AddPolicy("strict", context =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 5,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0
+                }));
+    });
+
     // Output caching
     services.AddOutputCache(options =>
     {
@@ -237,6 +292,12 @@ void ConfigurePipeline(WebApplication app)
     // CORS
     app.UseCors("AllowAngular");
 
+    // Rate limiting (skip in Testing environment)
+    if (!app.Environment.IsEnvironment("Testing"))
+    {
+        app.UseRateLimiter();
+    }
+
     // Caching
     app.UseResponseCaching();
     app.UseOutputCache();
@@ -247,6 +308,14 @@ void ConfigurePipeline(WebApplication app)
 
     // Health checks
     app.MapHealthChecks("/health");
+    app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+    {
+        Predicate = _ => true // Run all checks for readiness
+    });
+    app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+    {
+        Predicate = _ => false // No checks for liveness - just confirms app is running
+    });
 
     // Controllers
     app.MapControllers();

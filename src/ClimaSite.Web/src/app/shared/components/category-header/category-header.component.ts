@@ -28,7 +28,7 @@ export interface CategoryInfo {
 
       <div class="header-content">
         <!-- Breadcrumb -->
-        <nav class="breadcrumb" aria-label="Breadcrumb" data-testid="category-breadcrumb">
+        <nav class="breadcrumb" [attr.aria-label]="'common.aria.breadcrumb' | translate" data-testid="category-breadcrumb">
           <a routerLink="/" class="breadcrumb-link">{{ 'nav.home' | translate }}</a>
           <span class="separator">/</span>
           <a routerLink="/products" class="breadcrumb-link">{{ 'nav.products' | translate }}</a>

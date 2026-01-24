@@ -97,9 +97,20 @@ public class AdminCategoriesController : ControllerBase
         return Ok(new { success = true });
     }
 
+    /// <summary>
+    /// Reorder categories by updating their sort order.
+    /// </summary>
+    /// <remarks>
+    /// TODO: API-008 - This endpoint has an N+1 query problem. Each category update triggers
+    /// a separate database call. For better performance with large datasets, implement a
+    /// BatchUpdateCategorySortOrderCommand that updates all categories in a single transaction.
+    /// </remarks>
     [HttpPatch("reorder")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ReorderCategories([FromBody] ReorderCategoriesRequest request)
     {
+        // TODO: Replace with batch update command for better performance
         foreach (var item in request.Items)
         {
             var command = new UpdateCategoryCommand

@@ -163,7 +163,7 @@ import { LoadingComponent } from '../../shared/components/loading/loading.compon
       display: inline-block;
       padding: 0.75rem 1.5rem;
       background: var(--color-primary);
-      color: white;
+      color: var(--color-text-inverse);
       border: none;
       border-radius: 8px;
       text-decoration: none;

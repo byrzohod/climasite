@@ -1,3 +1,4 @@
+#if DEBUG
 using ClimaSite.Core.Entities;
 using ClimaSite.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
@@ -9,6 +10,7 @@ namespace ClimaSite.Api.Controllers;
 /// <summary>
 /// Test-only endpoints for E2E testing.
 /// These endpoints are only available in Development environment.
+/// This controller is only compiled in DEBUG builds.
 /// </summary>
 [ApiController]
 [Route("api/test")]
@@ -269,3 +271,4 @@ public record CleanupResult
     public int NotificationsDeleted { get; set; }
 }
 public record SeededProduct(Guid Id, string Name, string Slug, decimal Price);
+#endif

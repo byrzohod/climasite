@@ -78,6 +78,8 @@ public class BulkAdjustStockCommandHandler : IRequestHandler<BulkAdjustStockComm
                 variant.SetStockQuantity(adjustment.NewQuantity);
                 successCount++;
             }
+            // Catching generic Exception is intentional for bulk operations to ensure
+            // partial success - we want to continue processing remaining items even if one fails
             catch (Exception ex)
             {
                 errors.Add($"Variant {adjustment.VariantId}: {ex.Message}");

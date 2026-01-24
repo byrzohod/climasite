@@ -59,7 +59,12 @@ public class HomePage : BasePage
 
     public async Task SelectLanguageAsync(string languageCode)
     {
-        await ClickAsync(LanguageSelector);
+        // Hover on the language selector container to open dropdown (uses mouseenter event)
+        var langSelector = Page.Locator("[data-testid='language-selector']");
+        await langSelector.HoverAsync();
+        // Wait for dropdown to appear
+        await Page.WaitForSelectorAsync("[data-testid='language-dropdown']", new PageWaitForSelectorOptions { Timeout = 5000 });
+        // Click on the specific language option
         await Page.ClickAsync($"[data-testid='language-{languageCode}']");
         await WaitForLoadAsync();
     }

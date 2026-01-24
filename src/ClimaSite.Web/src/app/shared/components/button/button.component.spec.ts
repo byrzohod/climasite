@@ -52,7 +52,7 @@ describe('ButtonComponent', () => {
     fixture.componentRef.setInput('loading', true);
     fixture.detectChanges();
 
-    const spinner = fixture.nativeElement.querySelector('svg.animate-spin');
+    const spinner = fixture.nativeElement.querySelector('svg.btn-spinner');
     expect(spinner).toBeTruthy();
   });
 

@@ -48,7 +48,7 @@ import {
           } @else {
             @for (relation of currentRelations(); track relation.id; let i = $index) {
               <div class="relation-item" [attr.data-index]="i">
-                <span class="drag-handle" title="Drag to reorder">
+                <span class="drag-handle" [title]="'common.aria.dragToReorder' | translate">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                     <circle cx="9" cy="6" r="2"/>
                     <circle cx="15" cy="6" r="2"/>
@@ -74,7 +74,7 @@ import {
                     class="order-btn"
                     [disabled]="i === 0"
                     (click)="moveUp(i)"
-                    title="Move up"
+                    [title]="'common.aria.moveUp' | translate"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M12 4l-8 8h6v8h4v-8h6z"/>
@@ -85,7 +85,7 @@ import {
                     class="order-btn"
                     [disabled]="i === currentRelations().length - 1"
                     (click)="moveDown(i)"
-                    title="Move down"
+                    [title]="'common.aria.moveDown' | translate"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M12 20l8-8h-6V4h-4v8H4z"/>
@@ -96,7 +96,7 @@ import {
                   type="button"
                   class="remove-btn"
                   (click)="removeRelation(relation.id)"
-                  title="Remove relation"
+                  [title]="'common.aria.removeRelation' | translate"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>

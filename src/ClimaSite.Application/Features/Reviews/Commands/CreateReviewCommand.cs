@@ -79,26 +79,20 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, R
         review.SetTitle(request.Title);
         review.SetContent(request.Content);
 
+        // TODO: Optimize this to use a single query instead of two
+        // Could use FirstOrDefaultAsync directly and check for null
         // Check if user has purchased this product
-        var hasPurchased = await _context.Orders
+        var order = await _context.Orders
             .Include(o => o.Items)
-            .AnyAsync(o =>
+            .Where(o =>
                 o.UserId == userId &&
                 o.Status == OrderStatus.Delivered &&
-                o.Items.Any(i => i.ProductId == request.ProductId),
-                cancellationToken);
+                o.Items.Any(i => i.ProductId == request.ProductId))
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (hasPurchased)
+        if (order != null)
         {
-            var order = await _context.Orders
-                .Include(o => o.Items)
-                .Where(o =>
-                    o.UserId == userId &&
-                    o.Status == OrderStatus.Delivered &&
-                    o.Items.Any(i => i.ProductId == request.ProductId))
-                .FirstOrDefaultAsync(cancellationToken);
-
-            review.SetVerifiedPurchase(true, order?.Id);
+            review.SetVerifiedPurchase(true, order.Id);
         }
 
         _context.Reviews.Add(review);

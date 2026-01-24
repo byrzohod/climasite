@@ -1,1064 +1,1443 @@
-import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, signal, OnInit, OnDestroy, PLATFORM_ID, AfterViewInit, ElementRef, ViewChildren, QueryList } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Subscription } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ProductService } from '../../core/services/product.service';
 import { ProductBrief } from '../../core/models/product.model';
 import { ProductCardComponent } from '../products/product-card/product-card.component';
-import { AnimateOnScrollDirective } from '../../shared/directives/animate-on-scroll.directive';
-import { TestimonialsComponent } from '../../shared/components/testimonials/testimonials.component';
+import { RevealDirective } from '../../shared/directives/reveal.directive';
+import { TiltEffectDirective } from '../../shared/directives/tilt-effect.directive';
+import { CountUpDirective } from '../../shared/directives/count-up.directive';
 import { SkeletonProductCardComponent } from '../../shared/components/skeleton-product-card/skeleton-product-card.component';
 
-interface HeroSlide {
-  title: string;
-  subtitle: string;
-  cta: string;
-  link: string;
-  gradient: string;
+interface Testimonial {
+  id: number;
+  name: string;
+  location: string;
+  rating: number;
+  text: string;
 }
-
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, ProductCardComponent, AnimateOnScrollDirective, TestimonialsComponent, SkeletonProductCardComponent],
+  imports: [
+    CommonModule,
+    RouterLink,
+    FormsModule,
+    TranslateModule,
+    ProductCardComponent,
+    RevealDirective,
+    TiltEffectDirective,
+    CountUpDirective,
+    SkeletonProductCardComponent
+  ],
   template: `
-    <div class="home-container">
-      <!-- HOME-001: Enhanced Hero Slider -->
-      <section class="hero-slider" data-testid="hero-section">
-        <div class="hero-slides">
-          @for (slide of heroSlides; track slide.title; let i = $index) {
-            <div
-              class="hero-slide"
-              [class.active]="currentSlide() === i"
-              [style.background]="slide.gradient"
-            >
-              <div class="hero-content">
-                <h1>{{ slide.title | translate }}</h1>
-                <p>{{ slide.subtitle | translate }}</p>
-                <a [routerLink]="slide.link" class="cta-button" data-testid="hero-cta">
-                  {{ slide.cta | translate }}
-                </a>
+    <!-- ================================================================
+         HERO - Full-screen immersive experience
+         ================================================================ -->
+    <section class="hero" data-testid="hero-section">
+      <!-- Animated gradient background -->
+      <div class="hero__bg">
+        <div class="hero__gradient hero__gradient--1"></div>
+        <div class="hero__gradient hero__gradient--2"></div>
+        <div class="hero__gradient hero__gradient--3"></div>
+        <div class="hero__noise"></div>
+      </div>
+
+      <!-- Content -->
+      <div class="hero__content">
+        <p class="hero__eyebrow">{{ 'home.hero.eyebrow' | translate }}</p>
+        <h1 class="hero__title">
+          <span class="hero__title-line">{{ 'home.hero.title1' | translate }}</span>
+          <span class="hero__title-line hero__title-line--accent">{{ 'home.hero.title2' | translate }}</span>
+        </h1>
+        <p class="hero__subtitle">{{ 'home.hero.subtitle' | translate }}</p>
+        <div class="hero__cta">
+          <a routerLink="/products" class="btn btn--primary btn--large" data-testid="hero-cta">
+            {{ 'home.hero.cta' | translate }}
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638l-3.96-3.67a.75.75 0 111.02-1.16l5.25 4.875a.75.75 0 010 1.16l-5.25 4.875a.75.75 0 11-1.02-1.16l3.96-3.67H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Scroll indicator -->
+      <div class="hero__scroll" aria-hidden="true">
+        <div class="hero__scroll-mouse">
+          <div class="hero__scroll-wheel"></div>
+        </div>
+        <span class="hero__scroll-text">{{ 'home.hero.scroll' | translate }}</span>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         BRANDS - Infinite scrolling ticker
+         ================================================================ -->
+    <section class="brands" data-testid="brands-section">
+      <div class="brands__track" (mouseenter)="pauseMarquee = true" (mouseleave)="pauseMarquee = false" [class.paused]="pauseMarquee">
+        @for (brand of duplicatedBrands; track $index) {
+          <span class="brands__item">{{ brand }}</span>
+        }
+      </div>
+    </section>
+
+    <!-- ================================================================
+         VALUE STRIP - Minimal benefit icons
+         ================================================================ -->
+    <section class="values" data-testid="values-section">
+      <div class="values__container">
+        @for (value of valueProps; track value.key) {
+          <div class="values__item" appReveal="fade-up" [delay]="$index * 100">
+            <div class="values__icon" [innerHTML]="value.icon"></div>
+            <span class="values__label">{{ value.key | translate }}</span>
+          </div>
+        }
+      </div>
+    </section>
+
+    <!-- ================================================================
+         CATEGORIES - Visual navigation panels
+         HOME-P02: Uses Intersection Observer for lazy loading background images
+         ================================================================ -->
+    <section class="categories" data-testid="categories-section">
+      <div class="categories__grid">
+        @for (cat of categories; track cat.slug) {
+          <a
+            #categoryPanel
+            [routerLink]="['/products/category', cat.slug]"
+            class="categories__panel"
+            [attr.data-bg]="'url(' + cat.image + ')'"
+            [attr.aria-label]="cat.name | translate"
+            appReveal="scale-up" [delay]="$index * 75"
+            appTiltEffect [maxTilt]="8" [glare]="true" [glareOpacity]="0.15"
+            data-testid="category-card"
+          >
+            <div class="categories__panel-bg"></div>
+            <div class="categories__panel-content">
+              <h3 class="categories__panel-title">{{ cat.name | translate }}</h3>
+              <span class="categories__panel-link">
+                {{ 'home.categories.explore' | translate }}
+                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638l-3.96-3.67a.75.75 0 111.02-1.16l5.25 4.875a.75.75 0 010 1.16l-5.25 4.875a.75.75 0 11-1.02-1.16l3.96-3.67H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>
+              </span>
+            </div>
+          </a>
+        }
+      </div>
+    </section>
+
+    <!-- ================================================================
+         PROCESS - How it works timeline
+         ================================================================ -->
+    <section class="process" data-testid="process-section">
+      <div class="container">
+        <header class="section-header">
+          <h2 class="section-header__title">{{ 'home.process.title' | translate }}</h2>
+        </header>
+
+        <div class="process__timeline">
+          <div class="process__line" #processLine></div>
+          @for (step of processSteps; track step.num) {
+            <div class="process__step" appReveal="fade-up" [delay]="$index * 150">
+              <div class="process__step-number">{{ step.num }}</div>
+              <div class="process__step-content">
+                <h3 class="process__step-title">{{ step.title | translate }}</h3>
+                <p class="process__step-desc">{{ step.desc | translate }}</p>
               </div>
             </div>
           }
         </div>
-        <div class="slide-indicators">
-          @for (slide of heroSlides; track slide.title; let i = $index) {
-            <button
-              class="indicator"
-              [class.active]="currentSlide() === i"
-              (click)="goToSlide(i)"
-              [attr.aria-label]="'Go to slide ' + (i + 1)"
-            ></button>
-          }
-        </div>
-        <button class="slide-nav prev" (click)="prevSlide()" aria-label="Previous slide">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
-          </svg>
-        </button>
-        <button class="slide-nav next" (click)="nextSlide()" aria-label="Next slide">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M8.59 16.59L10 18l6-6-6-6-1.41 1.41L13.17 12z"/>
-          </svg>
-        </button>
-      </section>
+      </div>
+    </section>
 
-      <!-- HOME-001: Benefits section with professional SVG icons -->
-      <section class="benefits-section" data-testid="benefits-section" appAnimateOnScroll [animation]="'fade-in-up'">
-        <div class="benefits-grid">
-          <div class="benefit-card">
-            <div class="benefit-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M3.375 4.5C2.339 4.5 1.5 5.34 1.5 6.375V13.5h12V6.375c0-1.036-.84-1.875-1.875-1.875h-8.25zM13.5 15h-12v2.625c0 1.035.84 1.875 1.875 1.875h.375a3 3 0 116 0h3a.75.75 0 00.75-.75V15z" />
-                <path d="M8.25 19.5a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0zM15.75 6.75a.75.75 0 00-.75.75v11.25c0 .087.015.17.042.248a3 3 0 015.958.464c.853-.175 1.522-.935 1.464-1.883a18.659 18.659 0 00-3.732-10.104 1.837 1.837 0 00-1.47-.725H15.75z" />
-                <path d="M19.5 19.5a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0z" />
-              </svg>
-            </div>
-            <h3>{{ 'home.benefits.freeShipping' | translate }}</h3>
-            <p>{{ 'home.benefits.freeShippingDesc' | translate }}</p>
-          </div>
-          <div class="benefit-card">
-            <div class="benefit-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path fill-rule="evenodd" d="M12.516 2.17a.75.75 0 00-1.032 0 11.209 11.209 0 01-7.877 3.08.75.75 0 00-.722.515A12.74 12.74 0 002.25 9.75c0 5.942 4.064 10.933 9.563 12.348a.749.749 0 00.374 0c5.499-1.415 9.563-6.406 9.563-12.348 0-1.39-.223-2.73-.635-3.985a.75.75 0 00-.722-.516 11.209 11.209 0 01-7.877-3.08zm.924 5.89a.75.75 0 00-1.06-1.06l-3.75 3.75a.75.75 0 000 1.06l1.5 1.5a.75.75 0 001.06 0l3-3a.75.75 0 00-1.06-1.06l-2.47 2.47-.97-.97 3.75-3.75z" clip-rule="evenodd" />
-              </svg>
-            </div>
-            <h3>{{ 'home.benefits.warranty' | translate }}</h3>
-            <p>{{ 'home.benefits.warrantyDesc' | translate }}</p>
-          </div>
-          <div class="benefit-card">
-            <div class="benefit-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path fill-rule="evenodd" d="M4.804 21.644A6.707 6.707 0 006 21.75a6.721 6.721 0 003.583-1.029c.774.182 1.584.279 2.417.279 5.322 0 9.75-3.97 9.75-9 0-5.03-4.428-9-9.75-9s-9.75 3.97-9.75 9c0 2.409 1.025 4.587 2.674 6.192.232.226.277.428.254.543a3.73 3.73 0 01-.814 1.686.75.75 0 00.44 1.223zM8.25 10.875a1.125 1.125 0 100 2.25 1.125 1.125 0 000-2.25zM10.875 12a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0zm4.875-1.125a1.125 1.125 0 100 2.25 1.125 1.125 0 000-2.25z" clip-rule="evenodd" />
-              </svg>
-            </div>
-            <h3>{{ 'home.benefits.support' | translate }}</h3>
-            <p>{{ 'home.benefits.supportDesc' | translate }}</p>
-          </div>
-          <div class="benefit-card">
-            <div class="benefit-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path fill-rule="evenodd" d="M12 6.75a5.25 5.25 0 016.775-5.025.75.75 0 01.313 1.248l-3.32 3.319c.063.475.276.934.641 1.299.365.365.824.578 1.3.64l3.318-3.319a.75.75 0 011.248.313 5.25 5.25 0 01-5.472 6.756c-1.018-.086-1.87.1-2.309.634L7.344 21.3A3.298 3.298 0 112.7 16.657l8.684-7.151c.533-.44.72-1.291.634-2.309A5.342 5.342 0 0112 6.75zM4.117 19.125a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v.008a.75.75 0 01-.75.75h-.008a.75.75 0 01-.75-.75v-.008z" clip-rule="evenodd" />
-              </svg>
-            </div>
-            <h3>{{ 'home.benefits.installation' | translate }}</h3>
-            <p>{{ 'home.benefits.installationDesc' | translate }}</p>
-          </div>
-        </div>
-      </section>
+    <!-- ================================================================
+         FEATURED PRODUCTS - Clean product grid
+         ================================================================ -->
+    <section class="products" data-testid="featured-products">
+      <div class="container">
+        <header class="section-header section-header--row">
+          <h2 class="section-header__title">{{ 'home.products.title' | translate }}</h2>
+          <a routerLink="/products" class="section-header__link" data-testid="view-all-products">
+            {{ 'home.products.viewAll' | translate }}
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638l-3.96-3.67a.75.75 0 111.02-1.16l5.25 4.875a.75.75 0 010 1.16l-5.25 4.875a.75.75 0 11-1.02-1.16l3.96-3.67H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>
+          </a>
+        </header>
 
-      <!-- HOME-001: Promotional Banners with SVG icons -->
-      <section class="promo-section" data-testid="promo-section">
-        <div class="promo-grid">
-          <a routerLink="/promotions" class="promo-card" style="--promo-color: #ef4444">
-            <div class="promo-icon promo-icon--sale">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path fill-rule="evenodd" d="M5.25 2.25a3 3 0 00-3 3v4.318a3 3 0 00.879 2.121l9.58 9.581c.92.92 2.39.92 3.31 0l4.17-4.17a2.343 2.343 0 000-3.311l-9.58-9.581a3 3 0 00-2.122-.879H5.25zM6.375 7.5a1.125 1.125 0 100-2.25 1.125 1.125 0 000 2.25z" clip-rule="evenodd" />
-              </svg>
-            </div>
-            <div class="promo-content">
-              <h3>{{ 'home.promo.sale.title' | translate }}</h3>
-              <p>{{ 'home.promo.sale.description' | translate }}</p>
-            </div>
-            <div class="promo-arrow">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638l-3.96-3.67a.75.75 0 111.02-1.16l5.25 4.875a.75.75 0 010 1.16l-5.25 4.875a.75.75 0 11-1.02-1.16l3.96-3.67H3.75A.75.75 0 013 10z" clip-rule="evenodd" />
-              </svg>
-            </div>
-          </a>
-          <a routerLink="/products" class="promo-card" style="--promo-color: #8b5cf6">
-            <div class="promo-icon promo-icon--new">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path fill-rule="evenodd" d="M14.615 1.595a.75.75 0 01.359.852L12.982 9.75h7.268a.75.75 0 01.548 1.262l-10.5 11.25a.75.75 0 01-1.272-.71l1.992-7.302H3.75a.75.75 0 01-.548-1.262l10.5-11.25a.75.75 0 01.913-.143z" clip-rule="evenodd" />
-              </svg>
-            </div>
-            <div class="promo-content">
-              <h3>{{ 'home.promo.new.title' | translate }}</h3>
-              <p>{{ 'home.promo.new.description' | translate }}</p>
-            </div>
-            <div class="promo-arrow">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638l-3.96-3.67a.75.75 0 111.02-1.16l5.25 4.875a.75.75 0 010 1.16l-5.25 4.875a.75.75 0 11-1.02-1.16l3.96-3.67H3.75A.75.75 0 013 10z" clip-rule="evenodd" />
-              </svg>
-            </div>
-          </a>
-          <a routerLink="/products" class="promo-card" style="--promo-color: #10b981">
-            <div class="promo-icon promo-icon--bundle">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path fill-rule="evenodd" d="M9.315 7.584C12.195 3.883 16.695 1.5 21.75 1.5a.75.75 0 01.75.75c0 5.056-2.383 9.555-6.084 12.436A6.75 6.75 0 019.75 22.5a.75.75 0 01-.75-.75v-4.131A15.838 15.838 0 016.382 15H2.25a.75.75 0 01-.75-.75 6.75 6.75 0 017.815-6.666zM15 6.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" clip-rule="evenodd" />
-                <path d="M5.26 17.242a.75.75 0 10-.897-1.203 5.243 5.243 0 00-2.05 5.022.75.75 0 00.625.627 5.243 5.243 0 005.022-2.051.75.75 0 10-1.202-.897 3.744 3.744 0 01-3.008 1.51c0-1.23.592-2.323 1.51-3.008z" />
-              </svg>
-            </div>
-            <div class="promo-content">
-              <h3>{{ 'home.promo.bundle.title' | translate }}</h3>
-              <p>{{ 'home.promo.bundle.description' | translate }}</p>
-            </div>
-            <div class="promo-arrow">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638l-3.96-3.67a.75.75 0 111.02-1.16l5.25 4.875a.75.75 0 010 1.16l-5.25 4.875a.75.75 0 11-1.02-1.16l3.96-3.67H3.75A.75.75 0 013 10z" clip-rule="evenodd" />
-              </svg>
-            </div>
-          </a>
-        </div>
-      </section>
-
-      <!-- NAV-001 FIX: Use route-based navigation with correct database slugs -->
-      <section class="categories-section" appAnimateOnScroll [animation]="'fade-in-up'" [delay]="100">
-        <h2>{{ 'home.categories.title' | translate }}</h2>
-        <div class="categories-grid">
-          <a [routerLink]="['/products/category', 'air-conditioners']" class="category-card category-card--cooling" data-testid="category-card">
-            <div class="category-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z"/>
-              </svg>
-            </div>
-            <h3>{{ 'categories.airConditioning' | translate }}</h3>
-            <span class="category-count">{{ 'home.categories.viewProducts' | translate }}</span>
-          </a>
-          <a [routerLink]="['/products/category', 'heating-systems']" class="category-card category-card--heating" data-testid="category-card">
-            <div class="category-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path fill-rule="evenodd" d="M12.963 2.286a.75.75 0 00-1.071-.136 9.742 9.742 0 00-3.539 6.177A7.547 7.547 0 016.648 6.61a.75.75 0 00-1.152.082A9 9 0 1015.68 4.534a7.46 7.46 0 01-2.717-2.248zM15.75 14.25a3.75 3.75 0 11-7.313-1.172c.628.465 1.35.81 2.133 1a5.99 5.99 0 011.925-3.545 3.75 3.75 0 013.255 3.717z" clip-rule="evenodd"/>
-              </svg>
-            </div>
-            <h3>{{ 'categories.heatingSystems' | translate }}</h3>
-            <span class="category-count">{{ 'home.categories.viewProducts' | translate }}</span>
-          </a>
-          <a [routerLink]="['/products/category', 'ventilation']" class="category-card category-card--ventilation" data-testid="category-card">
-            <div class="category-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-.53 5.47a.75.75 0 011.06 0l3 3a.75.75 0 010 1.06l-3 3a.75.75 0 11-1.06-1.06l1.72-1.72H8.25a.75.75 0 010-1.5h4.94l-1.72-1.72a.75.75 0 010-1.06z"/>
-              </svg>
-            </div>
-            <h3>{{ 'categories.ventilation' | translate }}</h3>
-            <span class="category-count">{{ 'home.categories.viewProducts' | translate }}</span>
-          </a>
-          <a [routerLink]="['/products/category', 'accessories']" class="category-card category-card--accessories" data-testid="category-card">
-            <div class="category-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path fill-rule="evenodd" d="M12 6.75a5.25 5.25 0 016.775-5.025.75.75 0 01.313 1.248l-3.32 3.319c.063.475.276.934.641 1.299.365.365.824.578 1.3.64l3.318-3.319a.75.75 0 011.248.313 5.25 5.25 0 01-5.472 6.756c-1.018-.086-1.87.1-2.309.634L7.344 21.3A3.298 3.298 0 112.7 16.657l8.684-7.151c.533-.44.72-1.291.634-2.309A5.342 5.342 0 0112 6.75zM4.117 19.125a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v.008a.75.75 0 01-.75.75h-.008a.75.75 0 01-.75-.75v-.008z" clip-rule="evenodd"/>
-              </svg>
-            </div>
-            <h3>{{ 'categories.accessories' | translate }}</h3>
-            <span class="category-count">{{ 'home.categories.viewProducts' | translate }}</span>
-          </a>
-        </div>
-      </section>
-
-      <!-- HOME-001: Featured products with actual loading -->
-      <section class="featured-section" data-testid="featured-products" appAnimateOnScroll [animation]="'fade-in-up'" [delay]="200">
-        <div class="section-header">
-          <h2>{{ 'home.featured.title' | translate }}</h2>
-          <a routerLink="/products" class="view-all-link" data-testid="view-all-products">
-            {{ 'home.featured.viewAll' | translate }} →
-          </a>
-        </div>
         @if (loadingFeatured()) {
-          <div class="featured-grid">
-            @for (i of [1,2,3,4,5,6,7,8]; track i) {
+          <div class="products__grid">
+            @for (i of [1,2,3,4]; track i) {
               <app-skeleton-product-card />
             }
           </div>
         } @else if (featuredProducts().length === 0) {
-          <div class="featured-empty">
-            <p>{{ 'products.noProducts' | translate }}</p>
-          </div>
+          <p class="products__empty">{{ 'products.noProducts' | translate }}</p>
         } @else {
-          <div class="featured-grid">
-            @for (product of featuredProducts(); track product.id) {
-              <app-product-card [product]="product" />
+          <div class="products__grid">
+            @for (product of featuredProducts().slice(0, 4); track product.id) {
+              <div class="products__item" appReveal="fade-up" [delay]="$index * 100">
+                <app-product-card [product]="product" />
+              </div>
             }
           </div>
         }
-      </section>
+      </div>
+    </section>
 
-      <!-- HOME-003: Customer Testimonials -->
-      <app-testimonials appAnimateOnScroll [animation]="'fade-in-up'" [delay]="250" />
+    <!-- ================================================================
+         STATS - Large numbers on dark background
+         ================================================================ -->
+    <section class="stats" data-testid="stats-section" appReveal="fade">
+      <div class="container">
+        <div class="stats__grid">
+          @for (stat of stats; track stat.label) {
+            <div class="stats__item" appReveal="scale" [delay]="$index * 100">
+              <span class="stats__value" [appCountUp]="stat.numericValue" [suffix]="stat.suffix" [decimals]="stat.decimals" [duration]="2000"></span>
+              <span class="stats__label">{{ stat.label | translate }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </section>
 
-      <!-- HOME-001: Newsletter Section with proper feedback -->
-      <section class="newsletter-section" data-testid="newsletter-section" appAnimateOnScroll [animation]="'fade-in-up'" [delay]="300">
-        <div class="newsletter-content">
-          <div class="newsletter-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M1.5 8.67v8.58a3 3 0 003 3h15a3 3 0 003-3V8.67l-8.928 5.493a3 3 0 01-3.144 0L1.5 8.67z" />
-              <path d="M22.5 6.908V6.75a3 3 0 00-3-3h-15a3 3 0 00-3 3v.158l9.714 5.978a1.5 1.5 0 001.572 0L22.5 6.908z" />
-            </svg>
+    <!-- ================================================================
+         TESTIMONIALS - Single rotating quote
+         ================================================================ -->
+    <section class="testimonials" data-testid="testimonials-section">
+      <div class="container">
+        <div class="testimonials__content">
+          <div class="testimonials__quote-mark">"</div>
+          <blockquote class="testimonials__quote">
+            {{ testimonials[activeTestimonial()].text }}
+          </blockquote>
+          <div class="testimonials__author">
+            <div class="testimonials__avatar">
+              {{ getInitials(testimonials[activeTestimonial()].name) }}
+            </div>
+            <div class="testimonials__info">
+              <span class="testimonials__name">{{ testimonials[activeTestimonial()].name }}</span>
+              <span class="testimonials__location">{{ testimonials[activeTestimonial()].location }}</span>
+            </div>
           </div>
-          <h2>{{ 'home.newsletter.title' | translate }}</h2>
-          <p>{{ 'home.newsletter.subtitle' | translate }}</p>
+          <div class="testimonials__dots" role="tablist" [attr.aria-label]="'home.testimonials.title' | translate">
+            @for (t of testimonials; track t.id) {
+              <button
+                type="button"
+                role="tab"
+                class="testimonials__dot"
+                [class.active]="activeTestimonial() === $index"
+                [attr.aria-selected]="activeTestimonial() === $index"
+                (click)="setTestimonial($index)"
+                [attr.aria-label]="'Testimonial ' + ($index + 1)"
+              ></button>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         NEWSLETTER - Clean signup
+         ================================================================ -->
+    <section class="newsletter" data-testid="newsletter-section">
+      <div class="container">
+        <div class="newsletter__content">
+          <div class="newsletter__text">
+            <h2 class="newsletter__title">{{ 'home.newsletter.title' | translate }}</h2>
+            <p class="newsletter__subtitle">{{ 'home.newsletter.subtitle' | translate }}</p>
+          </div>
           @if (!newsletterSubmitted()) {
-            <form class="newsletter-form" (submit)="subscribeNewsletter($event)">
-              <div class="newsletter-input-wrapper">
+            <form class="newsletter__form" (submit)="submitNewsletter($event)">
+              <div class="newsletter__input-wrap">
                 <input
                   type="email"
                   [(ngModel)]="newsletterEmail"
                   name="email"
+                  class="newsletter__input"
                   [placeholder]="'home.newsletter.placeholder' | translate"
-                  class="newsletter-input"
-                  [class.newsletter-input--error]="newsletterError()"
+                  [attr.aria-label]="'home.newsletter.placeholder' | translate"
                   required
                 />
-                @if (newsletterError()) {
-                  <span class="newsletter-error">{{ newsletterError() }}</span>
-                }
+                <button type="submit" class="newsletter__btn" [disabled]="newsletterLoading()" [attr.aria-label]="'home.newsletter.subscribe' | translate">
+                  @if (newsletterLoading()) {
+                    <span class="spinner"></span>
+                  } @else {
+                    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638l-3.96-3.67a.75.75 0 111.02-1.16l5.25 4.875a.75.75 0 010 1.16l-5.25 4.875a.75.75 0 11-1.02-1.16l3.96-3.67H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>
+                  }
+                </button>
               </div>
-              <button type="submit" class="newsletter-button" [disabled]="newsletterLoading()">
-                @if (newsletterLoading()) {
-                  <span class="newsletter-spinner"></span>
-                } @else {
-                  {{ 'home.newsletter.subscribe' | translate }}
-                }
-              </button>
+              @if (newsletterError()) {
+                <p class="newsletter__error">{{ newsletterError() }}</p>
+              }
             </form>
           } @else {
-            <div class="newsletter-success">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd" />
-              </svg>
+            <div class="newsletter__success">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd"/></svg>
               <span>{{ 'home.newsletter.success' | translate }}</span>
             </div>
           }
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- HOME-001: Trust Badges -->
-      <section class="trust-section">
-        <div class="trust-grid">
-          <div class="trust-badge">
-            <span class="trust-number">10K+</span>
-            <span class="trust-label">{{ 'home.trust.customers' | translate }}</span>
-          </div>
-          <div class="trust-badge">
-            <span class="trust-number">500+</span>
-            <span class="trust-label">{{ 'home.trust.products' | translate }}</span>
-          </div>
-          <div class="trust-badge">
-            <span class="trust-number">15+</span>
-            <span class="trust-label">{{ 'home.trust.years' | translate }}</span>
-          </div>
-          <div class="trust-badge">
-            <span class="trust-number">4.8★</span>
-            <span class="trust-label">{{ 'home.trust.rating' | translate }}</span>
-          </div>
+    <!-- ================================================================
+         FINAL CTA - Bold call to action
+         ================================================================ -->
+    <section class="cta">
+      <div class="cta__bg">
+        <div class="cta__gradient"></div>
+      </div>
+      <div class="container">
+        <div class="cta__content">
+          <h2 class="cta__title">{{ 'home.cta.title' | translate }}</h2>
+          <a routerLink="/products" class="cta__btn" [attr.aria-label]="'home.cta.button' | translate">
+            {{ 'home.cta.button' | translate }}
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638l-3.96-3.67a.75.75 0 111.02-1.16l5.25 4.875a.75.75 0 010 1.16l-5.25 4.875a.75.75 0 11-1.02-1.16l3.96-3.67H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>
+          </a>
         </div>
-      </section>
-    </div>
+      </div>
+    </section>
   `,
   styles: [`
-    .home-container {
-      padding: 0;
+    /* ==========================================================================
+       DESIGN TOKENS
+       ========================================================================== */
+    :host {
+      --section-spacing: clamp(5rem, 10vw, 8rem);
+      --container-max: 1200px;
+      --container-padding: clamp(1.5rem, 5vw, 3rem);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+      --radius-full: 9999px;
+      --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-slow: 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* Hero Slider */
-    .hero-slider {
-      position: relative;
-      height: 500px;
-      overflow: hidden;
+    .container {
+      max-width: var(--container-max);
+      margin: 0 auto;
+      padding: 0 var(--container-padding);
     }
 
-    .hero-slides {
-      position: relative;
-      height: 100%;
-    }
-
-    .hero-slide {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
+    /* ==========================================================================
+       BUTTONS
+       ========================================================================== */
+    .btn {
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity 0.5s ease-in-out;
-      color: white;
-
-      &.active {
-        opacity: 1;
-        z-index: 1;
-      }
-    }
-
-    .hero-content {
-      max-width: 800px;
-      text-align: center;
-      padding: 2rem;
-
-      h1 {
-        font-size: 3.5rem;
-        margin-bottom: 1rem;
-        font-weight: 700;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-      }
-
-      p {
-        font-size: 1.5rem;
-        margin-bottom: 2rem;
-        opacity: 0.95;
-      }
-    }
-
-    .cta-button {
-      display: inline-block;
-      background: white;
-      color: var(--color-primary);
-      padding: 1rem 2.5rem;
-      border-radius: 50px;
-      text-decoration: none;
+      gap: 0.5rem;
+      padding: 0.875rem 1.75rem;
+      font-size: 1rem;
       font-weight: 600;
-      font-size: 1.125rem;
-      transition: transform 0.2s, box-shadow 0.2s;
+      text-decoration: none;
+      border-radius: var(--radius-full);
+      border: none;
+      cursor: pointer;
+      transition: all var(--transition);
+
+      svg {
+        width: 18px;
+        height: 18px;
+        transition: transform var(--transition-fast);
+      }
+
+      &:hover svg {
+        transform: translateX(4px);
+      }
+    }
+
+    .btn--primary {
+      background: var(--color-text-primary);
+      color: var(--color-bg-primary);
 
       &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 10px 40px -10px var(--shadow-color-lg);
       }
     }
 
-    .slide-indicators {
+    .btn--large {
+      padding: 1rem 2rem;
+      font-size: 1.125rem;
+    }
+
+    /* ==========================================================================
+       SECTION HEADERS
+       ========================================================================== */
+    .section-header {
+      margin-bottom: 3rem;
+
+      &--row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+    }
+
+    .section-header__title {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin: 0;
+      letter-spacing: -0.03em;
+    }
+
+    .section-header__link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      transition: color var(--transition-fast), gap var(--transition-fast);
+
+      svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      &:hover {
+        color: var(--color-text-primary);
+        gap: 0.75rem;
+      }
+    }
+
+    /* ==========================================================================
+       HERO SECTION
+       ========================================================================== */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .hero__bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .hero__gradient {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.5;
+      animation: float 20s ease-in-out infinite;
+
+      &--1 {
+        width: 60vw;
+        height: 60vw;
+        top: -20%;
+        left: -10%;
+        background: var(--color-primary);
+        animation-delay: 0s;
+      }
+
+      &--2 {
+        width: 50vw;
+        height: 50vw;
+        bottom: -20%;
+        right: -10%;
+        background: var(--color-accent);
+        animation-delay: -7s;
+      }
+
+      &--3 {
+        width: 40vw;
+        height: 40vw;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--color-primary-light);
+        animation-delay: -14s;
+      }
+    }
+
+    .hero__noise {
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      25% { transform: translate(5%, 5%) scale(1.05); }
+      50% { transform: translate(0, 10%) scale(1); }
+      75% { transform: translate(-5%, 5%) scale(0.95); }
+    }
+
+    .hero__content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 0 var(--container-padding);
+      max-width: 900px;
+      animation: heroFadeIn 1s ease-out;
+    }
+
+    @keyframes heroFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .hero__eyebrow {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--color-text-secondary);
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border-primary);
+      border-radius: var(--radius-full);
+      animation: heroFadeIn 1s ease-out 0.2s both;
+    }
+
+    .hero__title {
+      font-size: clamp(3rem, 10vw, 6rem);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      margin: 0 0 1.5rem;
+      color: var(--color-text-primary);
+    }
+
+    .hero__title-line {
+      display: block;
+      animation: heroFadeIn 1s ease-out 0.3s both;
+
+      &--accent {
+        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation-delay: 0.4s;
+      }
+    }
+
+    .hero__subtitle {
+      font-size: clamp(1.125rem, 2vw, 1.375rem);
+      line-height: 1.6;
+      color: var(--color-text-secondary);
+      margin: 0 0 2.5rem;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      animation: heroFadeIn 1s ease-out 0.5s both;
+    }
+
+    .hero__cta {
+      animation: heroFadeIn 1s ease-out 0.6s both;
+    }
+
+    .hero__scroll {
       position: absolute;
       bottom: 2rem;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
+      flex-direction: column;
+      align-items: center;
       gap: 0.75rem;
-      z-index: 10;
+      animation: heroFadeIn 1s ease-out 1s both;
     }
 
-    .indicator {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.5);
-      border: none;
-      cursor: pointer;
-      transition: all 0.3s;
+    .hero__scroll-mouse {
+      width: 24px;
+      height: 40px;
+      border: 2px solid var(--color-text-tertiary);
+      border-radius: 12px;
+      display: flex;
+      justify-content: center;
+      padding-top: 8px;
+    }
 
-      &.active {
-        background: white;
-        transform: scale(1.2);
+    .hero__scroll-wheel {
+      width: 4px;
+      height: 8px;
+      background: var(--color-text-tertiary);
+      border-radius: 2px;
+      animation: scrollWheel 2s ease-in-out infinite;
+    }
+
+    @keyframes scrollWheel {
+      0%, 100% { opacity: 1; transform: translateY(0); }
+      50% { opacity: 0.3; transform: translateY(8px); }
+    }
+
+    .hero__scroll-text {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-text-tertiary);
+    }
+
+    /* ==========================================================================
+       BRANDS SECTION
+       ========================================================================== */
+    .brands {
+      padding: 2rem 0;
+      overflow: hidden;
+      background: var(--color-bg-secondary);
+      border-top: 1px solid var(--color-border-primary);
+      border-bottom: 1px solid var(--color-border-primary);
+    }
+
+    .brands__track {
+      display: flex;
+      animation: scroll 30s linear infinite;
+      width: max-content;
+
+      &.paused {
+        animation-play-state: paused;
       }
+    }
+
+    .brands__item {
+      flex-shrink: 0;
+      padding: 0 3rem;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--color-text-tertiary);
+      white-space: nowrap;
+      opacity: 0.5;
+      transition: opacity var(--transition-fast);
 
       &:hover {
-        background: rgba(255, 255, 255, 0.8);
+        opacity: 1;
       }
     }
 
-    .slide-nav {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.2);
-      border: none;
-      cursor: pointer;
+    @keyframes scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* ==========================================================================
+       VALUES SECTION
+       ========================================================================== */
+    .values {
+      padding: 4rem 0;
+    }
+
+    .values__container {
+      max-width: var(--container-max);
+      margin: 0 auto;
+      padding: 0 var(--container-padding);
+      display: flex;
+      justify-content: center;
+      gap: 4rem;
+      flex-wrap: wrap;
+    }
+
+    .values__item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .values__icon {
+      width: 40px;
+      height: 40px;
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 10;
-      transition: background 0.3s;
+      color: var(--color-primary);
+
+      :deep(svg) {
+        width: 24px;
+        height: 24px;
+      }
+    }
+
+    .values__label {
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    /* ==========================================================================
+       CATEGORIES SECTION
+       ========================================================================== */
+    .categories {
+      padding: var(--section-spacing) 0;
+    }
+
+    .categories__grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      padding: 0 var(--container-padding);
+      max-width: calc(var(--container-max) + var(--container-padding) * 2);
+      margin: 0 auto;
+    }
+
+    .categories__panel {
+      position: relative;
+      height: 50vh;
+      min-height: 400px;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+
+      &:hover {
+        .categories__panel-bg {
+          transform: scale(1.1);
+        }
+
+        .categories__panel-content {
+          transform: translateY(-8px);
+        }
+
+        .categories__panel-link svg {
+          transform: translateX(4px);
+        }
+      }
+    }
+
+    .categories__panel-bg {
+      position: absolute;
+      inset: 0;
+      /* HOME-P02: Background is set via CSS variable after lazy load */
+      background: var(--color-bg-tertiary);
+      transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-image 0.3s ease;
+
+      &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top, var(--color-bg-overlay) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.1) 100%);
+      }
+    }
+
+    /* HOME-P02: When loaded, show the background image */
+    .categories__panel--loaded .categories__panel-bg {
+      background: var(--panel-image) center/cover no-repeat;
+    }
+
+    .categories__panel-content {
+      position: relative;
+      z-index: 1;
+      padding: 2rem;
+      color: var(--color-text-inverse);
+      transition: transform var(--transition);
+    }
+
+    .categories__panel-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0 0 0.75rem;
+    }
+
+    .categories__panel-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      opacity: 0.9;
+
+      svg {
+        width: 16px;
+        height: 16px;
+        transition: transform var(--transition-fast);
+      }
+    }
+
+    /* ==========================================================================
+       PROCESS SECTION
+       ========================================================================== */
+    .process {
+      padding: var(--section-spacing) 0;
+      background: var(--color-bg-secondary);
+    }
+
+    .process__timeline {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2rem;
+      position: relative;
+    }
+
+    .process__line {
+      display: none;
+    }
+
+    .process__step {
+      text-align: center;
+    }
+
+    .process__step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 64px;
+      height: 64px;
+      margin-bottom: 1.25rem;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--color-primary);
+      background: var(--color-primary-100, rgba(59, 130, 246, 0.1));
+      border-radius: var(--radius-full);
+    }
+
+    [data-theme="dark"] .process__step-number {
+      background: var(--color-primary-900, rgba(59, 130, 246, 0.2));
+    }
+
+    .process__step-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin: 0 0 0.5rem;
+    }
+
+    .process__step-desc {
+      font-size: 0.9375rem;
+      color: var(--color-text-secondary);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    /* ==========================================================================
+       PRODUCTS SECTION
+       ========================================================================== */
+    .products {
+      padding: var(--section-spacing) 0;
+    }
+
+    .products__grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+    }
+
+    .products__item {
+      transition: transform var(--transition);
+
+      &:hover {
+        transform: translateY(-4px);
+      }
+    }
+
+    .products__empty {
+      text-align: center;
+      color: var(--color-text-secondary);
+      padding: 3rem;
+      grid-column: 1 / -1;
+    }
+
+    /* ==========================================================================
+       STATS SECTION
+       ========================================================================== */
+    .stats {
+      padding: var(--section-spacing) 0;
+      background: var(--color-text-primary);
+      color: var(--color-bg-primary);
+    }
+
+    .stats__grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 2rem;
+      text-align: center;
+    }
+
+    .stats__value {
+      display: block;
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .stats__label {
+      display: block;
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      opacity: 0.7;
+    }
+
+    /* ==========================================================================
+       TESTIMONIALS SECTION
+       ========================================================================== */
+    .testimonials {
+      padding: var(--section-spacing) 0;
+    }
+
+    .testimonials__content {
+      max-width: 800px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .testimonials__quote-mark {
+      font-size: 6rem;
+      line-height: 1;
+      color: var(--color-primary);
+      opacity: 0.2;
+      font-family: Georgia, serif;
+      margin-bottom: -2rem;
+    }
+
+    .testimonials__quote {
+      font-size: clamp(1.25rem, 3vw, 1.75rem);
+      font-weight: 500;
+      line-height: 1.5;
+      color: var(--color-text-primary);
+      margin: 0 0 2rem;
+    }
+
+    .testimonials__author {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .testimonials__avatar {
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+      color: var(--color-text-inverse);
+      font-weight: 700;
+      border-radius: var(--radius-full);
+    }
+
+    .testimonials__info {
+      text-align: left;
+    }
+
+    .testimonials__name {
+      display: block;
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    .testimonials__location {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+    }
+
+    .testimonials__dots {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 2rem;
+    }
+
+    .testimonials__dot {
+      width: 8px;
+      height: 8px;
+      padding: 0;
+      background: var(--color-border-secondary);
+      border: none;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+
+      &:hover {
+        background: var(--color-text-tertiary);
+      }
+
+      &:focus {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+      }
+
+      &.active {
+        width: 24px;
+        background: var(--color-primary);
+      }
+    }
+
+    /* ==========================================================================
+       NEWSLETTER SECTION
+       ========================================================================== */
+    .newsletter {
+      padding: var(--section-spacing) 0;
+      background: var(--color-bg-secondary);
+    }
+
+    .newsletter__content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 3rem;
+      flex-wrap: wrap;
+    }
+
+    .newsletter__text {
+      flex: 1;
+      min-width: 280px;
+    }
+
+    .newsletter__title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin: 0 0 0.5rem;
+    }
+
+    .newsletter__subtitle {
+      color: var(--color-text-secondary);
+      margin: 0;
+    }
+
+    .newsletter__form {
+      flex: 1;
+      min-width: 320px;
+      max-width: 400px;
+    }
+
+    .newsletter__input-wrap {
+      display: flex;
+      background: var(--color-bg-primary);
+      border: 1px solid var(--color-border-primary);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      transition: border-color var(--transition-fast);
+
+      &:focus-within {
+        border-color: var(--color-primary);
+      }
+    }
+
+    .newsletter__input {
+      flex: 1;
+      padding: 1rem 1.5rem;
+      border: none;
+      background: transparent;
+      color: var(--color-text-primary);
+      font-size: 1rem;
+      outline: none;
+
+      &::placeholder {
+        color: var(--color-text-tertiary);
+      }
+    }
+
+    .newsletter__btn {
+      padding: 1rem 1.5rem;
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      border: none;
+      cursor: pointer;
+      transition: background var(--transition-fast);
+
+      svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      &:hover:not(:disabled) {
+        background: var(--color-primary-hover);
+      }
+
+      &:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+      }
+    }
+
+    .newsletter__error {
+      font-size: 0.875rem;
+      color: var(--color-error);
+      margin: 0.5rem 0 0 1.5rem;
+    }
+
+    .newsletter__success {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 1.5rem;
+      background: var(--color-success-light);
+      color: var(--color-success);
+      border-radius: var(--radius-full);
+      font-weight: 500;
 
       svg {
         width: 24px;
         height: 24px;
-        fill: white;
-      }
-
-      &:hover {
-        background: rgba(255, 255, 255, 0.4);
-      }
-
-      &.prev { left: 2rem; }
-      &.next { right: 2rem; }
-    }
-
-    /* Benefits Section */
-    .benefits-section {
-      background: var(--color-bg-secondary);
-      padding: 3rem 2rem;
-    }
-
-    .benefits-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1.5rem;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .benefit-card {
-      background: var(--color-bg-primary);
-      border-radius: 16px;
-      padding: 2rem 1.5rem;
-      text-align: center;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-      border: 1px solid var(--color-border-primary);
-      transition: transform 0.3s, box-shadow 0.3s;
-
-      &:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
-      }
-
-      .benefit-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 64px;
-        height: 64px;
-        margin: 0 auto 1.25rem;
-        background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-bg-secondary) 100%);
-        border-radius: 16px;
-        color: var(--color-primary);
-
-        svg {
-          width: 32px;
-          height: 32px;
-        }
-      }
-
-      h3 {
-        color: var(--color-text-primary);
-        font-size: 1.0625rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-      }
-
-      p {
-        color: var(--color-text-secondary);
-        font-size: 0.875rem;
-        margin: 0;
-        line-height: 1.5;
       }
     }
 
-    /* Promo Section */
-    .promo-section {
-      padding: 3rem 2rem;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .promo-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1.5rem;
-    }
-
-    .promo-card {
-      display: flex;
-      align-items: center;
-      gap: 1.25rem;
-      padding: 1.5rem 1.75rem;
-      background: var(--color-bg-primary);
-      border-radius: 16px;
-      border-left: 4px solid var(--promo-color, var(--color-primary));
-      text-decoration: none;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-      transition: transform 0.3s, box-shadow 0.3s;
-
-      &:hover {
-        transform: translateX(6px);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-
-        .promo-arrow svg {
-          transform: translateX(4px);
-        }
-      }
-
-      .promo-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 52px;
-        height: 52px;
-        border-radius: 12px;
-        flex-shrink: 0;
-
-        svg {
-          width: 28px;
-          height: 28px;
-        }
-
-        &--sale {
-          background: rgba(239, 68, 68, 0.1);
-          color: #ef4444;
-        }
-
-        &--new {
-          background: rgba(139, 92, 246, 0.1);
-          color: #8b5cf6;
-        }
-
-        &--bundle {
-          background: rgba(16, 185, 129, 0.1);
-          color: #10b981;
-        }
-      }
-
-      .promo-content {
-        flex: 1;
-
-        h3 {
-          color: var(--color-text-primary);
-          font-size: 1.0625rem;
-          font-weight: 600;
-          margin-bottom: 0.25rem;
-        }
-
-        p {
-          color: var(--color-text-secondary);
-          font-size: 0.875rem;
-          margin: 0;
-          line-height: 1.4;
-        }
-      }
-
-      .promo-arrow {
-        color: var(--promo-color, var(--color-primary));
-        flex-shrink: 0;
-
-        svg {
-          width: 24px;
-          height: 24px;
-          transition: transform 0.3s;
-        }
-      }
-    }
-
-    /* Categories Section */
-    .categories-section {
-      padding: 4rem 2rem;
-      max-width: 1200px;
-      margin: 0 auto;
-
-      h2 {
-        text-align: center;
-        font-size: 2rem;
-        margin-bottom: 2rem;
-        color: var(--color-text-primary);
-      }
-    }
-
-    .categories-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1.5rem;
-    }
-
-    .category-card {
-      background: var(--color-bg-primary);
-      border: 1px solid var(--color-border-primary);
-      border-radius: 20px;
-      padding: 2.5rem 2rem;
-      text-align: center;
-      text-decoration: none;
-      transition: all 0.3s;
-      position: relative;
-      overflow: hidden;
-
-      &::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: var(--category-color, var(--color-primary));
-        transform: scaleX(0);
-        transition: transform 0.3s;
-      }
-
-      &:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
-        border-color: var(--category-color, var(--color-primary));
-
-        &::before {
-          transform: scaleX(1);
-        }
-
-        .category-icon {
-          transform: scale(1.1);
-        }
-      }
-
-      .category-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 80px;
-        height: 80px;
-        margin: 0 auto 1.25rem;
-        border-radius: 20px;
-        transition: transform 0.3s;
-
-        svg {
-          width: 40px;
-          height: 40px;
-        }
-      }
-
-      /* Category-specific colors */
-      &--cooling {
-        --category-color: #06b6d4;
-
-        .category-icon {
-          background: linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(6, 182, 212, 0.05) 100%);
-          color: #06b6d4;
-        }
-      }
-
-      &--heating {
-        --category-color: #f97316;
-
-        .category-icon {
-          background: linear-gradient(135deg, rgba(249, 115, 22, 0.15) 0%, rgba(249, 115, 22, 0.05) 100%);
-          color: #f97316;
-        }
-      }
-
-      &--ventilation {
-        --category-color: #22c55e;
-
-        .category-icon {
-          background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%);
-          color: #22c55e;
-        }
-      }
-
-      &--accessories {
-        --category-color: #8b5cf6;
-
-        .category-icon {
-          background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0.05) 100%);
-          color: #8b5cf6;
-        }
-      }
-
-      h3 {
-        color: var(--color-text-primary);
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin-bottom: 0.75rem;
-      }
-
-      .category-count {
-        color: var(--category-color, var(--color-primary));
-        font-size: 0.875rem;
-        font-weight: 500;
-      }
-    }
-
-    /* Featured Section */
-    .featured-section {
-      padding: 4rem 2rem;
-      max-width: 1400px;
-      margin: 0 auto;
-      background: var(--color-bg-secondary);
-    }
-
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-
-      h2 {
-        font-size: 2rem;
-        color: var(--color-text-primary);
-        margin: 0;
-      }
-    }
-
-    .view-all-link {
-      color: var(--color-primary);
-      text-decoration: none;
-      font-weight: 600;
-      transition: color 0.2s;
-
-      &:hover {
-        color: var(--color-primary-dark);
-      }
-    }
-
-    .featured-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 1.5rem;
-    }
-
-    .featured-loading {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem;
-      gap: 1rem;
-    }
-
-    .loading-spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid var(--color-border);
-      border-top-color: var(--color-primary);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--glass-border);
+      border-top-color: var(--color-text-inverse);
+      border-radius: var(--radius-full);
+      animation: spin 0.8s linear infinite;
     }
 
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
 
-    .featured-empty {
-      padding: 3rem;
-      text-align: center;
-      color: var(--color-text-secondary);
-    }
-
-    /* Newsletter Section */
-    .newsletter-section {
-      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-      padding: 5rem 2rem;
-      color: white;
+    /* ==========================================================================
+       CTA SECTION
+       ========================================================================== */
+    .cta {
       position: relative;
+      padding: var(--section-spacing) 0;
       overflow: hidden;
-
-      &::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -20%;
-        width: 500px;
-        height: 500px;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-        border-radius: 50%;
-      }
     }
 
-    .newsletter-content {
-      max-width: 600px;
-      margin: 0 auto;
-      text-align: center;
+    .cta__bg {
+      position: absolute;
+      inset: 0;
+      background: var(--color-primary);
+    }
+
+    .cta__gradient {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+      animation: ctaGradient 10s ease-in-out infinite alternate;
+    }
+
+    @keyframes ctaGradient {
+      0% { opacity: 1; }
+      100% { opacity: 0.7; }
+    }
+
+    .cta__content {
       position: relative;
       z-index: 1;
-
-      .newsletter-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 72px;
-        height: 72px;
-        margin: 0 auto 1.5rem;
-        background: rgba(255,255,255,0.15);
-        border-radius: 20px;
-        backdrop-filter: blur(10px);
-
-        svg {
-          width: 36px;
-          height: 36px;
-        }
-      }
-
-      h2 {
-        font-size: 2.25rem;
-        font-weight: 700;
-        margin-bottom: 0.75rem;
-      }
-
-      p {
-        opacity: 0.9;
-        margin-bottom: 2rem;
-        font-size: 1.0625rem;
-        line-height: 1.6;
-      }
-    }
-
-    .newsletter-form {
-      display: flex;
-      gap: 0.75rem;
-      max-width: 500px;
-      margin: 0 auto;
-    }
-
-    .newsletter-input-wrapper {
-      flex: 1;
-      min-width: 0;
-      position: relative;
-    }
-
-    .newsletter-input {
-      width: 100%;
-      padding: 1.125rem 1.5rem;
-      border: 2px solid transparent;
-      border-radius: 50px;
-      font-size: 1rem;
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      background-color: white;
-      color: #1f2937;
-
-      &::placeholder {
-        color: #9ca3af;
-      }
-
-      &:focus {
-        border-color: rgba(255,255,255,0.5);
-        box-shadow: 0 0 0 4px rgba(255,255,255,0.1);
-      }
-
-      &--error {
-        border-color: #ff6b6b;
-      }
-    }
-
-    .newsletter-error {
-      position: absolute;
-      bottom: -24px;
-      left: 1.5rem;
-      font-size: 0.8125rem;
-      color: #ff6b6b;
-    }
-
-    .newsletter-button {
-      padding: 1.125rem 2rem;
-      background: white;
-      color: var(--color-primary);
-      border: none;
-      border-radius: 50px;
-      font-weight: 600;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-      white-space: nowrap;
-      min-width: 140px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      &:hover:not(:disabled) {
-        transform: scale(1.05);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-      }
-
-      &:disabled {
-        opacity: 0.8;
-        cursor: wait;
-      }
-    }
-
-    .newsletter-spinner {
-      width: 20px;
-      height: 20px;
-      border: 2px solid var(--color-primary-light);
-      border-top-color: var(--color-primary);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
-    .newsletter-success {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.75rem;
-      padding: 1.25rem 2rem;
-      background: rgba(255,255,255,0.15);
-      border-radius: 50px;
-      backdrop-filter: blur(10px);
-      animation: fadeIn 0.3s ease;
-
-      svg {
-        width: 24px;
-        height: 24px;
-        color: #4ade80;
-      }
-
-      span {
-        font-weight: 500;
-      }
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Trust Section */
-    .trust-section {
-      padding: 3rem 2rem;
-      background: var(--color-bg-primary);
-    }
-
-    .trust-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 2rem;
-      max-width: 1000px;
-      margin: 0 auto;
       text-align: center;
     }
 
-    .trust-badge {
-      .trust-number {
-        display: block;
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: var(--color-primary);
-        margin-bottom: 0.5rem;
+    .cta__title {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 700;
+      color: var(--color-text-inverse);
+      margin: 0 0 2rem;
+      letter-spacing: -0.02em;
+    }
+
+    .cta__btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 2rem;
+      font-size: 1.125rem;
+      font-weight: 600;
+      background: var(--color-bg-primary);
+      color: var(--color-primary);
+      border-radius: var(--radius-full);
+      text-decoration: none;
+      transition: all var(--transition);
+
+      svg {
+        width: 20px;
+        height: 20px;
+        transition: transform var(--transition-fast);
       }
 
-      .trust-label {
-        color: var(--color-text-secondary);
-        font-size: 0.875rem;
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 40px var(--shadow-color-lg);
+
+        svg {
+          transform: translateX(4px);
+        }
       }
     }
 
-    /* Responsive */
+    /* ==========================================================================
+       RESPONSIVE
+       ========================================================================== */
     @media (max-width: 1024px) {
-      .hero-content h1 { font-size: 2.5rem; }
-      .benefits-grid { grid-template-columns: repeat(2, 1fr); }
-      .promo-grid { grid-template-columns: 1fr; }
-      .categories-grid { grid-template-columns: repeat(2, 1fr); }
-      .featured-grid { grid-template-columns: repeat(2, 1fr); }
-      .trust-grid { grid-template-columns: repeat(2, 1fr); }
+      .categories__grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .categories__panel {
+        height: 40vh;
+        min-height: 300px;
+      }
+
+      .process__timeline {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .products__grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .stats__grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
 
     @media (max-width: 768px) {
-      .hero-slider { height: 400px; }
-      .hero-content h1 { font-size: 2rem; }
-      .hero-content p { font-size: 1.125rem; }
-      .slide-nav { display: none; }
-      .section-header { flex-direction: column; gap: 1rem; }
+      .hero__title {
+        font-size: clamp(2.5rem, 12vw, 4rem);
+      }
+
+      .hero__scroll {
+        display: none;
+      }
+
+      .values__container {
+        gap: 2rem;
+      }
+
+      .values__item {
+        flex: 0 0 calc(50% - 1rem);
+        justify-content: center;
+      }
+
+      .categories__grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+      }
+
+      .categories__panel {
+        height: 30vh;
+        min-height: 200px;
+      }
+
+      .process__timeline {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+      }
+
+      .products__grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats__grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .newsletter__content {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .newsletter__form {
+        width: 100%;
+        max-width: none;
+      }
     }
 
     @media (max-width: 480px) {
-      .hero-slider { height: 350px; }
-      .benefits-grid { grid-template-columns: 1fr; }
-      .categories-grid { grid-template-columns: 1fr; }
-      .featured-grid { grid-template-columns: 1fr; }
-      .trust-grid { grid-template-columns: repeat(2, 1fr); }
-      .newsletter-form { flex-direction: column; }
+      .values__item {
+        flex: 0 0 100%;
+      }
+
+      .stats__grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+      }
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      .hero__gradient,
+      .hero__scroll-wheel,
+      .brands__track,
+      .cta__gradient {
+        animation: none;
+      }
+
+      .hero__content,
+      .hero__eyebrow,
+      .hero__title-line,
+      .hero__subtitle,
+      .hero__cta,
+      .hero__scroll {
+        animation: none;
+      }
     }
   `]
 })
-export class HomeComponent implements OnInit, OnDestroy {
+export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly productService = inject(ProductService);
   private readonly translateService = inject(TranslateService);
-  private slideInterval: ReturnType<typeof setInterval> | null = null;
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly elementRef = inject(ElementRef);
 
+  private testimonialInterval: ReturnType<typeof setInterval> | null = null;
+  // HOME-P03: Track subscriptions to prevent memory leaks
+  private langChangeSubscription: Subscription | null = null;
+  // HOME-P02: Intersection Observer for lazy loading background images
+  private categoryObserver: IntersectionObserver | null = null;
+  
+  @ViewChildren('categoryPanel') categoryPanels!: QueryList<ElementRef<HTMLElement>>;
+
+  // Signals
   featuredProducts = signal<ProductBrief[]>([]);
   loadingFeatured = signal(true);
-  currentSlide = signal(0);
-
-  // Newsletter form state
+  activeTestimonial = signal(0);
   newsletterEmail = '';
   newsletterLoading = signal(false);
+  pauseMarquee = false;
   newsletterError = signal<string | null>(null);
   newsletterSubmitted = signal(false);
 
-  heroSlides: HeroSlide[] = [
-    {
-      title: 'common.tagline',
-      subtitle: 'home.hero.subtitle',
-      cta: 'home.hero.cta',
-      link: '/products',
-      gradient: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)'
-    },
-    {
-      title: 'home.slides.summer.title',
-      subtitle: 'home.slides.summer.subtitle',
-      cta: 'home.slides.summer.cta',
-      link: '/products/category/air-conditioners',
-      gradient: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)'
-    },
-    {
-      title: 'home.slides.winter.title',
-      subtitle: 'home.slides.winter.subtitle',
-      cta: 'home.slides.winter.cta',
-      link: '/products/category/heating-systems',
-      gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)'
-    }
+  // Data
+  brandsList = ['Daikin', 'Mitsubishi Electric', 'LG', 'Samsung', 'Fujitsu', 'Gree', 'Midea', 'Toshiba', 'Aquaphor', 'BWT'];
+  duplicatedBrands = [...this.brandsList, ...this.brandsList];
+
+  valueProps = [
+    { key: 'home.values.shipping', icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25m-2.25 0h-2.25m0 0v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v4.964m12-4.006v4.006m0 0v3.75m-12-7.756v7.756m12-7.756h-2.25" /></svg>` },
+    { key: 'home.values.warranty', icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>` },
+    { key: 'home.values.support', icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" /></svg>` },
+    { key: 'home.values.installation', icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" /></svg>` }
   ];
 
+  categories = [
+    { slug: 'air-conditioners', name: 'categories.airConditioning', image: 'https://images.unsplash.com/photo-1625961332771-3f40b0e2bdcf?w=800&q=80' },
+    { slug: 'water-purification', name: 'categories.waterPurification', image: 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=800&q=80' },
+    { slug: 'heating-systems', name: 'categories.heatingSystems', image: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&q=80' },
+    { slug: 'ventilation', name: 'categories.ventilation', image: 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=800&q=80' }
+  ];
+
+  processSteps = [
+    { num: '01', title: 'home.process.step1.title', desc: 'home.process.step1.desc' },
+    { num: '02', title: 'home.process.step2.title', desc: 'home.process.step2.desc' },
+    { num: '03', title: 'home.process.step3.title', desc: 'home.process.step3.desc' },
+    { num: '04', title: 'home.process.step4.title', desc: 'home.process.step4.desc' }
+  ];
+
+  stats = [
+    { numericValue: 10000, suffix: '+', decimals: 0, label: 'home.stats.customers' },
+    { numericValue: 500, suffix: '+', decimals: 0, label: 'home.stats.products' },
+    { numericValue: 15, suffix: '+', decimals: 0, label: 'home.stats.years' },
+    { numericValue: 4.9, suffix: '', decimals: 1, label: 'home.stats.rating' }
+  ];
+
+  testimonials: Testimonial[] = [];
+  
+  private initTestimonials(): void {
+    // Subscribe to language changes to update testimonials
+    this.translateService.get([
+      'home.testimonials.items.1.name',
+      'home.testimonials.items.1.location',
+      'home.testimonials.items.1.text',
+      'home.testimonials.items.2.name',
+      'home.testimonials.items.2.location',
+      'home.testimonials.items.2.text',
+      'home.testimonials.items.3.name',
+      'home.testimonials.items.3.location',
+      'home.testimonials.items.3.text'
+    ]).subscribe(translations => {
+      this.testimonials = [
+        {
+          id: 1,
+          name: translations['home.testimonials.items.1.name'],
+          location: translations['home.testimonials.items.1.location'],
+          rating: 5,
+          text: translations['home.testimonials.items.1.text']
+        },
+        {
+          id: 2,
+          name: translations['home.testimonials.items.2.name'],
+          location: translations['home.testimonials.items.2.location'],
+          rating: 5,
+          text: translations['home.testimonials.items.2.text']
+        },
+        {
+          id: 3,
+          name: translations['home.testimonials.items.3.name'],
+          location: translations['home.testimonials.items.3.location'],
+          rating: 5,
+          text: translations['home.testimonials.items.3.text']
+        }
+      ];
+    });
+  }
 
   ngOnInit(): void {
+    this.initTestimonials();
     this.loadFeaturedProducts();
-    this.startSlideshow();
+    if (isPlatformBrowser(this.platformId)) {
+      this.startTestimonialRotation();
+    }
+    // HOME-P03: Store subscription for cleanup to prevent memory leak
+    this.langChangeSubscription = this.translateService.onLangChange.subscribe(() => {
+      this.initTestimonials();
+    });
+  }
+
+  ngAfterViewInit(): void {
+    // HOME-P02: Set up Intersection Observer for lazy loading category images
+    if (isPlatformBrowser(this.platformId)) {
+      this.setupCategoryLazyLoading();
+    }
   }
 
   ngOnDestroy(): void {
-    this.stopSlideshow();
+    this.stopTestimonialRotation();
+    // HOME-P03: Clean up language change subscription to prevent memory leak
+    if (this.langChangeSubscription) {
+      this.langChangeSubscription.unsubscribe();
+      this.langChangeSubscription = null;
+    }
+    // HOME-P02: Clean up Intersection Observer
+    if (this.categoryObserver) {
+      this.categoryObserver.disconnect();
+      this.categoryObserver = null;
+    }
+  }
+
+  // HOME-P02: Lazy load category background images using Intersection Observer
+  private setupCategoryLazyLoading(): void {
+    this.categoryObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const el = entry.target as HTMLElement;
+            const bgUrl = el.getAttribute('data-bg');
+            if (bgUrl) {
+              el.style.setProperty('--panel-image', bgUrl);
+              el.classList.add('categories__panel--loaded');
+            }
+            this.categoryObserver?.unobserve(el);
+          }
+        });
+      },
+      { rootMargin: '100px', threshold: 0.1 }
+    );
+
+    // Observe all category panels
+    this.categoryPanels?.forEach((panel) => {
+      this.categoryObserver?.observe(panel.nativeElement);
+    });
   }
 
   private loadFeaturedProducts(): void {
     this.loadingFeatured.set(true);
-    this.productService.getFeaturedProducts(8).subscribe({
+    this.productService.getFeaturedProducts(4).subscribe({
       next: (products) => {
         this.featuredProducts.set(products);
         this.loadingFeatured.set(false);
@@ -1070,55 +1449,52 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
-  private startSlideshow(): void {
-    this.slideInterval = setInterval(() => {
-      this.nextSlide();
-    }, 5000);
+  private startTestimonialRotation(): void {
+    this.testimonialInterval = setInterval(() => {
+      const next = (this.activeTestimonial() + 1) % this.testimonials.length;
+      this.activeTestimonial.set(next);
+    }, 6000);
   }
 
-  private stopSlideshow(): void {
-    if (this.slideInterval) {
-      clearInterval(this.slideInterval);
-      this.slideInterval = null;
+  private stopTestimonialRotation(): void {
+    if (this.testimonialInterval) {
+      clearInterval(this.testimonialInterval);
+      this.testimonialInterval = null;
     }
   }
 
-  nextSlide(): void {
-    const next = (this.currentSlide() + 1) % this.heroSlides.length;
-    this.currentSlide.set(next);
+  setTestimonial(index: number): void {
+    this.activeTestimonial.set(index);
+    this.stopTestimonialRotation();
+    if (isPlatformBrowser(this.platformId)) {
+      this.startTestimonialRotation();
+    }
   }
 
-  prevSlide(): void {
-    const prev = (this.currentSlide() - 1 + this.heroSlides.length) % this.heroSlides.length;
-    this.currentSlide.set(prev);
+  getInitials(name: string): string {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
   }
 
-  goToSlide(index: number): void {
-    this.currentSlide.set(index);
-    this.stopSlideshow();
-    this.startSlideshow();
-  }
-
-  subscribeNewsletter(event: Event): void {
+  submitNewsletter(event: Event): void {
     event.preventDefault();
     this.newsletterError.set(null);
 
-    // Validate email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!this.newsletterEmail.trim()) {
+    const email = this.newsletterEmail.trim();
+    if (!email) {
       this.translateService.get('home.newsletter.errorRequired').subscribe(msg => {
         this.newsletterError.set(msg);
       });
       return;
     }
-    if (!emailRegex.test(this.newsletterEmail.trim())) {
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
       this.translateService.get('home.newsletter.errorInvalid').subscribe(msg => {
         this.newsletterError.set(msg);
       });
       return;
     }
 
-    // Simulate API call
     this.newsletterLoading.set(true);
     setTimeout(() => {
       this.newsletterLoading.set(false);

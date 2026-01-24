@@ -9,24 +9,24 @@ import { TranslateModule } from '@ngx-translate/core';
   imports: [CommonModule, RouterLink, TranslateModule],
   template: `
     <div class="admin-container">
-      <h1>Admin Dashboard</h1>
+      <h1>{{ 'admin.title' | translate }}</h1>
 
       <div class="admin-links">
         <a routerLink="products" class="admin-link">
           <span class="icon">📦</span>
-          <span>Products</span>
+          <span>{{ 'admin.products.title' | translate }}</span>
         </a>
         <a routerLink="orders" class="admin-link">
           <span class="icon">📋</span>
-          <span>Orders</span>
+          <span>{{ 'admin.orders.title' | translate }}</span>
         </a>
         <a routerLink="users" class="admin-link">
           <span class="icon">👥</span>
-          <span>Users</span>
+          <span>{{ 'admin.users.title' | translate }}</span>
         </a>
         <a routerLink="moderation" class="admin-link">
           <span class="icon">🛡️</span>
-          <span>Moderation</span>
+          <span>{{ 'admin.moderation.title' | translate }}</span>
         </a>
       </div>
     </div>

@@ -83,6 +83,7 @@ public static class DependencyInjection
         // Repositories
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
+        services.AddScoped<IWishlistRepository, WishlistRepository>();
 
         // Data Seeder
         services.AddScoped<DataSeeder>();

@@ -14,7 +14,10 @@ import { WishlistService } from '../../../core/services/wishlist.service';
     <article
       class="product-card"
       [class.list-view]="listView"
+      [class.is-hovered]="isHovered"
       data-testid="product-card"
+      (mouseenter)="isHovered = true"
+      (mouseleave)="isHovered = false"
     >
       <a [routerLink]="['/products', product.slug]" class="product-image-link">
         <div class="product-image">
@@ -26,21 +29,46 @@ import { WishlistService } from '../../../core/services/wishlist.service';
             />
           } @else {
             <div class="placeholder-image">
-              <span>No Image</span>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+              </svg>
             </div>
           }
 
-          @if (product.isOnSale && product.discountPercentage > 0) {
-            <span class="sale-badge" data-testid="sale-badge">
-              -{{ product.discountPercentage }}%
-            </span>
-          }
+          <!-- Badges -->
+          <div class="badge-container">
+            @if (product.isOnSale && product.discountPercentage > 0) {
+              <span class="sale-badge" data-testid="sale-badge">
+                -{{ product.discountPercentage }}%
+              </span>
+            }
+            @if (!product.inStock) {
+              <span class="out-of-stock-badge">
+                {{ 'products.details.outOfStock' | translate }}
+              </span>
+            }
+          </div>
 
-          @if (!product.inStock) {
-            <span class="out-of-stock-badge">
-              {{ 'products.details.outOfStock' | translate }}
-            </span>
-          }
+          <!-- Quick actions overlay -->
+          <div class="quick-actions">
+            <button
+              class="quick-action-btn wishlist"
+              [class.active]="isWishlisted()"
+              (click)="toggleWishlist($event)"
+              [attr.aria-label]="(isWishlisted() ? 'products.details.removeFromWishlist' : 'products.details.addToWishlist') | translate"
+              data-testid="wishlist-button"
+            >
+              @if (isWishlisted()) {
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+                </svg>
+              } @else {
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                </svg>
+              }
+            </button>
+          </div>
         </div>
       </a>
 
@@ -60,11 +88,15 @@ import { WishlistService } from '../../../core/services/wishlist.service';
         <div class="product-rating" *ngIf="product.reviewCount > 0">
           <div class="stars">
             @for (star of stars; track $index) {
-              <span
-                class="star"
+              <svg 
+                class="star-icon" 
                 [class.filled]="star <= Math.floor(product.averageRating)"
                 [class.half]="star === Math.ceil(product.averageRating) && product.averageRating % 1 >= 0.5"
-              >&#9733;</span>
+                xmlns="http://www.w3.org/2000/svg" 
+                viewBox="0 0 24 24"
+              >
+                <path d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z"/>
+              </svg>
             }
           </div>
           <span class="review-count">({{ product.reviewCount }})</span>
@@ -72,8 +104,8 @@ import { WishlistService } from '../../../core/services/wishlist.service';
 
         <div class="product-price" data-testid="product-price">
           @if (product.isOnSale && product.salePrice) {
-            <span class="original-price">{{ product.salePrice | currency:'EUR' }}</span>
-            <span class="sale-price">{{ product.basePrice | currency:'EUR' }}</span>
+            <span class="sale-price">{{ product.salePrice | currency:'EUR' }}</span>
+            <span class="original-price">{{ product.basePrice | currency:'EUR' }}</span>
           } @else {
             <span class="current-price">{{ product.basePrice | currency:'EUR' }}</span>
           }
@@ -82,34 +114,30 @@ import { WishlistService } from '../../../core/services/wishlist.service';
         <div class="product-actions">
           <button
             class="btn-add-to-cart"
+            [class.loading]="isAddingToCart()"
             [class.added]="addedToCart()"
             [disabled]="!product.inStock || isAddingToCart()"
             (click)="addToCart($event)"
             data-testid="add-to-cart"
           >
             @if (isAddingToCart()) {
-              {{ 'common.loading' | translate }}
+              <svg class="spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>{{ 'common.loading' | translate }}</span>
             } @else if (addedToCart()) {
-              ✓ Added
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path fill-rule="evenodd" d="M19.916 4.626a.75.75 0 01.208 1.04l-9 13.5a.75.75 0 01-1.154.114l-6-6a.75.75 0 011.06-1.06l5.353 5.353 8.493-12.739a.75.75 0 011.04-.208z" clip-rule="evenodd" />
+              </svg>
+              <span>{{ 'cart.added' | translate }}</span>
             } @else if (!product.inStock) {
-              {{ 'products.details.outOfStock' | translate }}
+              <span>{{ 'products.details.outOfStock' | translate }}</span>
             } @else {
-              {{ 'products.details.addToCart' | translate }}
-            }
-          </button>
-
-          <!-- NAV-002: Wishlist button with state management -->
-          <button
-            class="btn-wishlist"
-            [class.wishlisted]="isWishlisted()"
-            (click)="toggleWishlist($event)"
-            [attr.aria-label]="(isWishlisted() ? 'products.details.removeFromWishlist' : 'products.details.addToWishlist') | translate"
-            data-testid="wishlist-button"
-          >
-            @if (isWishlisted()) {
-              <span class="heart-icon filled">&#9829;</span>
-            } @else {
-              <span class="heart-icon">&#9825;</span>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+              </svg>
+              <span>{{ 'products.details.addToCart' | translate }}</span>
             }
           </button>
         </div>
@@ -118,17 +146,34 @@ import { WishlistService } from '../../../core/services/wishlist.service';
   `,
   styles: [`
     .product-card {
+      --card-radius: var(--radius-xl);
+      --card-padding: 1rem;
+      
       display: flex;
       flex-direction: column;
-      background: var(--color-bg-primary);
-      border-radius: 12px;
+      background: var(--color-bg-card);
+      border-radius: var(--card-radius);
+      border: 1px solid var(--color-border-primary);
       overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      transition: 
+        transform var(--duration-normal) var(--ease-out-quart),
+        box-shadow var(--duration-normal) var(--ease-smooth),
+        border-color var(--duration-fast) var(--ease-smooth);
 
-      &:hover {
+      &:hover,
+      &.is-hovered {
         transform: translateY(-4px);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        box-shadow: var(--shadow-xl);
+        border-color: var(--color-border-secondary);
+
+        .product-image img {
+          transform: scale(1.08);
+        }
+
+        .quick-actions {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
 
       &.list-view {
@@ -143,7 +188,7 @@ import { WishlistService } from '../../../core/services/wishlist.service';
 
         .product-info {
           flex: 1;
-          padding: 1rem 1rem 1rem 0;
+          padding: var(--card-padding) var(--card-padding) var(--card-padding) 0;
         }
 
         .product-actions {
@@ -160,6 +205,8 @@ import { WishlistService } from '../../../core/services/wishlist.service';
     .product-image {
       position: relative;
       height: 220px;
+      min-height: 220px;
+      aspect-ratio: 1 / 1;
       background: var(--color-bg-secondary);
       overflow: hidden;
 
@@ -167,11 +214,7 @@ import { WishlistService } from '../../../core/services/wishlist.service';
         width: 100%;
         height: 100%;
         object-fit: contain;
-        transition: transform 0.3s ease;
-      }
-
-      &:hover img {
-        transform: scale(1.05);
+        transition: transform var(--duration-slow) var(--ease-out-quart);
       }
 
       .placeholder-image {
@@ -180,37 +223,102 @@ import { WishlistService } from '../../../core/services/wishlist.service';
         justify-content: center;
         width: 100%;
         height: 100%;
-        color: var(--color-text-secondary);
-        font-size: 0.875rem;
+        color: var(--color-text-tertiary);
+
+        svg {
+          width: 3rem;
+          height: 3rem;
+        }
       }
     }
 
-    .sale-badge {
+    .badge-container {
       position: absolute;
       top: 0.75rem;
       left: 0.75rem;
-      padding: 0.25rem 0.5rem;
-      background: var(--color-error);
-      color: white;
-      font-size: 0.75rem;
-      font-weight: 600;
-      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      z-index: 2;
+    }
+
+    .sale-badge {
+      padding: 0.25rem 0.625rem;
+      background: linear-gradient(135deg, var(--color-error) 0%, var(--color-error-dark) 100%);
+      color: var(--color-text-inverse);
+      font-size: var(--text-body-xs);
+      font-weight: var(--font-semibold);
+      border-radius: var(--radius-md);
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
     }
 
     .out-of-stock-badge {
+      padding: 0.25rem 0.625rem;
+      background: var(--color-secondary-600);
+      color: var(--color-text-inverse);
+      font-size: var(--text-body-xs);
+      font-weight: var(--font-medium);
+      border-radius: var(--radius-md);
+    }
+
+    .quick-actions {
       position: absolute;
       top: 0.75rem;
       right: 0.75rem;
-      padding: 0.25rem 0.5rem;
-      background: var(--color-text-secondary);
-      color: white;
-      font-size: 0.75rem;
-      font-weight: 500;
-      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      opacity: 0;
+      transform: translateY(-8px);
+      transition: 
+        opacity var(--duration-normal) var(--ease-smooth),
+        transform var(--duration-normal) var(--ease-out-quart);
+      z-index: 2;
+    }
+
+    .quick-action-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background: var(--glass-bg-heavy);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-smooth);
+
+      svg {
+        width: 18px;
+        height: 18px;
+        color: var(--color-text-secondary);
+        transition: color var(--duration-fast) var(--ease-smooth);
+      }
+
+      &:hover {
+        background: var(--color-bg-card);
+        border-color: var(--color-error);
+        transform: scale(1.1);
+
+        svg {
+          color: var(--color-error);
+        }
+      }
+
+      &.active {
+        background: var(--color-error-light);
+        border-color: var(--color-error);
+
+        svg {
+          color: var(--color-error);
+        }
+      }
     }
 
     .product-info {
-      padding: 1rem;
+      padding: var(--card-padding);
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
@@ -218,10 +326,12 @@ import { WishlistService } from '../../../core/services/wishlist.service';
     }
 
     .product-brand {
-      font-size: 0.75rem;
-      color: var(--color-text-secondary);
+      font-family: var(--font-body);
+      font-size: var(--text-body-xs);
+      font-weight: var(--font-medium);
+      color: var(--color-text-tertiary);
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: var(--tracking-wide);
     }
 
     .product-name-link {
@@ -230,15 +340,17 @@ import { WishlistService } from '../../../core/services/wishlist.service';
     }
 
     .product-name {
-      font-size: 1rem;
-      font-weight: 600;
+      font-family: var(--font-display);
+      font-size: var(--text-body);
+      font-weight: var(--font-semibold);
       color: var(--color-text-primary);
       margin: 0;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      line-height: 1.3;
+      line-height: var(--leading-snug);
+      transition: color var(--duration-fast) var(--ease-smooth);
 
       &:hover {
         color: var(--color-primary);
@@ -246,37 +358,44 @@ import { WishlistService } from '../../../core/services/wishlist.service';
     }
 
     .product-description {
-      font-size: 0.875rem;
+      font-size: var(--text-body-sm);
       color: var(--color-text-secondary);
       margin: 0;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
+      line-height: var(--leading-normal);
     }
 
     .product-rating {
       display: flex;
       align-items: center;
-      gap: 0.25rem;
+      gap: 0.375rem;
 
       .stars {
         display: flex;
         gap: 2px;
       }
 
-      .star {
-        color: var(--color-border);
-        font-size: 0.875rem;
+      .star-icon {
+        width: 14px;
+        height: 14px;
+        fill: var(--color-border-secondary);
+        stroke: none;
 
-        &.filled, &.half {
-          color: #ffc107;
+        &.filled {
+          fill: var(--color-warning-400);
+        }
+
+        &.half {
+          fill: url(#half-star-gradient);
         }
       }
 
       .review-count {
-        font-size: 0.75rem;
-        color: var(--color-text-secondary);
+        font-size: var(--text-body-xs);
+        color: var(--color-text-tertiary);
       }
     }
 
@@ -285,20 +404,26 @@ import { WishlistService } from '../../../core/services/wishlist.service';
       align-items: baseline;
       gap: 0.5rem;
       margin-top: auto;
+      padding-top: 0.5rem;
 
-      .current-price, .sale-price {
-        font-size: 1.25rem;
-        font-weight: 700;
+      .current-price {
+        font-family: var(--font-mono);
+        font-size: var(--text-h4);
+        font-weight: var(--font-bold);
         color: var(--color-text-primary);
       }
 
       .sale-price {
+        font-family: var(--font-mono);
+        font-size: var(--text-h4);
+        font-weight: var(--font-bold);
         color: var(--color-error);
       }
 
       .original-price {
-        font-size: 0.875rem;
-        color: var(--color-text-secondary);
+        font-family: var(--font-mono);
+        font-size: var(--text-body-sm);
+        color: var(--color-text-tertiary);
         text-decoration: line-through;
       }
     }
@@ -311,74 +436,96 @@ import { WishlistService } from '../../../core/services/wishlist.service';
 
     .btn-add-to-cart {
       flex: 1;
-      padding: 0.625rem 1rem;
-      background: var(--color-primary);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.875rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.2s ease;
-
-      &:hover:not(:disabled) {
-        background: var(--color-primary-dark);
-      }
-
-      &:disabled {
-        background: var(--color-bg-secondary);
-        color: var(--color-text-secondary);
-        cursor: not-allowed;
-      }
-
-      &.added {
-        background: var(--color-success, #22c55e);
-        color: white;
-        cursor: default;
-      }
-    }
-
-    .btn-wishlist {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 40px;
-      height: 40px;
-      background: var(--color-bg-secondary);
-      border: 1px solid var(--color-border);
-      border-radius: 8px;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      border: none;
+      border-radius: var(--radius-lg);
+      font-family: var(--font-body);
+      font-size: var(--text-body-sm);
+      font-weight: var(--font-medium);
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all var(--duration-fast) var(--ease-smooth);
 
-      .heart-icon {
-        font-size: 1.25rem;
-        color: var(--color-text-secondary);
+      svg {
+        width: 18px;
+        height: 18px;
+      }
 
-        &.filled {
-          color: var(--color-error);
+      .spinner {
+        width: 16px;
+        height: 16px;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      &:hover:not(:disabled) {
+        background: var(--color-primary-hover);
+        box-shadow: var(--glow-sm-primary);
+        transform: translateY(-1px);
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0) scale(0.98);
+      }
+
+      &:disabled {
+        background: var(--color-bg-tertiary);
+        color: var(--color-text-tertiary);
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      &.added {
+        background: var(--color-success);
+        color: var(--color-text-inverse);
+
+        &:hover:not(:disabled) {
+          background: var(--color-success);
+          box-shadow: var(--glow-success);
         }
       }
 
-      &:hover {
-        background: var(--color-error-bg);
-        border-color: var(--color-error);
-
-        .heart-icon {
-          color: var(--color-error);
-        }
-      }
-
-      /* NAV-002: Wishlisted state */
-      &.wishlisted {
-        background: var(--color-error-bg);
-        border-color: var(--color-error);
-
-        .heart-icon {
-          color: var(--color-error);
-        }
-      }
-    }
-  `]
+      &.loading {
+                        pointer-events: none;
+                      }
+                    }
+                    
+                    /* Reduced motion support */
+                    @media (prefers-reduced-motion: reduce) {
+                      .product-card,
+                      .product-image img,
+                      .quick-actions,
+                      .quick-action-btn,
+                      .btn-add-to-cart {
+                        transition: none !important;
+                        animation: none !important;
+                        transform: none !important;
+                      }
+                      
+                      .product-card:hover,
+                      .product-card.is-hovered {
+                        transform: none;
+                      }
+                      
+                      .product-image img {
+                        transform: none;
+                      }
+                      
+                      .quick-actions {
+                        opacity: 1;
+                        transform: none;
+                      }
+                    }
+                  `]
 })
 export class ProductCardComponent {
   @Input({ required: true }) product!: ProductBrief;
@@ -391,8 +538,8 @@ export class ProductCardComponent {
   stars = [1, 2, 3, 4, 5];
   isAddingToCart = signal(false);
   addedToCart = signal(false);
+  isHovered = false;
 
-  // NAV-002: Check if product is in wishlist - must access items() signal for reactivity
   isWishlisted = computed(() => {
     const items = this.wishlistService.items();
     return items.some(item => item.productId === this.product?.id);
@@ -413,7 +560,6 @@ export class ProductCardComponent {
       next: () => {
         this.isAddingToCart.set(false);
         this.addedToCart.set(true);
-        // Reset the added state after 2 seconds
         setTimeout(() => this.addedToCart.set(false), 2000);
       },
       error: () => {
@@ -422,7 +568,6 @@ export class ProductCardComponent {
     });
   }
 
-  // NAV-002: Toggle wishlist functionality
   toggleWishlist(event: Event): void {
     event.preventDefault();
     event.stopPropagation();
