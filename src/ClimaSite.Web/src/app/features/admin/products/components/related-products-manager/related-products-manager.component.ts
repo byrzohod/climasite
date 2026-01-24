@@ -58,10 +58,11 @@ import {
                     <circle cx="15" cy="18" r="2"/>
                   </svg>
                 </span>
-                <img
+<img
                   [src]="relation.primaryImageUrl || 'assets/images/no-image.svg'"
                   [alt]="relation.name"
                   class="product-image"
+                  loading="lazy"
                 />
                 <div class="product-info">
                   <span class="name">{{ relation.name }}</span>
@@ -122,10 +123,11 @@ import {
             <div class="search-results">
               @for (product of searchResults(); track product.id) {
                 <div class="search-result-item" (click)="addRelation(product.id)">
-                  <img
+<img
                     [src]="product.primaryImageUrl || 'assets/images/no-image.svg'"
                     [alt]="product.name"
                     class="product-image"
+                    loading="lazy"
                   />
                   <div class="product-info">
                     <span class="name">{{ product.name }}</span>

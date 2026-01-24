@@ -29,7 +29,7 @@ import { PromotionBrief, PromotionType } from '../../../core/models/promotion.mo
             <a [routerLink]="['/promotions', promotion.slug]" class="promotion-card">
               <div class="promotion-image">
                 @if (promotion.bannerImageUrl || promotion.thumbnailImageUrl) {
-                  <img [src]="promotion.thumbnailImageUrl || promotion.bannerImageUrl" [alt]="promotion.name" />
+                  <img [src]="promotion.thumbnailImageUrl || promotion.bannerImageUrl" [alt]="promotion.name" loading="lazy" />
                 } @else {
                   <div class="placeholder-image">
                     <span class="discount-badge">

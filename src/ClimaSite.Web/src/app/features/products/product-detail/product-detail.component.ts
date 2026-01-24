@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, computed, effect } from '@angular/core';
+import { Component, inject, signal, OnInit, computed, effect, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -7,6 +7,7 @@ import { ProductService } from '../../../core/services/product.service';
 import { CartService } from '../../../core/services/cart.service';
 import { LanguageService } from '../../../core/services/language.service';
 import { WishlistService } from '../../../core/services/wishlist.service';
+import { FlyingCartService } from '../../../core/services/flying-cart.service';
 import { Product } from '../../../core/models/product.model';
 import { ProductConsumablesComponent } from '../../../shared/components/product-consumables/product-consumables.component';
 import { SimilarProductsComponent } from '../../../shared/components/similar-products/similar-products.component';
@@ -54,7 +55,7 @@ import { RevealDirective } from '../../../shared/directives/reveal.directive';
 
           <div class="product-main">
             <!-- Image Gallery with Zoom -->
-            <div class="product-gallery-wrapper" appReveal="fade-right" [duration]="500">
+            <div class="product-gallery-wrapper" appReveal="fade-right" [duration]="500" #galleryWrapper>
               <app-product-gallery
                 [images]="galleryImages()"
                 [productName]="product()?.name || ''" />
@@ -818,13 +819,16 @@ import { RevealDirective } from '../../../shared/directives/reveal.directive';
                   `]
 })
 export class ProductDetailComponent implements OnInit {
-  private readonly route = inject(ActivatedRoute);
+private readonly route = inject(ActivatedRoute);
   private readonly productService = inject(ProductService);
   private readonly cartService = inject(CartService);
   private readonly languageService = inject(LanguageService);
   private readonly wishlistService = inject(WishlistService);
+  private readonly flyingCartService = inject(FlyingCartService);
   private currentSlug: string | null = null;
   private lastLanguage: string | null = null;
+
+  @ViewChild('galleryWrapper') galleryWrapper?: ElementRef<HTMLElement>;
 
   Math = Math;
 
@@ -945,11 +949,24 @@ export class ProductDetailComponent implements OnInit {
     this.isAddingToCart.set(true);
     this.addedToCart.set(false);
 
-    this.cartService.addToCart(prod.id, this.quantity()).subscribe({
+this.cartService.addToCart(prod.id, this.quantity()).subscribe({
       next: () => {
         this.isAddingToCart.set(false);
         this.addedToCart.set(true);
         this.showNotification.set(true);
+
+        // Trigger flying cart animation
+        const primaryImageUrl = prod.images?.[0]?.url;
+        if (this.galleryWrapper?.nativeElement && primaryImageUrl) {
+          // Find the main image within the gallery
+          const mainImage = this.galleryWrapper.nativeElement.querySelector('img') as HTMLElement;
+          if (mainImage) {
+            this.flyingCartService.fly({
+              imageUrl: primaryImageUrl,
+              sourceElement: mainImage
+            });
+          }
+        }
 
         setTimeout(() => {
           this.addedToCart.set(false);

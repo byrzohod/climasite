@@ -36,6 +36,14 @@ ClimaSite is a production-grade online shop specializing in air conditioners, he
 | **Shared Components** | **Complete** | Alert, Modal, Toast, Breadcrumb components created |
 | **Accessibility (WCAG)** | **Complete** | Focus traps, ARIA roles, keyboard navigation, screen reader support |
 | **Performance** | **Complete** | Scroll throttling, lazy loading, memory leak fixes |
+| **Motion/Animation System** | **Complete** | AnimationService, reduced motion support, GPU-accelerated animations |
+| **Flying Cart Animation** | **Complete** | Product image flies to cart icon with arc trajectory |
+| **Confetti Celebration** | **Complete** | Canvas-based confetti on order confirmation |
+| **Parallax Effects** | **Complete** | Scroll and mouse-based parallax on hero sections |
+| **Toast Notifications** | **Complete** | Progress bar, hover pause, type-specific icons |
+| **Route Transitions** | **Complete** | Fade/slide page transitions |
+| **Product Gallery** | **Complete** | Lightbox, crossfade, zoom, slide animations |
+| **Performance Audit** | **Complete** | Core Web Vitals optimizations, preconnect hints |
 
 ---
 
@@ -270,37 +278,79 @@ test('user can complete checkout', async ({ page, request }) => {
 
 ## Agent Usage Guidelines (CRITICAL)
 
-### Use Subagents for All Complex Tasks
+### Use Subagents for All Complex Tasks - MANDATORY
 
-**ALWAYS use the Task tool with subagents when:**
+**Subagents are the preferred way to handle most development work. They provide significant benefits:**
 
-1. **Multiple files need to be read or modified** - Launch explore agents to gather context
-2. **Fixing multiple related issues** - Use general agents to fix issue batches in parallel
-3. **Code exploration needed** - Use explore agents instead of manual grep/glob sequences
-4. **Independent work can be parallelized** - Launch multiple agents simultaneously
-5. **Context is getting long** - Offload work to fresh agents to maintain performance
+#### Why Use Subagents
 
-**Benefits of using subagents:**
-- Keeps main conversation context fresh and responsive
-- Enables parallel execution of independent tasks
-- Each agent has full context for its specific task
-- Reduces token usage in main conversation
-- Better error isolation
+| Benefit | Description |
+|---------|-------------|
+| **Context Efficiency** | Main conversation stays fresh; each agent gets clean context for its task |
+| **Parallel Execution** | Launch 4-6 agents simultaneously for independent tasks |
+| **Better Performance** | Reduced token usage = faster responses in main conversation |
+| **Error Isolation** | If one agent fails, others continue; easier to retry specific tasks |
+| **Focused Work** | Each agent can deeply focus on one specific task without distraction |
+| **Scalability** | Can handle 50+ file changes across multiple agents without context overflow |
 
-**Example patterns:**
+#### When to Use Subagents (ALWAYS prefer these patterns)
+
+1. **Feature Implementation** - Launch parallel agents for:
+   - Backend service/controller
+   - Frontend component/service
+   - Tests
+   - Documentation
+
+2. **Bug Fixes** - Group related fixes:
+   - All UI issues → 1 agent
+   - All i18n issues → 1 agent
+   - All API issues → 1 agent
+
+3. **Code Exploration** - Use `explore` agent for:
+   - Finding all usages of a pattern
+   - Understanding codebase structure
+   - Answering "how does X work?" questions
+
+4. **Multi-file Changes** - Any task touching 5+ files should use subagents
+
+5. **Research Tasks** - Documentation, audits, analysis
+
+#### Subagent Types
+
+| Type | Use For |
+|------|---------|
+| `general` | Implementation, fixes, writing code, tests |
+| `explore` | Finding files, searching code, answering questions about codebase |
+
+#### Example Patterns
+
 ```
-# Good: Use explore agent for codebase questions
+# GOOD: Parallel implementation (launch all at once)
+Task(subagent_type="general", prompt="Implement FlyingCartService...")
+Task(subagent_type="general", prompt="Implement ConfettiService...")
+Task(subagent_type="general", prompt="Add parallax effects to hero sections...")
+Task(subagent_type="general", prompt="Create performance audit document...")
+
+# GOOD: Use explore for research
 Task(subagent_type="explore", prompt="Find all components using hardcoded colors...")
+Task(subagent_type="explore", prompt="How does the cart merge functionality work?")
 
-# Good: Use general agent for batch fixes
-Task(subagent_type="general", prompt="Fix all i18n issues in auth components...")
+# GOOD: Batch fixes by category
+Task(subagent_type="general", prompt="Fix all 15 i18n issues in these components: ...")
+Task(subagent_type="general", prompt="Add loading='lazy' to all images in: ...")
 
-# Good: Parallel agents for independent fixes
-[Agent 1: Fix UI issues] + [Agent 2: Fix i18n issues] + [Agent 3: Fix API issues]
-
-# Bad: Manually reading 20 files in main conversation
-# Bad: Fixing 50 issues one-by-one in main conversation
+# BAD: Manually reading 20 files in main conversation
+# BAD: Fixing 50 issues one-by-one in main conversation
+# BAD: Using grep/glob sequences when explore agent would be faster
 ```
+
+#### Best Practices
+
+1. **Be Specific** - Give agents clear, detailed prompts with file paths
+2. **Include Context** - Tell agent about project structure, conventions, related files
+3. **Define Output** - Specify what the agent should return (summary, file list, etc.)
+4. **Parallel Launch** - Always launch independent agents in the same message
+5. **Don't Over-Split** - Keep related changes in one agent (e.g., component + its styles)
 
 ---
 
@@ -632,9 +682,14 @@ A feature is ONLY complete when:
 | CQRS Handlers | `src/ClimaSite.Application/Features/` |
 | Domain Entities | `src/ClimaSite.Core/Entities/` |
 | EF Configs | `src/ClimaSite.Infrastructure/Data/Configurations/` |
-| E2E Tests | `tests/ClimaSite.E2E/tests/` |
+| E2E Tests | `tests/ClimaSite.E2E/Tests/` |
 | Test Factory | `tests/ClimaSite.E2E/fixtures/test-data-factory.ts` |
 | Plans | `docs/plans/` |
+| Animation Services | `src/ClimaSite.Web/src/app/core/services/animation.service.ts` |
+| Flying Cart | `src/ClimaSite.Web/src/app/core/services/flying-cart.service.ts` |
+| Confetti | `src/ClimaSite.Web/src/app/core/services/confetti.service.ts` |
+| Performance Audit | `docs/performance/performance-audit.md` |
+| Animation Directives | `src/ClimaSite.Web/src/app/shared/directives/` |
 
 ### Important URLs (Development)
 

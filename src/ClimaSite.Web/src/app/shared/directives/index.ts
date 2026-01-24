@@ -1,6 +1,7 @@
 // Animation Directives
 export * from './animate-on-scroll.directive';
 export * from './count-up.directive';
+export * from './floating.directive';
 export * from './magnetic-hover.directive';
 export * from './parallax.directive';
 export * from './reveal.directive';

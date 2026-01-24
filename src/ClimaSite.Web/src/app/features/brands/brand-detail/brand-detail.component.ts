@@ -6,11 +6,12 @@ import { BrandService } from '../../../core/services/brand.service';
 import { CartService } from '../../../core/services/cart.service';
 import { Brand } from '../../../core/models/brand.model';
 import { ProductBrief } from '../../../core/models/product.model';
+import { ParallaxDirective } from '../../../shared/directives/parallax.directive';
 
 @Component({
   selector: 'app-brand-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, TranslateModule],
+  imports: [CommonModule, RouterLink, TranslateModule, ParallaxDirective],
   template: `
     <div class="brand-detail-page">
       @if (isLoading()) {
@@ -18,12 +19,20 @@ import { ProductBrief } from '../../../core/models/product.model';
       } @else if (error()) {
         <div class="error">{{ error() }}</div>
       } @else if (brand()) {
-        <!-- Hero Banner -->
-        <div class="brand-hero" [style.background-image]="brand()?.bannerImageUrl ? 'url(' + brand()?.bannerImageUrl + ')' : ''">
+<!-- Hero Banner with Parallax -->
+        <div class="brand-hero">
+          <div 
+            class="hero-bg" 
+            [style.background-image]="brand()?.bannerImageUrl ? 'url(' + brand()?.bannerImageUrl + ')' : ''"
+            appParallax 
+            [speed]="0.2" 
+            [direction]="'down'" 
+            [scaleOnScroll]="1.1"
+          ></div>
           <div class="hero-overlay">
             <div class="hero-content">
               @if (brand()?.logoUrl) {
-                <img [src]="brand()?.logoUrl" [alt]="brand()?.name" class="brand-logo" />
+                <img [src]="brand()?.logoUrl" [alt]="brand()?.name" class="brand-logo" loading="eager" fetchpriority="high" />
               } @else {
                 <div class="logo-placeholder">{{ brand()?.name?.charAt(0) }}</div>
               }
@@ -137,14 +146,19 @@ import { ProductBrief } from '../../../core/models/product.model';
       color: var(--color-error);
     }
 
-    .brand-hero {
+.brand-hero {
       position: relative;
       min-height: 300px;
+      border-radius: 0 0 24px 24px;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: -20%;
       background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
       background-size: cover;
       background-position: center;
-      border-radius: 0 0 24px 24px;
-      overflow: hidden;
     }
 
     .hero-overlay {

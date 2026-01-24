@@ -32,6 +32,8 @@ export interface ProductImage {
                [class.changing]="isTransitioning()"
                [class.loaded]="!isImageLoading()"
                data-testid="gallery-main-image"
+               loading="eager"
+               fetchpriority="high"
                (load)="onImageLoad()" />
 
           <!-- Zoom Lens (desktop only) -->

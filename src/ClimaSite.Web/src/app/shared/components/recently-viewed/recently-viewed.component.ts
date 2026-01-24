@@ -31,7 +31,7 @@ import { RecentlyViewedService, RecentlyViewedProduct } from '../../../core/serv
               [attr.data-testid]="'recently-viewed-' + product.id">
               <div class="product-image">
                 @if (product.primaryImageUrl) {
-                  <img [src]="product.primaryImageUrl" [alt]="product.name" />
+                  <img [src]="product.primaryImageUrl" [alt]="product.name" loading="lazy" />
                 } @else {
                   <div class="no-image">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">

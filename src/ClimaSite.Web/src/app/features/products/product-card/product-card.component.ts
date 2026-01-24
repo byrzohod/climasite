@@ -1,10 +1,11 @@
-import { Component, Input, inject, signal, computed } from '@angular/core';
+import { Component, Input, inject, signal, computed, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { ProductBrief } from '../../../core/models/product.model';
 import { CartService } from '../../../core/services/cart.service';
 import { WishlistService } from '../../../core/services/wishlist.service';
+import { FlyingCartService } from '../../../core/services/flying-cart.service';
 
 @Component({
   selector: 'app-product-card',
@@ -23,9 +24,11 @@ import { WishlistService } from '../../../core/services/wishlist.service';
         <div class="product-image">
           @if (product.primaryImageUrl) {
             <img
+              #productImage
               [src]="product.primaryImageUrl"
               [alt]="product.name"
               loading="lazy"
+              data-testid="product-image"
             />
           } @else {
             <div class="placeholder-image">
@@ -531,8 +534,11 @@ export class ProductCardComponent {
   @Input({ required: true }) product!: ProductBrief;
   @Input() listView = false;
 
+  @ViewChild('productImage') productImage?: ElementRef<HTMLImageElement>;
+
   private readonly cartService = inject(CartService);
   private readonly wishlistService = inject(WishlistService);
+  private readonly flyingCartService = inject(FlyingCartService);
 
   Math = Math;
   stars = [1, 2, 3, 4, 5];
@@ -560,6 +566,15 @@ export class ProductCardComponent {
       next: () => {
         this.isAddingToCart.set(false);
         this.addedToCart.set(true);
+        
+        // Trigger flying cart animation
+        if (this.productImage?.nativeElement && this.product.primaryImageUrl) {
+          this.flyingCartService.fly({
+            imageUrl: this.product.primaryImageUrl,
+            sourceElement: this.productImage.nativeElement
+          });
+        }
+        
         setTimeout(() => this.addedToCart.set(false), 2000);
       },
       error: () => {

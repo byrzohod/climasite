@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
+import { ParallaxDirective } from '../../shared/directives/parallax.directive';
 
 interface ResourceCategory {
   id: string;
@@ -22,12 +23,13 @@ interface Resource {
 @Component({
   selector: 'app-resources',
   standalone: true,
-  imports: [CommonModule, RouterLink, TranslateModule],
+  imports: [CommonModule, RouterLink, TranslateModule, ParallaxDirective],
   template: `
     <div class="resources-page">
-      <!-- Hero Section -->
+<!-- Hero Section with Parallax -->
       <div class="hero-section">
-        <div class="hero-content">
+        <div class="hero-bg" appParallax [speed]="0.15" [direction]="'down'" [scaleOnScroll]="1.05"></div>
+        <div class="hero-content" appParallax [speed]="0.08" [direction]="'up'">
           <h1>{{ 'resources.title' | translate }}</h1>
           <p>{{ 'resources.subtitle' | translate }}</p>
         </div>
@@ -94,15 +96,25 @@ interface Resource {
       margin: 0 auto;
     }
 
-    .hero-section {
-      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+.hero-section {
+      position: relative;
       padding: 4rem 2rem;
       text-align: center;
       border-radius: 0 0 24px 24px;
       margin-bottom: 3rem;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: -20%;
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+      z-index: 0;
     }
 
     .hero-content {
+      position: relative;
+      z-index: 1;
       max-width: 600px;
       margin: 0 auto;
       color: white;

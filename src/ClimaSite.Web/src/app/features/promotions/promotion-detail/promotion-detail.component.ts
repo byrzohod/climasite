@@ -6,11 +6,12 @@ import { PromotionService } from '../../../core/services/promotion.service';
 import { CartService } from '../../../core/services/cart.service';
 import { Promotion, PromotionType } from '../../../core/models/promotion.model';
 import { ProductBrief } from '../../../core/models/product.model';
+import { ParallaxDirective } from '../../../shared/directives/parallax.directive';
 
 @Component({
   selector: 'app-promotion-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, TranslateModule],
+  imports: [CommonModule, RouterLink, TranslateModule, ParallaxDirective],
   template: `
     <div class="promotion-detail-page">
       @if (isLoading()) {
@@ -18,8 +19,16 @@ import { ProductBrief } from '../../../core/models/product.model';
       } @else if (error()) {
         <div class="error">{{ error() }}</div>
       } @else if (promotion()) {
-        <!-- Hero Banner -->
-        <div class="promotion-hero" [style.background-image]="promotion()?.bannerImageUrl ? 'url(' + promotion()?.bannerImageUrl + ')' : ''">
+<!-- Hero Banner with Parallax -->
+        <div class="promotion-hero">
+          <div 
+            class="hero-bg"
+            [style.background-image]="promotion()?.bannerImageUrl ? 'url(' + promotion()?.bannerImageUrl + ')' : ''"
+            appParallax 
+            [speed]="0.2" 
+            [direction]="'down'" 
+            [scaleOnScroll]="1.1"
+          ></div>
           <div class="hero-overlay">
             <div class="hero-content">
               <span class="discount-badge">{{ getDiscountText() }}</span>
@@ -144,14 +153,19 @@ import { ProductBrief } from '../../../core/models/product.model';
       color: var(--color-error);
     }
 
-    .promotion-hero {
+.promotion-hero {
       position: relative;
       min-height: 300px;
+      border-radius: 0 0 24px 24px;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: -20%;
       background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
       background-size: cover;
       background-position: center;
-      border-radius: 0 0 24px 24px;
-      overflow: hidden;
     }
 
     .hero-overlay {

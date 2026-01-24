@@ -39,7 +39,7 @@ import { BrandBrief } from '../../../core/models/brand.model';
             <a [routerLink]="['/brands', brand.slug]" class="brand-card">
               <div class="brand-logo">
                 @if (brand.logoUrl) {
-                  <img [src]="brand.logoUrl" [alt]="brand.name" />
+                  <img [src]="brand.logoUrl" [alt]="brand.name" loading="lazy" />
                 } @else {
                   <div class="logo-placeholder">{{ brand.name.charAt(0) }}</div>
                 }

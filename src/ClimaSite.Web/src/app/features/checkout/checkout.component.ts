@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -8,6 +8,7 @@ import { CheckoutService, CheckoutStep } from '../../core/services/checkout.serv
 import { AddressService } from '../../core/services/address.service';
 import { AuthService } from '../../auth/services/auth.service';
 import { PaymentService } from '../../core/services/payment.service';
+import { ConfettiService } from '../../core/services/confetti.service';
 import { Address } from '../../core/models/order.model';
 import { SavedAddress } from '../../core/models/address.model';
 
@@ -998,12 +999,13 @@ import { SavedAddress } from '../../core/models/address.model';
     }
   `]
 })
-export class CheckoutComponent implements OnInit {
+export class CheckoutComponent implements OnInit, OnDestroy {
   readonly cartService = inject(CartService);
   readonly checkoutService = inject(CheckoutService);
   readonly addressService = inject(AddressService);
   readonly authService = inject(AuthService);
   readonly paymentService = inject(PaymentService);
+  private readonly confettiService = inject(ConfettiService);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
 
@@ -1011,11 +1013,16 @@ export class CheckoutComponent implements OnInit {
   selectedAddressId = signal<string | null>(null);
   private clientSecret = signal<string | null>(null);
 
-  ngOnInit(): void {
+ngOnInit(): void {
     // Load saved addresses if user is authenticated
     if (this.authService.isAuthenticated()) {
       this.addressService.loadAddresses();
     }
+  }
+
+  ngOnDestroy(): void {
+    // Stop confetti animation if component is destroyed
+    this.confettiService.stop();
   }
 
   private async initializeStripe(): Promise<void> {
@@ -1162,12 +1169,14 @@ export class CheckoutComponent implements OnInit {
           return;
         }
 
-        // Payment succeeded, create order with payment intent ID
+// Payment succeeded, create order with payment intent ID
         this.checkoutService.createOrder(email, phone, paymentResult.paymentIntentId).subscribe({
           next: () => {
             this.orderPlaced.set(true);
             this.cartService.clearCart().subscribe();
             this.paymentService.destroyElements();
+            // Trigger confetti celebration
+            this.confettiService.burst();
           },
           error: (err) => {
             console.error('Order creation failed after payment:', err);
@@ -1178,11 +1187,13 @@ export class CheckoutComponent implements OnInit {
         this.checkoutService.setError(error.message || 'Payment failed');
       }
     } else {
-      // Non-card payment (PayPal, bank transfer, etc.)
+// Non-card payment (PayPal, bank transfer, etc.)
       this.checkoutService.createOrder(email, phone).subscribe({
         next: () => {
           this.orderPlaced.set(true);
           this.cartService.clearCart().subscribe();
+          // Trigger confetti celebration
+          this.confettiService.burst();
         },
         error: (err) => {
           console.error('Order failed:', err);

@@ -123,7 +123,7 @@ import { AddressCardComponent } from '../../../shared/components/address-card/ad
                 @for (item of order()!.items; track item.id) {
                   <div class="order-item" data-testid="order-item-row">
                     @if (item.imageUrl) {
-                      <img [src]="item.imageUrl" [alt]="item.productName" class="item-image" />
+                      <img [src]="item.imageUrl" [alt]="item.productName" class="item-image" loading="lazy" />
                     } @else {
                       <div class="item-placeholder"></div>
                     }

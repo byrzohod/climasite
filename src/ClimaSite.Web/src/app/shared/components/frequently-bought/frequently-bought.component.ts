@@ -26,7 +26,7 @@ export interface BundleProduct {
         <!-- Main Product (always included) -->
         <div class="bundle-product main-product">
           <div class="product-image">
-            <img [src]="mainProduct().imageUrl" [alt]="mainProduct().name" />
+            <img [src]="mainProduct().imageUrl" [alt]="mainProduct().name" loading="lazy" />
           </div>
           <div class="product-info">
             <span class="product-name">{{ mainProduct().name }}</span>
@@ -59,7 +59,7 @@ export interface BundleProduct {
               }
             </div>
             <div class="product-image">
-              <img [src]="product.imageUrl" [alt]="product.name" />
+              <img [src]="product.imageUrl" [alt]="product.name" loading="lazy" />
             </div>
             <div class="product-info">
               <a [routerLink]="['/products', product.slug]" class="product-name">{{ product.name }}</a>

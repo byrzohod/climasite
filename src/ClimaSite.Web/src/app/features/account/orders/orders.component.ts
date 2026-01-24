@@ -179,7 +179,7 @@ import { OrderBrief, OrdersFilterParams, PaginatedOrders, ORDER_STATUS_CONFIG, O
                 @for (item of order.items.slice(0, 3); track item.id) {
                   <div class="order-item">
                     @if (item.imageUrl) {
-                      <img [src]="item.imageUrl" [alt]="item.productName" class="item-image" />
+                      <img [src]="item.imageUrl" [alt]="item.productName" class="item-image" loading="lazy" />
                     } @else {
                       <div class="item-placeholder"></div>
                     }

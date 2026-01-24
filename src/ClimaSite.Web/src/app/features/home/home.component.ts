@@ -10,6 +10,8 @@ import { ProductCardComponent } from '../products/product-card/product-card.comp
 import { RevealDirective } from '../../shared/directives/reveal.directive';
 import { TiltEffectDirective } from '../../shared/directives/tilt-effect.directive';
 import { CountUpDirective } from '../../shared/directives/count-up.directive';
+import { ParallaxDirective } from '../../shared/directives/parallax.directive';
+import { FloatingDirective } from '../../shared/directives/floating.directive';
 import { SkeletonProductCardComponent } from '../../shared/components/skeleton-product-card/skeleton-product-card.component';
 
 interface Testimonial {
@@ -32,6 +34,8 @@ interface Testimonial {
     RevealDirective,
     TiltEffectDirective,
     CountUpDirective,
+    ParallaxDirective,
+    FloatingDirective,
     SkeletonProductCardComponent
   ],
   template: `
@@ -39,23 +43,23 @@ interface Testimonial {
          HERO - Full-screen immersive experience
          ================================================================ -->
     <section class="hero" data-testid="hero-section">
-      <!-- Animated gradient background -->
+      <!-- Animated gradient background with parallax -->
       <div class="hero__bg">
-        <div class="hero__gradient hero__gradient--1"></div>
-        <div class="hero__gradient hero__gradient--2"></div>
-        <div class="hero__gradient hero__gradient--3"></div>
+        <div class="hero__gradient hero__gradient--1" appParallax [mode]="'both'" [speed]="0.15" [intensity]="40" [direction]="'down'"></div>
+        <div class="hero__gradient hero__gradient--2" appParallax [mode]="'both'" [speed]="0.1" [intensity]="30" [direction]="'up'"></div>
+        <div class="hero__gradient hero__gradient--3" appParallax [mode]="'mouse'" [intensity]="20" [smoothing]="0.05"></div>
         <div class="hero__noise"></div>
       </div>
 
-      <!-- Content -->
+      <!-- Content with floating animation -->
       <div class="hero__content">
-        <p class="hero__eyebrow">{{ 'home.hero.eyebrow' | translate }}</p>
+        <p class="hero__eyebrow" appFloating [variant]="'gentle'" [delay]="200">{{ 'home.hero.eyebrow' | translate }}</p>
         <h1 class="hero__title">
-          <span class="hero__title-line">{{ 'home.hero.title1' | translate }}</span>
-          <span class="hero__title-line hero__title-line--accent">{{ 'home.hero.title2' | translate }}</span>
+          <span class="hero__title-line" appFloating [variant]="'gentle'" [duration]="5000" [delay]="0">{{ 'home.hero.title1' | translate }}</span>
+          <span class="hero__title-line hero__title-line--accent" appFloating [variant]="'gentle'" [duration]="5500" [delay]="100">{{ 'home.hero.title2' | translate }}</span>
         </h1>
-        <p class="hero__subtitle">{{ 'home.hero.subtitle' | translate }}</p>
-        <div class="hero__cta">
+        <p class="hero__subtitle" appFloating [variant]="'gentle'" [duration]="4500" [delay]="300">{{ 'home.hero.subtitle' | translate }}</p>
+        <div class="hero__cta" appFloating [variant]="'gentle'" [duration]="4000" [delay]="400">
           <a routerLink="/products" class="btn btn--primary btn--large" data-testid="hero-cta">
             {{ 'home.hero.cta' | translate }}
             <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638l-3.96-3.67a.75.75 0 111.02-1.16l5.25 4.875a.75.75 0 010 1.16l-5.25 4.875a.75.75 0 11-1.02-1.16l3.96-3.67H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>
@@ -285,10 +289,10 @@ interface Testimonial {
          ================================================================ -->
     <section class="cta">
       <div class="cta__bg">
-        <div class="cta__gradient"></div>
+        <div class="cta__gradient" appParallax [speed]="0.2" [direction]="'down'" [scaleOnScroll]="1.1"></div>
       </div>
       <div class="container">
-        <div class="cta__content">
+        <div class="cta__content" appParallax [speed]="0.1" [direction]="'up'">
           <h2 class="cta__title">{{ 'home.cta.title' | translate }}</h2>
           <a routerLink="/products" class="cta__btn" [attr.aria-label]="'home.cta.button' | translate">
             {{ 'home.cta.button' | translate }}
