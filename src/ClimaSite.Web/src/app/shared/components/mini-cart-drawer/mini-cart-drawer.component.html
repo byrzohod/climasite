@@ -1,0 +1,119 @@
+@if (isOpen()) {
+  <!-- Backdrop -->
+  <div 
+    class="mini-cart-backdrop"
+    (click)="onBackdropClick($event)"
+    [@fadeBackdrop]
+    data-testid="mini-cart-backdrop"
+    aria-hidden="true"
+  ></div>
+  
+  <!-- Drawer Panel -->
+  <aside
+    #drawerPanel
+    class="mini-cart-drawer"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'cart.miniCart' | translate"
+    [@slideDrawer]
+    data-testid="mini-cart-drawer"
+  >
+    <!-- Header -->
+    <header class="drawer-header">
+      <h2 class="drawer-title">
+        {{ 'cart.yourCart' | translate }}
+        <span class="item-count">({{ itemCount() }})</span>
+      </h2>
+      <button
+        #closeButton
+        type="button"
+        class="close-btn"
+        (click)="close()"
+        [attr.aria-label]="'common.close' | translate"
+        data-testid="mini-cart-close"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="close-icon">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </header>
+    
+    <!-- Content -->
+    <div class="drawer-content">
+      @if (isEmpty()) {
+        <!-- Empty Cart State -->
+        <div class="empty-cart" data-testid="mini-cart-empty">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          <p class="empty-text">{{ 'cart.empty' | translate }}</p>
+          <a 
+            routerLink="/products" 
+            class="shop-link"
+            (click)="close()"
+            data-testid="mini-cart-shop-link"
+          >
+            {{ 'cart.continueShopping' | translate }}
+          </a>
+        </div>
+      } @else {
+        <!-- Cart Items List -->
+        <ul 
+          class="cart-items" 
+          role="list"
+          [@listAnimation]="items().length"
+          data-testid="mini-cart-items"
+        >
+          @for (item of items(); track trackByItemId($index, item)) {
+            <li class="cart-item-wrapper" [@itemRemove]>
+              <app-mini-cart-item
+                [item]="item"
+                [isLoading]="isItemLoading(item.id)"
+                (quantityChange)="updateQuantity(item.id, $event)"
+                (remove)="removeItem(item.id)"
+                data-testid="mini-cart-item"
+              />
+            </li>
+          }
+        </ul>
+      }
+    </div>
+    
+    <!-- Footer (only when cart has items) -->
+    @if (!isEmpty()) {
+      <footer class="drawer-footer" data-testid="mini-cart-footer">
+        <!-- Subtotal -->
+        <div class="subtotal-row">
+          <span class="subtotal-label">{{ 'cart.summary.subtotal' | translate }}</span>
+          <span class="subtotal-amount">{{ subtotal() | currency }}</span>
+        </div>
+        
+        <!-- Shipping Note -->
+        <p class="shipping-note">{{ 'cart.summary.calculatedAtCheckout' | translate }}</p>
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <a 
+            routerLink="/cart" 
+            class="btn btn-secondary"
+            (click)="close()"
+            data-testid="mini-cart-view-cart"
+          >
+            {{ 'cart.title' | translate }}
+          </a>
+          <a 
+            routerLink="/checkout" 
+            class="btn btn-primary"
+            (click)="close()"
+            data-testid="mini-cart-checkout"
+          >
+            {{ 'cart.checkout' | translate }}
+          </a>
+        </div>
+      </footer>
+    }
+  </aside>
+}

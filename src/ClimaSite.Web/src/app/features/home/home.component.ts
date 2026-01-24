@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit, OnDestroy, PLATFORM_ID, AfterViewInit, ElementRef, ViewChildren, QueryList } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Subscription } from 'rxjs';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ProductService } from '../../core/services/product.service';
@@ -19,6 +19,14 @@ interface Testimonial {
   text: string;
 }
 
+interface PromoBanner {
+  id: string;
+  messageKey: string;
+  ctaKey: string;
+  link: string;
+  active: boolean;
+}
+
 @Component({
   selector: 'app-home',
   standalone: true,
@@ -34,39 +42,128 @@ interface Testimonial {
   ],
   template: `
     <!-- ================================================================
-         HERO - Full-screen immersive experience
+         PROMO BANNER - Seasonal/promotional banner (TASK-21A-003)
          ================================================================ -->
-    <section class="hero" data-testid="hero-section">
-      <!-- Static gradient background (no animation) -->
-      <div class="hero__bg">
-        <div class="hero__gradient hero__gradient--1"></div>
-        <div class="hero__gradient hero__gradient--2"></div>
-        <div class="hero__gradient hero__gradient--3"></div>
-        <div class="hero__noise"></div>
-      </div>
-
-      <!-- Content (no floating animation) -->
-      <div class="hero__content">
-        <p class="hero__eyebrow">{{ 'home.hero.eyebrow' | translate }}</p>
-        <h1 class="hero__title">
-          <span class="hero__title-line">{{ 'home.hero.title1' | translate }}</span>
-          <span class="hero__title-line hero__title-line--accent">{{ 'home.hero.title2' | translate }}</span>
-        </h1>
-        <p class="hero__subtitle">{{ 'home.hero.subtitle' | translate }}</p>
-        <div class="hero__cta">
-          <a routerLink="/products" class="btn btn--primary btn--large" data-testid="hero-cta">
-            {{ 'home.hero.cta' | translate }}
-            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638l-3.96-3.67a.75.75 0 111.02-1.16l5.25 4.875a.75.75 0 010 1.16l-5.25 4.875a.75.75 0 11-1.02-1.16l3.96-3.67H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>
+    @if (promoBanner().active && !promoBannerDismissed()) {
+      <div class="promo-banner" data-testid="promo-banner">
+        <div class="promo-banner__content">
+          <span class="promo-banner__message">{{ promoBanner().messageKey | translate }}</span>
+          <a [routerLink]="promoBanner().link" class="promo-banner__cta">
+            {{ promoBanner().ctaKey | translate }}
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638l-3.96-3.67a.75.75 0 111.02-1.16l5.25 4.875a.75.75 0 010 1.16l-5.25 4.875a.75.75 0 11-1.02-1.16l3.96-3.67H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>
           </a>
         </div>
+        <button 
+          type="button" 
+          class="promo-banner__dismiss" 
+          (click)="dismissPromoBanner()"
+          [attr.aria-label]="'common.dismiss' | translate"
+        >
+          <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/></svg>
+        </button>
+      </div>
+    }
+
+    <!-- ================================================================
+         HERO - Product-focused split layout (TASK-21A-001, 002, 005, 006, 007)
+         ================================================================ -->
+    <section class="hero" data-testid="hero-section">
+      <!-- Clean gradient background - no blobs -->
+      <div class="hero__bg">
+        <div class="hero__gradient-subtle"></div>
       </div>
 
-      <!-- Scroll indicator -->
-      <div class="hero__scroll" aria-hidden="true">
-        <div class="hero__scroll-mouse">
-          <div class="hero__scroll-wheel"></div>
+      <div class="hero__container">
+        <div class="hero__grid">
+          <!-- Left: Content -->
+          <div class="hero__content">
+            <p class="hero__eyebrow">{{ 'home.hero.eyebrow' | translate }}</p>
+            <h1 class="hero__title">
+              <span class="hero__title-line">{{ 'home.hero.title1' | translate }}</span>
+              <span class="hero__title-line hero__title-line--accent">{{ 'home.hero.title2' | translate }}</span>
+            </h1>
+            <p class="hero__subtitle">{{ 'home.hero.subtitle' | translate }}</p>
+
+            <!-- Search Bar (TASK-21A-006) -->
+            <form class="hero__search" (submit)="onHeroSearch($event)" data-testid="hero-search">
+              <div class="hero__search-input-wrap">
+                <svg class="hero__search-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd"/>
+                </svg>
+                <input
+                  type="search"
+                  [(ngModel)]="heroSearchQuery"
+                  name="heroSearch"
+                  class="hero__search-input"
+                  [placeholder]="'home.hero.searchPlaceholder' | translate"
+                  [attr.aria-label]="'common.search' | translate"
+                />
+                <button type="submit" class="hero__search-btn" [attr.aria-label]="'common.search' | translate">
+                  {{ 'common.search' | translate }}
+                </button>
+              </div>
+            </form>
+
+            <!-- Dual CTAs (TASK-21A-007) -->
+            <div class="hero__ctas">
+              <a routerLink="/products" class="btn btn--primary btn--large" data-testid="hero-cta-primary">
+                {{ 'home.hero.cta.primary' | translate }}
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638l-3.96-3.67a.75.75 0 111.02-1.16l5.25 4.875a.75.75 0 010 1.16l-5.25 4.875a.75.75 0 11-1.02-1.16l3.96-3.67H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>
+              </a>
+              <a routerLink="/contact" class="btn btn--ghost btn--large" data-testid="hero-cta-secondary">
+                {{ 'home.hero.cta.secondary' | translate }}
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638l-3.96-3.67a.75.75 0 111.02-1.16l5.25 4.875a.75.75 0 010 1.16l-5.25 4.875a.75.75 0 11-1.02-1.16l3.96-3.67H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>
+              </a>
+            </div>
+
+            <!-- Shop by Category quick links -->
+            <nav class="hero__categories" aria-label="Shop by category">
+              <span class="hero__categories-label">{{ 'home.hero.shopBy' | translate }}</span>
+              <div class="hero__categories-links">
+                @for (cat of categories; track cat.slug) {
+                  <a [routerLink]="['/products/category', cat.slug]" class="hero__category-link">
+                    {{ cat.name | translate }}
+                  </a>
+                }
+              </div>
+            </nav>
+          </div>
+
+          <!-- Right: Product Image (TASK-21A-002) -->
+          <div class="hero__product">
+            <div class="hero__product-card">
+              <div class="hero__product-badge">{{ 'home.hero.featuredBadge' | translate }}</div>
+              <img 
+                src="https://images.unsplash.com/photo-1625961332771-3f40b0e2bdcf?w=600&h=600&fit=crop&q=80"
+                alt="Featured HVAC unit"
+                class="hero__product-image"
+                loading="eager"
+                width="600"
+                height="600"
+              />
+              <div class="hero__product-info">
+                <span class="hero__product-name">{{ 'home.hero.featuredProduct' | translate }}</span>
+                <span class="hero__product-tagline">{{ 'home.hero.featuredTagline' | translate }}</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <span class="hero__scroll-text">{{ 'home.hero.scroll' | translate }}</span>
+      </div>
+    </section>
+
+    <!-- ================================================================
+         VALUE STRIP - Above the fold (TASK-21A-004)
+         ================================================================ -->
+    <section class="values values--compact" data-testid="values-section">
+      <div class="values__container">
+        @for (value of valueProps; track value.key) {
+          <div class="values__item">
+            <div class="values__icon" [innerHTML]="value.icon"></div>
+            <div class="values__text">
+              <span class="values__label">{{ value.key | translate }}</span>
+            </div>
+          </div>
+        }
       </div>
     </section>
 
@@ -320,6 +417,83 @@ interface Testimonial {
     }
 
     /* ==========================================================================
+       PROMO BANNER (TASK-21A-003)
+       ========================================================================== */
+    .promo-banner {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 3rem 0.75rem 1.5rem;
+      background: linear-gradient(135deg, var(--color-ember-500) 0%, var(--color-ember-600) 100%);
+      color: var(--color-text-inverse);
+    }
+
+    .promo-banner__content {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .promo-banner__message {
+      font-size: 0.9375rem;
+      font-weight: 500;
+    }
+
+    .promo-banner__cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--color-text-inverse);
+      text-decoration: none;
+      padding: 0.375rem 0.75rem;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius-full);
+      transition: background var(--transition-fast);
+
+      svg {
+        width: 14px;
+        height: 14px;
+        transition: transform var(--transition-fast);
+      }
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.25);
+
+        svg {
+          transform: translateX(2px);
+        }
+      }
+    }
+
+    .promo-banner__dismiss {
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 0.375rem;
+      background: transparent;
+      border: none;
+      color: var(--color-text-inverse);
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity var(--transition-fast);
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+
+    /* ==========================================================================
        BUTTONS
        ========================================================================== */
     .btn {
@@ -353,6 +527,17 @@ interface Testimonial {
       &:hover {
         transform: translateY(-2px);
         box-shadow: 0 10px 40px -10px var(--shadow-color-lg);
+      }
+    }
+
+    .btn--ghost {
+      background: transparent;
+      color: var(--color-text-primary);
+      border: 2px solid var(--color-border-secondary);
+
+      &:hover {
+        background: var(--color-bg-hover);
+        border-color: var(--color-text-primary);
       }
     }
 
@@ -405,16 +590,15 @@ interface Testimonial {
     }
 
     /* ==========================================================================
-       HERO SECTION
+       HERO SECTION - Redesigned (TASK-21A-001, 002, 005)
        ========================================================================== */
     .hero {
       position: relative;
-      min-height: 100vh;
-      min-height: 100dvh;
+      min-height: 85vh;
       display: flex;
       align-items: center;
-      justify-content: center;
       overflow: hidden;
+      padding: 4rem 0 2rem;
     }
 
     .hero__bg {
@@ -423,60 +607,44 @@ interface Testimonial {
       z-index: 0;
     }
 
-    .hero__gradient {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(80px);
-      opacity: 0.5;
-      /* No animation - static decorative elements */
-
-      &--1 {
-        width: 60vw;
-        height: 60vw;
-        top: -20%;
-        left: -10%;
-        background: var(--color-primary);
-      }
-
-      &--2 {
-        width: 50vw;
-        height: 50vw;
-        bottom: -20%;
-        right: -10%;
-        background: var(--color-accent);
-      }
-
-      &--3 {
-        width: 40vw;
-        height: 40vw;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: var(--color-primary-light);
-      }
-    }
-
-    .hero__noise {
+    /* Subtle gradient background - no blobs (TASK-21A-001) */
+    .hero__gradient-subtle {
       position: absolute;
       inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-      opacity: 0.03;
-      pointer-events: none;
+      background: 
+        radial-gradient(ellipse 80% 50% at 20% 40%, var(--color-primary-100) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 40% at 80% 60%, var(--color-accent-100) 0%, transparent 50%);
+      opacity: 0.6;
     }
 
-    .hero__content {
+    [data-theme="dark"] .hero__gradient-subtle {
+      background: 
+        radial-gradient(ellipse 80% 50% at 20% 40%, rgba(14, 165, 233, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse 60% 40% at 80% 60%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
+      opacity: 0.8;
+    }
+
+    .hero__container {
       position: relative;
       z-index: 1;
-      text-align: center;
+      width: 100%;
+      max-width: var(--container-max);
+      margin: 0 auto;
       padding: 0 var(--container-padding);
-      max-width: 900px;
-      animation: heroFadeIn 1s ease-out;
+    }
+
+    .hero__grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+      animation: heroFadeIn 0.8s ease-out;
     }
 
     @keyframes heroFadeIn {
       from {
         opacity: 0;
-        transform: translateY(30px);
+        transform: translateY(20px);
       }
       to {
         opacity: 1;
@@ -484,97 +652,285 @@ interface Testimonial {
       }
     }
 
+    .hero__content {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
     .hero__eyebrow {
-      display: inline-block;
+      display: inline-flex;
+      align-self: flex-start;
       padding: 0.5rem 1rem;
-      margin-bottom: 1.5rem;
-      font-size: 0.875rem;
+      font-size: 0.8125rem;
       font-weight: 600;
       letter-spacing: 0.05em;
       text-transform: uppercase;
-      color: var(--color-text-secondary);
-      background: var(--color-bg-secondary);
-      border: 1px solid var(--color-border-primary);
+      color: var(--color-primary);
+      background: var(--color-primary-100);
       border-radius: var(--radius-full);
-      animation: heroFadeIn 1s ease-out 0.2s both;
+      margin: 0;
+    }
+
+    [data-theme="dark"] .hero__eyebrow {
+      background: rgba(14, 165, 233, 0.15);
     }
 
     .hero__title {
-      font-size: clamp(3rem, 10vw, 6rem);
+      font-size: clamp(2.5rem, 5vw, 4rem);
       font-weight: 800;
-      line-height: 1;
-      letter-spacing: -0.04em;
-      margin: 0 0 1.5rem;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin: 0;
       color: var(--color-text-primary);
     }
 
     .hero__title-line {
       display: block;
-      animation: heroFadeIn 1s ease-out 0.3s both;
 
       &--accent {
         background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
-        animation-delay: 0.4s;
       }
     }
 
     .hero__subtitle {
-      font-size: clamp(1.125rem, 2vw, 1.375rem);
+      font-size: 1.125rem;
       line-height: 1.6;
       color: var(--color-text-secondary);
-      margin: 0 0 2.5rem;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
-      animation: heroFadeIn 1s ease-out 0.5s both;
+      margin: 0;
+      max-width: 480px;
     }
 
-    .hero__cta {
-      animation: heroFadeIn 1s ease-out 0.6s both;
+    /* Hero Search (TASK-21A-006) */
+    .hero__search {
+      margin-top: 0.5rem;
     }
 
-    .hero__scroll {
-      position: absolute;
-      bottom: 2rem;
-      left: 50%;
-      transform: translateX(-50%);
+    .hero__search-input-wrap {
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      background: var(--color-bg-primary);
+      border: 1px solid var(--color-border-primary);
+      border-radius: var(--radius-full);
+      padding: 0.25rem;
+      box-shadow: 0 4px 20px var(--shadow-color);
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+
+      &:focus-within {
+        border-color: var(--color-primary);
+        box-shadow: 0 4px 20px var(--shadow-color), 0 0 0 3px var(--color-primary-100);
+      }
+    }
+
+    .hero__search-icon {
+      width: 20px;
+      height: 20px;
+      margin-left: 1rem;
+      color: var(--color-text-tertiary);
+      flex-shrink: 0;
+    }
+
+    .hero__search-input {
+      flex: 1;
+      padding: 0.875rem 1rem;
+      border: none;
+      background: transparent;
+      color: var(--color-text-primary);
+      font-size: 1rem;
+      outline: none;
+      min-width: 0;
+
+      &::placeholder {
+        color: var(--color-text-tertiary);
+      }
+    }
+
+    .hero__search-btn {
+      padding: 0.75rem 1.5rem;
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      border: none;
+      border-radius: var(--radius-full);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background var(--transition-fast);
+      white-space: nowrap;
+
+      &:hover {
+        background: var(--color-primary-hover);
+      }
+    }
+
+    /* Dual CTAs (TASK-21A-007) */
+    .hero__ctas {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    /* Shop by category links */
+    .hero__categories {
+      display: flex;
       align-items: center;
       gap: 0.75rem;
-      animation: heroFadeIn 1s ease-out 1s both;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
     }
 
-    .hero__scroll-mouse {
-      width: 24px;
-      height: 40px;
-      border: 2px solid var(--color-text-tertiary);
-      border-radius: 12px;
+    .hero__categories-label {
+      font-size: 0.875rem;
+      color: var(--color-text-tertiary);
+    }
+
+    .hero__categories-links {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .hero__category-link {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      padding: 0.375rem 0.75rem;
+      background: var(--color-bg-secondary);
+      border-radius: var(--radius-full);
+      transition: all var(--transition-fast);
+
+      &:hover {
+        color: var(--color-primary);
+        background: var(--color-primary-100);
+      }
+    }
+
+    [data-theme="dark"] .hero__category-link:hover {
+      background: rgba(14, 165, 233, 0.15);
+    }
+
+    /* Hero Product Image (TASK-21A-002) */
+    .hero__product {
       display: flex;
       justify-content: center;
-      padding-top: 8px;
+      align-items: center;
     }
 
-    .hero__scroll-wheel {
-      width: 4px;
-      height: 8px;
-      background: var(--color-text-tertiary);
-      border-radius: 2px;
-      animation: scrollWheel 2s ease-in-out infinite;
+    .hero__product-card {
+      position: relative;
+      background: var(--color-bg-card);
+      border-radius: var(--radius-xl);
+      padding: 1.5rem;
+      box-shadow: 0 20px 60px var(--shadow-color-lg);
+      border: 1px solid var(--color-border-primary);
+      max-width: 400px;
+      width: 100%;
     }
 
-    @keyframes scrollWheel {
-      0%, 100% { opacity: 1; transform: translateY(0); }
-      50% { opacity: 0.3; transform: translateY(8px); }
-    }
-
-    .hero__scroll-text {
+    .hero__product-badge {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      padding: 0.375rem 0.75rem;
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
       font-size: 0.75rem;
+      font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.05em;
+      border-radius: var(--radius-full);
+    }
+
+    .hero__product-image {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: var(--radius-lg);
+      background: var(--color-bg-tertiary);
+    }
+
+    .hero__product-info {
+      margin-top: 1rem;
+      text-align: center;
+    }
+
+    .hero__product-name {
+      display: block;
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    .hero__product-tagline {
+      display: block;
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    /* ==========================================================================
+       VALUES SECTION - Compact above-fold version (TASK-21A-004)
+       ========================================================================== */
+    .values--compact {
+      padding: 2rem 0;
+      background: var(--color-bg-secondary);
+      border-top: 1px solid var(--color-border-primary);
+      border-bottom: 1px solid var(--color-border-primary);
+    }
+
+    .values--compact .values__container {
+      max-width: var(--container-max);
+      margin: 0 auto;
+      padding: 0 var(--container-padding);
+      display: flex;
+      justify-content: center;
+      gap: 3rem;
+      flex-wrap: wrap;
+    }
+
+    .values--compact .values__item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .values--compact .values__icon {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-primary);
+      background: var(--color-primary-100);
+      border-radius: var(--radius-md);
+
+      :deep(svg) {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    [data-theme="dark"] .values--compact .values__icon {
+      background: rgba(14, 165, 233, 0.15);
+    }
+
+    .values--compact .values__text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .values--compact .values__label {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    .values--compact .values__detail {
+      font-size: 0.8125rem;
       color: var(--color-text-tertiary);
     }
 
@@ -1157,6 +1513,40 @@ interface Testimonial {
        RESPONSIVE
        ========================================================================== */
     @media (max-width: 1024px) {
+      .hero__grid {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+        text-align: center;
+      }
+
+      .hero__content {
+        align-items: center;
+      }
+
+      .hero__eyebrow {
+        align-self: center;
+      }
+
+      .hero__subtitle {
+        max-width: 100%;
+      }
+
+      .hero__ctas {
+        justify-content: center;
+      }
+
+      .hero__categories {
+        justify-content: center;
+      }
+
+      .hero__product {
+        order: -1;
+      }
+
+      .hero__product-card {
+        max-width: 320px;
+      }
+
       .categories__grid {
         grid-template-columns: repeat(2, 1fr);
       }
@@ -1177,24 +1567,45 @@ interface Testimonial {
       .stats__grid {
         grid-template-columns: repeat(2, 1fr);
       }
+
+      .values--compact .values__container {
+        gap: 2rem;
+      }
     }
 
     @media (max-width: 768px) {
+      .hero {
+        min-height: auto;
+        padding: 2rem 0;
+      }
+
       .hero__title {
-        font-size: clamp(2.5rem, 12vw, 4rem);
+        font-size: clamp(2rem, 8vw, 3rem);
       }
 
-      .hero__scroll {
-        display: none;
+      .hero__search-input-wrap {
+        flex-wrap: wrap;
       }
 
-      .values__container {
-        gap: 2rem;
+      .hero__search-btn {
+        width: 100%;
+        margin-top: 0.5rem;
       }
 
-      .values__item {
-        flex: 0 0 calc(50% - 1rem);
-        justify-content: center;
+      .hero__product-card {
+        max-width: 280px;
+        padding: 1rem;
+      }
+
+      .values--compact .values__container {
+        flex-direction: column;
+        align-items: center;
+        gap: 1.25rem;
+      }
+
+      .values--compact .values__item {
+        width: 100%;
+        max-width: 280px;
       }
 
       .categories__grid {
@@ -1229,11 +1640,26 @@ interface Testimonial {
         width: 100%;
         max-width: none;
       }
+
+      .promo-banner__content {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
     }
 
     @media (max-width: 480px) {
-      .values__item {
-        flex: 0 0 100%;
+      .hero__ctas {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .hero__ctas .btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .hero__categories-links {
+        justify-content: center;
       }
 
       .stats__grid {
@@ -1244,17 +1670,11 @@ interface Testimonial {
 
     /* Reduced motion */
     @media (prefers-reduced-motion: reduce) {
-      .hero__scroll-wheel,
       .brands__track {
         animation: none;
       }
 
-      .hero__content,
-      .hero__eyebrow,
-      .hero__title-line,
-      .hero__subtitle,
-      .hero__cta,
-      .hero__scroll {
+      .hero__grid {
         animation: none;
       }
     }
@@ -1265,6 +1685,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly translateService = inject(TranslateService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly elementRef = inject(ElementRef);
+  private readonly router = inject(Router);
 
   private testimonialInterval: ReturnType<typeof setInterval> | null = null;
   // HOME-P03: Track subscriptions to prevent memory leaks
@@ -1284,15 +1705,34 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   newsletterError = signal<string | null>(null);
   newsletterSubmitted = signal(false);
 
+  // Hero section signals (TASK-21A-003, 21A-006, 21A-008)
+  heroSearchQuery = '';
+  promoBannerDismissed = signal(false);
+  promoBanner = signal<PromoBanner>({
+    id: 'winter-2026',
+    messageKey: 'home.promo.banner.winter',
+    ctaKey: 'home.promo.banner.cta',
+    link: '/products/category/heating-systems',
+    active: true
+  });
+
+  // Hero categories for quick links
+  heroCategories = [
+    { slug: 'air-conditioners', name: 'categories.airConditioning' },
+    { slug: 'heating-systems', name: 'categories.heatingSystems' },
+    { slug: 'ventilation', name: 'categories.ventilation' },
+    { slug: 'water-purification', name: 'categories.waterPurification' }
+  ];
+
   // Data
   brandsList = ['Daikin', 'Mitsubishi Electric', 'LG', 'Samsung', 'Fujitsu', 'Gree', 'Midea', 'Toshiba', 'Aquaphor', 'BWT'];
   duplicatedBrands = [...this.brandsList, ...this.brandsList];
 
   valueProps = [
-    { key: 'home.values.shipping', icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25m-2.25 0h-2.25m0 0v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v4.964m12-4.006v4.006m0 0v3.75m-12-7.756v7.756m12-7.756h-2.25" /></svg>` },
-    { key: 'home.values.warranty', icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>` },
-    { key: 'home.values.support', icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" /></svg>` },
-    { key: 'home.values.installation', icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" /></svg>` }
+    { key: 'home.values.shipping', detail: 'home.values.shippingDetail', icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25m-2.25 0h-2.25m0 0v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v4.964m12-4.006v4.006m0 0v3.75m-12-7.756v7.756m12-7.756h-2.25" /></svg>` },
+    { key: 'home.values.warranty', detail: null, icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>` },
+    { key: 'home.values.support', detail: null, icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" /></svg>` },
+    { key: 'home.values.installation', detail: null, icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" /></svg>` }
   ];
 
   categories = [
@@ -1362,6 +1802,11 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     this.loadFeaturedProducts();
     if (isPlatformBrowser(this.platformId)) {
       this.startTestimonialRotation();
+      // Check if promo banner was previously dismissed
+      const dismissed = localStorage.getItem('promoBannerDismissed_' + this.promoBanner().id);
+      if (dismissed === 'true') {
+        this.promoBannerDismissed.set(true);
+      }
     }
     // HOME-P03: Store subscription for cleanup to prevent memory leak
     this.langChangeSubscription = this.translateService.onLangChange.subscribe(() => {
@@ -1453,6 +1898,23 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
 
   getInitials(name: string): string {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  }
+
+  // Hero section methods (TASK-21A-003, 21A-006)
+  dismissPromoBanner(): void {
+    this.promoBannerDismissed.set(true);
+    // Optionally persist to localStorage
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.setItem('promoBannerDismissed_' + this.promoBanner().id, 'true');
+    }
+  }
+
+  onHeroSearch(event: Event): void {
+    event.preventDefault();
+    const query = this.heroSearchQuery.trim();
+    if (query) {
+      this.router.navigate(['/products'], { queryParams: { search: query } });
+    }
   }
 
   submitNewsletter(event: Event): void {

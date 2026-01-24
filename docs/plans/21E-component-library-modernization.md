@@ -976,9 +976,9 @@ export class PaginationComponent {
 ### Phase 2: Icon System
 
 - [x] **TASK-21E-012**: Install and configure `lucide-angular`
-- [ ] **TASK-21E-013**: Create `IconComponent` wrapper with size/color props
+- [x] **TASK-21E-013**: Create `IconComponent` wrapper with size/color props
 - [ ] **TASK-21E-014**: Replace all inline SVGs with Lucide icons
-- [ ] **TASK-21E-015**: Create icon usage documentation and guidelines
+- [x] **TASK-21E-015**: Create icon usage documentation and guidelines
 
 ### Phase 3: Card System
 
@@ -1009,10 +1009,10 @@ export class PaginationComponent {
 
 ### Phase 6: Loading States
 
-- [ ] **TASK-21E-034**: Create base `SkeletonComponent`
-- [ ] **TASK-21E-035**: Create `SkeletonTextComponent`
+- [x] **TASK-21E-034**: Create base `SkeletonComponent`
+- [x] **TASK-21E-035**: Create `SkeletonTextComponent`
 - [ ] **TASK-21E-036**: Create `SkeletonAvatarComponent`
-- [ ] **TASK-21E-037**: Refactor `SkeletonProductCardComponent` to use base skeleton
+- [x] **TASK-21E-037**: Refactor `SkeletonProductCardComponent` to use base skeleton
 - [ ] **TASK-21E-038**: Create `SkeletonTableComponent`
 
 ### Phase 7: Modal/Dialog System

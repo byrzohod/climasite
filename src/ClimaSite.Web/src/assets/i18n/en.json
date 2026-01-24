@@ -386,8 +386,11 @@
   },
   "cart": {
     "title": "Shopping Cart",
+    "yourCart": "Your Cart",
+    "miniCart": "Shopping Cart Preview",
     "empty": "Your cart is empty",
     "continueShopping": "Continue Shopping",
+    "startShopping": "Start Shopping",
     "items": "{{count}} item(s)",
     "item": {
       "remove": "Remove",
@@ -660,21 +663,35 @@
       "title": "Climate & Water Solutions",
       "titleLine1": "Perfect Climate,",
       "titleLine2": "Pure Water",
-      "eyebrow": "CDL - Your Comfort Partner",
-      "title1": "Climate Control",
-      "title2": "& Water Purification",
+      "eyebrow": "Nordic Tech Climate Systems",
+      "title1": "Perfect Climate.",
+      "title2": "Precision Engineered.",
       "line1": "Perfect Climate,",
       "line2": "Pure Water",
-      "subtitle": "Premium HVAC systems and water purification solutions for your home and business. Over 15 years of experience in Bulgaria.",
+      "subtitle": "Premium HVAC solutions for homes and businesses. Energy-efficient. Professionally installed.",
       "cta": "View Products",
+      "cta.primary": "Shop All Products",
+      "cta.secondary": "Find Your System",
       "secondaryCta": "Get Expert Advice",
       "badge": "Trusted by 10,000+ Customers",
       "scroll": "Scroll to explore",
+      "searchPlaceholder": "Search for products, brands, categories...",
+      "shopBy": "Shop by:",
+      "featuredBadge": "Featured",
+      "featuredProduct": "Premium Split AC",
+      "featuredTagline": "Energy-efficient cooling for any space",
       "visualLabel": "Energy Savings",
       "visualValue": "Up to 40%",
       "cooling": "Cooling",
       "heating": "Heating",
       "ventilation": "Ventilation"
+    },
+    "promo": {
+      "banner": {
+        "winter": "Winter Sale: Up to 30% off heating systems",
+        "summer": "Summer Sale: Cool savings on air conditioners",
+        "cta": "Shop Now"
+      }
     },
     "slides": {
       "summer": {
@@ -759,6 +776,7 @@
     },
     "values": {
       "shipping": "Free Shipping",
+      "shippingDetail": "On orders over $500",
       "warranty": "5-Year Warranty",
       "support": "24/7 Support",
       "installation": "Pro Installation"

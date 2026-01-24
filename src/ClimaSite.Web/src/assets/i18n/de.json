@@ -386,8 +386,11 @@
   },
   "cart": {
     "title": "Warenkorb",
+    "yourCart": "Ihr Warenkorb",
+    "miniCart": "Warenkorb-Vorschau",
     "empty": "Ihr Warenkorb ist leer",
     "continueShopping": "Weiter einkaufen",
+    "startShopping": "Einkaufen starten",
     "items": "{{count}} Artikel",
     "item": {
       "remove": "Entfernen",

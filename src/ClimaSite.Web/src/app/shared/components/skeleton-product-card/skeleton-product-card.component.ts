@@ -1,28 +1,101 @@
-import { Component } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { 
+  SkeletonComponent, 
+  type SkeletonAnimation 
+} from '../skeleton/skeleton.component';
 
+/**
+ * Skeleton Product Card Component (Legacy Location)
+ * 
+ * This component has been refactored to use the new base SkeletonComponent.
+ * For new usage, consider importing from '@shared/components/skeleton'.
+ * 
+ * @deprecated Import from '../skeleton' instead for the full skeleton system
+ */
 @Component({
   selector: 'app-skeleton-product-card',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, SkeletonComponent],
   template: `
-    <div class="skeleton-card" data-testid="skeleton-product-card">
-      <div class="skeleton-image shimmer"></div>
+    <div 
+      class="skeleton-card" 
+      role="status"
+      [attr.aria-label]="ariaLabel()"
+      [attr.data-testid]="testId()"
+    >
+      <span class="sr-only">{{ ariaLabel() }}</span>
+      
+      <!-- Image placeholder -->
+      <div class="skeleton-image">
+        <app-skeleton 
+          variant="rectangular" 
+          width="100%" 
+          height="100%" 
+          [animation]="animation()"
+          ariaLabel=""
+        />
+      </div>
+      
+      <!-- Content area -->
       <div class="skeleton-content">
-        <div class="skeleton-category shimmer"></div>
-        <div class="skeleton-title shimmer"></div>
-        <div class="skeleton-title-short shimmer"></div>
-        <div class="skeleton-rating shimmer"></div>
-        <div class="skeleton-price shimmer"></div>
+        <!-- Category -->
+        <app-skeleton 
+          variant="text" 
+          width="60%" 
+          height="0.75rem" 
+          [animation]="animation()"
+          ariaLabel=""
+        />
+        
+        <!-- Title line 1 -->
+        <app-skeleton 
+          variant="text" 
+          width="100%" 
+          height="1rem" 
+          [animation]="animation()"
+          ariaLabel=""
+        />
+        
+        <!-- Title line 2 (shorter) -->
+        <app-skeleton 
+          variant="text" 
+          width="70%" 
+          height="1rem" 
+          [animation]="animation()"
+          ariaLabel=""
+        />
+        
+        <!-- Rating -->
+        <app-skeleton 
+          variant="text" 
+          width="40%" 
+          height="0.875rem" 
+          [animation]="animation()"
+          ariaLabel=""
+        />
+        
+        <!-- Price -->
+        <app-skeleton 
+          variant="text" 
+          width="50%" 
+          height="1.5rem" 
+          [animation]="animation()"
+          ariaLabel=""
+        />
       </div>
     </div>
   `,
   styles: [`
+    :host {
+      display: block;
+    }
+
     .skeleton-card {
-      background: var(--color-bg-primary);
-      border-radius: 12px;
+      background: var(--color-bg-card);
+      border-radius: var(--radius-xl);
       overflow: hidden;
-      border: 1px solid var(--color-border);
+      border: 1px solid var(--color-border-primary);
     }
 
     .skeleton-image {
@@ -32,83 +105,41 @@ import { CommonModule } from '@angular/common';
     }
 
     .skeleton-content {
-      padding: 1rem;
+      padding: var(--space-4);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
     }
 
-    .skeleton-category {
-      width: 60%;
-      height: 12px;
-      border-radius: 4px;
-      margin-bottom: 0.75rem;
-      background: var(--color-bg-secondary);
+    /* Spacing adjustments for specific elements */
+    .skeleton-content app-skeleton:nth-child(3) {
+      margin-bottom: var(--space-2);
     }
 
-    .skeleton-title {
-      width: 100%;
-      height: 16px;
-      border-radius: 4px;
-      margin-bottom: 0.5rem;
-      background: var(--color-bg-secondary);
+    .skeleton-content app-skeleton:nth-child(4) {
+      margin-bottom: var(--space-2);
     }
 
-    .skeleton-title-short {
-      width: 70%;
-      height: 16px;
-      border-radius: 4px;
-      margin-bottom: 1rem;
-      background: var(--color-bg-secondary);
-    }
-
-    .skeleton-rating {
-      width: 40%;
-      height: 14px;
-      border-radius: 4px;
-      margin-bottom: 1rem;
-      background: var(--color-bg-secondary);
-    }
-
-    .skeleton-price {
-      width: 50%;
-      height: 24px;
-      border-radius: 4px;
-      background: var(--color-bg-secondary);
-    }
-
-    .shimmer {
-      position: relative;
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
       overflow: hidden;
-
-      &::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(
-          90deg,
-          transparent,
-          rgba(255, 255, 255, 0.2),
-          transparent
-        );
-        animation: shimmer 1.5s infinite;
-      }
-    }
-
-    @keyframes shimmer {
-      0% {
-        transform: translateX(-100%);
-      }
-      100% {
-        transform: translateX(100%);
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .shimmer::after {
-        animation: none;
-      }
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
     }
   `]
 })
-export class SkeletonProductCardComponent {}
+export class SkeletonProductCardComponent {
+  /** Animation type */
+  readonly animation = input<SkeletonAnimation>('pulse');
+  
+  /** Accessible label for screen readers */
+  readonly ariaLabel = input<string>('Loading product...');
+  
+  /** Test ID for E2E testing */
+  readonly testId = input<string>('skeleton-product-card');
+}

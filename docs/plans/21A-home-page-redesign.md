@@ -90,14 +90,14 @@ Transform the ClimaSite home page from a generic, template-like experience into 
 
 **Tasks:**
 
-- [ ] TASK-21A-001: Remove gradient blob backgrounds from hero section
-- [ ] TASK-21A-002: Create HeroProductComponent with product image slot
-- [ ] TASK-21A-003: Implement seasonal promo banner with dismiss functionality
-- [ ] TASK-21A-004: Move value propositions strip above the fold (below hero)
-- [ ] TASK-21A-005: Replace floating animations with single fade-in entrance
-- [ ] TASK-21A-006: Add prominent search bar to hero (or ensure header search is visible)
-- [ ] TASK-21A-007: Create dual CTA layout (primary + secondary ghost button)
-- [ ] TASK-21A-008: Implement hero content API for dynamic seasonal content
+- [x] TASK-21A-001: Remove gradient blob backgrounds from hero section
+- [x] TASK-21A-002: Create HeroProductComponent with product image slot
+- [x] TASK-21A-003: Implement seasonal promo banner with dismiss functionality
+- [x] TASK-21A-004: Move value propositions strip above the fold (below hero)
+- [x] TASK-21A-005: Replace floating animations with single fade-in entrance
+- [x] TASK-21A-006: Add prominent search bar to hero (or ensure header search is visible)
+- [x] TASK-21A-007: Create dual CTA layout (primary + secondary ghost button)
+- [x] TASK-21A-008: Implement hero content API for dynamic seasonal content
 
 ---
 
@@ -478,15 +478,15 @@ Transform the ClimaSite home page from a generic, template-like experience into 
 
 ## Task List Summary
 
-### Hero Section (8 tasks)
-- [ ] TASK-21A-001: Remove gradient blob backgrounds from hero section
-- [ ] TASK-21A-002: Create HeroProductComponent with product image slot
-- [ ] TASK-21A-003: Implement seasonal promo banner with dismiss functionality
-- [ ] TASK-21A-004: Move value propositions strip above the fold
-- [ ] TASK-21A-005: Replace floating animations with single fade-in entrance
-- [ ] TASK-21A-006: Add prominent search bar to hero
-- [ ] TASK-21A-007: Create dual CTA layout (primary + secondary ghost button)
-- [ ] TASK-21A-008: Implement hero content API for dynamic seasonal content
+### Hero Section (8 tasks) - COMPLETED
+- [x] TASK-21A-001: Remove gradient blob backgrounds from hero section
+- [x] TASK-21A-002: Create HeroProductComponent with product image slot
+- [x] TASK-21A-003: Implement seasonal promo banner with dismiss functionality
+- [x] TASK-21A-004: Move value propositions strip above the fold
+- [x] TASK-21A-005: Replace floating animations with single fade-in entrance
+- [x] TASK-21A-006: Add prominent search bar to hero
+- [x] TASK-21A-007: Create dual CTA layout (primary + secondary ghost button)
+- [x] TASK-21A-008: Implement hero content API for dynamic seasonal content
 
 ### Categories Section (7 tasks)
 - [ ] TASK-21A-009: Implement Bento grid layout for categories

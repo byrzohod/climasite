@@ -476,16 +476,16 @@ export class SwipeGestureDirective {
 - [ ] TASK-21C-017: Add loading and empty states to search
 
 ### Phase 3: Mini-Cart Drawer
-- [ ] TASK-21C-018: Create MiniCartDrawerComponent
-- [ ] TASK-21C-019: Create MiniCartItemComponent
-- [ ] TASK-21C-020: Add mini-cart state to CartService
-- [ ] TASK-21C-021: Implement drawer slide animation
-- [ ] TASK-21C-022: Add backdrop with click-to-close
-- [ ] TASK-21C-023: Implement quantity update inline
-- [ ] TASK-21C-024: Implement remove item with animation
+- [x] TASK-21C-018: Create MiniCartDrawerComponent
+- [x] TASK-21C-019: Create MiniCartItemComponent
+- [x] TASK-21C-020: Add mini-cart state to CartService
+- [x] TASK-21C-021: Implement drawer slide animation
+- [x] TASK-21C-022: Add backdrop with click-to-close
+- [x] TASK-21C-023: Implement quantity update inline
+- [x] TASK-21C-024: Implement remove item with animation
 - [ ] TASK-21C-025: Add upsell products section
-- [ ] TASK-21C-026: Handle empty cart state
-- [ ] TASK-21C-027: Add keyboard accessibility (focus trap, Escape)
+- [x] TASK-21C-026: Handle empty cart state
+- [x] TASK-21C-027: Add keyboard accessibility (focus trap, Escape)
 - [ ] TASK-21C-028: Connect cart icon click to open drawer
 
 ### Phase 4: Mega Menu Redesign
@@ -516,14 +516,14 @@ export class SwipeGestureDirective {
 ### Phase 7: Testing & Polish
 - [ ] TASK-21C-048: Write unit tests for new header components
 - [ ] TASK-21C-049: Write unit tests for SearchService
-- [ ] TASK-21C-050: Write unit tests for MiniCartDrawerComponent
+- [x] TASK-21C-050: Write unit tests for MiniCartDrawerComponent
 - [ ] TASK-21C-051: Write E2E tests for search flow
 - [ ] TASK-21C-052: Write E2E tests for mini-cart flow
 - [ ] TASK-21C-053: Write E2E tests for mobile navigation
 - [ ] TASK-21C-054: Cross-browser testing (Chrome, Firefox, Safari)
 - [ ] TASK-21C-055: Accessibility audit (screen reader, keyboard)
 - [ ] TASK-21C-056: Performance audit (no layout shift, fast interactions)
-- [ ] TASK-21C-057: Update i18n translations for new strings
+- [x] TASK-21C-057: Update i18n translations for new strings
 
 ---
 

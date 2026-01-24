@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
+
 import { CartService } from '../../core/services/cart.service';
 import { CheckoutService, CheckoutStep } from '../../core/services/checkout.service';
 import { AddressService } from '../../core/services/address.service';
@@ -11,11 +12,12 @@ import { PaymentService } from '../../core/services/payment.service';
 import { ConfettiService } from '../../core/services/confetti.service';
 import { Address } from '../../core/models/order.model';
 import { SavedAddress } from '../../core/models/address.model';
+import { IconComponent, ICON_REGISTRY } from '../../shared/components/icon';
 
 @Component({
   selector: 'app-checkout',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ReactiveFormsModule, TranslateModule],
+  imports: [CommonModule, RouterLink, FormsModule, ReactiveFormsModule, TranslateModule, IconComponent],
   template: `
     <div class="checkout-container" data-testid="checkout-page">
       <h1>{{ 'checkout.title' | translate }}</h1>
@@ -173,19 +175,19 @@ import { SavedAddress } from '../../core/models/address.model';
                 <div class="shipping-methods" data-testid="shipping-methods">
                   <label class="payment-option" [class.selected]="checkoutService.shippingMethod() === 'standard'">
                     <input type="radio" name="shippingMethod" value="standard" [checked]="checkoutService.shippingMethod() === 'standard'" (change)="selectShippingMethod('standard')" data-testid="shipping-standard" />
-                    <span class="payment-icon">📦</span>
+                    <span class="payment-icon"><app-icon name="package" size="lg" /></span>
                     <span>{{ 'checkout.shipping.standard' | translate }} ({{ 'checkout.shipping.standardTime' | translate }}) - {{ 'checkout.shipping.free' | translate }}</span>
                   </label>
 
                   <label class="payment-option" [class.selected]="checkoutService.shippingMethod() === 'express'">
                     <input type="radio" name="shippingMethod" value="express" [checked]="checkoutService.shippingMethod() === 'express'" (change)="selectShippingMethod('express')" data-testid="shipping-express" />
-                    <span class="payment-icon">🚀</span>
+                    <span class="payment-icon"><app-icon name="truck" size="lg" /></span>
                     <span>{{ 'checkout.shipping.express' | translate }} ({{ 'checkout.shipping.expressTime' | translate }}) - $9.99</span>
                   </label>
 
                   <label class="payment-option" [class.selected]="checkoutService.shippingMethod() === 'overnight'">
                     <input type="radio" name="shippingMethod" value="overnight" [checked]="checkoutService.shippingMethod() === 'overnight'" (change)="selectShippingMethod('overnight')" data-testid="shipping-overnight" />
-                    <span class="payment-icon">⚡</span>
+                    <span class="payment-icon"><app-icon name="zap" size="lg" /></span>
                     <span>{{ 'checkout.shipping.overnight' | translate }} ({{ 'checkout.shipping.overnightTime' | translate }}) - $19.99</span>
                   </label>
                 </div>
@@ -195,19 +197,19 @@ import { SavedAddress } from '../../core/models/address.model';
                 <div class="payment-methods">
                   <label class="payment-option" [class.selected]="checkoutService.paymentMethod() === 'card'">
                     <input type="radio" name="paymentMethod" value="card" [checked]="checkoutService.paymentMethod() === 'card'" (change)="selectPaymentMethod('card')" data-testid="payment-card" />
-                    <span class="payment-icon">💳</span>
+                    <span class="payment-icon"><app-icon name="credit-card" size="lg" /></span>
                     <span>{{ 'checkout.payment.card' | translate }}</span>
                   </label>
 
                   <label class="payment-option" [class.selected]="checkoutService.paymentMethod() === 'paypal'">
                     <input type="radio" name="paymentMethod" value="paypal" [checked]="checkoutService.paymentMethod() === 'paypal'" (change)="selectPaymentMethod('paypal')" data-testid="payment-paypal" />
-                    <span class="payment-icon">🅿️</span>
+                    <span class="payment-icon"><app-icon name="wallet" size="lg" /></span>
                     <span>{{ 'checkout.payment.paypal' | translate }}</span>
                   </label>
 
                   <label class="payment-option" [class.selected]="checkoutService.paymentMethod() === 'bank'">
                     <input type="radio" name="paymentMethod" value="bank" [checked]="checkoutService.paymentMethod() === 'bank'" (change)="selectPaymentMethod('bank')" data-testid="payment-bank" />
-                    <span class="payment-icon">🏦</span>
+                    <span class="payment-icon"><app-icon name="building-2" size="lg" /></span>
                     <span>{{ 'checkout.payment.bank' | translate }}</span>
                   </label>
                 </div>
@@ -273,9 +275,9 @@ import { SavedAddress } from '../../core/models/address.model';
                   <h3>{{ 'checkout.review.paymentMethod' | translate }}</h3>
                   <p class="payment-display">
                     @switch (checkoutService.paymentMethod()) {
-                      @case ('card') { 💳 {{ 'checkout.payment.card' | translate }} }
-                      @case ('paypal') { 🅿️ {{ 'checkout.payment.paypal' | translate }} }
-                      @case ('bank') { 🏦 {{ 'checkout.payment.bank' | translate }} }
+                      @case ('card') { <app-icon name="credit-card" size="sm" /> {{ 'checkout.payment.card' | translate }} }
+                      @case ('paypal') { <app-icon name="wallet" size="sm" /> {{ 'checkout.payment.paypal' | translate }} }
+                      @case ('bank') { <app-icon name="building-2" size="sm" /> {{ 'checkout.payment.bank' | translate }} }
                     }
                   </p>
                   <button type="button" class="btn-link" (click)="goToStep('payment')">{{ 'common.edit' | translate }}</button>
@@ -649,19 +651,24 @@ import { SavedAddress } from '../../core/models/address.model';
       }
 
       .payment-icon {
-        transition: transform 0.2s ease-out;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-text-secondary);
+        transition: transform 0.2s ease-out, color 0.2s ease-out;
       }
 
       &:hover .payment-icon {
         transform: scale(1.1);
+        color: var(--color-primary);
+      }
+
+      &.selected .payment-icon {
+        color: var(--color-primary);
       }
 
       input {
         display: none;
-      }
-
-      .payment-icon {
-        font-size: 1.5rem;
       }
     }
 
@@ -775,6 +782,9 @@ import { SavedAddress } from '../../core/models/address.model';
     }
 
     .payment-display {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
       color: var(--color-text-primary);
     }
 
@@ -978,7 +988,8 @@ import { SavedAddress } from '../../core/models/address.model';
       .form-group select,
       .form-group .field-error,
       .payment-option,
-      .payment-option .payment-icon {
+      .payment-option .payment-icon,
+      .payment-option .payment-icon app-icon {
         transition: none !important;
         animation: none !important;
       }

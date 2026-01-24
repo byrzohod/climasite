@@ -20,11 +20,13 @@ export class CartService {
   private readonly _cart = signal<Cart | null>(null);
   private readonly _isLoading = signal(false);
   private readonly _error = signal<string | null>(null);
+  private readonly _miniCartOpen = signal(false);
 
   // Public readonly signals
   readonly cart = this._cart.asReadonly();
   readonly isLoading = this._isLoading.asReadonly();
   readonly error = this._error.asReadonly();
+  readonly miniCartOpen = this._miniCartOpen.asReadonly();
 
   // Computed signals
   readonly items = computed(() => this._cart()?.items ?? []);
@@ -223,5 +225,37 @@ export class CartService {
       (!variantId || i.variantId === variantId)
     );
     return item?.quantity ?? 0;
+  }
+
+  // Mini-cart drawer state management
+  /**
+   * Open the mini-cart drawer
+   */
+  openMiniCart(): void {
+    this._miniCartOpen.set(true);
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  /**
+   * Close the mini-cart drawer
+   */
+  closeMiniCart(): void {
+    this._miniCartOpen.set(false);
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = '';
+    }
+  }
+
+  /**
+   * Toggle the mini-cart drawer open/closed state
+   */
+  toggleMiniCart(): void {
+    if (this._miniCartOpen()) {
+      this.closeMiniCart();
+    } else {
+      this.openMiniCart();
+    }
   }
 }
