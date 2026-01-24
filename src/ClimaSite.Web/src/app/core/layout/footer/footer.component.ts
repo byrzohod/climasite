@@ -2,13 +2,20 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
+import { TrustBadgeStripComponent } from '../../../shared/components/trust-badge';
+import { PaymentTrustStripComponent } from '../../../shared/components/payment-icons';
 
 @Component({
   selector: 'app-footer',
   standalone: true,
-  imports: [CommonModule, RouterModule, TranslateModule],
+  imports: [CommonModule, RouterModule, TranslateModule, TrustBadgeStripComponent, PaymentTrustStripComponent],
   template: `
     <footer class="footer" data-testid="footer">
+      <!-- Trust Badge Strip (TASK-21A-035 to 21A-039) -->
+      <div class="footer-trust-strip">
+        <app-trust-badge-strip [compact]="true" [centered]="true" />
+      </div>
+
       <div class="footer-container">
         <!-- Top Section -->
         <div class="footer-grid">
@@ -74,6 +81,14 @@ import { TranslateModule } from '@ngx-translate/core';
           <p class="copyright">
             {{ 'footer.copyright' | translate:{ year: currentYear } }}
           </p>
+          
+          <!-- Payment Icons Strip (TASK-21A-040 to 21A-046) -->
+          <app-payment-trust-strip 
+            [brands]="['visa', 'mastercard', 'amex', 'paypal', 'apple-pay', 'google-pay']"
+            size="sm"
+            [grayscale]="true"
+          />
+          
           <div class="social-links">
             <a href="#" aria-label="Facebook" class="social-link">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -100,6 +115,13 @@ import { TranslateModule } from '@ngx-translate/core';
       background-color: var(--color-bg-secondary);
       border-top: 1px solid var(--color-border-primary);
       transition: var(--theme-transition);
+    }
+
+    /* Trust Badge Strip at top of footer */
+    .footer-trust-strip {
+      background-color: var(--color-bg-tertiary);
+      border-bottom: 1px solid var(--color-border-primary);
+      padding: 0.75rem 1rem;
     }
 
     .footer-container {
@@ -227,9 +249,14 @@ import { TranslateModule } from '@ngx-translate/core';
       padding-top: 1.5rem;
       border-top: 1px solid var(--color-border-primary);
 
-      @media (min-width: 640px) {
+      @media (min-width: 768px) {
         flex-direction: row;
         justify-content: space-between;
+        flex-wrap: wrap;
+      }
+
+      @media (min-width: 1024px) {
+        flex-wrap: nowrap;
       }
     }
 

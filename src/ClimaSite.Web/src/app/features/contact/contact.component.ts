@@ -266,16 +266,16 @@ import { TranslateModule } from '@ngx-translate/core';
     }
 
     .success-message {
-      background: var(--color-success-bg, #d4edda);
-      color: var(--color-success, #155724);
+      background: var(--color-success-bg);
+      color: var(--color-success);
       padding: 1rem;
       border-radius: 8px;
       margin-bottom: 1.5rem;
     }
 
     .error-message {
-      background: var(--color-error-bg, #f8d7da);
-      color: var(--color-error, #721c24);
+      background: var(--color-error-bg);
+      color: var(--color-error);
       padding: 1rem;
       border-radius: 8px;
       margin-bottom: 1.5rem;

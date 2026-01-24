@@ -485,12 +485,33 @@
     "placeOrder": "Bestellung aufgeben",
     "processing": "Ihre Bestellung wird bearbeitet...",
     "backToCart": "Zurück zum Warenkorb",
-    "orderComplete": {
+"orderComplete": {
       "title": "Bestellung bestätigt!",
       "message": "Vielen Dank für Ihre Bestellung. Sie erhalten in Kürze eine Bestätigungs-E-Mail.",
       "orderNumber": "Bestellnummer",
       "viewOrder": "Bestellung anzeigen",
       "continueShopping": "Weiter einkaufen"
+    },
+    "orderConfirmation": {
+      "title": "Bestellung aufgegeben!",
+      "thankYou": "Vielen Dank für Ihre Bestellung, {{name}}!",
+      "emailSent": "Eine Bestätigung wurde an {{email}} gesendet",
+      "orderDate": "Bestellt am",
+      "shippingTo": "Lieferadresse",
+      "paymentMethod": "Zahlung",
+      "totalCharged": "Gesamtbetrag",
+      "estimatedDelivery": "Voraussichtliche Lieferung",
+      "itemsOrdered": "Bestellte Artikel",
+      "trackOrder": "Bestellung verfolgen",
+      "needHelp": "Brauchen Sie Hilfe?",
+      "contactInfo": "Rufen Sie uns an",
+      "or": "oder schreiben Sie an",
+      "whatsNext": {
+        "title": "Was kommt als Nächstes?",
+        "step1": "Sie erhalten in Kürze eine Bestätigungs-E-Mail",
+        "step2": "Wir informieren Sie per E-Mail, wenn Ihre Bestellung versandt wird",
+        "step3": "Voraussichtliche Lieferung: {{date}}"
+      }
     }
   },
   "account": {
@@ -838,21 +859,28 @@
     "testimonials": {
       "title": "Was unsere Kunden sagen",
       "subtitle": "Echte Bewertungen von zufriedenen Kunden",
+      "verified": "Verifizierter Kauf",
       "items": {
         "1": {
           "name": "Maria Petrova",
           "location": "Sofia, Bulgarien",
-          "text": "Das Installationsteam war sehr professionell und die Klimaanlage funktioniert perfekt. Ich empfehle CDL jedem!"
+          "text": "Das Installationsteam war sehr professionell und die Klimaanlage funktioniert perfekt. Der Energieverbrauch ist niedriger als erwartet. Ich empfehle CDL jedem!",
+          "role": "Hausbesitzerin",
+          "date": "vor 2 Wochen"
         },
         "2": {
           "name": "Georg Dimitrov",
           "location": "Plovdiv, Bulgarien",
-          "text": "Das Wasseraufbereitungssystem hat unser Leben verändert. Das Wasser zu Hause hat jetzt einen ausgezeichneten Geschmack und Qualität."
+          "text": "Das Wasseraufbereitungssystem hat unser Leben verändert. Das Wasser zu Hause hat jetzt einen ausgezeichneten Geschmack und Qualität. Die Installation war schnell und problemlos.",
+          "role": "Restaurantbesitzer",
+          "date": "vor 1 Monat"
         },
         "3": {
           "name": "Stefan Ivanov",
           "location": "Varna, Bulgarien",
-          "text": "Ausgezeichnete Preise und schnelle Lieferung. Die 5-Jahres-Garantie gibt mir Sicherheit. Danke!"
+          "text": "Ausgezeichnete Preise und schnelle Lieferung. Die 5-Jahres-Garantie gibt mir Sicherheit. Der Kundenservice war bei meinen Fragen unglaublich hilfreich.",
+          "role": "Immobilienverwalter",
+          "date": "vor 3 Wochen"
         }
       }
     },

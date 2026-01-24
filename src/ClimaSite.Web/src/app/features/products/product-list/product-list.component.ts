@@ -970,7 +970,7 @@ import { RevealDirective } from '../../../shared/directives/reveal.directive';
     }
 
     .error-state {
-      background: var(--color-error-bg, #fee2e2);
+      background: var(--color-error-bg);
       border: 1px solid var(--color-error);
 
       .error-icon {

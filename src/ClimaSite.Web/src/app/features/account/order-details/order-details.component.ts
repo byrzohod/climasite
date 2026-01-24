@@ -457,15 +457,15 @@ import { AddressCardComponent } from '../../../shared/components/address-card/ad
       font-size: 0.875rem;
 
       &.alert-success {
-        background: var(--color-success-bg, #dcfce7);
-        color: var(--color-success, #166534);
-        border: 1px solid var(--color-success, #166534);
+        background: var(--color-success-bg);
+        color: var(--color-success);
+        border: 1px solid var(--color-success);
       }
 
       &.alert-warning {
-        background: var(--color-warning-bg, #fef3c7);
-        color: var(--color-warning, #92400e);
-        border: 1px solid var(--color-warning, #92400e);
+        background: var(--color-warning-bg);
+        color: var(--color-warning);
+        border: 1px solid var(--color-warning);
       }
     }
 
@@ -1008,7 +1008,9 @@ export class OrderDetailsComponent implements OnInit {
 
   getStatusConfig(status: string): { bgColor: string; color: string } {
     const config = ORDER_STATUS_CONFIG[status as OrderStatus];
-    return config || { bgColor: '#e5e7eb', color: '#374151' };
+    return config
+      ? { bgColor: config.bgColorVar, color: config.colorVar }
+      : { bgColor: 'var(--color-status-neutral-bg)', color: 'var(--color-status-neutral-text)' };
   }
 
   reorder(): void {

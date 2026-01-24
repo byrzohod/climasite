@@ -126,18 +126,18 @@ export interface DeliveryOption {
       border-radius: 6px;
 
       &.in-stock {
-        background: rgba(34, 197, 94, 0.1);
-        color: #22c55e;
+        background: var(--color-success-light);
+        color: var(--color-success);
       }
 
       &.low-stock {
-        background: rgba(249, 115, 22, 0.1);
-        color: #f97316;
+        background: var(--color-warning-light);
+        color: var(--color-warning);
       }
 
       &.out-of-stock {
-        background: rgba(239, 68, 68, 0.1);
-        color: #ef4444;
+        background: var(--color-error-light);
+        color: var(--color-error);
       }
     }
 
@@ -240,7 +240,7 @@ export interface DeliveryOption {
       font-size: 0.875rem;
 
       .free {
-        color: #22c55e;
+        color: var(--color-success);
       }
     }
 
@@ -249,9 +249,9 @@ export interface DeliveryOption {
       align-items: center;
       gap: 0.5rem;
       padding: 0.75rem;
-      background: rgba(59, 130, 246, 0.1);
+      background: var(--color-primary-light);
       border-radius: 6px;
-      color: #3b82f6;
+      color: var(--color-primary);
       font-size: 0.875rem;
 
       svg {

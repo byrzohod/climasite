@@ -301,9 +301,9 @@ import { Review, ReviewSummary, PaginatedReviews } from '../../../core/models/re
     }
 
     .star {
-      color: var(--color-border);
+      color: var(--color-rating-star-empty);
       &.filled {
-        color: #ffc107;
+        color: var(--color-rating-star);
       }
     }
 
@@ -335,7 +335,7 @@ import { Review, ReviewSummary, PaginatedReviews } from '../../../core/models/re
 
     .bar-fill {
       height: 100%;
-      background: #ffc107;
+      background: var(--color-rating-star);
       transition: width 0.3s ease;
     }
 
@@ -487,13 +487,13 @@ import { Review, ReviewSummary, PaginatedReviews } from '../../../core/models/re
         font-size: 2rem;
         background: none;
         border: none;
-        color: var(--color-border);
+        color: var(--color-rating-star-empty);
         cursor: pointer;
         padding: 0;
         transition: color 0.2s, transform 0.2s;
 
         &:hover, &.selected {
-          color: #ffc107;
+          color: var(--color-rating-star);
           transform: scale(1.1);
         }
       }
@@ -591,8 +591,8 @@ import { Review, ReviewSummary, PaginatedReviews } from '../../../core/models/re
     .verified-badge {
       font-size: 0.75rem;
       padding: 0.25rem 0.5rem;
-      background: rgba(34, 197, 94, 0.1);
-      color: var(--color-success, #22c55e);
+      background: var(--color-success-light);
+      color: var(--color-success);
       border-radius: 4px;
     }
 

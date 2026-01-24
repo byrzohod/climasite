@@ -485,12 +485,33 @@
     "placeOrder": "Place Order",
     "processing": "Processing your order...",
     "backToCart": "Back to Cart",
-    "orderComplete": {
+"orderComplete": {
       "title": "Order Confirmed!",
       "message": "Thank you for your order. You will receive a confirmation email shortly.",
       "orderNumber": "Order Number",
       "viewOrder": "View Order",
       "continueShopping": "Continue Shopping"
+    },
+    "orderConfirmation": {
+      "title": "Order Placed!",
+      "thankYou": "Thank you for your order, {{name}}!",
+      "emailSent": "A confirmation email has been sent to {{email}}",
+      "orderDate": "Placed",
+      "shippingTo": "Shipping To",
+      "paymentMethod": "Payment",
+      "totalCharged": "Total charged",
+      "estimatedDelivery": "Estimated Delivery",
+      "itemsOrdered": "Items Ordered",
+      "trackOrder": "Track Your Order",
+      "needHelp": "Need Help?",
+      "contactInfo": "Call us at",
+      "or": "or email",
+      "whatsNext": {
+        "title": "What's Next?",
+        "step1": "You'll receive a confirmation email shortly",
+        "step2": "We'll email you when your order ships with tracking info",
+        "step3": "Estimated delivery: {{date}}"
+      }
     }
   },
   "account": {
@@ -853,21 +874,28 @@
     "testimonials": {
       "title": "What Our Customers Say",
       "subtitle": "Real reviews from satisfied customers",
+      "verified": "Verified Purchase",
       "items": {
         "1": {
           "name": "Maria Petrova",
           "location": "Sofia, Bulgaria",
-          "text": "The installation team was very professional and the air conditioner works perfectly. I recommend CDL to everyone!"
+          "text": "The installation team was very professional and the air conditioner works perfectly. Energy consumption is lower than expected. I recommend CDL to everyone!",
+          "role": "Homeowner",
+          "date": "2 weeks ago"
         },
         "2": {
           "name": "George Dimitrov",
           "location": "Plovdiv, Bulgaria",
-          "text": "The water purification system changed our lives. The water at home now has excellent taste and quality."
+          "text": "The water purification system changed our lives. The water at home now has excellent taste and quality. Installation was quick and hassle-free.",
+          "role": "Restaurant Owner",
+          "date": "1 month ago"
         },
         "3": {
           "name": "Stefan Ivanov",
           "location": "Varna, Bulgaria",
-          "text": "Excellent prices and fast delivery. The 5-year warranty gives me peace of mind. Thank you!"
+          "text": "Excellent prices and fast delivery. The 5-year warranty gives me peace of mind. Customer support was incredibly helpful with my questions.",
+          "role": "Property Manager",
+          "date": "3 weeks ago"
         }
       }
     },

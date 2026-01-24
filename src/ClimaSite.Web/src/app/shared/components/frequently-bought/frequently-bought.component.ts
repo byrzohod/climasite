@@ -307,7 +307,7 @@ export interface BundleProduct {
 
       &.savings {
         .value {
-          color: #22c55e;
+          color: var(--color-success);
         }
       }
 

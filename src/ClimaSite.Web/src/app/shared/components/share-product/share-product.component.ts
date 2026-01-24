@@ -154,7 +154,7 @@ export interface ShareOption {
         color: var(--color-text-primary);
 
         &.copied {
-          color: #22c55e;
+          color: var(--color-success);
         }
       }
     }

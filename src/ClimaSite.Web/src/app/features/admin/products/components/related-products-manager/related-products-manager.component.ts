@@ -314,15 +314,15 @@ import {
       padding: 0.5rem;
       border: none;
       background: transparent;
-      color: var(--error-color, #ef4444);
+      color: var(--color-error);
       cursor: pointer;
       border-radius: 4px;
       transition: background 0.2s;
     }
 
     .remove-btn:hover {
-      background: var(--error-color, #ef4444);
-      color: white;
+      background: var(--color-error);
+      color: var(--color-text-inverse);
     }
 
     .add-relation {
@@ -382,9 +382,9 @@ import {
     }
 
     .error-state {
-      color: var(--error-color, #ef4444);
+      color: var(--color-error);
       padding: 1rem;
-      background: rgba(239, 68, 68, 0.1);
+      background: var(--color-error-light);
       border-radius: 6px;
       margin-top: 1rem;
     }

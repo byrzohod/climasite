@@ -123,18 +123,17 @@ export type OrderStatus =
   | 'Refunded'
   | 'Returned';
 
-// TODO: Move these colors to CSS variables for better theme support
-// Currently using hardcoded values for status badge colors as they represent
-// semantic states (warning, success, info, error) that are consistent across themes
-export const ORDER_STATUS_CONFIG: Record<OrderStatus, { label: string; color: string; bgColor: string }> = {
-  Pending: { label: 'Pending', color: '#92400e', bgColor: '#fef3c7' },
-  Paid: { label: 'Paid', color: '#166534', bgColor: '#dcfce7' },
-  Processing: { label: 'Processing', color: '#1e40af', bgColor: '#dbeafe' },
-  Shipped: { label: 'Shipped', color: '#3730a3', bgColor: '#e0e7ff' },
-  Delivered: { label: 'Delivered', color: '#166534', bgColor: '#dcfce7' },
-  Cancelled: { label: 'Cancelled', color: '#991b1b', bgColor: '#fee2e2' },
-  Refunded: { label: 'Refunded', color: '#6b21a8', bgColor: '#f3e8ff' },
-  Returned: { label: 'Returned', color: '#0369a1', bgColor: '#e0f2fe' }
+// Status badge colors now use CSS custom properties for proper dark mode support
+// Components should use these CSS variable names in their styles
+export const ORDER_STATUS_CONFIG: Record<OrderStatus, { label: string; colorVar: string; bgColorVar: string }> = {
+  Pending: { label: 'Pending', colorVar: 'var(--color-status-pending-text)', bgColorVar: 'var(--color-status-pending-bg)' },
+  Paid: { label: 'Paid', colorVar: 'var(--color-status-success-text)', bgColorVar: 'var(--color-status-success-bg)' },
+  Processing: { label: 'Processing', colorVar: 'var(--color-status-processing-text)', bgColorVar: 'var(--color-status-processing-bg)' },
+  Shipped: { label: 'Shipped', colorVar: 'var(--color-status-shipped-text)', bgColorVar: 'var(--color-status-shipped-bg)' },
+  Delivered: { label: 'Delivered', colorVar: 'var(--color-status-success-text)', bgColorVar: 'var(--color-status-success-bg)' },
+  Cancelled: { label: 'Cancelled', colorVar: 'var(--color-status-error-text)', bgColorVar: 'var(--color-status-error-bg)' },
+  Refunded: { label: 'Refunded', colorVar: 'var(--color-status-refunded-text)', bgColorVar: 'var(--color-status-refunded-bg)' },
+  Returned: { label: 'Returned', colorVar: 'var(--color-status-returned-text)', bgColorVar: 'var(--color-status-returned-bg)' }
 };
 
 export interface ReorderResult {

@@ -437,8 +437,8 @@ import { ToastService } from '../../shared/components/toast/toast.service';
                         }
 
                         &.quantity-updated {
-                          background-color: var(--color-success-light, #dcfce7);
-                          border-color: var(--color-success, #22c55e);
+                          background-color: var(--color-success-light);
+                          border-color: var(--color-success);
                         }
                         
                         &.incrementing {

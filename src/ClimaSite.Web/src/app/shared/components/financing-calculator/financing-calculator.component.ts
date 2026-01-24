@@ -101,8 +101,8 @@ const DEFAULT_OPTIONS: FinancingOption[] = [
       align-items: center;
       gap: 0.5rem;
       padding: 0.375rem 0.75rem;
-      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-      color: white;
+      background: var(--gradient-ventilation);
+      color: var(--color-text-inverse);
       font-size: 0.75rem;
       font-weight: 700;
       text-transform: uppercase;

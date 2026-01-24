@@ -39,7 +39,19 @@ export interface ProductBrief {
   reviewCount: number;
   primaryImageUrl?: string;
   inStock: boolean;
+  // HVAC-specific quick specs
+  energyRating?: EnergyRatingLevel;
+  btuCapacity?: number;
+  noiseLevel?: number;        // in dB
+  roomSizeMin?: number;       // in m²
+  roomSizeMax?: number;       // in m²
+  hasWifi?: boolean;
+  hasInverter?: boolean;
+  isHeatPump?: boolean;
 }
+
+// EU Energy Efficiency Rating levels
+export type EnergyRatingLevel = 'A+++' | 'A++' | 'A+' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
 
 export interface ProductImage {
   id: string;
@@ -119,7 +131,16 @@ export interface ProductFilter {
   isFeatured?: boolean;
   sortBy?: string;
   sortDescending?: boolean;
+  // HVAC-specific filters
+  energyRatings?: EnergyRatingLevel[];
+  btuMin?: number;
+  btuMax?: number;
+  noiseLevelMax?: number;
+  roomSize?: number;
+  features?: ProductFeature[];
 }
+
+export type ProductFeature = 'wifi' | 'inverter' | 'heat_pump' | 'smart_home';
 
 export interface ProductSearchParams {
   q: string;

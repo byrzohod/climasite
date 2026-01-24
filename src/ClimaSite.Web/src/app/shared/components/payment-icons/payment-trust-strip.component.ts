@@ -108,7 +108,7 @@ import { PaymentIconComponent, PaymentBrand, PaymentIconSize } from './payment-i
     }
 
     .lock-icon {
-      color: var(--color-success, #22c55e);
+      color: var(--color-success);
     }
 
     @media (max-width: 640px) {

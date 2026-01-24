@@ -383,7 +383,7 @@ export class HowItWorksComponent implements OnInit, OnDestroy, AfterViewInit {
       descriptionKey: 'home.howItWorks.steps.browse.description',
       linkKey: 'home.howItWorks.steps.browse.link',
       link: '/products',
-      color: '#3b82f6',
+      color: 'var(--color-step-1)',
       icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
         <path fill-rule="evenodd" d="M10.5 3.75a6.75 6.75 0 100 13.5 6.75 6.75 0 000-13.5zM2.25 10.5a8.25 8.25 0 1114.59 5.28l4.69 4.69a.75.75 0 11-1.06 1.06l-4.69-4.69A8.25 8.25 0 012.25 10.5z" clip-rule="evenodd"/>
       </svg>`
@@ -394,7 +394,7 @@ export class HowItWorksComponent implements OnInit, OnDestroy, AfterViewInit {
       descriptionKey: 'home.howItWorks.steps.compare.description',
       linkKey: 'home.howItWorks.steps.compare.link',
       link: '/products',
-      color: '#8b5cf6',
+      color: 'var(--color-step-2)',
       icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
         <path fill-rule="evenodd" d="M3 6a3 3 0 013-3h2.25a3 3 0 013 3v2.25a3 3 0 01-3 3H6a3 3 0 01-3-3V6zm9.75 0a3 3 0 013-3H18a3 3 0 013 3v2.25a3 3 0 01-3 3h-2.25a3 3 0 01-3-3V6zM3 15.75a3 3 0 013-3h2.25a3 3 0 013 3V18a3 3 0 01-3 3H6a3 3 0 01-3-3v-2.25zm9.75 0a3 3 0 013-3H18a3 3 0 013 3V18a3 3 0 01-3 3h-2.25a3 3 0 01-3-3v-2.25z" clip-rule="evenodd"/>
       </svg>`
@@ -405,7 +405,7 @@ export class HowItWorksComponent implements OnInit, OnDestroy, AfterViewInit {
       descriptionKey: 'home.howItWorks.steps.order.description',
       linkKey: 'home.howItWorks.steps.order.link',
       link: '/cart',
-      color: '#06b6d4',
+      color: 'var(--color-step-3)',
       icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
         <path d="M2.25 2.25a.75.75 0 000 1.5h1.386c.17 0 .318.114.362.278l2.558 9.592a3.752 3.752 0 00-2.806 3.63c0 .414.336.75.75.75h15.75a.75.75 0 000-1.5H5.378A2.25 2.25 0 017.5 15h11.218a.75.75 0 00.674-.421 60.358 60.358 0 002.96-7.228.75.75 0 00-.525-.965A60.864 60.864 0 005.68 4.509l-.232-.867A1.875 1.875 0 003.636 2.25H2.25zM3.75 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM16.5 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z"/>
       </svg>`
@@ -416,7 +416,7 @@ export class HowItWorksComponent implements OnInit, OnDestroy, AfterViewInit {
       descriptionKey: 'home.howItWorks.steps.install.description',
       linkKey: 'home.howItWorks.steps.install.link',
       link: '/resources',
-      color: '#10b981',
+      color: 'var(--color-step-4)',
       icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
         <path fill-rule="evenodd" d="M12 6.75a5.25 5.25 0 016.775-5.025.75.75 0 01.313 1.248l-3.32 3.319c.063.475.276.934.641 1.299.365.365.824.578 1.3.64l3.318-3.319a.75.75 0 011.248.313 5.25 5.25 0 01-5.472 6.756c-1.018-.086-1.87.1-2.309.634L7.344 21.3A3.298 3.298 0 112.7 16.657l8.684-7.151c.533-.44.72-1.291.634-2.309A5.342 5.342 0 0112 6.75zM4.117 19.125a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v.008a.75.75 0 01-.75.75h-.008a.75.75 0 01-.75-.75v-.008z" clip-rule="evenodd"/>
       </svg>`

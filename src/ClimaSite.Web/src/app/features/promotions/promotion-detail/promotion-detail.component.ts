@@ -231,7 +231,7 @@ import { ProductBrief } from '../../../core/models/product.model';
       }
 
       .copied-badge {
-        color: #22c55e;
+        color: var(--color-success);
         font-weight: 700;
       }
     }
@@ -410,7 +410,7 @@ import { ProductBrief } from '../../../core/models/product.model';
       }
 
       &.added {
-        background: var(--color-success, #22c55e);
+        background: var(--color-success);
       }
 
       .spinner {

@@ -125,23 +125,23 @@ import { TranslateModule } from '@ngx-translate/core';
     }
 
     .warranty-icon {
-      background: rgba(34, 197, 94, 0.1);
-      color: #22c55e;
+      background: var(--color-success-light);
+      color: var(--color-success);
     }
 
     .return-icon {
-      background: rgba(59, 130, 246, 0.1);
-      color: #3b82f6;
+      background: var(--color-primary-light);
+      color: var(--color-primary);
     }
 
     .shipping-icon {
-      background: rgba(168, 85, 247, 0.1);
-      color: #a855f7;
+      background: var(--glow-primary);
+      color: var(--color-primary);
     }
 
     .stock-icon {
-      background: rgba(34, 197, 94, 0.1);
-      color: #22c55e;
+      background: var(--color-success-light);
+      color: var(--color-success);
     }
 
     .installation-icon {

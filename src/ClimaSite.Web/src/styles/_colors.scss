@@ -332,6 +332,48 @@ $color-info-950: #082f49;
 
   // Theme transition
   --theme-transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+
+  // ==========================================================================
+  // NEW VARIABLES FOR DARK MODE REFINEMENT (Plan 21J)
+  // ==========================================================================
+
+  // Rating Stars
+  --color-rating-star: #{$color-warm-400};
+  --color-rating-star-empty: #{$color-gray-300};
+
+  // Step Indicators (How It Works)
+  --color-step-1: #{$color-primary-500};
+  --color-step-2: #8b5cf6;
+  --color-step-3: #{$color-accent-500};
+  --color-step-4: #{$color-success-500};
+
+  // Status Badge Colors (Light Theme)
+  --color-status-pending-bg: #{$color-warning-100};
+  --color-status-pending-text: #{$color-warning-800};
+  --color-status-processing-bg: #{$color-info-100};
+  --color-status-processing-text: #{$color-info-800};
+  --color-status-shipped-bg: #e0e7ff;
+  --color-status-shipped-text: #3730a3;
+  --color-status-success-bg: #{$color-success-100};
+  --color-status-success-text: #{$color-success-800};
+  --color-status-error-bg: #{$color-error-100};
+  --color-status-error-text: #{$color-error-800};
+  --color-status-info-bg: #{$color-info-100};
+  --color-status-info-text: #{$color-info-800};
+  --color-status-neutral-bg: #{$color-gray-100};
+  --color-status-neutral-text: #{$color-gray-700};
+  --color-status-refunded-bg: #f3e8ff;
+  --color-status-refunded-text: #6b21a8;
+  --color-status-returned-bg: #e0f2fe;
+  --color-status-returned-text: #0369a1;
+
+  // CTA Gradients
+  --gradient-cooling: linear-gradient(135deg, #{$color-accent-500} 0%, #{$color-accent-600} 100%);
+  --gradient-heating: linear-gradient(135deg, #{$color-ember-500} 0%, #{$color-ember-600} 100%);
+  --gradient-ventilation: linear-gradient(135deg, #{$color-success-500} 0%, #{$color-success-600} 100%);
+
+  // Warning Background for forms
+  --color-warning-bg: #{$color-warning-100};
 }
 
 // =============================================================================
@@ -432,6 +474,43 @@ $color-info-950: #082f49;
   --color-border: var(--color-border-primary);
   --color-surface: var(--color-bg-card);
   --color-background: var(--color-bg-secondary);
+
+  // ==========================================================================
+  // DARK THEME OVERRIDES FOR NEW VARIABLES (Plan 21J)
+  // ==========================================================================
+
+  // Rating Stars (brighter for dark mode)
+  --color-rating-star: #{$color-warm-300};
+  --color-rating-star-empty: #{$color-gray-600};
+
+  // Step Indicators (brighter for dark mode)
+  --color-step-1: #{$color-primary-400};
+  --color-step-2: #a78bfa;
+  --color-step-3: #{$color-accent-400};
+  --color-step-4: #{$color-success-400};
+
+  // Status Badge Colors (Dark Theme - darker backgrounds, lighter text)
+  --color-status-pending-bg: rgba(245, 158, 11, 0.15);
+  --color-status-pending-text: #{$color-warning-300};
+  --color-status-processing-bg: rgba(14, 165, 233, 0.15);
+  --color-status-processing-text: #{$color-info-300};
+  --color-status-shipped-bg: rgba(99, 102, 241, 0.15);
+  --color-status-shipped-text: #a5b4fc;
+  --color-status-success-bg: rgba(16, 185, 129, 0.15);
+  --color-status-success-text: #{$color-success-300};
+  --color-status-error-bg: rgba(239, 68, 68, 0.15);
+  --color-status-error-text: #{$color-error-300};
+  --color-status-info-bg: rgba(14, 165, 233, 0.15);
+  --color-status-info-text: #{$color-info-300};
+  --color-status-neutral-bg: rgba(100, 116, 139, 0.15);
+  --color-status-neutral-text: #{$color-gray-300};
+  --color-status-refunded-bg: rgba(139, 92, 246, 0.15);
+  --color-status-refunded-text: #c4b5fd;
+  --color-status-returned-bg: rgba(14, 165, 233, 0.15);
+  --color-status-returned-text: #7dd3fc;
+
+  // Warning Background for forms
+  --color-warning-bg: rgba(245, 158, 11, 0.15);
 }
 
 // =============================================================================

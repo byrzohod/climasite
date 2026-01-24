@@ -50,8 +50,8 @@ import { ProductBrief } from '../../../core/models/product.model';
                     <h4 class="product-name">{{ product.name }}</h4>
                     <div class="product-price">
                       @if (product.isOnSale && product.salePrice) {
-                        <span class="original-price">{{ product.salePrice | currency:'EUR' }}</span>
-                        <span class="sale-price">{{ product.basePrice | currency:'EUR' }}</span>
+                        <span class="original-price">{{ product.basePrice | currency:'EUR' }}</span>
+                        <span class="sale-price">{{ product.salePrice | currency:'EUR' }}</span>
                       } @else {
                         <span class="current-price">{{ product.basePrice | currency:'EUR' }}</span>
                       }
@@ -309,7 +309,7 @@ import { ProductBrief } from '../../../core/models/product.model';
       }
 
       &.added {
-        background: var(--color-success, #22c55e);
+        background: var(--color-success);
         opacity: 1;
       }
 

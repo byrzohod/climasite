@@ -2,7 +2,7 @@ import { Component, Input, inject, signal, computed, ElementRef, ViewChild } fro
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-import { ProductBrief } from '../../../core/models/product.model';
+import { ProductBrief, EnergyRatingLevel } from '../../../core/models/product.model';
 import { CartService } from '../../../core/services/cart.service';
 import { WishlistService } from '../../../core/services/wishlist.service';
 import { FlyingCartService } from '../../../core/services/flying-cart.service';
@@ -52,6 +52,17 @@ import { FlyingCartService } from '../../../core/services/flying-cart.service';
             }
           </div>
 
+          <!-- Energy Rating Badge -->
+          @if (product.energyRating) {
+            <div 
+              class="energy-badge" 
+              [class]="getEnergyRatingClass(product.energyRating)"
+              [attr.aria-label]="('specs.energy_class' | translate) + ': ' + product.energyRating"
+              data-testid="energy-badge">
+              <span class="energy-label">{{ product.energyRating }}</span>
+            </div>
+          }
+
           <!-- Quick actions overlay -->
           <div class="quick-actions">
             <button
@@ -86,6 +97,38 @@ import { FlyingCartService } from '../../../core/services/flying-cart.service';
 
         @if (listView && product.shortDescription) {
           <p class="product-description">{{ product.shortDescription }}</p>
+        }
+
+        <!-- Quick Specs Row (HVAC-specific) -->
+        @if (hasQuickSpecs()) {
+          <div class="quick-specs" data-testid="quick-specs">
+            @if (product.btuCapacity) {
+              <span class="spec-item" [attr.aria-label]="'specs.btu' | translate">
+                <svg class="spec-icon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                  <path d="M8 16a6 6 0 0 0 6-6c0-1.655-1.122-2.904-2.432-4.362C10.254 4.176 8.75 2.503 8 0c0 0-6 5.686-6 10a6 6 0 0 0 6 6zM6.5 12.5a1 1 0 0 1-1-1 3.5 3.5 0 0 1 3.5-3.5.5.5 0 0 1 0 1A2.5 2.5 0 0 0 6.5 11.5a.5.5 0 0 1-.5.5.5.5 0 0 1-.5.5z"/>
+                </svg>
+                {{ formatBtu(product.btuCapacity) }}
+              </span>
+            }
+            @if (product.noiseLevel) {
+              <span class="spec-item" [attr.aria-label]="'specs.noise_level' | translate">
+                <svg class="spec-icon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                  <path d="M11.536 14.01A8.473 8.473 0 0 0 14.026 8a8.473 8.473 0 0 0-2.49-6.01l-.708.707A7.476 7.476 0 0 1 13.025 8c0 2.071-.84 3.946-2.197 5.303l.708.707z"/>
+                  <path d="M10.121 12.596A6.48 6.48 0 0 0 12.025 8a6.48 6.48 0 0 0-1.904-4.596l-.707.707A5.483 5.483 0 0 1 11.025 8a5.483 5.483 0 0 1-1.61 3.89l.706.706z"/>
+                  <path d="M8.707 11.182A4.486 4.486 0 0 0 10.025 8a4.486 4.486 0 0 0-1.318-3.182L8 5.525A3.489 3.489 0 0 1 9.025 8 3.49 3.49 0 0 1 8 10.475l.707.707zM6.717 3.55A.5.5 0 0 1 7 4v8a.5.5 0 0 1-.812.39L3.825 10.5H1.5A.5.5 0 0 1 1 10V6a.5.5 0 0 1 .5-.5h2.325l2.363-1.89a.5.5 0 0 1 .529-.06z"/>
+                </svg>
+                {{ product.noiseLevel }}dB
+              </span>
+            }
+            @if (product.roomSizeMin && product.roomSizeMax) {
+              <span class="spec-item" [attr.aria-label]="'specs.room_size' | translate">
+                <svg class="spec-icon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                  <path d="M14.763.075A.5.5 0 0 1 15 .5v15a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5V14h-1v1.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V10a.5.5 0 0 1 .342-.474L6 7.64V4.5a.5.5 0 0 1 .276-.447l8-4a.5.5 0 0 1 .487.022zM6 8.694L1 10.36V15h5V8.694zM7 15h2v-1.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5V15h2V1.309l-7 3.5V15z"/>
+                </svg>
+                {{ product.roomSizeMin }}-{{ product.roomSizeMax }}m²
+              </span>
+            }
+          </div>
         }
 
         <div class="product-rating" *ngIf="product.reviewCount > 0">
@@ -264,6 +307,61 @@ import { FlyingCartService } from '../../../core/services/flying-cart.service';
       border-radius: var(--radius-md);
     }
 
+    /* Energy Rating Badge */
+    .energy-badge {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 42px;
+      height: 28px;
+      padding: 0 0.5rem;
+      border-radius: var(--radius-md);
+      font-family: var(--font-mono);
+      font-size: var(--text-body-sm);
+      font-weight: var(--font-bold);
+      color: var(--color-text-inverse);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      z-index: 3;
+      transition: transform var(--duration-fast) var(--ease-smooth);
+
+      &:hover {
+        transform: scale(1.05);
+      }
+
+      /* Energy rating color classes */
+      &.energy-excellent {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+      }
+
+      &.energy-good {
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);
+      }
+
+      &.energy-average {
+        background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
+        box-shadow: 0 2px 8px rgba(234, 179, 8, 0.4);
+      }
+
+      &.energy-poor {
+        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+        box-shadow: 0 2px 8px rgba(249, 115, 22, 0.4);
+      }
+
+      &.energy-bad {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+      }
+    }
+
+    .energy-label {
+      letter-spacing: 0.5px;
+    }
+
     .quick-actions {
       position: absolute;
       top: 0.75rem;
@@ -369,6 +467,33 @@ import { FlyingCartService } from '../../../core/services/flying-cart.service';
       -webkit-box-orient: vertical;
       overflow: hidden;
       line-height: var(--leading-normal);
+    }
+
+    /* Quick Specs Row */
+    .quick-specs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.625rem;
+      padding: 0.5rem 0;
+      margin-top: 0.25rem;
+      border-top: 1px solid var(--color-border-primary);
+    }
+
+    .spec-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-family: var(--font-mono);
+      font-size: var(--text-body-xs);
+      color: var(--color-text-secondary);
+      white-space: nowrap;
+
+      .spec-icon {
+        width: 12px;
+        height: 12px;
+        flex-shrink: 0;
+        color: var(--color-primary);
+      }
     }
 
     .product-rating {
@@ -498,37 +623,42 @@ import { FlyingCartService } from '../../../core/services/flying-cart.service';
       }
 
       &.loading {
-                        pointer-events: none;
-                      }
-                    }
-                    
-                    /* Reduced motion support */
-                    @media (prefers-reduced-motion: reduce) {
-                      .product-card,
-                      .product-image img,
-                      .quick-actions,
-                      .quick-action-btn,
-                      .btn-add-to-cart {
-                        transition: none !important;
-                        animation: none !important;
-                        transform: none !important;
-                      }
-                      
-                      .product-card:hover,
-                      .product-card.is-hovered {
-                        transform: none;
-                      }
-                      
-                      .product-image img {
-                        transform: none;
-                      }
-                      
-                      .quick-actions {
-                        opacity: 1;
-                        transform: none;
-                      }
-                    }
-                  `]
+        pointer-events: none;
+      }
+    }
+    
+    /* Reduced motion support */
+    @media (prefers-reduced-motion: reduce) {
+      .product-card,
+      .product-image img,
+      .quick-actions,
+      .quick-action-btn,
+      .btn-add-to-cart,
+      .energy-badge {
+        transition: none !important;
+        animation: none !important;
+        transform: none !important;
+      }
+      
+      .product-card:hover,
+      .product-card.is-hovered {
+        transform: none;
+      }
+      
+      .product-image img {
+        transform: none;
+      }
+      
+      .quick-actions {
+        opacity: 1;
+        transform: none;
+      }
+
+      .energy-badge:hover {
+        transform: none;
+      }
+    }
+  `]
 })
 export class ProductCardComponent {
   @Input({ required: true }) product!: ProductBrief;
@@ -587,5 +717,54 @@ export class ProductCardComponent {
     event.preventDefault();
     event.stopPropagation();
     this.wishlistService.toggleWishlist(this.product.id, this.product);
+  }
+
+  /**
+   * Check if product has any quick specs to display
+   */
+  hasQuickSpecs(): boolean {
+    return !!(
+      this.product.btuCapacity ||
+      this.product.noiseLevel ||
+      (this.product.roomSizeMin && this.product.roomSizeMax)
+    );
+  }
+
+  /**
+   * Get the CSS class for energy rating badge based on efficiency level
+   * A+++, A++, A+ = Excellent (dark green)
+   * A = Good (green)
+   * B = Average (yellow)
+   * C, D = Poor (orange)
+   * E, F, G = Bad (red)
+   */
+  getEnergyRatingClass(rating: EnergyRatingLevel): string {
+    switch (rating) {
+      case 'A+++':
+      case 'A++':
+      case 'A+':
+        return 'energy-excellent';
+      case 'A':
+        return 'energy-good';
+      case 'B':
+        return 'energy-average';
+      case 'C':
+      case 'D':
+        return 'energy-poor';
+      default:
+        return 'energy-bad';
+    }
+  }
+
+  /**
+   * Format BTU capacity for display
+   * e.g., 12000 -> "12K BTU"
+   */
+  formatBtu(btu: number): string {
+    if (btu >= 1000) {
+      const formatted = (btu / 1000).toFixed(btu % 1000 === 0 ? 0 : 1);
+      return `${formatted}K BTU`;
+    }
+    return `${btu} BTU`;
   }
 }

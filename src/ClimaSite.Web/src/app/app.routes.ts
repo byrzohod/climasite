@@ -73,9 +73,19 @@ export const routes: Routes = [
   },
   {
     path: 'checkout',
-    canActivate: [authGuard],
-    loadComponent: () => import('./features/checkout/checkout.component').then(m => m.CheckoutComponent),
-    data: { animation: 'checkout' }
+    children: [
+      {
+        path: '',
+        canActivate: [authGuard],
+        loadComponent: () => import('./features/checkout/checkout.component').then(m => m.CheckoutComponent),
+        data: { animation: 'checkout' }
+      },
+      {
+        path: 'confirmation/:orderId',
+        loadComponent: () => import('./features/checkout/order-confirmation/order-confirmation.component').then(m => m.OrderConfirmationComponent),
+        data: { animation: 'order-confirmation' }
+      }
+    ]
   },
   {
     path: 'account',

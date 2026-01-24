@@ -414,7 +414,7 @@ import { IconComponent, ICON_REGISTRY } from '../../shared/components/icon';
       }
 
       &.completed {
-        color: var(--color-success, #22c55e);
+        color: var(--color-success);
       }
     }
 
@@ -816,7 +816,7 @@ import { IconComponent, ICON_REGISTRY } from '../../shared/components/icon';
 
     .error-message {
       padding: 1rem;
-      background: var(--color-error-bg, #fee2e2);
+      background: var(--color-error-bg);
       color: var(--color-error);
       border-radius: 8px;
       margin-bottom: 1rem;
@@ -904,8 +904,8 @@ import { IconComponent, ICON_REGISTRY } from '../../shared/components/icon';
         display: flex;
         align-items: center;
         justify-content: center;
-        background: var(--color-success, #22c55e);
-        color: white;
+        background: var(--color-success);
+        color: var(--color-text-inverse);
         font-size: 2.5rem;
         border-radius: 50%;
       }
@@ -1183,11 +1183,17 @@ ngOnInit(): void {
 // Payment succeeded, create order with payment intent ID
         this.checkoutService.createOrder(email, phone, paymentResult.paymentIntentId).subscribe({
           next: () => {
-            this.orderPlaced.set(true);
             this.cartService.clearCart().subscribe();
             this.paymentService.destroyElements();
-            // Trigger confetti celebration
-            this.confettiService.burst();
+            // Navigate to dedicated confirmation page
+            const orderId = this.checkoutService.lastOrderId();
+            if (orderId) {
+              this.router.navigate(['/checkout/confirmation', orderId]);
+            } else {
+              // Fallback to inline confirmation
+              this.orderPlaced.set(true);
+              this.confettiService.burst();
+            }
           },
           error: (err) => {
             console.error('Order creation failed after payment:', err);
@@ -1201,10 +1207,16 @@ ngOnInit(): void {
 // Non-card payment (PayPal, bank transfer, etc.)
       this.checkoutService.createOrder(email, phone).subscribe({
         next: () => {
-          this.orderPlaced.set(true);
           this.cartService.clearCart().subscribe();
-          // Trigger confetti celebration
-          this.confettiService.burst();
+          // Navigate to dedicated confirmation page
+          const orderId = this.checkoutService.lastOrderId();
+          if (orderId) {
+            this.router.navigate(['/checkout/confirmation', orderId]);
+          } else {
+            // Fallback to inline confirmation
+            this.orderPlaced.set(true);
+            this.confettiService.burst();
+          }
         },
         error: (err) => {
           console.error('Order failed:', err);

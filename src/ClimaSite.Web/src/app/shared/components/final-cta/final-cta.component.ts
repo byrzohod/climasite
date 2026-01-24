@@ -212,20 +212,20 @@ import { AnimateOnScrollDirective } from '../../directives/animate-on-scroll.dir
       }
 
       &--cooling {
-        background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+        background: var(--gradient-cooling);
         top: 0;
         left: 50%;
         transform: translateX(-50%);
       }
 
       &--heating {
-        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+        background: var(--gradient-heating);
         bottom: 20px;
         left: 0;
       }
 
       &--vent {
-        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        background: var(--gradient-ventilation);
         bottom: 20px;
         right: 0;
       }

@@ -932,6 +932,8 @@ export class OrdersComponent implements OnInit {
 
   getStatusConfig(status: string): { bgColor: string; color: string } {
     const config = ORDER_STATUS_CONFIG[status as OrderStatus];
-    return config || { bgColor: '#e5e7eb', color: '#374151' };
+    return config
+      ? { bgColor: config.bgColorVar, color: config.colorVar }
+      : { bgColor: 'var(--color-status-neutral-bg)', color: 'var(--color-status-neutral-text)' };
   }
 }

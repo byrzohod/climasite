@@ -176,7 +176,7 @@ import { PromotionBrief, PromotionType } from '../../../core/models/promotion.mo
         border-radius: 20px;
 
         &.featured {
-          background: var(--color-warning, #f59e0b);
+          background: var(--color-warning);
         }
       }
     }

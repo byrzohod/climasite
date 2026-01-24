@@ -690,13 +690,13 @@ export class InstallationUpsellComponent {
 
 ### Phase 5: Order Confirmation (Priority: Medium)
 
-- [ ] TASK-21D-029: Create /checkout/confirmation/:orderId route
-- [ ] TASK-21D-030: Create OrderConfirmationComponent
-- [ ] TASK-21D-031: Design and implement confirmation page layout
-- [ ] TASK-21D-032: Add "What's Next" section with timeline
-- [ ] TASK-21D-033: Add order tracking CTA button
-- [ ] TASK-21D-034: Integrate confetti animation on page load
-- [ ] TASK-21D-035: Update checkout flow to redirect to confirmation page
+- [x] TASK-21D-029: Create /checkout/confirmation/:orderId route
+- [x] TASK-21D-030: Create OrderConfirmationComponent
+- [x] TASK-21D-031: Design and implement confirmation page layout
+- [x] TASK-21D-032: Add "What's Next" section with timeline
+- [x] TASK-21D-033: Add order tracking CTA button
+- [x] TASK-21D-034: Integrate confetti animation on page load
+- [x] TASK-21D-035: Update checkout flow to redirect to confirmation page
 
 ### Phase 6: Installation Upsell (Priority: Medium)
 

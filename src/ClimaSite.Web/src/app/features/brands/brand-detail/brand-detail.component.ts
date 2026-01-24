@@ -402,7 +402,7 @@ import { ProductBrief } from '../../../core/models/product.model';
       }
 
       &.added {
-        background: var(--color-success, #22c55e);
+        background: var(--color-success);
       }
 
       .spinner {

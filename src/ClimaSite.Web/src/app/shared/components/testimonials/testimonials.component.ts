@@ -151,9 +151,9 @@ interface Testimonial {
       font-size: 1.25rem;
 
       .star {
-        color: var(--color-border);
+        color: var(--color-rating-star-empty);
         &.filled {
-          color: #ffc107;
+          color: var(--color-rating-star);
         }
       }
     }

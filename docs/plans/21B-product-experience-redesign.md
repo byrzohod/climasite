@@ -495,15 +495,15 @@ src/ClimaSite.Web/src/app/shared/components/similar-products/similar-products.co
 ### Phase 1: Foundation & Bug Fixes (Sprint 1-2)
 
 #### Critical Bug Fixes
-- [ ] **TASK-21B-001:** Fix similar products price label bug (swap basePrice/salePrice)
+- [x] **TASK-21B-001:** Fix similar products price label bug (swap basePrice/salePrice) ✅ *Completed 2026-01-24*
 - [ ] **TASK-21B-002:** Audit all product price displays for consistency
 
 #### Product Card Foundation
 - [ ] **TASK-21B-003:** Increase product card image height from 220px to 280px
-- [ ] **TASK-21B-004:** Create EnergyBadge component for product cards
-- [ ] **TASK-21B-005:** Add energy badge overlay to product card image
-- [ ] **TASK-21B-006:** Create QuickSpecsRow component (BTU, noise, room size)
-- [ ] **TASK-21B-007:** Add quick specs row to product card below title
+- [x] **TASK-21B-004:** Create EnergyBadge component for product cards ✅ *Completed 2026-01-24 - Added inline to ProductCard*
+- [x] **TASK-21B-005:** Add energy badge overlay to product card image ✅ *Completed 2026-01-24*
+- [x] **TASK-21B-006:** Create QuickSpecsRow component (BTU, noise, room size) ✅ *Completed 2026-01-24 - Added inline to ProductCard*
+- [x] **TASK-21B-007:** Add quick specs row to product card below title ✅ *Completed 2026-01-24*
 - [ ] **TASK-21B-008:** Make wishlist button always visible (not hover-only)
 - [ ] **TASK-21B-009:** Add stock indicator badge (In Stock/Low Stock/Out of Stock)
 
@@ -684,7 +684,7 @@ src/ClimaSite.Web/src/app/shared/components/similar-products/similar-products.co
 
 ### 4.3 Model Updates
 
-#### ProductBrief Interface Extensions
+#### ProductBrief Interface Extensions ✅ *Implemented 2026-01-24*
 
 ```typescript
 // src/ClimaSite.Web/src/app/core/models/product.model.ts
@@ -705,7 +705,7 @@ export interface ProductBrief {
   primaryImageUrl?: string;
   inStock: boolean;
   
-  // NEW: HVAC-specific quick specs
+  // NEW: HVAC-specific quick specs (IMPLEMENTED)
   energyRating?: EnergyRatingLevel;
   btuCapacity?: number;
   noiseLevel?: number;        // in dB
@@ -715,6 +715,10 @@ export interface ProductBrief {
   hasInverter?: boolean;
   isHeatPump?: boolean;
 }
+
+// Also added:
+export type EnergyRatingLevel = 'A+++' | 'A++' | 'A+' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
+export type ProductFeature = 'wifi' | 'inverter' | 'heat_pump' | 'smart_home';
 
 export interface ProductFilter {
   // Existing fields...

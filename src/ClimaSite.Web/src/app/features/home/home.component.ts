@@ -17,6 +17,10 @@ interface Testimonial {
   location: string;
   rating: number;
   text: string;
+  verified: boolean;
+  date: string;
+  role?: string;
+  photoUrl?: string;
 }
 
 interface PromoBanner {
@@ -305,37 +309,70 @@ interface PromoBanner {
     </section>
 
     <!-- ================================================================
-         TESTIMONIALS - Single rotating quote
+         TESTIMONIALS - 3-card grid layout (TASK-21A-028 to 21A-034)
          ================================================================ -->
     <section class="testimonials" data-testid="testimonials-section">
       <div class="container">
-        <div class="testimonials__content">
-          <div class="testimonials__quote-mark">"</div>
-          <blockquote class="testimonials__quote">
-            {{ testimonials[activeTestimonial()].text }}
-          </blockquote>
-          <div class="testimonials__author">
-            <div class="testimonials__avatar">
-              {{ getInitials(testimonials[activeTestimonial()].name) }}
-            </div>
-            <div class="testimonials__info">
-              <span class="testimonials__name">{{ testimonials[activeTestimonial()].name }}</span>
-              <span class="testimonials__location">{{ testimonials[activeTestimonial()].location }}</span>
-            </div>
-          </div>
-          <div class="testimonials__dots" role="tablist" [attr.aria-label]="'home.testimonials.title' | translate">
-            @for (t of testimonials; track t.id) {
-              <button
-                type="button"
-                role="tab"
-                class="testimonials__dot"
-                [class.active]="activeTestimonial() === $index"
-                [attr.aria-selected]="activeTestimonial() === $index"
-                (click)="setTestimonial($index)"
-                [attr.aria-label]="'Testimonial ' + ($index + 1)"
-              ></button>
-            }
-          </div>
+        <header class="section-header">
+          <h2 class="section-header__title">{{ 'home.testimonials.title' | translate }}</h2>
+          <p class="section-header__subtitle">{{ 'home.testimonials.subtitle' | translate }}</p>
+        </header>
+
+        <div class="testimonials__grid">
+          @for (testimonial of testimonials; track testimonial.id) {
+            <article class="testimonial-card" appReveal="fade-up" [delay]="$index * 100">
+              <!-- Star Rating -->
+              <div class="testimonial-card__rating" [attr.aria-label]="testimonial.rating + ' out of 5 stars'">
+                @for (star of [1,2,3,4,5]; track star) {
+                  <svg 
+                    class="testimonial-card__star" 
+                    [class.filled]="star <= testimonial.rating"
+                    viewBox="0 0 20 20" 
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path fill-rule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401Z" clip-rule="evenodd"/>
+                  </svg>
+                }
+              </div>
+
+              <!-- Quote -->
+              <blockquote class="testimonial-card__quote">
+                "{{ testimonial.text }}"
+              </blockquote>
+
+              <!-- Author -->
+              <div class="testimonial-card__author">
+                <div class="testimonial-card__avatar" [class.has-photo]="testimonial.photoUrl">
+                  @if (testimonial.photoUrl) {
+                    <img [src]="testimonial.photoUrl" [alt]="testimonial.name" loading="lazy" />
+                  } @else {
+                    {{ getInitials(testimonial.name) }}
+                  }
+                </div>
+                <div class="testimonial-card__info">
+                  <span class="testimonial-card__name">{{ testimonial.name }}</span>
+                  @if (testimonial.role) {
+                    <span class="testimonial-card__role">{{ testimonial.role }}</span>
+                  }
+                  <span class="testimonial-card__meta">
+                    <span class="testimonial-card__location">{{ testimonial.location }}</span>
+                    <span class="testimonial-card__date">{{ testimonial.date }}</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Verified Purchase Badge -->
+              @if (testimonial.verified) {
+                <div class="testimonial-card__verified">
+                  <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M16.403 12.652a3 3 0 0 0 0-5.304 3 3 0 0 0-3.75-3.751 3 3 0 0 0-5.305 0 3 3 0 0 0-3.751 3.75 3 3 0 0 0 0 5.305 3 3 0 0 0 3.75 3.751 3 3 0 0 0 5.305 0 3 3 0 0 0 3.751-3.75Zm-2.546-4.46a.75.75 0 0 0-1.214-.883l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clip-rule="evenodd"/>
+                  </svg>
+                  <span>{{ 'home.testimonials.verified' | translate }}</span>
+                </div>
+              }
+            </article>
+          }
         </div>
       </div>
     </section>
@@ -1329,98 +1366,154 @@ interface PromoBanner {
     }
 
     /* ==========================================================================
-       TESTIMONIALS SECTION
+       TESTIMONIALS SECTION - 3-card grid (TASK-21A-028 to 21A-034)
        ========================================================================== */
     .testimonials {
       padding: var(--section-spacing) 0;
+      background: var(--color-bg-secondary);
     }
 
-    .testimonials__content {
-      max-width: 800px;
-      margin: 0 auto;
+    .testimonials .section-header {
       text-align: center;
+      margin-bottom: 3rem;
     }
 
-    .testimonials__quote-mark {
-      font-size: 6rem;
-      line-height: 1;
-      color: var(--color-primary);
-      opacity: 0.2;
-      font-family: Georgia, serif;
-      margin-bottom: -2rem;
+    .testimonials .section-header__subtitle {
+      font-size: 1.125rem;
+      color: var(--color-text-secondary);
+      margin-top: 0.5rem;
     }
 
-    .testimonials__quote {
-      font-size: clamp(1.25rem, 3vw, 1.75rem);
-      font-weight: 500;
-      line-height: 1.5;
+    .testimonials__grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    .testimonial-card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border-primary);
+      border-radius: var(--radius-xl);
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      position: relative;
+      transition: transform var(--transition), box-shadow var(--transition);
+
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px var(--shadow-color-lg);
+      }
+    }
+
+    .testimonial-card__rating {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .testimonial-card__star {
+      width: 18px;
+      height: 18px;
+      color: var(--color-border-secondary);
+      transition: color var(--transition-fast);
+
+      &.filled {
+        color: var(--color-rating-star);
+      }
+    }
+
+    .testimonial-card__quote {
+      font-size: 1rem;
+      line-height: 1.6;
       color: var(--color-text-primary);
-      margin: 0 0 2rem;
+      margin: 0;
+      flex: 1;
     }
 
-    .testimonials__author {
+    .testimonial-card__author {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 1rem;
+      gap: 0.875rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--color-border-primary);
     }
 
-    .testimonials__avatar {
-      width: 56px;
-      height: 56px;
+    .testimonial-card__avatar {
+      width: 48px;
+      height: 48px;
+      min-width: 48px;
       display: flex;
       align-items: center;
       justify-content: center;
       background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
       color: var(--color-text-inverse);
       font-weight: 700;
+      font-size: 0.875rem;
       border-radius: var(--radius-full);
+      overflow: hidden;
+
+      &.has-photo {
+        background: none;
+      }
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
     }
 
-    .testimonials__info {
-      text-align: left;
+    .testimonial-card__info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+      min-width: 0;
     }
 
-    .testimonials__name {
-      display: block;
+    .testimonial-card__name {
       font-weight: 600;
       color: var(--color-text-primary);
+      font-size: 0.9375rem;
     }
 
-    .testimonials__location {
-      font-size: 0.875rem;
+    .testimonial-card__role {
+      font-size: 0.8125rem;
       color: var(--color-text-secondary);
     }
 
-    .testimonials__dots {
+    .testimonial-card__meta {
       display: flex;
-      justify-content: center;
+      align-items: center;
       gap: 0.5rem;
-      margin-top: 2rem;
+      font-size: 0.8125rem;
+      color: var(--color-text-tertiary);
     }
 
-    .testimonials__dot {
-      width: 8px;
-      height: 8px;
-      padding: 0;
-      background: var(--color-border-secondary);
-      border: none;
+    .testimonial-card__location {
+      &::after {
+        content: '·';
+        margin-left: 0.5rem;
+      }
+    }
+
+    .testimonial-card__verified {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.375rem 0.75rem;
+      background: var(--color-success-light);
+      color: var(--color-success);
+      font-size: 0.75rem;
+      font-weight: 600;
       border-radius: var(--radius-full);
-      cursor: pointer;
-      transition: all var(--transition-fast);
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
 
-      &:hover {
-        background: var(--color-text-tertiary);
-      }
-
-      &:focus {
-        outline: 2px solid var(--color-primary);
-        outline-offset: 2px;
-      }
-
-      &.active {
-        width: 24px;
-        background: var(--color-primary);
+      svg {
+        width: 14px;
+        height: 14px;
       }
     }
 
@@ -1681,6 +1774,17 @@ interface PromoBanner {
       .values--compact .values__container {
         gap: 2rem;
       }
+
+      /* Testimonials grid responsive - 2 columns on tablet */
+      .testimonials__grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .testimonials__grid .testimonial-card:last-child {
+        grid-column: span 2;
+        max-width: 50%;
+        justify-self: center;
+      }
     }
 
     @media (max-width: 768px) {
@@ -1716,6 +1820,26 @@ interface PromoBanner {
       .values--compact .values__item {
         width: 100%;
         max-width: 280px;
+      }
+
+      /* Testimonials grid responsive - 1 column on mobile */
+      .testimonials__grid {
+        grid-template-columns: 1fr;
+      }
+
+      .testimonials__grid .testimonial-card:last-child {
+        grid-column: span 1;
+        max-width: 100%;
+      }
+
+      .testimonial-card {
+        padding: 1.5rem;
+      }
+
+      .testimonial-card__verified {
+        position: static;
+        align-self: flex-start;
+        margin-top: -0.5rem;
       }
 
       /* Bento grid mobile (TASK-21A-015) */
@@ -1831,7 +1955,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly elementRef = inject(ElementRef);
   private readonly router = inject(Router);
 
-  private testimonialInterval: ReturnType<typeof setInterval> | null = null;
+  // Testimonial rotation removed - now using static 3-card grid (TASK-21A-028)
   // HOME-P03: Track subscriptions to prevent memory leaks
   private langChangeSubscription: Subscription | null = null;
   // HOME-P02: Intersection Observer for lazy loading background images
@@ -1842,7 +1966,6 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   // Signals
   featuredProducts = signal<ProductBrief[]>([]);
   loadingFeatured = signal(true);
-  activeTestimonial = signal(0);
   newsletterEmail = '';
   newsletterLoading = signal(false);
   pauseMarquee = false;
@@ -1937,12 +2060,18 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
       'home.testimonials.items.1.name',
       'home.testimonials.items.1.location',
       'home.testimonials.items.1.text',
+      'home.testimonials.items.1.role',
+      'home.testimonials.items.1.date',
       'home.testimonials.items.2.name',
       'home.testimonials.items.2.location',
       'home.testimonials.items.2.text',
+      'home.testimonials.items.2.role',
+      'home.testimonials.items.2.date',
       'home.testimonials.items.3.name',
       'home.testimonials.items.3.location',
-      'home.testimonials.items.3.text'
+      'home.testimonials.items.3.text',
+      'home.testimonials.items.3.role',
+      'home.testimonials.items.3.date'
     ]).subscribe(translations => {
       this.testimonials = [
         {
@@ -1950,21 +2079,33 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
           name: translations['home.testimonials.items.1.name'],
           location: translations['home.testimonials.items.1.location'],
           rating: 5,
-          text: translations['home.testimonials.items.1.text']
+          text: translations['home.testimonials.items.1.text'],
+          role: translations['home.testimonials.items.1.role'],
+          date: translations['home.testimonials.items.1.date'],
+          verified: true,
+          photoUrl: undefined
         },
         {
           id: 2,
           name: translations['home.testimonials.items.2.name'],
           location: translations['home.testimonials.items.2.location'],
           rating: 5,
-          text: translations['home.testimonials.items.2.text']
+          text: translations['home.testimonials.items.2.text'],
+          role: translations['home.testimonials.items.2.role'],
+          date: translations['home.testimonials.items.2.date'],
+          verified: true,
+          photoUrl: undefined
         },
         {
           id: 3,
           name: translations['home.testimonials.items.3.name'],
           location: translations['home.testimonials.items.3.location'],
           rating: 5,
-          text: translations['home.testimonials.items.3.text']
+          text: translations['home.testimonials.items.3.text'],
+          role: translations['home.testimonials.items.3.role'],
+          date: translations['home.testimonials.items.3.date'],
+          verified: false,
+          photoUrl: undefined
         }
       ];
     });
@@ -1974,7 +2115,6 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     this.initTestimonials();
     this.loadFeaturedProducts();
     if (isPlatformBrowser(this.platformId)) {
-      this.startTestimonialRotation();
       // Check if promo banner was previously dismissed
       const dismissed = localStorage.getItem('promoBannerDismissed_' + this.promoBanner().id);
       if (dismissed === 'true') {
@@ -1995,7 +2135,6 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnDestroy(): void {
-    this.stopTestimonialRotation();
     // HOME-P03: Clean up language change subscription to prevent memory leak
     if (this.langChangeSubscription) {
       this.langChangeSubscription.unsubscribe();
@@ -2027,28 +2166,6 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
         this.loadingFeatured.set(false);
       }
     });
-  }
-
-  private startTestimonialRotation(): void {
-    this.testimonialInterval = setInterval(() => {
-      const next = (this.activeTestimonial() + 1) % this.testimonials.length;
-      this.activeTestimonial.set(next);
-    }, 6000);
-  }
-
-  private stopTestimonialRotation(): void {
-    if (this.testimonialInterval) {
-      clearInterval(this.testimonialInterval);
-      this.testimonialInterval = null;
-    }
-  }
-
-  setTestimonial(index: number): void {
-    this.activeTestimonial.set(index);
-    this.stopTestimonialRotation();
-    if (isPlatformBrowser(this.platformId)) {
-      this.startTestimonialRotation();
-    }
   }
 
   getInitials(name: string): string {
