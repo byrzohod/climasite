@@ -471,7 +471,10 @@
       "cvv": "CVV",
       "nameOnCard": "Name on Card",
       "paypal": "PayPal",
-      "bank": "Bank Transfer"
+      "bank": "Bank Transfer",
+      "weAccept": "We accept",
+      "acceptedMethods": "Accepted payment methods",
+      "securePayment": "Secure payment"
     },
     "review": {
       "title": "Review Your Order",
@@ -761,7 +764,13 @@
       "coolingDesc": "Energy-efficient air conditioners and cooling systems for maximum comfort during hot summer months.",
       "heatingDesc": "Keep your space warm with our range of heating solutions.",
       "ventilationDesc": "Fresh air circulation systems for healthier indoor environments.",
-      "accessoriesDesc": "Essential parts, filters, and accessories for your HVAC systems."
+      "accessoriesDesc": "Essential parts, filters, and accessories for your HVAC systems.",
+      "taglines": {
+        "airConditioning": "Stay cool with premium split ACs and inverter technology",
+        "heating": "Efficient warmth for every room in your home",
+        "ventilation": "Fresh air circulation for healthier living",
+        "water": "Crystal clear, pure water every day"
+      }
     },
     "benefits": {
       "title": "Why Choose ClimaSite",
@@ -1250,5 +1259,47 @@
     "scop": "SCOP",
     "room_size": "Room Size",
     "coverage_area": "Coverage Area"
+  },
+  "trust": {
+    "sectionTitle": "Trust & Security",
+    "secureCheckout": "Secure Checkout",
+    "sslEncrypted": "SSL Encrypted",
+    "freeShipping": "Free Shipping",
+    "freeShippingThreshold": "Orders over $500",
+    "freeShippingDesc": "On orders over $500",
+    "warrantyIncluded": "Warranty Included",
+    "upToYears": "Up to 5 years",
+    "expertSupport": "Expert Support",
+    "supportHours": "Mon-Fri 8am-8pm",
+    "securePayment": "Secure Payment",
+    "security": "Your Security",
+    "ourPromise": "Our Promise",
+    "support": "Need Help?",
+    "moneyBack": "30-Day Money Back",
+    "moneyBackDesc": "Not satisfied? Full refund within 30 days",
+    "priceMatch": "Price Match Guarantee",
+    "priceMatchDesc": "Found it cheaper? We'll match it",
+    "gdprCompliant": "GDPR Compliant",
+    "pciCompliant": "PCI DSS Compliant",
+    "dataProtected": "Your Data is Protected"
+  },
+  "warranty": {
+    "manufacturerWarranty": "Manufacturer Warranty",
+    "extendedWarranty": "Extended Warranty",
+    "premiumWarranty": "Premium Warranty",
+    "year": "Year",
+    "years": "Years",
+    "extended": "Extended",
+    "premium": "Premium",
+    "coverageIncludes": "Coverage Includes",
+    "viewFullTerms": "View Full Terms",
+    "features": {
+      "parts": "All Parts Covered",
+      "labor": "Labor Included",
+      "manufacturer": "Manufacturer Defects",
+      "accidentalDamage": "Accidental Damage",
+      "replacement": "Full Replacement",
+      "prioritySupport": "Priority Support"
+    }
   }
 }

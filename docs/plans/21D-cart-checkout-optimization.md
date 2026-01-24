@@ -650,11 +650,11 @@ export class InstallationUpsellComponent {
 
 ### Phase 1: Foundation (Priority: Critical)
 
-- [ ] TASK-21D-001: Create PaymentIconComponent with SVG icons for Visa, Mastercard, Amex, PayPal
+- [x] TASK-21D-001: Create PaymentIconComponent with SVG icons for Visa, Mastercard, Amex, PayPal
 - [ ] TASK-21D-002: Create ShippingIconComponent with SVG icons for delivery types
 - [ ] TASK-21D-003: Add payment brand detection utility (card number → brand)
 - [ ] TASK-21D-004: Replace all emoji icons in checkout.component.ts with new icon components
-- [ ] TASK-21D-005: Add translation keys for all new checkout UI strings
+- [x] TASK-21D-005: Add translation keys for all new checkout UI strings
 
 ### Phase 2: Mini-Cart (Priority: High)
 
@@ -718,7 +718,7 @@ export class InstallationUpsellComponent {
 ### Phase 8: Testing & Polish (Priority: Critical)
 
 - [ ] TASK-21D-047: Write unit tests for MiniCartService
-- [ ] TASK-21D-048: Write unit tests for PaymentIconComponent
+- [x] TASK-21D-048: Write unit tests for PaymentIconComponent
 - [ ] TASK-21D-049: Write E2E tests for mini-cart interactions
 - [ ] TASK-21D-050: Write E2E tests for checkout flow
 - [ ] TASK-21D-051: Write E2E tests for order confirmation page

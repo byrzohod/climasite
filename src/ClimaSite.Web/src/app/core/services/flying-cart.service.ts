@@ -1,11 +1,14 @@
 import { Injectable, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { AnimationService } from './animation.service';
+import { CartService } from './cart.service';
 
 export interface FlyingCartOptions {
   imageUrl: string;
   sourceElement: HTMLElement;
   imageSize?: number;
+  /** If true, auto-opens the mini-cart after animation completes. Default: true */
+  openMiniCart?: boolean;
 }
 
 /**
@@ -22,10 +25,12 @@ export interface FlyingCartOptions {
 export class FlyingCartService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly animationService = inject(AnimationService);
+  private readonly cartService = inject(CartService);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   
   private readonly ANIMATION_DURATION = 600; // ms
   private readonly IMAGE_SIZE = 60; // px
+  private readonly MINI_CART_OPEN_DELAY = 400; // ms after animation completes
   
   /**
    * Trigger the flying cart animation
@@ -34,9 +39,14 @@ export class FlyingCartService {
   fly(options: FlyingCartOptions): void {
     if (!this.isBrowser) return;
     
+    const shouldOpenMiniCart = options.openMiniCart !== false; // Default to true
+    
     // Skip animation if reduced motion is preferred
     if (this.animationService.prefersReducedMotion()) {
       this.triggerCartBump();
+      if (shouldOpenMiniCart) {
+        this.openMiniCartWithDelay();
+      }
       return;
     }
     
@@ -78,6 +88,11 @@ export class FlyingCartService {
       
       // Trigger cart bump animation
       this.triggerCartBump();
+      
+      // Auto-open mini-cart after a short delay
+      if (shouldOpenMiniCart) {
+        this.openMiniCartWithDelay();
+      }
     });
   }
   
@@ -177,5 +192,15 @@ export class FlyingCartService {
     setTimeout(() => {
       cartIcon.classList.remove('cart-bump');
     }, 300);
+  }
+  
+  /**
+   * Open the mini-cart drawer after a delay
+   * This gives the user a moment to see the cart bump animation
+   */
+  private openMiniCartWithDelay(): void {
+    setTimeout(() => {
+      this.cartService.openMiniCart();
+    }, this.MINI_CART_OPEN_DELAY);
   }
 }

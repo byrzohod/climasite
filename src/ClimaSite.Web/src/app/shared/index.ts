@@ -15,6 +15,7 @@ export * from './components/modal/modal.component';
 export * from './components/toast/toast.component';
 export * from './components/toast/toast.service';
 export * from './components/breadcrumb/breadcrumb.component';
+export * from './components/trust-badge';
 
 // Directives
 export * from './directives/animate-on-scroll.directive';

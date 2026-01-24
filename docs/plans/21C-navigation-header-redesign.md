@@ -486,7 +486,7 @@ export class SwipeGestureDirective {
 - [ ] TASK-21C-025: Add upsell products section
 - [x] TASK-21C-026: Handle empty cart state
 - [x] TASK-21C-027: Add keyboard accessibility (focus trap, Escape)
-- [ ] TASK-21C-028: Connect cart icon click to open drawer
+- [x] TASK-21C-028: Connect cart icon click to open drawer
 
 ### Phase 4: Mega Menu Redesign
 - [ ] TASK-21C-029: Redesign mega menu with visual category cards

@@ -67,7 +67,7 @@ import { CartItem } from '../../../core/models/cart.model';
         
         <!-- Price -->
         <div class="item-price">
-          @if (item().salePrice && item().salePrice < item().unitPrice) {
+          @if (item().salePrice && item().salePrice! < item().unitPrice) {
             <span class="price-sale">{{ item().salePrice | currency }}</span>
             <span class="price-original">{{ item().unitPrice | currency }}</span>
           } @else {

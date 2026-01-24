@@ -318,11 +318,11 @@ Explicit guarantees that reduce purchase anxiety.
 
 ### Phase 1: Core Trust Badges & Components
 
-- [ ] **TASK-21G-001**: Create TrustBadgeComponent with payment, security, and warranty variants
+- [x] **TASK-21G-001**: Create TrustBadgeComponent with payment, security, and warranty variants
 - [ ] **TASK-21G-002**: Create PaymentBadgesComponent with all payment method logos
 - [ ] **TASK-21G-003**: Create SecurityBadgesComponent for SSL, encryption, GDPR indicators
 - [ ] **TASK-21G-004**: Create CertificationBadgeComponent for Energy Star, AHRI, UL badges
-- [ ] **TASK-21G-005**: Create WarrantyCardComponent with visual warranty display
+- [x] **TASK-21G-005**: Create WarrantyCardComponent with visual warranty display
 - [ ] **TASK-21G-006**: Create GuaranteeBadgeComponent for money-back, price match, etc.
 
 ### Phase 2: Review System Enhancements

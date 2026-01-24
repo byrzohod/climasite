@@ -471,7 +471,10 @@
       "paypal": "PayPal",
       "bank": "Banküberweisung",
       "cardDetails": "Kartendetails",
-      "loadingStripe": "Zahlungsformular wird geladen..."
+      "loadingStripe": "Zahlungsformular wird geladen...",
+      "weAccept": "Wir akzeptieren",
+      "acceptedMethods": "Akzeptierte Zahlungsmethoden",
+      "securePayment": "Sichere Zahlung"
     },
     "review": {
       "title": "Bestellung überprüfen",
@@ -747,7 +750,13 @@
       "coolingDesc": "Energieeffiziente Klimaanlagen und Kühlsysteme für maximalen Komfort in heißen Sommermonaten.",
       "heatingDesc": "Halten Sie Ihren Raum warm mit unserer Auswahl an Heizlösungen.",
       "ventilationDesc": "Frischluftzirkulationssysteme für eine gesündere Innenumgebung.",
-      "accessoriesDesc": "Wichtige Teile, Filter und Zubehör für Ihre HLK-Systeme."
+      "accessoriesDesc": "Wichtige Teile, Filter und Zubehör für Ihre HLK-Systeme.",
+      "taglines": {
+        "airConditioning": "Bleiben Sie kühl mit Premium-Split-Klimaanlagen und Inverter-Technologie",
+        "heating": "Effiziente Wärme für jeden Raum in Ihrem Zuhause",
+        "ventilation": "Frischluft für ein gesünderes Leben",
+        "water": "Kristallklares, reines Wasser jeden Tag"
+      }
     },
     "benefits": {
       "title": "Warum ClimaSite wählen",
@@ -1235,5 +1244,47 @@
     "scop": "SCOP",
     "room_size": "Raumgröße",
     "coverage_area": "Abdeckungsbereich"
+  },
+  "trust": {
+    "sectionTitle": "Vertrauen & Sicherheit",
+    "secureCheckout": "Sichere Kasse",
+    "sslEncrypted": "SSL-verschlüsselt",
+    "freeShipping": "Kostenloser Versand",
+    "freeShippingThreshold": "Bestellungen über 500€",
+    "freeShippingDesc": "Bei Bestellungen über 500€",
+    "warrantyIncluded": "Garantie inklusive",
+    "upToYears": "Bis zu 5 Jahre",
+    "expertSupport": "Experten-Support",
+    "supportHours": "Mo-Fr 8-20 Uhr",
+    "securePayment": "Sichere Zahlung",
+    "security": "Ihre Sicherheit",
+    "ourPromise": "Unser Versprechen",
+    "support": "Brauchen Sie Hilfe?",
+    "moneyBack": "30 Tage Geld-zurück",
+    "moneyBackDesc": "Nicht zufrieden? Volle Rückerstattung innerhalb von 30 Tagen",
+    "priceMatch": "Preisgarantie",
+    "priceMatchDesc": "Günstiger gefunden? Wir passen den Preis an",
+    "gdprCompliant": "DSGVO-konform",
+    "pciCompliant": "PCI-DSS-konform",
+    "dataProtected": "Ihre Daten sind geschützt"
+  },
+  "warranty": {
+    "manufacturerWarranty": "Herstellergarantie",
+    "extendedWarranty": "Erweiterte Garantie",
+    "premiumWarranty": "Premium-Garantie",
+    "year": "Jahr",
+    "years": "Jahre",
+    "extended": "Erweitert",
+    "premium": "Premium",
+    "coverageIncludes": "Deckung umfasst",
+    "viewFullTerms": "Vollständige Bedingungen anzeigen",
+    "features": {
+      "parts": "Alle Teile abgedeckt",
+      "labor": "Arbeitskosten inklusive",
+      "manufacturer": "Herstellerfehler",
+      "accidentalDamage": "Unfallschäden",
+      "replacement": "Vollständiger Ersatz",
+      "prioritySupport": "Prioritäts-Support"
+    }
   }
 }

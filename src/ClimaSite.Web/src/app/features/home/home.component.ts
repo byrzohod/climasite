@@ -193,25 +193,35 @@ interface PromoBanner {
     </section>
 
     <!-- ================================================================
-         CATEGORIES - Visual navigation panels
-         HOME-P02: Uses Intersection Observer for lazy loading background images
+         CATEGORIES - Bento Grid Layout (TASK-21A-009 to 21A-015)
+         Asymmetric grid with gradient backgrounds and icons
          ================================================================ -->
     <section class="categories" data-testid="categories-section">
-      <div class="categories__grid">
-        @for (cat of categories; track cat.slug) {
+      <div class="container">
+        <header class="section-header">
+          <h2 class="section-header__title">{{ 'home.categories.title' | translate }}</h2>
+        </header>
+      </div>
+      <div class="categories__bento">
+        @for (cat of categories; track cat.slug; let i = $index) {
           <a
             #categoryPanel
             [routerLink]="['/products/category', cat.slug]"
-            class="categories__panel"
-            [attr.data-bg]="'url(' + cat.image + ')'"
+            class="categories__card"
+            [class.categories__card--large]="i === 0"
+            [class.categories__card--medium]="i === 3"
             [attr.aria-label]="cat.name | translate"
-            appReveal="fade-up" [delay]="$index * 75"
+            [style.--card-gradient]="cat.gradient"
+            [style.--card-accent]="cat.accent"
+            appReveal="fade-up" [delay]="i * 75"
             data-testid="category-card"
           >
-            <div class="categories__panel-bg"></div>
-            <div class="categories__panel-content">
-              <h3 class="categories__panel-title">{{ cat.name | translate }}</h3>
-              <span class="categories__panel-link">
+            <div class="categories__card-bg"></div>
+            <div class="categories__card-icon" [innerHTML]="cat.icon"></div>
+            <div class="categories__card-content">
+              <h3 class="categories__card-title">{{ cat.name | translate }}</h3>
+              <p class="categories__card-tagline">{{ cat.tagline | translate }}</p>
+              <span class="categories__card-link">
                 {{ 'home.categories.explore' | translate }}
                 <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638l-3.96-3.67a.75.75 0 111.02-1.16l5.25 4.875a.75.75 0 010 1.16l-5.25 4.875a.75.75 0 11-1.02-1.16l3.96-3.67H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>
               </span>
@@ -1018,88 +1028,182 @@ interface PromoBanner {
     }
 
     /* ==========================================================================
-       CATEGORIES SECTION
+       CATEGORIES SECTION - Bento Grid (TASK-21A-009 to 21A-015)
        ========================================================================== */
     .categories {
       padding: var(--section-spacing) 0;
     }
 
-    .categories__grid {
+    .categories__bento {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(2, 200px);
       gap: 1rem;
       padding: 0 var(--container-padding);
       max-width: calc(var(--container-max) + var(--container-padding) * 2);
       margin: 0 auto;
     }
 
-    .categories__panel {
+    .categories__card {
       position: relative;
-      height: 50vh;
-      min-height: 400px;
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-xl);
       overflow: hidden;
       text-decoration: none;
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
+      transition: transform var(--transition), box-shadow var(--transition);
 
+      /* Default: 1x1 (small) */
+      grid-column: span 1;
+      grid-row: span 1;
+
+      /* Hover: subtle scale + shadow increase (TASK-21A-013) */
       &:hover {
-        .categories__panel-bg {
-          transform: scale(1.1);
-        }
+        transform: scale(1.02);
+        box-shadow: 0 20px 40px var(--shadow-color-lg);
 
-        .categories__panel-content {
-          transform: translateY(-8px);
-        }
-
-        .categories__panel-link svg {
+        .categories__card-link svg {
           transform: translateX(4px);
         }
+
+        .categories__card-icon {
+          transform: scale(1.1);
+        }
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
       }
     }
 
-    .categories__panel-bg {
+    /* Large card: 2x2 - Featured category (TASK-21A-011) */
+    .categories__card--large {
+      grid-column: span 2;
+      grid-row: span 2;
+
+      .categories__card-icon {
+        width: 80px;
+        height: 80px;
+
+        :deep(svg) {
+          width: 48px;
+          height: 48px;
+        }
+      }
+
+      .categories__card-title {
+        font-size: 2rem;
+      }
+
+      .categories__card-tagline {
+        font-size: 1rem;
+        max-width: 280px;
+      }
+    }
+
+    /* Medium card: 2x1 - Secondary highlight (TASK-21A-011) */
+    .categories__card--medium {
+      grid-column: span 2;
+
+      .categories__card-content {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .categories__card-icon {
+        position: relative;
+        top: auto;
+        right: auto;
+        margin-bottom: 0;
+      }
+    }
+
+    /* Gradient background (TASK-21A-012) */
+    .categories__card-bg {
       position: absolute;
       inset: 0;
-      /* HOME-P02: Background is set via CSS variable after lazy load */
-      background: var(--color-bg-tertiary);
-      transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-image 0.3s ease;
+      background: var(--card-gradient, linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-accent-500) 100%));
+      transition: opacity var(--transition);
 
+      /* Subtle pattern overlay */
+      &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: 
+          radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
+          radial-gradient(circle at 80% 80%, rgba(0, 0, 0, 0.1) 0%, transparent 40%);
+      }
+
+      /* Bottom gradient for text readability */
       &::after {
         content: '';
         position: absolute;
         inset: 0;
-        background: linear-gradient(to top, var(--color-bg-overlay) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.1) 100%);
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.4) 0%, transparent 60%);
       }
     }
 
-    /* HOME-P02: When loaded, show the background image */
-    .categories__panel--loaded .categories__panel-bg {
-      background: var(--panel-image) center/cover no-repeat;
-    }
-
-    .categories__panel-content {
-      position: relative;
-      z-index: 1;
-      padding: 2rem;
+    /* Category icon (TASK-21A-012) */
+    .categories__card-icon {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(8px);
+      border-radius: var(--radius-lg);
       color: var(--color-text-inverse);
       transition: transform var(--transition);
+
+      :deep(svg) {
+        width: 28px;
+        height: 28px;
+      }
     }
 
-    .categories__panel-title {
-      font-size: 1.5rem;
+    .categories__card-content {
+      position: relative;
+      z-index: 1;
+      padding: 1.5rem;
+      color: var(--color-text-inverse);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .categories__card-title {
+      font-size: 1.25rem;
       font-weight: 700;
-      margin: 0 0 0.75rem;
+      margin: 0;
+      letter-spacing: -0.02em;
     }
 
-    .categories__panel-link {
+    .categories__card-tagline {
+      font-size: 0.875rem;
+      margin: 0;
+      opacity: 0.85;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .categories__card-link {
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      font-size: 0.9375rem;
-      font-weight: 500;
-      opacity: 0.9;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-top: 0.5rem;
 
       svg {
         width: 16px;
@@ -1547,13 +1651,19 @@ interface PromoBanner {
         max-width: 320px;
       }
 
-      .categories__grid {
+      /* Bento grid responsive (TASK-21A-015) */
+      .categories__bento {
         grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(3, 180px);
       }
 
-      .categories__panel {
-        height: 40vh;
-        min-height: 300px;
+      .categories__card--large {
+        grid-column: span 2;
+        grid-row: span 2;
+      }
+
+      .categories__card--medium {
+        grid-column: span 2;
       }
 
       .process__timeline {
@@ -1608,14 +1718,48 @@ interface PromoBanner {
         max-width: 280px;
       }
 
-      .categories__grid {
+      /* Bento grid mobile (TASK-21A-015) */
+      .categories__bento {
         grid-template-columns: 1fr;
+        grid-template-rows: auto;
         gap: 0.75rem;
       }
 
-      .categories__panel {
-        height: 30vh;
-        min-height: 200px;
+      .categories__card {
+        min-height: 160px;
+      }
+
+      .categories__card--large,
+      .categories__card--medium {
+        grid-column: span 1;
+        grid-row: span 1;
+      }
+
+      .categories__card--large {
+        min-height: 220px;
+
+        .categories__card-icon {
+          width: 56px;
+          height: 56px;
+
+          :deep(svg) {
+            width: 28px;
+            height: 28px;
+          }
+        }
+
+        .categories__card-title {
+          font-size: 1.5rem;
+        }
+
+        .categories__card-tagline {
+          font-size: 0.875rem;
+        }
+      }
+
+      .categories__card--medium .categories__card-content {
+        flex-direction: column;
+        align-items: flex-start;
       }
 
       .process__timeline {
@@ -1735,11 +1879,40 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     { key: 'home.values.installation', detail: null, icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" /></svg>` }
   ];
 
+  // Categories with gradient backgrounds and icons (TASK-21A-012)
   categories = [
-    { slug: 'air-conditioners', name: 'categories.airConditioning', image: 'https://images.unsplash.com/photo-1625961332771-3f40b0e2bdcf?w=800&q=80' },
-    { slug: 'water-purification', name: 'categories.waterPurification', image: 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=800&q=80' },
-    { slug: 'heating-systems', name: 'categories.heatingSystems', image: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&q=80' },
-    { slug: 'ventilation', name: 'categories.ventilation', image: 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=800&q=80' }
+    { 
+      slug: 'air-conditioners', 
+      name: 'categories.airConditioning', 
+      tagline: 'home.categories.taglines.airConditioning',
+      gradient: 'linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-accent-500) 100%)',
+      accent: 'var(--color-primary-200)',
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" /></svg>`
+    },
+    { 
+      slug: 'heating-systems', 
+      name: 'categories.heatingSystems', 
+      tagline: 'home.categories.taglines.heating',
+      gradient: 'linear-gradient(135deg, var(--color-ember-500) 0%, var(--color-warm-500) 100%)',
+      accent: 'var(--color-ember-200)',
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.925 3.547 5.975 5.975 0 0 1-2.133-1.001A3.75 3.75 0 0 0 12 18Z" /></svg>`
+    },
+    { 
+      slug: 'ventilation', 
+      name: 'categories.ventilation', 
+      tagline: 'home.categories.taglines.ventilation',
+      gradient: 'linear-gradient(135deg, var(--color-aurora-500) 0%, var(--color-accent-400) 100%)',
+      accent: 'var(--color-aurora-200)',
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>`
+    },
+    { 
+      slug: 'water-purification', 
+      name: 'categories.waterPurification', 
+      tagline: 'home.categories.taglines.water',
+      gradient: 'linear-gradient(135deg, var(--color-accent-500) 0%, var(--color-primary-400) 100%)',
+      accent: 'var(--color-accent-200)',
+      icon: `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 1-6.23.693L5 15.5m14.8-.2-.8 3.2a1.5 1.5 0 0 1-1.4 1H6.4a1.5 1.5 0 0 1-1.4-1l-.8-3.2" /></svg>`
+    }
   ];
 
   processSteps = [
@@ -1835,29 +2008,11 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  // HOME-P02: Lazy load category background images using Intersection Observer
+  // HOME-P02: Category panels now use CSS gradients, no lazy loading needed
+  // Keeping the observer setup for potential future use with product images
   private setupCategoryLazyLoading(): void {
-    this.categoryObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const el = entry.target as HTMLElement;
-            const bgUrl = el.getAttribute('data-bg');
-            if (bgUrl) {
-              el.style.setProperty('--panel-image', bgUrl);
-              el.classList.add('categories__panel--loaded');
-            }
-            this.categoryObserver?.unobserve(el);
-          }
-        });
-      },
-      { rootMargin: '100px', threshold: 0.1 }
-    );
-
-    // Observe all category panels
-    this.categoryPanels?.forEach((panel) => {
-      this.categoryObserver?.observe(panel.nativeElement);
-    });
+    // Categories now use gradient backgrounds instead of images (TASK-21A-012)
+    // No lazy loading needed for gradients
   }
 
   private loadFeaturedProducts(): void {

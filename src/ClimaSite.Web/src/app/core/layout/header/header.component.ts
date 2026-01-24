@@ -7,6 +7,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { ThemeToggleComponent } from '../../../shared/components/theme-toggle/theme-toggle.component';
 import { LanguageSelectorComponent } from '../../../shared/components/language-selector/language-selector.component';
 import { MegaMenuComponent } from '../../../shared/components/mega-menu/mega-menu.component';
+import { MiniCartDrawerComponent } from '../../../shared/components/mini-cart-drawer';
 import { CartService } from '../../services/cart.service';
 import { WishlistService } from '../../services/wishlist.service';
 import { AuthService } from '../../../auth/services/auth.service';
@@ -21,7 +22,8 @@ import { AuthService } from '../../../auth/services/auth.service';
     TranslateModule,
     ThemeToggleComponent,
     LanguageSelectorComponent,
-    MegaMenuComponent
+    MegaMenuComponent,
+    MiniCartDrawerComponent
   ],
   template: `
     <header class="header" [class.header--sticky]="isSticky()" data-testid="header">
@@ -94,15 +96,22 @@ import { AuthService } from '../../../auth/services/auth.service';
               }
             </a>
 
-            <!-- Cart -->
-            <a routerLink="/cart" class="action-btn action-btn--cart" [attr.aria-label]="'nav.cart' | translate" data-testid="cart-icon">
+            <!-- Cart (desktop: opens mini-cart drawer) -->
+            <button 
+              type="button"
+              class="action-btn action-btn--cart" 
+              [attr.aria-label]="'nav.cart' | translate"
+              [attr.aria-expanded]="cartService.miniCartOpen()"
+              aria-haspopup="dialog"
+              (click)="onCartIconClick($event)"
+              data-testid="cart-icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M2.25 2.25a.75.75 0 000 1.5h1.386c.17 0 .318.114.362.278l2.558 9.592a3.752 3.752 0 00-2.806 3.63c0 .414.336.75.75.75h15.75a.75.75 0 000-1.5H5.378A2.25 2.25 0 017.5 15h11.218a.75.75 0 00.674-.421 60.358 60.358 0 002.96-7.228.75.75 0 00-.525-.965A60.864 60.864 0 005.68 4.509l-.232-.867A1.875 1.875 0 003.636 2.25H2.25zM3.75 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM16.5 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z"/>
               </svg>
               @if (cartService.itemCount() > 0) {
                 <span class="cart-badge" data-testid="cart-count">{{ cartService.itemCount() }}</span>
               }
-            </a>
+            </button>
 
             <!-- User Menu -->
             @if (authService.isAuthenticated()) {
@@ -327,6 +336,12 @@ import { AuthService } from '../../../auth/services/auth.service';
         </div>
       </div>
     }
+
+    <!-- Mini-Cart Drawer (rendered outside header for proper z-index stacking) -->
+    <app-mini-cart-drawer
+      [isOpen]="cartService.miniCartOpen()"
+      (closed)="cartService.closeMiniCart()"
+    />
   `,
   styles: [`
     .header {
@@ -1327,5 +1342,14 @@ export class HeaderComponent {
 
   closeMobileSearch(): void {
     this.mobileSearchOpen.set(false);
+  }
+
+  /**
+   * Handle cart icon click
+   * Desktop: Opens the mini-cart drawer
+   */
+  onCartIconClick(event: Event): void {
+    event.preventDefault();
+    this.cartService.toggleMiniCart();
   }
 }

@@ -138,13 +138,13 @@ Transform the ClimaSite home page from a generic, template-like experience into 
 
 **Tasks:**
 
-- [ ] TASK-21A-009: Implement Bento grid layout for categories (CSS Grid)
-- [ ] TASK-21A-010: Remove TiltEffectDirective from category panels
-- [ ] TASK-21A-011: Create asymmetric panel sizing (large featured + smaller)
-- [ ] TASK-21A-012: Update category images to product-focused photography
-- [ ] TASK-21A-013: Simplify hover effects (scale + arrow only)
-- [ ] TASK-21A-014: Add category taglines to translation files
-- [ ] TASK-21A-015: Ensure proper aspect ratios on all breakpoints
+- [x] TASK-21A-009: Implement Bento grid layout for categories (CSS Grid)
+- [x] TASK-21A-010: Remove TiltEffectDirective from category panels (already removed in 21F)
+- [x] TASK-21A-011: Create asymmetric panel sizing (large featured + smaller)
+- [x] TASK-21A-012: Update category images to product-focused photography (replaced with gradient backgrounds + icons)
+- [x] TASK-21A-013: Simplify hover effects (scale + arrow only)
+- [x] TASK-21A-014: Add category taglines to translation files
+- [x] TASK-21A-015: Ensure proper aspect ratios on all breakpoints
 
 ---
 
@@ -488,14 +488,14 @@ Transform the ClimaSite home page from a generic, template-like experience into 
 - [x] TASK-21A-007: Create dual CTA layout (primary + secondary ghost button)
 - [x] TASK-21A-008: Implement hero content API for dynamic seasonal content
 
-### Categories Section (7 tasks)
-- [ ] TASK-21A-009: Implement Bento grid layout for categories
-- [ ] TASK-21A-010: Remove TiltEffectDirective from category panels
-- [ ] TASK-21A-011: Create asymmetric panel sizing
-- [ ] TASK-21A-012: Update category images to product-focused photography
-- [ ] TASK-21A-013: Simplify hover effects (scale + arrow only)
-- [ ] TASK-21A-014: Add category taglines to translation files
-- [ ] TASK-21A-015: Ensure proper aspect ratios on all breakpoints
+### Categories Section (7 tasks) - COMPLETED
+- [x] TASK-21A-009: Implement Bento grid layout for categories
+- [x] TASK-21A-010: Remove TiltEffectDirective from category panels (already done in 21F)
+- [x] TASK-21A-011: Create asymmetric panel sizing
+- [x] TASK-21A-012: Update category images to product-focused photography (replaced with gradient backgrounds + icons)
+- [x] TASK-21A-013: Simplify hover effects (scale + arrow only)
+- [x] TASK-21A-014: Add category taglines to translation files
+- [x] TASK-21A-015: Ensure proper aspect ratios on all breakpoints
 
 ### Featured Products Section (6 tasks)
 - [ ] TASK-21A-016: Create FeaturedProductsGridComponent with hero product layout
