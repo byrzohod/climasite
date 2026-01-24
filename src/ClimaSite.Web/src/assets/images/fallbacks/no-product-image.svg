@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!-- Background -->
+  <rect width="200" height="200" fill="#f8fafc"/>
+  
+  <!-- Subtle gradient overlay -->
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f0f9ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e0f2fe;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" fill="url(#bgGrad)"/>
+  
+  <!-- Package/Product icon -->
+  <g transform="translate(60, 55)">
+    <!-- Box body -->
+    <path 
+      d="M40 10L75 27.5V72.5L40 90L5 72.5V27.5L40 10Z" 
+      stroke="#94a3b8" 
+      stroke-width="2.5" 
+      fill="none"
+      stroke-linejoin="round"
+    />
+    <!-- Box center line -->
+    <path 
+      d="M5 27.5L40 45L75 27.5" 
+      stroke="#94a3b8" 
+      stroke-width="2.5" 
+      fill="none"
+      stroke-linejoin="round"
+    />
+    <!-- Box vertical line -->
+    <path 
+      d="M40 45V90" 
+      stroke="#94a3b8" 
+      stroke-width="2.5" 
+      fill="none"
+    />
+    <!-- Top flap lines -->
+    <path 
+      d="M22.5 18.75L40 27.5L57.5 18.75" 
+      stroke="#cbd5e1" 
+      stroke-width="1.5" 
+      fill="none"
+      stroke-linejoin="round"
+    />
+  </g>
+  
+  <!-- Small decorative elements -->
+  <circle cx="45" cy="160" r="3" fill="#e2e8f0"/>
+  <circle cx="155" cy="40" r="2" fill="#e2e8f0"/>
+  <circle cx="160" cy="155" r="4" fill="#e2e8f0"/>
+</svg>

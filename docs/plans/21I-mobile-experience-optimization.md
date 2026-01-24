@@ -115,10 +115,10 @@ After analyzing the current header structure and mobile UX best practices, the r
 #### Task: Bottom Navigation Bar Component
 
 ```
-- [ ] TASK-21I-001: Create BottomNavComponent with 5 navigation items
-- [ ] TASK-21I-002: Implement safe area insets for notched devices
-- [ ] TASK-21I-003: Add hide-on-scroll behavior (optional, debounced)
-- [ ] TASK-21I-004: Create bottom nav animations (item press, badge pulse)
+- [x] TASK-21I-001: Create BottomNavComponent with 5 navigation items
+- [x] TASK-21I-002: Implement safe area insets for notched devices
+- [x] TASK-21I-003: Add hide-on-scroll behavior (optional, debounced)
+- [x] TASK-21I-004: Create bottom nav animations (item press, badge pulse)
 - [ ] TASK-21I-005: Add haptic feedback service for supported devices
 ```
 
@@ -141,11 +141,23 @@ The simplified header will:
 - Optional: Slim promo banner for promotions
 
 ```
-- [ ] TASK-21I-006: Refactor HeaderComponent to hide actions on mobile
-- [ ] TASK-21I-007: Create compact header variant (40px height on mobile)
+- [x] TASK-21I-006: Refactor HeaderComponent to hide actions on mobile
+- [x] TASK-21I-007: Create compact header variant (56px height on mobile)
 - [ ] TASK-21I-008: Add promotional banner slot for mobile header
 - [ ] TASK-21I-009: Implement scroll-aware header (shrink on scroll)
 ```
+
+**Completed (January 24, 2026):**
+- Simplified mobile header to single compact row (~56px)
+- Removed wishlist and cart icons from mobile header (moved to bottom nav)
+- Kept search icon toggle and hamburger menu in mobile header
+- Enhanced mobile menu with:
+  - Search bar at top
+  - Wishlist link with badge count
+  - Language selector
+  - Theme toggle
+  - User info section for authenticated users
+  - Admin link for admin users
 
 ### 3. Bottom Sheet Pattern
 
@@ -624,10 +636,10 @@ While full PWA is out of scope for this plan, prepare the foundation:
 - [ ] TASK-21I-084: Implement 768px tablet transition styles
 
 #### Phase 2: Navigation Redesign (TASK-21I-001 to TASK-21I-009, TASK-21I-039 to TASK-21I-044)
-- [ ] TASK-21I-001: Create BottomNavComponent with 5 navigation items
-- [ ] TASK-21I-002: Implement safe area insets for notched devices
-- [ ] TASK-21I-003: Add hide-on-scroll behavior (optional, debounced)
-- [ ] TASK-21I-004: Create bottom nav animations (item press, badge pulse)
+- [x] TASK-21I-001: Create BottomNavComponent with 5 navigation items
+- [x] TASK-21I-002: Implement safe area insets for notched devices
+- [x] TASK-21I-003: Add hide-on-scroll behavior (optional, debounced)
+- [x] TASK-21I-004: Create bottom nav animations (item press, badge pulse)
 - [ ] TASK-21I-005: Add haptic feedback service for supported devices
 - [ ] TASK-21I-006: Refactor HeaderComponent to hide actions on mobile
 - [ ] TASK-21I-007: Create compact header variant (40px height on mobile)

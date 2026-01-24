@@ -192,9 +192,9 @@ import { AuthService } from '../../../auth/services/auth.service';
             }
           </div>
 
-          <!-- Mobile Actions (visible only on mobile) -->
+          <!-- Mobile Actions (visible only on mobile) - Simplified for bottom nav coordination -->
           <div class="mobile-actions" data-testid="mobile-actions">
-            <!-- Mobile Search Toggle -->
+            <!-- Mobile Search Toggle - Primary action kept in header -->
             <button 
               type="button" 
               class="mobile-action-btn" 
@@ -206,26 +206,6 @@ import { AuthService } from '../../../auth/services/auth.service';
                 <path fill-rule="evenodd" d="M10.5 3.75a6.75 6.75 0 100 13.5 6.75 6.75 0 000-13.5zM2.25 10.5a8.25 8.25 0 1114.59 5.28l4.69 4.69a.75.75 0 11-1.06 1.06l-4.69-4.69A8.25 8.25 0 012.25 10.5z" clip-rule="evenodd"/>
               </svg>
             </button>
-
-            <!-- Mobile Wishlist -->
-            <a routerLink="/wishlist" class="mobile-action-btn" [attr.aria-label]="'nav.wishlist' | translate" data-testid="mobile-wishlist-button">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"/>
-              </svg>
-              @if (wishlistService.itemCount() > 0) {
-                <span class="mobile-badge" data-testid="mobile-wishlist-count">{{ wishlistService.itemCount() }}</span>
-              }
-            </a>
-
-            <!-- Mobile Cart -->
-            <a routerLink="/cart" class="mobile-action-btn" [attr.aria-label]="'nav.cart' | translate" data-testid="mobile-cart-button">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M2.25 2.25a.75.75 0 000 1.5h1.386c.17 0 .318.114.362.278l2.558 9.592a3.752 3.752 0 00-2.806 3.63c0 .414.336.75.75.75h15.75a.75.75 0 000-1.5H5.378A2.25 2.25 0 017.5 15h11.218a.75.75 0 00.674-.421 60.358 60.358 0 002.96-7.228.75.75 0 00-.525-.965A60.864 60.864 0 005.68 4.509l-.232-.867A1.875 1.875 0 003.636 2.25H2.25zM3.75 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM16.5 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z"/>
-              </svg>
-              @if (cartService.itemCount() > 0) {
-                <span class="mobile-badge mobile-badge--primary" data-testid="mobile-cart-count">{{ cartService.itemCount() }}</span>
-              }
-            </a>
           </div>
 
           <!-- Mobile Menu Toggle -->
@@ -303,7 +283,7 @@ import { AuthService } from '../../../auth/services/auth.service';
         [attr.aria-label]="'nav.mobile_menu' | translate"
         (keydown)="onMobileMenuKeydown($event)">
         <div class="mobile-menu-header">
-          <span class="logo-text">ClimaSite</span>
+          <span class="logo-text">CDL</span>
           <button 
             type="button" 
             class="mobile-menu-close" 
@@ -315,19 +295,74 @@ import { AuthService } from '../../../auth/services/auth.service';
             </svg>
           </button>
         </div>
+
+        <!-- Mobile Menu Search -->
+        <div class="mobile-menu-search">
+          <form class="mobile-menu-search-form" (ngSubmit)="performSearch(); closeMobileMenu()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="mobile-menu-search-icon">
+              <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd"/>
+            </svg>
+            <input
+              type="text"
+              [(ngModel)]="searchQuery"
+              name="mobileMenuSearchQuery"
+              [placeholder]="'common.search' | translate"
+              class="mobile-menu-search-input"
+              data-testid="mobile-menu-search-input"
+            />
+          </form>
+        </div>
+
         <nav class="mobile-nav">
           <a routerLink="/" class="mobile-nav-link" (click)="closeMobileMenu()">{{ 'nav.home' | translate }}</a>
-          <a routerLink="/promotions" class="mobile-nav-link" (click)="closeMobileMenu()">{{ 'nav.promotions' | translate }}</a>
+          <a routerLink="/promotions" class="mobile-nav-link mobile-nav-link--promo" (click)="closeMobileMenu()">
+            {{ 'nav.promotions' | translate }}
+            <span class="promo-badge">Hot</span>
+          </a>
           <a routerLink="/products" class="mobile-nav-link" (click)="closeMobileMenu()">{{ 'nav.products' | translate }}</a>
           <a routerLink="/brands" class="mobile-nav-link" (click)="closeMobileMenu()">{{ 'nav.brands' | translate }}</a>
           <a routerLink="/about" class="mobile-nav-link" (click)="closeMobileMenu()">{{ 'nav.about' | translate }}</a>
           <a routerLink="/resources" class="mobile-nav-link" (click)="closeMobileMenu()">{{ 'nav.resources' | translate }}</a>
           <a routerLink="/contact" class="mobile-nav-link" (click)="closeMobileMenu()">{{ 'nav.contact' | translate }}</a>
+          
+          <!-- Wishlist link for mobile (moved from header actions) -->
+          <a routerLink="/wishlist" class="mobile-nav-link mobile-nav-link--wishlist" (click)="closeMobileMenu()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="mobile-nav-icon">
+              <path d="M9.653 16.915l-.005-.003-.019-.01a20.759 20.759 0 01-1.162-.682 22.045 22.045 0 01-2.582-1.9C4.045 12.733 2 10.352 2 7.5a4.5 4.5 0 018-2.828A4.5 4.5 0 0118 7.5c0 2.852-2.044 5.233-3.885 6.82a22.049 22.049 0 01-3.744 2.582l-.019.01-.005.003h-.002a.739.739 0 01-.69.001l-.002-.001z"/>
+            </svg>
+            {{ 'nav.wishlist' | translate }}
+            @if (wishlistService.itemCount() > 0) {
+              <span class="mobile-nav-badge">{{ wishlistService.itemCount() }}</span>
+            }
+          </a>
         </nav>
+
+        <!-- Mobile Menu Settings (Language & Theme) -->
+        <div class="mobile-menu-settings">
+          <div class="mobile-menu-settings-row">
+            <span class="mobile-menu-settings-label">{{ 'common.language' | translate }}</span>
+            <app-language-selector />
+          </div>
+          <div class="mobile-menu-settings-row">
+            <span class="mobile-menu-settings-label">{{ 'common.theme' | translate }}</span>
+            <app-theme-toggle />
+          </div>
+        </div>
+
         <div class="mobile-menu-footer">
           @if (authService.isAuthenticated()) {
+            <div class="mobile-menu-user">
+              <div class="mobile-menu-user-avatar">{{ getUserInitials() }}</div>
+              <div class="mobile-menu-user-info">
+                <span class="mobile-menu-user-name">{{ authService.user()?.firstName }} {{ authService.user()?.lastName }}</span>
+                <span class="mobile-menu-user-email">{{ authService.user()?.email }}</span>
+              </div>
+            </div>
             <a routerLink="/account" class="mobile-nav-link" (click)="closeMobileMenu()">{{ 'nav.account' | translate }}</a>
             <a routerLink="/account/orders" class="mobile-nav-link" (click)="closeMobileMenu()">{{ 'nav.orders' | translate }}</a>
+            @if (authService.isAdmin()) {
+              <a routerLink="/admin" class="mobile-nav-link mobile-nav-link--admin" (click)="closeMobileMenu()">{{ 'nav.admin' | translate }}</a>
+            }
             <button type="button" class="mobile-logout-btn" (click)="logout()">{{ 'auth.logout' | translate }}</button>
           } @else {
             <a routerLink="/login" class="mobile-login-btn" (click)="closeMobileMenu()">{{ 'auth.login.title' | translate }}</a>
@@ -436,6 +471,12 @@ import { AuthService } from '../../../auth/services/auth.service';
       max-width: 80rem;
       margin: 0 auto;
       padding: 0.75rem 1rem;
+
+      /* Mobile: Compact single row, ~56px height */
+      @media (max-width: 767px) {
+        padding: 0.5rem 1rem;
+        min-height: 3.5rem; /* 56px */
+      }
     }
 
     .header-logo {
@@ -898,7 +939,7 @@ import { AuthService } from '../../../auth/services/auth.service';
       height: 1rem;
     }
 
-    /* Mobile Actions */
+    /* Mobile Actions - Simplified (search only, cart/wishlist in bottom nav) */
     .mobile-actions {
       display: flex;
       align-items: center;
@@ -935,27 +976,6 @@ import { AuthService } from '../../../auth/services/auth.service';
       svg {
         width: 1.375rem;
         height: 1.375rem;
-      }
-    }
-
-    .mobile-badge {
-      position: absolute;
-      top: 0.25rem;
-      right: 0.25rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 1rem;
-      height: 1rem;
-      padding: 0 0.25rem;
-      background-color: var(--color-error);
-      color: var(--color-text-inverse);
-      font-size: 0.625rem;
-      font-weight: 600;
-      border-radius: 9999px;
-
-      &--primary {
-        background-color: var(--color-primary);
       }
     }
 
@@ -1135,13 +1155,19 @@ import { AuthService } from '../../../auth/services/auth.service';
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 2.5rem;
-      height: 2.5rem;
+      width: 2.75rem;
+      height: 2.75rem;
       background: none;
       border: none;
-      border-radius: 0.5rem;
+      border-radius: var(--radius-lg);
       color: var(--color-text-secondary);
       cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-smooth);
+
+      &:hover {
+        background-color: var(--color-bg-hover);
+        color: var(--color-text-primary);
+      }
 
       svg {
         width: 1.5rem;
@@ -1149,19 +1175,185 @@ import { AuthService } from '../../../auth/services/auth.service';
       }
     }
 
+    /* Mobile Menu Search */
+    .mobile-menu-search {
+      padding: 0.75rem 1rem;
+      background: var(--color-bg-secondary);
+      border-bottom: 1px solid var(--color-border-primary);
+    }
+
+    .mobile-menu-search-form {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--color-bg-primary);
+      border: 1px solid var(--color-border-primary);
+      border-radius: var(--radius-lg);
+      padding: 0.5rem 1rem;
+      transition: border-color var(--duration-fast) var(--ease-smooth),
+                  box-shadow var(--duration-fast) var(--ease-smooth);
+
+      &:focus-within {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px var(--color-primary-light);
+      }
+    }
+
+    .mobile-menu-search-icon {
+      width: 1.25rem;
+      height: 1.25rem;
+      color: var(--color-text-tertiary);
+      flex-shrink: 0;
+    }
+
+    .mobile-menu-search-input {
+      flex: 1;
+      padding: 0.5rem 0;
+      background: transparent;
+      border: none;
+      color: var(--color-text-primary);
+      font-size: 1rem;
+
+      &::placeholder {
+        color: var(--color-text-placeholder);
+      }
+
+      &:focus {
+        outline: none;
+      }
+    }
+
     .mobile-nav {
       flex: 1;
-      padding: 1rem;
+      padding: 0.5rem 1rem;
       overflow-y: auto;
     }
 
     .mobile-nav-link {
-      display: block;
-      padding: 0.75rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.875rem 0;
       color: var(--color-text-primary);
       text-decoration: none;
       font-weight: 500;
       border-bottom: 1px solid var(--color-border-primary);
+      transition: color var(--duration-fast) var(--ease-smooth);
+
+      &:hover {
+        color: var(--color-primary);
+      }
+
+      &--promo {
+        color: var(--color-warm);
+
+        .promo-badge {
+          background: var(--color-warm);
+          color: var(--color-text-inverse);
+          font-size: 0.625rem;
+          font-weight: 600;
+          padding: 0.125rem 0.375rem;
+          border-radius: 9999px;
+          text-transform: uppercase;
+        }
+      }
+
+      &--wishlist {
+        .mobile-nav-icon {
+          width: 1.125rem;
+          height: 1.125rem;
+          color: var(--color-error);
+        }
+      }
+
+      &--admin {
+        color: var(--color-primary);
+      }
+    }
+
+    .mobile-nav-badge {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.25rem;
+      height: 1.25rem;
+      padding: 0 0.375rem;
+      background-color: var(--color-error);
+      color: var(--color-text-inverse);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      border-radius: 9999px;
+    }
+
+    /* Mobile Menu Settings */
+    .mobile-menu-settings {
+      padding: 0.75rem 1rem;
+      background: var(--color-bg-secondary);
+      border-top: 1px solid var(--color-border-primary);
+      border-bottom: 1px solid var(--color-border-primary);
+    }
+
+    .mobile-menu-settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+
+      &:not(:last-child) {
+        border-bottom: 1px solid var(--color-border-primary);
+      }
+    }
+
+    .mobile-menu-settings-label {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+      font-weight: 500;
+    }
+
+    /* Mobile Menu User Info */
+    .mobile-menu-user {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 0;
+      margin-bottom: 0.5rem;
+      border-bottom: 1px solid var(--color-border-primary);
+    }
+
+    .mobile-menu-user-avatar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+      color: var(--color-text-inverse);
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+
+    .mobile-menu-user-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+      min-width: 0;
+    }
+
+    .mobile-menu-user-name {
+      font-weight: 600;
+      color: var(--color-text-primary);
+      font-size: 0.9375rem;
+    }
+
+    .mobile-menu-user-email {
+      font-size: 0.8125rem;
+      color: var(--color-text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .mobile-menu-footer {
@@ -1176,32 +1368,52 @@ import { AuthService } from '../../../auth/services/auth.service';
     .mobile-register-btn {
       display: block;
       text-align: center;
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
+      padding: 0.875rem 1rem;
+      border-radius: var(--radius-lg);
       text-decoration: none;
       font-weight: 500;
+      font-size: 0.9375rem;
+      transition: all var(--duration-fast) var(--ease-smooth);
     }
 
     .mobile-login-btn {
-      background: var(--color-primary);
+      background: var(--gradient-primary-btn, var(--color-primary));
       color: var(--color-text-inverse);
+
+      &:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+      }
     }
 
     .mobile-register-btn {
       background: transparent;
       border: 1px solid var(--color-border-primary);
       color: var(--color-text-primary);
+
+      &:hover {
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+      }
     }
 
     .mobile-logout-btn {
       width: 100%;
-      padding: 0.75rem 1rem;
+      padding: 0.875rem 1rem;
       background: transparent;
       border: 1px solid var(--color-border-primary);
-      border-radius: 0.5rem;
+      border-radius: var(--radius-lg);
       color: var(--color-text-primary);
       font-weight: 500;
+      font-size: 0.9375rem;
       cursor: pointer;
+      transition: all var(--duration-fast) var(--ease-smooth);
+
+      &:hover {
+        background-color: var(--color-error-light);
+        border-color: var(--color-error);
+        color: var(--color-error);
+      }
     }
   `]
 })

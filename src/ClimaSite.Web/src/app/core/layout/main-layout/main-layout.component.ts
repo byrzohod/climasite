@@ -5,6 +5,7 @@ import { trigger, transition, style, animate, query, group, AnimationMetadata } 
 import { HeaderComponent } from '../header/header.component';
 import { FooterComponent } from '../footer/footer.component';
 import { ToastContainerComponent } from '../../../shared/components/toast/toast.component';
+import { BottomNavComponent } from '../../../shared/components/bottom-nav';
 import { AnimationService } from '../../services/animation.service';
 
 // Route animation trigger with fade and slide effect
@@ -38,7 +39,7 @@ export const routeAnimations = trigger('routeAnimations', [
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, RouterOutlet, HeaderComponent, FooterComponent, ToastContainerComponent],
+  imports: [CommonModule, RouterModule, RouterOutlet, HeaderComponent, FooterComponent, ToastContainerComponent, BottomNavComponent],
   animations: [routeAnimations],
   template: `
     <div class="layout" data-testid="main-layout">
@@ -48,6 +49,7 @@ export const routeAnimations = trigger('routeAnimations', [
         <router-outlet />
       </main>
       <app-footer />
+      <app-bottom-nav />
       <app-toast-container />
     </div>
   `,
@@ -65,6 +67,14 @@ export const routeAnimations = trigger('routeAnimations', [
       transition: var(--theme-transition);
       /* Ensure content doesn't overflow during animation */
       overflow-x: hidden;
+    }
+
+    /* Add padding at the bottom on mobile to account for bottom navigation */
+    @media (max-width: 767px) {
+      .main-content {
+        /* Bottom nav height (56px) + safe area inset */
+        padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+      }
     }
   `]
 })

@@ -45,7 +45,9 @@
       "moveDown": "Nach unten",
       "removeRelation": "Beziehung entfernen",
       "mapLocation": "Karte mit Standort"
-    }
+    },
+    "language": "Sprache",
+    "theme": "Design"
   },
   "nav": {
     "home": "Startseite",
@@ -69,283 +71,13 @@
     "logout": "Abmelden",
     "login": "Anmelden",
     "register": "Registrieren",
-    "mobile_menu": "Navigationsmenü"
-  },
-"auth": {
-    "showPassword": "Passwort anzeigen",
-    "hidePassword": "Passwort verbergen",
-    "login": {
-      "title": "Willkommen zurück",
-      "subtitle": "Melden Sie sich bei Ihrem Konto an",
-      "email": "E-Mail-Adresse",
-      "password": "Passwort",
-      "rememberMe": "Angemeldet bleiben",
-      "forgotPassword": "Passwort vergessen?",
-      "submit": "Anmelden",
-      "noAccount": "Sie haben noch kein Konto?",
-      "signUp": "Registrieren"
-    },
-    "validation": {
-      "emailRequired": "E-Mail ist erforderlich",
-      "emailInvalid": "Bitte geben Sie eine gültige E-Mail ein",
-      "passwordRequired": "Passwort ist erforderlich",
-      "passwordMinLength": "Passwort muss mindestens 6 Zeichen lang sein"
-    },
-    "register": {
-      "title": "Konto erstellen",
-      "subtitle": "Werden Sie heute Teil von ClimaSite",
-      "firstName": "Vorname",
-      "lastName": "Nachname",
-      "email": "E-Mail-Adresse",
-      "password": "Passwort",
-      "confirmPassword": "Passwort bestätigen",
-      "passwordRequirements": "Passwort muss mindestens 8 Zeichen lang sein",
-      "terms": "Ich stimme den Nutzungsbedingungen und der Datenschutzerklärung zu",
-      "submit": "Konto erstellen",
-      "hasAccount": "Sie haben bereits ein Konto?",
-      "signIn": "Anmelden",
-      "success": "Registrierung erfolgreich! Bitte überprüfen Sie Ihre E-Mail, um Ihr Konto zu bestätigen.",
-      "error": "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut."
-    },
-    "forgotPassword": {
-      "title": "Passwort zurücksetzen",
-      "subtitle": "Geben Sie Ihre E-Mail-Adresse ein, um einen Reset-Link zu erhalten",
-      "email": "E-Mail-Adresse",
-      "submit": "Reset-Link senden",
-      "backToLogin": "Zurück zur Anmeldung",
-      "success": "Falls die E-Mail existiert, wurde ein Link zum Zurücksetzen des Passworts gesendet."
-    },
-    "resetPassword": {
-      "title": "Passwort zurücksetzen",
-      "newPassword": "Neues Passwort",
-      "confirmNewPassword": "Neues Passwort bestätigen",
-      "reset": "Passwort zurücksetzen",
-      "success": "Passwort wurde erfolgreich zurückgesetzt. Weiterleitung zur Anmeldung...",
-      "error": "Passwort konnte nicht zurückgesetzt werden. Bitte versuchen Sie es erneut."
-    },
-    "logout": "Abmelden"
-  },
-  "products": {
-    "title": "Produkte",
-    "filter_sidebar": "Produktfilter",
-    "all": "Alle Produkte",
-    "featured": "Empfohlene Produkte",
-    "newArrivals": "Neuheiten",
-    "onSale": "Im Angebot",
-    "bestsellers": "Bestseller",
-    "noProducts": "Keine Produkte gefunden",
-    "error": {
-      "loadFailed": "Produkte konnten nicht geladen werden",
-      "tryAgain": "Bitte versuchen Sie es später erneut"
-    },
-    "itemsFound": "{{count}} Produkte gefunden",
-    "searchResults": "Suchergebnisse für",
-    "noImage": "Kein Bild",
-    "outOfStock": "Nicht verfügbar",
-    "similar": {
-      "title": "Ähnliche Produkte"
-    },
-    "consumables": {
-      "title": "Empfohlenes Zubehör",
-      "subtitle": "Wichtiges Zubehör und Verbrauchsmaterial für dieses Produkt",
-      "totalPrice": "Gesamt",
-      "addAll": "Alle in den Warenkorb"
-    },
-    "filters": {
-      "title": "Filter",
-      "category": "Kategorie",
-      "brand": "Marke",
-      "price": "Preis",
-      "priceRange": "Preisbereich",
-      "minPrice": "Min",
-      "maxPrice": "Max",
-      "minPriceLabel": "Mindestpreis",
-      "maxPriceLabel": "Höchstpreis",
-      "priceFilterHint": "Geben Sie einen Preisbereich ein, um Produkte zu filtern",
-      "rating": "Bewertung",
-      "inStock": "Nur verfügbare",
-      "clearAll": "Alle löschen"
-    },
-    "view": {
-      "grid": "Rasteransicht",
-      "list": "Listenansicht"
-    },
-    "sort": {
-      "title": "Sortieren nach",
-      "newest": "Neueste",
-      "priceAsc": "Preis: aufsteigend",
-      "priceDesc": "Preis: absteigend",
-      "nameAsc": "Name: A bis Z",
-      "nameDesc": "Name: Z bis A",
-      "rating": "Kundenbewertung",
-      "popularity": "Beliebtheit"
-    },
-    "details": {
-      "description": "Beschreibung",
-      "specifications": "Spezifikationen",
-      "features": "Eigenschaften",
-      "reviews": "Bewertungen",
-      "relatedProducts": "Ähnliche Produkte",
-      "inStock": "Auf Lager",
-      "outOfStock": "Nicht verfügbar",
-      "lowStock": "Nur noch wenige verfügbar",
-      "quantity": "Menge",
-      "addToCart": "In den Warenkorb",
-      "addToWishlist": "Zur Wunschliste hinzufügen",
-      "removeFromWishlist": "Von Wunschliste entfernen",
-      "sku": "Artikelnummer",
-      "brand": "Marke",
-      "model": "Modell",
-      "warranty": "Garantie",
-      "installation": "Installationsservice verfügbar",
-      "noImage": "Kein Bild",
-      "months": "Monate",
-      "noDescription": "Keine Beschreibung verfügbar.",
-      "noSpecifications": "Keine Spezifikationen verfügbar.",
-      "reviewsComingSoon": "Bewertungen demnächst verfügbar..."
-    },
-    "energyRating": "Energieklasse",
-    "coolingEfficiency": "Kühleffizienz",
-    "heatingEfficiency": "Heizeffizienz",
-    "warranty": {
-      "title": "Garantie",
-      "months": "Monate",
-      "years": "Jahre"
-    },
-    "returnPolicy": {
-      "title": "Rückgaberecht",
-      "days": "{{count}} Tage Rückgabe"
-    },
-    "freeShipping": "Kostenloser Versand",
-    "stock": {
-      "inStock": "Auf Lager",
-      "outOfStock": "Nicht verfügbar",
-      "lowStock": "Nur noch {{count}} verfügbar"
-    },
-    "installation": {
-      "available": "Installation verfügbar",
-      "title": "Professioneller Installationsservice",
-      "subtitle": "Unsere zertifizierten Techniker installieren Ihre Klimaanlage",
-      "none": "Keine Installation",
-      "standard": "Standard-Installation",
-      "premium": "Premium-Installation",
-      "recommended": "Empfohlen",
-      "fastest": "Schnellste",
-      "select": "Auswählen",
-      "selected": "Ausgewählt",
-      "estimatedTime": "{{days}} Werktage",
-      "requestTitle": "Installationsanfrage-Details",
-      "customerName": "Vollständiger Name",
-      "namePlaceholder": "Geben Sie Ihren Namen ein",
-      "customerEmail": "E-Mail-Adresse",
-      "emailPlaceholder": "Geben Sie Ihre E-Mail ein",
-      "customerPhone": "Telefonnummer",
-      "phonePlaceholder": "Geben Sie Ihre Telefonnummer ein",
-      "address": "Straße und Hausnummer",
-      "addressPlaceholder": "Geben Sie Ihre Adresse ein",
-      "addressLine2": "Wohnung/Einheit",
-      "addressLine2Placeholder": "Wohnung, Einheit (optional)",
-      "city": "Stadt",
-      "cityPlaceholder": "Geben Sie Ihre Stadt ein",
-      "postalCode": "Postleitzahl",
-      "postalCodePlaceholder": "Geben Sie die PLZ ein",
-      "country": "Land",
-      "selectCountry": "Wählen Sie Ihr Land",
-      "preferredDate": "Bevorzugtes Datum",
-      "preferredTime": "Bevorzugte Zeit",
-      "anyTime": "Jederzeit",
-      "morning": "Morgen",
-      "afternoon": "Nachmittag",
-      "evening": "Abend",
-      "timeSlots": {
-        "morning": "(8:00 - 12:00)",
-        "afternoon": "(12:00 - 17:00)",
-        "evening": "(17:00 - 20:00)"
-      },
-      "notes": "Zusätzliche Hinweise",
-      "notesPlaceholder": "Besondere Anweisungen oder Zugangsinformationen",
-      "selectedService": "Ausgewählter Service",
-      "estimatedCost": "Geschätzte Kosten",
-      "submitRequest": "Installation anfragen",
-      "submitting": "Wird gesendet...",
-      "requestInstallation": "Installation anfragen",
-      "requestSubmitted": "Anfrage gesendet!",
-      "requestSubmittedMessage": "Wir werden Sie innerhalb von 24 Stunden kontaktieren, um Ihren Installationstermin zu bestätigen.",
-      "notAvailable": "Der Installationsservice ist für dieses Produkt nicht verfügbar"
-    },
-    "variants": {
-      "priceRange": "Preisspanne"
-    },
-    "frequentlyBought": {
-      "title": "Wird oft zusammen gekauft",
-      "subtitle": "Sparen Sie mehr beim Kauf dieser Artikel zusammen",
-      "included": "Enthalten",
-      "totalItems": "Artikel insgesamt",
-      "bundleSavings": "Bundle-Ersparnis",
-      "bundlePrice": "Bundle-Preis",
-      "addBundle": "Bundle in den Warenkorb"
-    },
-    "recentlyViewed": {
-      "title": "Zuletzt angesehen",
-      "clearHistory": "Verlauf löschen"
-    },
-    "share": {
-      "title": "Produkt teilen",
-      "copyLink": "Link kopieren",
-      "copied": "Link kopiert!",
-      "shareVia": "Teilen über"
-    },
-    "comparison": {
-      "title": "Produkte vergleichen",
-      "addToCompare": "Zum Vergleich hinzufügen",
-      "removeFromCompare": "Aus Vergleich entfernen",
-      "compareNow": "Jetzt vergleichen",
-      "clearAll": "Alle löschen",
-      "maxItems": "Maximal {{count}} Produkte",
-      "noProducts": "Keine Produkte zum Vergleich",
-      "specifications": "Spezifikationen"
-    },
-    "financing": {
-      "title": "Finanzierungsmöglichkeiten",
-      "monthlyFrom": "Ab {{amount}}/Monat",
-      "months": "{{count}} Monate",
-      "interestRate": "{{rate}}% effektiver Jahreszins",
-      "zeroInterest": "0% Zinsen",
-      "calculate": "Rate berechnen",
-      "totalCost": "Gesamtkosten",
-      "monthlyPayment": "Monatliche Rate"
-    },
-    "qa": {
-      "title": "Fragen & Antworten",
-      "totalQuestions": "{{count}} Frage(n)",
-      "answeredQuestions": "{{count}} Beantwortet",
-      "askQuestion": "Frage stellen",
-      "yourQuestion": "Ihre Frage",
-      "questionPlaceholder": "Was möchten Sie über dieses Produkt wissen?",
-      "yourName": "Ihr Name (optional)",
-      "namePlaceholder": "Geben Sie Ihren Namen ein",
-      "yourEmail": "E-Mail für Benachrichtigungen",
-      "emailPlaceholder": "Geben Sie Ihre E-Mail ein",
-      "emailHint": "Wir benachrichtigen Sie, wenn Ihre Frage beantwortet wird",
-      "submitQuestion": "Frage absenden",
-      "submitting": "Wird gesendet...",
-      "questionSubmittedSuccess": "Ihre Frage wurde zur Überprüfung eingereicht. Wir benachrichtigen Sie, wenn sie genehmigt wird.",
-      "helpful": "Hilfreich",
-      "answer": "Antworten",
-      "answerPlaceholder": "Teilen Sie Ihr Wissen über dieses Produkt...",
-      "submitAnswer": "Antwort absenden",
-      "anonymous": "Anonym",
-      "communityMember": "Community-Mitglied",
-      "officialAnswer": "Offizielle Antwort",
-      "noAnswersYet": "Noch keine Antworten. Seien Sie der Erste, der hilft!",
-      "noQuestionsYet": "Noch keine Fragen zu diesem Produkt",
-      "beFirstToAsk": "Stellen Sie die erste Frage!",
-      "loginToAsk": "Melden Sie sich an, um eine Frage zu diesem Produkt zu stellen",
-      "loginToAnswer": "Anmelden zum Antworten",
-      "loginNow": "Anmelden",
-      "errors": {
-        "questionTooShort": "Die Frage muss mindestens 10 Zeichen lang sein"
-      }
+    "mobile_menu": "Navigationsmenü",
+    "bottom": {
+      "home": "Start",
+      "categories": "Kategorien",
+      "search": "Suche",
+      "cart": "Warenkorb",
+      "account": "Konto"
     }
   },
   "delivery": {
@@ -1313,6 +1045,38 @@
       "accidentalDamage": "Unfallschäden",
       "replacement": "Vollständiger Ersatz",
       "prioritySupport": "Prioritäts-Support"
+    }
+  },
+  "emptyState": {
+    "cart": {
+      "title": "Ihr Warenkorb ist leer",
+      "description": "Es sieht so aus, als hätten Sie noch keine Artikel hinzugefügt. Durchstöbern Sie unsere Produkte, um etwas zu finden, das Ihnen gefällt.",
+      "action": "Einkauf starten"
+    },
+    "search": {
+      "title": "Keine Ergebnisse gefunden",
+      "description": "Versuchen Sie, Ihre Suche oder Filter anzupassen, um das zu finden, wonach Sie suchen.",
+      "action": "Filter löschen"
+    },
+    "orders": {
+      "title": "Noch keine Bestellungen",
+      "description": "Wenn Sie eine Bestellung aufgeben, wird sie hier angezeigt. Beginnen Sie mit dem Einkaufen, um Ihre erste Bestellung aufzugeben.",
+      "action": "Produkte durchsuchen"
+    },
+    "wishlist": {
+      "title": "Ihre Wunschliste ist leer",
+      "description": "Speichern Sie Artikel, die Ihnen gefallen, indem Sie auf das Herzsymbol bei jedem Produkt klicken.",
+      "action": "Produkte entdecken"
+    },
+    "reviews": {
+      "title": "Noch keine Bewertungen",
+      "description": "Seien Sie der Erste, der seine Erfahrung mit diesem Produkt teilt.",
+      "action": "Bewertung schreiben"
+    },
+    "generic": {
+      "title": "Hier gibt es noch nichts",
+      "description": "Dieser Bereich ist derzeit leer.",
+      "action": "Zurück"
     }
   }
 }

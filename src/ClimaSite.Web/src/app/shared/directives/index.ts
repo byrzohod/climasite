@@ -6,3 +6,6 @@ export * from './reveal.directive';
 export * from './scroll-progress.directive';
 export * from './split-text.directive';
 // Removed: floating.directive, parallax.directive, tilt-effect.directive (Plan 21F)
+
+// Image Directives
+export * from './optimized-image.directive';

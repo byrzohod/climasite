@@ -1227,6 +1227,53 @@ textarea:focus-visible,
                 }
 
 // =============================================================================
+// OPTIMIZED IMAGE DIRECTIVE STYLES
+// =============================================================================
+.optimized-image {
+  transition: filter var(--duration-normal) var(--ease-smooth),
+              opacity var(--duration-normal) var(--ease-smooth);
+
+  &--loading {
+    opacity: 0.7;
+  }
+
+  &--loaded {
+    opacity: 1;
+  }
+
+  &--error {
+    opacity: 0.5;
+    filter: grayscale(50%);
+  }
+
+  &--broken {
+    opacity: 0.3;
+  }
+
+  // Blur-up effect
+  &.blur-up-loading {
+    filter: blur(10px);
+    transform: scale(1.02);
+  }
+
+  &.blur-up-loaded {
+    filter: blur(0);
+    transform: scale(1);
+  }
+}
+
+// Reduced motion for optimized images
+@media (prefers-reduced-motion: reduce) {
+  .optimized-image,
+  .optimized-image.blur-up-loading,
+  .optimized-image.blur-up-loaded {
+    transition: none !important;
+    filter: none !important;
+    transform: none !important;
+  }
+}
+
+// =============================================================================
 // FLYING CART ANIMATION
 // =============================================================================
 // Cart icon bump animation when item arrives

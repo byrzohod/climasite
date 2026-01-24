@@ -5,11 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { CheckoutService } from '../../../core/services/checkout.service';
 import { OrderBrief, OrdersFilterParams, PaginatedOrders, ORDER_STATUS_CONFIG, OrderStatus } from '../../../core/models/order.model';
+import { EmptyStateComponent } from '../../../shared/components/empty-state';
 
 @Component({
   selector: 'app-orders',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, TranslateModule],
+  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, EmptyStateComponent],
   template: `
     <div class="orders-container" data-testid="orders-page">
       <h1>{{ 'account.orders.title' | translate }}</h1>
@@ -147,15 +148,25 @@ import { OrderBrief, OrdersFilterParams, PaginatedOrders, ORDER_STATUS_CONFIG, O
           }
         </div>
       } @else if (orders().length === 0) {
-        <div class="empty-state" data-testid="orders-empty">
-          @if (hasActiveFilters()) {
-            <p>{{ 'account.orders.noMatchingOrders' | translate }}</p>
+        @if (hasActiveFilters()) {
+          <app-empty-state
+            variant="search"
+            [title]="'account.orders.noMatchingOrders' | translate"
+            [description]="'emptyState.search.description' | translate"
+            data-testid="orders-empty-filtered"
+          >
             <button class="btn-secondary" (click)="clearFilters()">{{ 'account.orders.clearFilters' | translate }}</button>
-          } @else {
-            <p>{{ 'account.orders.empty' | translate }}</p>
-            <a routerLink="/products" class="btn-primary">{{ 'cart.continueShopping' | translate }}</a>
-          }
-        </div>
+          </app-empty-state>
+        } @else {
+          <app-empty-state
+            variant="orders"
+            [title]="'emptyState.orders.title' | translate"
+            [description]="'emptyState.orders.description' | translate"
+            [actionLabel]="'emptyState.orders.action' | translate"
+            actionRoute="/products"
+            data-testid="orders-empty"
+          />
+        }
       } @else {
         <!-- Orders List -->
         <div class="orders-list" data-testid="orders-list">
@@ -456,45 +467,19 @@ import { OrderBrief, OrdersFilterParams, PaginatedOrders, ORDER_STATUS_CONFIG, O
       100% { background-position: 200% 0; }
     }
 
-    /* Empty State */
-    .empty-state {
-      text-align: center;
-      padding: 3rem;
-      background: var(--color-bg-primary);
+    /* Clear Filters Button (used in EmptyState slot) */
+    .btn-secondary {
+      padding: 0.75rem 1.5rem;
+      background: var(--color-bg-secondary);
+      color: var(--color-text-primary);
       border: 1px solid var(--color-border);
-      border-radius: 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
 
-      p {
-        margin-bottom: 1.5rem;
-        color: var(--color-text-secondary);
-      }
-
-      .btn-primary {
-        display: inline-block;
-        padding: 0.75rem 1.5rem;
-        background: var(--color-primary);
-        color: white;
-        text-decoration: none;
-        border-radius: 8px;
-        font-weight: 600;
-
-        &:hover {
-          background: var(--color-primary-dark);
-        }
-      }
-
-      .btn-secondary {
-        padding: 0.75rem 1.5rem;
-        background: var(--color-bg-secondary);
-        color: var(--color-text-primary);
-        border: 1px solid var(--color-border);
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-
-        &:hover {
-          background: var(--color-bg-tertiary);
-        }
+      &:hover {
+        background: var(--color-bg-tertiary);
       }
     }
 

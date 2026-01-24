@@ -107,6 +107,7 @@ import {
   
   // Layout
   Grid,
+  Grid2x2,
   List,
   LayoutGrid,
   LayoutList,
@@ -252,6 +253,7 @@ export const ICON_REGISTRY = {
   
   // Layout
   Grid,
+  Grid2x2,
   List,
   LayoutGrid,
   LayoutList,
@@ -324,7 +326,7 @@ export const ICON_CATEGORIES = {
     'maximize', 'minimize'
   ],
   layout: [
-    'grid', 'list', 'layout-grid', 'layout-list', 'columns', 'rows'
+    'grid', 'grid-2x2', 'list', 'layout-grid', 'layout-list', 'columns', 'rows'
   ],
   hvac: [
     'thermometer', 'thermometer-sun', 'thermometer-snowflake', 'wind', 'snowflake',

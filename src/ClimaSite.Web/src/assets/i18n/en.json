@@ -45,7 +45,9 @@
       "moveDown": "Move down",
       "removeRelation": "Remove relation",
       "mapLocation": "Map showing location"
-    }
+    },
+    "language": "Language",
+    "theme": "Theme"
   },
   "nav": {
     "home": "Home",
@@ -69,283 +71,13 @@
     "logout": "Logout",
     "login": "Login",
     "register": "Register",
-    "mobile_menu": "Navigation menu"
-  },
-  "auth": {
-    "showPassword": "Show password",
-    "hidePassword": "Hide password",
-    "login": {
-      "title": "Welcome Back",
-      "subtitle": "Sign in to your account",
-      "email": "Email Address",
-      "password": "Password",
-      "rememberMe": "Remember me",
-      "forgotPassword": "Forgot password?",
-      "submit": "Sign In",
-      "noAccount": "Don't have an account?",
-      "signUp": "Sign up"
-    },
-    "validation": {
-      "emailRequired": "Email is required",
-      "emailInvalid": "Please enter a valid email",
-      "passwordRequired": "Password is required",
-      "passwordMinLength": "Password must be at least 6 characters"
-    },
-    "register": {
-      "title": "Create Account",
-      "subtitle": "Join ClimaSite today",
-      "firstName": "First Name",
-      "lastName": "Last Name",
-      "email": "Email Address",
-      "password": "Password",
-      "confirmPassword": "Confirm Password",
-      "passwordRequirements": "Password must be at least 8 characters long",
-      "terms": "I agree to the Terms of Service and Privacy Policy",
-      "submit": "Create Account",
-      "hasAccount": "Already have an account?",
-      "signIn": "Sign in",
-      "success": "Registration successful! Please check your email to verify your account.",
-      "error": "Registration failed. Please try again."
-    },
-    "forgotPassword": {
-      "title": "Reset Password",
-      "subtitle": "Enter your email to receive a reset link",
-      "email": "Email Address",
-      "submit": "Send Reset Link",
-      "backToLogin": "Back to login",
-      "success": "If the email exists, a password reset link has been sent."
-    },
-    "resetPassword": {
-      "title": "Reset Password",
-      "newPassword": "New Password",
-      "confirmNewPassword": "Confirm New Password",
-      "reset": "Reset Password",
-      "success": "Password has been reset successfully. Redirecting to login...",
-      "error": "Failed to reset password. Please try again."
-    },
-    "logout": "Sign Out"
-  },
-  "products": {
-    "title": "Products",
-    "filter_sidebar": "Product filters",
-    "all": "All Products",
-    "featured": "Featured Products",
-    "newArrivals": "New Arrivals",
-    "onSale": "On Sale",
-    "bestsellers": "Bestsellers",
-    "noProducts": "No products found",
-    "error": {
-      "loadFailed": "Failed to load products",
-      "tryAgain": "Please try again later"
-    },
-    "itemsFound": "{{count}} products found",
-    "searchResults": "Search results for",
-    "noImage": "No Image",
-    "outOfStock": "Out of Stock",
-    "similar": {
-      "title": "Similar Products"
-    },
-    "consumables": {
-      "title": "Recommended Accessories",
-      "subtitle": "Essential accessories and consumables for this product",
-      "totalPrice": "Total",
-      "addAll": "Add All to Cart"
-    },
-    "filters": {
-      "title": "Filters",
-      "category": "Category",
-      "brand": "Brand",
-      "price": "Price",
-      "priceRange": "Price Range",
-      "minPrice": "Min",
-      "maxPrice": "Max",
-      "minPriceLabel": "Minimum price",
-      "maxPriceLabel": "Maximum price",
-      "priceFilterHint": "Enter price range to filter products",
-      "rating": "Rating",
-      "inStock": "In Stock Only",
-      "clearAll": "Clear All"
-    },
-    "view": {
-      "grid": "Grid view",
-      "list": "List view"
-    },
-    "sort": {
-      "title": "Sort by",
-      "newest": "Newest",
-      "priceAsc": "Price: Low to High",
-      "priceDesc": "Price: High to Low",
-      "nameAsc": "Name: A to Z",
-      "nameDesc": "Name: Z to A",
-      "rating": "Customer Rating",
-      "popularity": "Popularity"
-    },
-    "details": {
-      "description": "Description",
-      "specifications": "Specifications",
-      "features": "Features",
-      "reviews": "Reviews",
-      "relatedProducts": "Related Products",
-      "inStock": "In Stock",
-      "outOfStock": "Out of Stock",
-      "lowStock": "Low Stock",
-      "quantity": "Quantity",
-      "addToCart": "Add to Cart",
-      "addToWishlist": "Add to Wishlist",
-      "removeFromWishlist": "Remove from Wishlist",
-      "sku": "SKU",
-      "brand": "Brand",
-      "model": "Model",
-      "warranty": "Warranty",
-      "installation": "Installation Service Available",
-      "noImage": "No Image",
-      "months": "months",
-      "noDescription": "No description available.",
-      "noSpecifications": "No specifications available.",
-      "reviewsComingSoon": "Reviews coming soon..."
-    },
-    "energyRating": "Energy Class",
-    "coolingEfficiency": "Cooling Efficiency",
-    "heatingEfficiency": "Heating Efficiency",
-    "warranty": {
-      "title": "Warranty",
-      "months": "months",
-      "years": "years"
-    },
-    "returnPolicy": {
-      "title": "Return Policy",
-      "days": "{{count}} day returns"
-    },
-    "freeShipping": "Free Shipping",
-    "stock": {
-      "inStock": "In Stock",
-      "outOfStock": "Out of Stock",
-      "lowStock": "Only {{count}} left"
-    },
-    "installation": {
-      "available": "Installation Available",
-      "title": "Professional Installation Service",
-      "subtitle": "Let our certified technicians install your HVAC system",
-      "none": "No installation",
-      "standard": "Standard Installation",
-      "premium": "Premium Installation",
-      "recommended": "Recommended",
-      "fastest": "Fastest",
-      "select": "Select",
-      "selected": "Selected",
-      "estimatedTime": "{{days}} business days",
-      "requestTitle": "Installation Request Details",
-      "customerName": "Full Name",
-      "namePlaceholder": "Enter your full name",
-      "customerEmail": "Email Address",
-      "emailPlaceholder": "Enter your email",
-      "customerPhone": "Phone Number",
-      "phonePlaceholder": "Enter your phone number",
-      "address": "Street Address",
-      "addressPlaceholder": "Enter your street address",
-      "addressLine2": "Apartment/Unit",
-      "addressLine2Placeholder": "Apartment, suite, unit (optional)",
-      "city": "City",
-      "cityPlaceholder": "Enter your city",
-      "postalCode": "Postal Code",
-      "postalCodePlaceholder": "Enter postal code",
-      "country": "Country",
-      "selectCountry": "Select your country",
-      "preferredDate": "Preferred Date",
-      "preferredTime": "Preferred Time",
-      "anyTime": "Any time",
-      "morning": "Morning",
-      "afternoon": "Afternoon",
-      "evening": "Evening",
-      "timeSlots": {
-        "morning": "(8:00 - 12:00)",
-        "afternoon": "(12:00 - 17:00)",
-        "evening": "(17:00 - 20:00)"
-      },
-      "notes": "Additional Notes",
-      "notesPlaceholder": "Any special instructions or access details",
-      "selectedService": "Selected Service",
-      "estimatedCost": "Estimated Cost",
-      "submitRequest": "Request Installation",
-      "submitting": "Submitting...",
-      "requestInstallation": "Request Installation",
-      "requestSubmitted": "Request Submitted!",
-      "requestSubmittedMessage": "We'll contact you within 24 hours to confirm your installation appointment.",
-      "notAvailable": "Installation service is not available for this product"
-    },
-    "variants": {
-      "priceRange": "Price range"
-    },
-    "frequentlyBought": {
-      "title": "Frequently Bought Together",
-      "subtitle": "Save more when you buy these items together",
-      "included": "Included",
-      "totalItems": "Total items",
-      "bundleSavings": "Bundle savings",
-      "bundlePrice": "Bundle price",
-      "addBundle": "Add Bundle to Cart"
-    },
-    "recentlyViewed": {
-      "title": "Recently Viewed",
-      "clearHistory": "Clear History"
-    },
-    "share": {
-      "title": "Share Product",
-      "copyLink": "Copy Link",
-      "copied": "Link copied!",
-      "shareVia": "Share via"
-    },
-    "comparison": {
-      "title": "Compare Products",
-      "addToCompare": "Add to Compare",
-      "removeFromCompare": "Remove from Compare",
-      "compareNow": "Compare Now",
-      "clearAll": "Clear All",
-      "maxItems": "Maximum {{count}} products",
-      "noProducts": "No products to compare",
-      "specifications": "Specifications"
-    },
-    "financing": {
-      "title": "Financing Options",
-      "monthlyFrom": "From {{amount}}/month",
-      "months": "{{count}} months",
-      "interestRate": "{{rate}}% APR",
-      "zeroInterest": "0% Interest",
-      "calculate": "Calculate Payment",
-      "totalCost": "Total Cost",
-      "monthlyPayment": "Monthly Payment"
-    },
-    "qa": {
-      "title": "Questions & Answers",
-      "totalQuestions": "{{count}} Question(s)",
-      "answeredQuestions": "{{count}} Answered",
-      "askQuestion": "Ask a Question",
-      "yourQuestion": "Your Question",
-      "questionPlaceholder": "What would you like to know about this product?",
-      "yourName": "Your Name (optional)",
-      "namePlaceholder": "Enter your name",
-      "yourEmail": "Email for Notifications",
-      "emailPlaceholder": "Enter your email",
-      "emailHint": "We'll notify you when your question is answered",
-      "submitQuestion": "Submit Question",
-      "submitting": "Submitting...",
-      "questionSubmittedSuccess": "Your question has been submitted for review. We'll notify you when it's approved.",
-      "helpful": "Helpful",
-      "answer": "Answer",
-      "answerPlaceholder": "Share your knowledge about this product...",
-      "submitAnswer": "Submit Answer",
-      "anonymous": "Anonymous",
-      "communityMember": "Community Member",
-      "officialAnswer": "Official Answer",
-      "noAnswersYet": "No answers yet. Be the first to help!",
-      "noQuestionsYet": "No questions yet about this product",
-      "beFirstToAsk": "Be the first to ask a question!",
-      "loginToAsk": "Log in to ask a question about this product",
-      "loginToAnswer": "Log in to answer",
-      "loginNow": "Log in",
-      "errors": {
-        "questionTooShort": "Question must be at least 10 characters"
-      }
+    "mobile_menu": "Navigation menu",
+    "bottom": {
+      "home": "Home",
+      "categories": "Categories",
+      "search": "Search",
+      "cart": "Cart",
+      "account": "Account"
     }
   },
   "delivery": {
@@ -1328,6 +1060,38 @@
       "accidentalDamage": "Accidental Damage",
       "replacement": "Full Replacement",
       "prioritySupport": "Priority Support"
+    }
+  },
+  "emptyState": {
+    "cart": {
+      "title": "Your cart is empty",
+      "description": "Looks like you haven't added any items yet. Browse our products to find something you'll love.",
+      "action": "Start Shopping"
+    },
+    "search": {
+      "title": "No results found",
+      "description": "Try adjusting your search or filters to find what you're looking for.",
+      "action": "Clear Filters"
+    },
+    "orders": {
+      "title": "No orders yet",
+      "description": "When you place an order, it will appear here. Start shopping to place your first order.",
+      "action": "Browse Products"
+    },
+    "wishlist": {
+      "title": "Your wishlist is empty",
+      "description": "Save items you love by clicking the heart icon on any product.",
+      "action": "Discover Products"
+    },
+    "reviews": {
+      "title": "No reviews yet",
+      "description": "Be the first to share your experience with this product.",
+      "action": "Write a Review"
+    },
+    "generic": {
+      "title": "Nothing here yet",
+      "description": "This section is currently empty.",
+      "action": "Go Back"
     }
   }
 }

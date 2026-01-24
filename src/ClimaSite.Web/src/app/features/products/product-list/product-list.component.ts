@@ -12,6 +12,7 @@ import { Category } from '../../../core/models/category.model';
 import { ProductCardComponent } from '../product-card/product-card.component';
 import { CategoryHeaderComponent, CategoryInfo } from '../../../shared/components/category-header/category-header.component';
 import { RevealDirective } from '../../../shared/directives/reveal.directive';
+import { EmptyStateComponent } from '../../../shared/components/empty-state';
 
 @Component({
   selector: 'app-product-list',
@@ -23,7 +24,8 @@ import { RevealDirective } from '../../../shared/directives/reveal.directive';
     TranslateModule,
     ProductCardComponent,
     CategoryHeaderComponent,
-    RevealDirective
+    RevealDirective,
+    EmptyStateComponent
   ],
   template: `
     <div class="product-list-page">
@@ -254,15 +256,18 @@ import { RevealDirective } from '../../../shared/directives/reveal.directive';
               </button>
             </div>
           } @else if (products().length === 0) {
-            <div class="empty-state">
-              <h2>{{ 'products.noProducts' | translate }}</h2>
-              <p>{{ 'products.filters.clearAll' | translate }}</p>
+            <app-empty-state
+              variant="search"
+              [title]="'emptyState.search.title' | translate"
+              [description]="'emptyState.search.description' | translate"
+              data-testid="products-empty"
+            >
               @if (hasActiveFilters()) {
-                <button class="btn-primary" (click)="clearFilters()">
+                <button class="clear-filters-action" (click)="clearFilters()">
                   {{ 'products.filters.clearAll' | translate }}
                 </button>
               }
-            </div>
+            </app-empty-state>
           } @else {
             <div class="product-grid" [class.list-view]="viewMode() === 'list'">
               @for (product of products(); track product.id; let i = $index) {
@@ -936,7 +941,25 @@ import { RevealDirective } from '../../../shared/directives/reveal.directive';
       }
     }
 
-    .empty-state, .error-state {
+    /* Clear filters button in EmptyState slot */
+    .clear-filters-action {
+      padding: 0.75rem 1.5rem;
+      background: var(--color-bg-secondary);
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: var(--color-error-bg);
+        color: var(--color-error);
+        border-color: var(--color-error);
+      }
+    }
+
+    .error-state {
       text-align: center;
       padding: 4rem 2rem;
       background: var(--color-bg-primary);

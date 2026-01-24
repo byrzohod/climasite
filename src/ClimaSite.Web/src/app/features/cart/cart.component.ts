@@ -7,11 +7,12 @@ import { CartService } from '../../core/services/cart.service';
 import { CartItem } from '../../core/models/cart.model';
 import { RevealDirective } from '../../shared/directives/reveal.directive';
 import { ToastService } from '../../shared/components/toast/toast.service';
+import { EmptyStateComponent } from '../../shared/components/empty-state';
 
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, RevealDirective],
+  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, RevealDirective, EmptyStateComponent],
   template: `
     <div class="cart-container" data-testid="cart-page">
       <h1>{{ 'cart.title' | translate }}</h1>
@@ -25,19 +26,14 @@ import { ToastService } from '../../shared/components/toast/toast.service';
           {{ cartService.error() }}
         </div>
       } @else if (cartService.isEmpty()) {
-        <div class="empty-cart" data-testid="empty-cart">
-          <div class="empty-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="9" cy="21" r="1"/>
-              <circle cx="20" cy="21" r="1"/>
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-            </svg>
-          </div>
-          <p>{{ 'cart.empty' | translate }}</p>
-          <a routerLink="/products" class="continue-shopping-btn" data-testid="continue-shopping">
-            {{ 'cart.continueShopping' | translate }}
-          </a>
-        </div>
+        <app-empty-state
+          variant="cart"
+          [title]="'emptyState.cart.title' | translate"
+          [description]="'emptyState.cart.description' | translate"
+          [actionLabel]="'emptyState.cart.action' | translate"
+          actionRoute="/products"
+          data-testid="empty-cart"
+        />
       } @else {
         <div class="cart-content">
           <div class="cart-items">
@@ -198,41 +194,6 @@ import { ToastService } from '../../shared/components/toast/toast.service';
       border-radius: 8px;
       margin-bottom: 1rem;
       text-align: center;
-    }
-
-    .empty-cart {
-      text-align: center;
-      padding: 4rem 2rem;
-      background: var(--color-bg-primary);
-      border: 1px solid var(--color-border);
-      border-radius: 12px;
-
-      .empty-icon {
-        font-size: 4rem;
-        margin-bottom: 1rem;
-        opacity: 0.5;
-      }
-
-      p {
-        font-size: 1.25rem;
-        color: var(--color-text-secondary);
-        margin-bottom: 1.5rem;
-      }
-    }
-
-    .continue-shopping-btn {
-      display: inline-block;
-      background: var(--color-primary);
-      color: var(--color-text-inverse);
-      padding: 1rem 2rem;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: 600;
-      transition: background-color 0.2s;
-
-      &:hover {
-        background: var(--color-primary-dark);
-      }
     }
 
     .cart-content {
