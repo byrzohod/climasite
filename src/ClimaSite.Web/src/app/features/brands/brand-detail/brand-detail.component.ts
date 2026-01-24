@@ -6,12 +6,11 @@ import { BrandService } from '../../../core/services/brand.service';
 import { CartService } from '../../../core/services/cart.service';
 import { Brand } from '../../../core/models/brand.model';
 import { ProductBrief } from '../../../core/models/product.model';
-import { ParallaxDirective } from '../../../shared/directives/parallax.directive';
 
 @Component({
   selector: 'app-brand-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, TranslateModule, ParallaxDirective],
+  imports: [CommonModule, RouterLink, TranslateModule],
   template: `
     <div class="brand-detail-page">
       @if (isLoading()) {
@@ -19,15 +18,11 @@ import { ParallaxDirective } from '../../../shared/directives/parallax.directive
       } @else if (error()) {
         <div class="error">{{ error() }}</div>
       } @else if (brand()) {
-<!-- Hero Banner with Parallax -->
+<!-- Hero Banner -->
         <div class="brand-hero">
           <div 
             class="hero-bg" 
             [style.background-image]="brand()?.bannerImageUrl ? 'url(' + brand()?.bannerImageUrl + ')' : ''"
-            appParallax 
-            [speed]="0.2" 
-            [direction]="'down'" 
-            [scaleOnScroll]="1.1"
           ></div>
           <div class="hero-overlay">
             <div class="hero-content">
@@ -155,7 +150,7 @@ import { ParallaxDirective } from '../../../shared/directives/parallax.directive
 
     .hero-bg {
       position: absolute;
-      inset: -20%;
+      inset: 0;
       background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
       background-size: cover;
       background-position: center;

@@ -55,14 +55,14 @@ import { RevealDirective } from '../../../shared/directives/reveal.directive';
 
           <div class="product-main">
             <!-- Image Gallery with Zoom -->
-            <div class="product-gallery-wrapper" appReveal="fade-right" [duration]="500" #galleryWrapper>
+            <div class="product-gallery-wrapper" appReveal="fade-up" [duration]="300" #galleryWrapper>
               <app-product-gallery
                 [images]="galleryImages()"
                 [productName]="product()?.name || ''" />
             </div>
 
             <!-- Product Info -->
-            <div class="product-info" appReveal="fade-left" [delay]="100" [duration]="500">
+            <div class="product-info" appReveal="fade-up" [delay]="100" [duration]="300">
               @if (product()?.brand) {
                 <span class="product-brand">{{ product()?.brand }}</span>
               }

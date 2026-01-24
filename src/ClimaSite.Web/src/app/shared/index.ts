@@ -18,5 +18,6 @@ export * from './components/breadcrumb/breadcrumb.component';
 
 // Directives
 export * from './directives/animate-on-scroll.directive';
-export * from './directives/parallax.directive';
 export * from './directives/count-up.directive';
+export * from './directives/reveal.directive';
+// Removed: parallax.directive (Plan 21F)

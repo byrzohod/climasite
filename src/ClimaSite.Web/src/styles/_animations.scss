@@ -596,8 +596,8 @@ $easings: (
   
   // Background
   .animate-aurora { animation: auroraMove 20s var(--ease-smooth) infinite; }
-  .animate-marquee { animation: marquee 30s linear infinite; }
-  .animate-marquee-reverse { animation: marqueeReverse 30s linear infinite; }
+  .animate-marquee { animation: marquee 45s linear infinite; }
+  .animate-marquee-reverse { animation: marqueeReverse 45s linear infinite; }
   
   // Scroll indicator
   .animate-scroll-down { animation: scrollDown 1.5s var(--ease-smooth) infinite; }

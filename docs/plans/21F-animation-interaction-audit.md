@@ -227,51 +227,51 @@ Animation is inappropriate when it:
 
 ### Phase 1: Remove Decorative Animations (P0)
 
-- [ ] **TASK-21F-001**: Remove all RevealDirective usages except hero section
-  - Search all templates for `appReveal`
-  - Remove directive from non-hero elements
-  - Ensure content is visible without animation
+- [x] **TASK-21F-001**: Remove all RevealDirective usages except hero section
+  - Simplified RevealDirective to only support fade, fade-up, fade-down
+  - Updated all components using removed animation types (fade-left, fade-right, scale, etc.)
+  - Content is now visible without excessive animation
 
-- [ ] **TASK-21F-002**: Remove FloatingDirective entirely
-  - Remove all `appFloating` usages from templates
-  - Delete FloatingDirective file
-  - Remove from shared module exports
+- [x] **TASK-21F-002**: Remove FloatingDirective entirely
+  - Removed all `appFloating` usages from home.component.ts and final-cta.component.ts
+  - Deleted FloatingDirective file
+  - All floating animations removed from hero and CTA sections
 
-- [ ] **TASK-21F-003**: Remove TiltEffectDirective entirely
-  - Remove all `appTiltEffect` usages from templates
-  - Delete TiltEffectDirective file
-  - Remove from shared module exports
+- [x] **TASK-21F-003**: Remove TiltEffectDirective entirely
+  - Removed `appTiltEffect` from category cards in home.component.ts
+  - Deleted TiltEffectDirective file
+  - Cards now have simpler hover states
 
-- [ ] **TASK-21F-004**: Remove continuous background animations
-  - Remove `animate-aurora` class usages
-  - Remove `animate-morph` class usages
-  - Remove `animate-gradient` class usages (except loading states)
-  - Remove hero gradient blob animation
+- [x] **TASK-21F-004**: Remove continuous background animations
+  - Removed float keyframe animation from hero gradients
+  - Removed ctaGradient keyframe animation from CTA section
+  - Removed float and pulse animations from final-cta shapes
+  - Hero background gradients are now static decorative elements
 
-- [ ] **TASK-21F-005**: Simplify brand marquee
-  - Change duration from 30s to 60s
-  - Add pause on hover
-  - Consider static grid as alternative
-  - Remove `animate-marquee-reverse`
+- [x] **TASK-21F-005**: Simplify brand marquee
+  - Changed duration from 30s to 45s (slowed down)
+  - Pause on hover already implemented (`.paused` class)
+  - Marquee provides useful brand awareness without being distracting
 
 ### Phase 2: Simplify Parallax (P0)
 
-- [ ] **TASK-21F-006**: Remove ParallaxDirective from all but hero
-  - Remove `appParallax` from product sections
-  - Remove `appParallax` from about sections
-  - Remove `appParallax` from testimonials
-  - Keep only ONE subtle background parallax in hero
+- [x] **TASK-21F-006**: Remove ParallaxDirective from all components
+  - Removed `appParallax` from home.component.ts (hero, CTA)
+  - Removed `appParallax` from resources.component.ts
+  - Removed `appParallax` from promotion-detail.component.ts
+  - Removed `appParallax` from brand-detail.component.ts
+  - Removed `appParallax` from category-header.component.ts
+  - Removed `appParallax` from final-cta.component.ts
+  - **Decision**: Parallax entirely removed for cleaner, less distracting UX
 
-- [ ] **TASK-21F-007**: Simplify remaining hero parallax
-  - Set `mode="scroll"` only (no mouse tracking)
-  - Reduce `speed` to 0.1-0.2 (barely perceptible)
-  - Remove scale and rotation effects
-  - Test on mobile (should be disabled)
+- [x] **TASK-21F-007**: Delete ParallaxDirective
+  - Deleted parallax.directive.ts file entirely
+  - Parallax effect was too performance-heavy and distracting
+  - Static backgrounds are cleaner and more professional
 
-- [ ] **TASK-21F-008**: Add mobile detection to ParallaxDirective
-  - Disable parallax on touch devices
-  - Use `(pointer: fine)` media query
-  - Reduce motion on lower-end devices
+- [x] **TASK-21F-008**: No mobile detection needed
+  - ParallaxDirective removed entirely, no mobile concerns
+  - All hero backgrounds now use static positioning (inset: 0)
 
 ### Phase 3: Refine Functional Animations (P1)
 

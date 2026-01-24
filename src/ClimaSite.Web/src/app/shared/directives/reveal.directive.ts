@@ -12,41 +12,25 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { AnimationService } from '../../core/services/animation.service';
 
+/**
+ * Simplified animation types following Nordic Tech design philosophy.
+ * Only essential, subtle animations are supported.
+ */
 export type RevealAnimation = 
   | 'fade'
   | 'fade-up'
-  | 'fade-down'
-  | 'fade-left'
-  | 'fade-right'
-  | 'scale'
-  | 'scale-up'
-  | 'blur'
-  | 'blur-up'
-  | 'slide-up'
-  | 'slide-down'
-  | 'slide-left'
-  | 'slide-right'
-  | 'flip-up'
-  | 'flip-down'
-  | 'zoom-in'
-  | 'zoom-out'
-  | 'rotate-left'
-  | 'rotate-right'
-  | 'clip-left'
-  | 'clip-right'
-  | 'clip-top'
-  | 'clip-bottom';
+  | 'fade-down';
 
 /**
- * RevealDirective - Enhanced scroll-triggered reveal animations
+ * RevealDirective - Subtle scroll-triggered reveal animations
  * 
- * Replaces the basic AnimateOnScrollDirective with more animation options
- * and better performance optimizations.
+ * Following the "Nordic Tech" design philosophy: Animation should communicate, not decorate.
+ * Only essential, subtle animations are supported: fade, fade-up, fade-down.
  * 
  * Usage:
  * <div appReveal>Fade up (default)</div>
- * <div appReveal="fade-left" [delay]="200">Fade from left with delay</div>
- * <div appReveal="blur-up" [duration]="600" [threshold]="0.3">Blur reveal</div>
+ * <div appReveal="fade" [delay]="100">Simple fade</div>
+ * <div appReveal="fade-down" [delay]="200" [stagger]="true">Staggered items</div>
  */
 @Directive({
   selector: '[appReveal]',
@@ -64,14 +48,20 @@ export class RevealDirective implements OnInit, OnDestroy {
   /** Delay before animation starts (ms) */
   delay = input<number>(0);
   
-  /** Animation duration (ms) */
-  duration = input<number>(600);
+  /** Animation duration (ms) - reduced for snappier feel */
+  duration = input<number>(300);
   
   /** Intersection observer threshold (0-1) */
   threshold = input<number>(0.15);
   
-  /** Distance for translate animations (px) */
-  distance = input<number>(40);
+  /** Distance for translate animations (px) - reduced for subtlety */
+  distance = input<number>(16);
+  
+  /** Enable stagger for list items */
+  stagger = input<boolean>(false);
+  
+  /** Stagger delay between items (ms) */
+  staggerDelay = input<number>(50);
   
   /** Only animate once */
   once = input<boolean>(true);
@@ -141,117 +131,24 @@ export class RevealDirective implements OnInit, OnDestroy {
       case 'fade-down':
         return { opacity: '0', transform: `translateY(-${dist}px)` };
       
-      case 'fade-left':
-        return { opacity: '0', transform: `translateX(-${dist}px)` };
-      
-      case 'fade-right':
-        return { opacity: '0', transform: `translateX(${dist}px)` };
-      
-      case 'scale':
-        return { opacity: '0', transform: 'scale(0.9)' };
-      
-      case 'scale-up':
-        return { opacity: '0', transform: `scale(0.9) translateY(${dist}px)` };
-      
-      case 'blur':
-        return { opacity: '0', filter: 'blur(10px)' };
-      
-      case 'blur-up':
-        return { opacity: '0', filter: 'blur(10px)', transform: `translateY(${dist}px)` };
-      
-      case 'slide-up':
-        return { opacity: '0', transform: `translateY(${dist * 2}px)` };
-      
-      case 'slide-down':
-        return { opacity: '0', transform: `translateY(-${dist * 2}px)` };
-      
-      case 'slide-left':
-        return { opacity: '0', transform: `translateX(-${dist * 2}px)` };
-      
-      case 'slide-right':
-        return { opacity: '0', transform: `translateX(${dist * 2}px)` };
-      
-      case 'flip-up':
-        return { opacity: '0', transform: 'perspective(1000px) rotateX(90deg)' };
-      
-      case 'flip-down':
-        return { opacity: '0', transform: 'perspective(1000px) rotateX(-90deg)' };
-      
-      case 'zoom-in':
-        return { opacity: '0', transform: 'scale(0.5)' };
-      
-      case 'zoom-out':
-        return { opacity: '0', transform: 'scale(1.5)' };
-      
-      case 'rotate-left':
-        return { opacity: '0', transform: 'rotate(-15deg) scale(0.9)' };
-      
-      case 'rotate-right':
-        return { opacity: '0', transform: 'rotate(15deg) scale(0.9)' };
-      
-      case 'clip-left':
-        return { clipPath: 'inset(0 100% 0 0)' };
-      
-      case 'clip-right':
-        return { clipPath: 'inset(0 0 0 100%)' };
-      
-      case 'clip-top':
-        return { clipPath: 'inset(0 0 100% 0)' };
-      
-      case 'clip-bottom':
-        return { clipPath: 'inset(100% 0 0 0)' };
-      
       default:
+        // Default to fade-up for any unrecognized animation
         return { opacity: '0', transform: `translateY(${dist}px)` };
     }
   }
   
   private getRevealedStyles(): Record<string, string> {
-    const anim = this.animation();
-    
-    if (anim.startsWith('clip-')) {
-      return { clipPath: 'inset(0 0 0 0)' };
-    }
-    
-    const styles: Record<string, string> = {
+    return {
       opacity: '1',
       transform: 'none'
     };
-    
-    if (anim === 'blur' || anim === 'blur-up') {
-      styles['filter'] = 'blur(0)';
-    }
-    
-    return styles;
   }
   
   private getTransitionProperties(): string[] {
-    const anim = this.animation();
-    
-    if (anim.startsWith('clip-')) {
-      return ['clip-path'];
-    }
-    
-    const props = ['opacity', 'transform'];
-    
-    if (anim === 'blur' || anim === 'blur-up') {
-      props.push('filter');
-    }
-    
-    return props;
+    return ['opacity', 'transform'];
   }
   
   private getWillChangeProperties(): string {
-    const anim = this.animation();
-    
-    if (anim.startsWith('clip-')) {
-      return 'clip-path';
-    }
-    
-    if (anim === 'blur' || anim === 'blur-up') {
-      return 'opacity, transform, filter';
-    }
-    
     return 'opacity, transform';
   }
   

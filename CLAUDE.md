@@ -30,7 +30,6 @@ ClimaSite is a production-grade online shop specializing in air conditioners, he
 | Motion/Animation System | Complete | AnimationService, reduced motion support, GPU-accelerated animations |
 | Flying Cart Animation | Complete | Product image flies to cart icon with arc trajectory |
 | Confetti Celebration | Complete | Canvas-based confetti on order confirmation |
-| Parallax Effects | Complete | Scroll and mouse-based parallax on hero sections |
 | Toast Notifications | Complete | Progress bar, hover pause, type-specific icons |
 | Route Transitions | Complete | Fade/slide page transitions |
 | Product Gallery | Complete | Lightbox, crossfade, zoom, slide animations |
@@ -39,6 +38,7 @@ ClimaSite is a production-grade online shop specializing in air conditioners, he
 | UI Improvement Plan | Complete | 45+ issues fixed across 6 phases |
 | Shared Components | Complete | Alert, Modal, Toast, Breadcrumb components created |
 | Accessibility (WCAG) | Complete | Focus traps, ARIA roles, keyboard navigation, screen reader support |
+| Animation Audit (21F) | Partial | Phases 1-2 complete: Removed FloatingDirective, TiltEffectDirective, ParallaxDirective; simplified RevealDirective to fade/fade-up/fade-down only |
 
 ---
 
@@ -689,8 +689,8 @@ A feature is ONLY complete when:
 | Confetti | `src/ClimaSite.Web/src/app/core/services/confetti.service.ts` |
 | Performance Audit | `docs/performance/performance-audit.md` |
 | Animation Directives | `src/ClimaSite.Web/src/app/shared/directives/` |
-| FloatingDirective | `src/ClimaSite.Web/src/app/shared/directives/floating.directive.ts` |
-| ParallaxDirective | `src/ClimaSite.Web/src/app/shared/directives/parallax.directive.ts` |
+| RevealDirective | `src/ClimaSite.Web/src/app/shared/directives/reveal.directive.ts` |
+| CountUpDirective | `src/ClimaSite.Web/src/app/shared/directives/count-up.directive.ts` |
 
 ### Important URLs (Development)
 

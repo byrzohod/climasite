@@ -2,7 +2,6 @@ import { Component, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-import { ParallaxDirective } from '../../directives/parallax.directive';
 
 export interface CategoryInfo {
   id: string;
@@ -21,18 +20,14 @@ export interface CategoryInfo {
 @Component({
   selector: 'app-category-header',
   standalone: true,
-  imports: [CommonModule, RouterLink, TranslateModule, ParallaxDirective],
+imports: [CommonModule, RouterLink, TranslateModule],
   template: `
     <div class="category-header" [class.has-image]="category()?.imageUrl" data-testid="category-header">
-<!-- Background Image Overlay with Parallax -->
+<!-- Background Image Overlay -->
       <div 
         class="header-background" 
         *ngIf="category()?.imageUrl" 
         [style.backgroundImage]="'url(' + category()!.imageUrl + ')'"
-        appParallax 
-        [speed]="0.15" 
-        [direction]="'down'"
-        [scaleOnScroll]="1.05"
       ></div>
 
       <div class="header-content">

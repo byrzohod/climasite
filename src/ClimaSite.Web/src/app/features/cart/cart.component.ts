@@ -131,7 +131,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
             }
           </div>
 
-          <div class="cart-summary" appReveal="fade-left" [delay]="150">
+          <div class="cart-summary" appReveal="fade-up" [delay]="150">
             <h2>{{ 'cart.summary.title' | translate }}</h2>
 
             <div class="summary-row">

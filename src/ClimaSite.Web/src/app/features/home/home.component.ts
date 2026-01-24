@@ -8,10 +8,7 @@ import { ProductService } from '../../core/services/product.service';
 import { ProductBrief } from '../../core/models/product.model';
 import { ProductCardComponent } from '../products/product-card/product-card.component';
 import { RevealDirective } from '../../shared/directives/reveal.directive';
-import { TiltEffectDirective } from '../../shared/directives/tilt-effect.directive';
 import { CountUpDirective } from '../../shared/directives/count-up.directive';
-import { ParallaxDirective } from '../../shared/directives/parallax.directive';
-import { FloatingDirective } from '../../shared/directives/floating.directive';
 import { SkeletonProductCardComponent } from '../../shared/components/skeleton-product-card/skeleton-product-card.component';
 
 interface Testimonial {
@@ -32,10 +29,7 @@ interface Testimonial {
     TranslateModule,
     ProductCardComponent,
     RevealDirective,
-    TiltEffectDirective,
     CountUpDirective,
-    ParallaxDirective,
-    FloatingDirective,
     SkeletonProductCardComponent
   ],
   template: `
@@ -43,23 +37,23 @@ interface Testimonial {
          HERO - Full-screen immersive experience
          ================================================================ -->
     <section class="hero" data-testid="hero-section">
-      <!-- Animated gradient background with parallax -->
+      <!-- Static gradient background (no animation) -->
       <div class="hero__bg">
-        <div class="hero__gradient hero__gradient--1" appParallax [mode]="'both'" [speed]="0.15" [intensity]="40" [direction]="'down'"></div>
-        <div class="hero__gradient hero__gradient--2" appParallax [mode]="'both'" [speed]="0.1" [intensity]="30" [direction]="'up'"></div>
-        <div class="hero__gradient hero__gradient--3" appParallax [mode]="'mouse'" [intensity]="20" [smoothing]="0.05"></div>
+        <div class="hero__gradient hero__gradient--1"></div>
+        <div class="hero__gradient hero__gradient--2"></div>
+        <div class="hero__gradient hero__gradient--3"></div>
         <div class="hero__noise"></div>
       </div>
 
-      <!-- Content with floating animation -->
+      <!-- Content (no floating animation) -->
       <div class="hero__content">
-        <p class="hero__eyebrow" appFloating [variant]="'gentle'" [delay]="200">{{ 'home.hero.eyebrow' | translate }}</p>
+        <p class="hero__eyebrow">{{ 'home.hero.eyebrow' | translate }}</p>
         <h1 class="hero__title">
-          <span class="hero__title-line" appFloating [variant]="'gentle'" [duration]="5000" [delay]="0">{{ 'home.hero.title1' | translate }}</span>
-          <span class="hero__title-line hero__title-line--accent" appFloating [variant]="'gentle'" [duration]="5500" [delay]="100">{{ 'home.hero.title2' | translate }}</span>
+          <span class="hero__title-line">{{ 'home.hero.title1' | translate }}</span>
+          <span class="hero__title-line hero__title-line--accent">{{ 'home.hero.title2' | translate }}</span>
         </h1>
-        <p class="hero__subtitle" appFloating [variant]="'gentle'" [duration]="4500" [delay]="300">{{ 'home.hero.subtitle' | translate }}</p>
-        <div class="hero__cta" appFloating [variant]="'gentle'" [duration]="4000" [delay]="400">
+        <p class="hero__subtitle">{{ 'home.hero.subtitle' | translate }}</p>
+        <div class="hero__cta">
           <a routerLink="/products" class="btn btn--primary btn--large" data-testid="hero-cta">
             {{ 'home.hero.cta' | translate }}
             <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638l-3.96-3.67a.75.75 0 111.02-1.16l5.25 4.875a.75.75 0 010 1.16l-5.25 4.875a.75.75 0 11-1.02-1.16l3.96-3.67H3.75A.75.75 0 013 10z" clip-rule="evenodd"/></svg>
@@ -114,8 +108,7 @@ interface Testimonial {
             class="categories__panel"
             [attr.data-bg]="'url(' + cat.image + ')'"
             [attr.aria-label]="cat.name | translate"
-            appReveal="scale-up" [delay]="$index * 75"
-            appTiltEffect [maxTilt]="8" [glare]="true" [glareOpacity]="0.15"
+            appReveal="fade-up" [delay]="$index * 75"
             data-testid="category-card"
           >
             <div class="categories__panel-bg"></div>
@@ -195,7 +188,7 @@ interface Testimonial {
       <div class="container">
         <div class="stats__grid">
           @for (stat of stats; track stat.label) {
-            <div class="stats__item" appReveal="scale" [delay]="$index * 100">
+            <div class="stats__item" appReveal="fade-up" [delay]="$index * 100">
               <span class="stats__value" [appCountUp]="stat.numericValue" [suffix]="stat.suffix" [decimals]="stat.decimals" [duration]="2000"></span>
               <span class="stats__label">{{ stat.label | translate }}</span>
             </div>
@@ -289,10 +282,10 @@ interface Testimonial {
          ================================================================ -->
     <section class="cta">
       <div class="cta__bg">
-        <div class="cta__gradient" appParallax [speed]="0.2" [direction]="'down'" [scaleOnScroll]="1.1"></div>
+        <div class="cta__gradient"></div>
       </div>
       <div class="container">
-        <div class="cta__content" appParallax [speed]="0.1" [direction]="'up'">
+        <div class="cta__content">
           <h2 class="cta__title">{{ 'home.cta.title' | translate }}</h2>
           <a routerLink="/products" class="cta__btn" [attr.aria-label]="'home.cta.button' | translate">
             {{ 'home.cta.button' | translate }}
@@ -435,7 +428,7 @@ interface Testimonial {
       border-radius: 50%;
       filter: blur(80px);
       opacity: 0.5;
-      animation: float 20s ease-in-out infinite;
+      /* No animation - static decorative elements */
 
       &--1 {
         width: 60vw;
@@ -443,7 +436,6 @@ interface Testimonial {
         top: -20%;
         left: -10%;
         background: var(--color-primary);
-        animation-delay: 0s;
       }
 
       &--2 {
@@ -452,7 +444,6 @@ interface Testimonial {
         bottom: -20%;
         right: -10%;
         background: var(--color-accent);
-        animation-delay: -7s;
       }
 
       &--3 {
@@ -462,7 +453,6 @@ interface Testimonial {
         left: 50%;
         transform: translate(-50%, -50%);
         background: var(--color-primary-light);
-        animation-delay: -14s;
       }
     }
 
@@ -472,13 +462,6 @@ interface Testimonial {
       background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
       opacity: 0.03;
       pointer-events: none;
-    }
-
-    @keyframes float {
-      0%, 100% { transform: translate(0, 0) scale(1); }
-      25% { transform: translate(5%, 5%) scale(1.05); }
-      50% { transform: translate(0, 10%) scale(1); }
-      75% { transform: translate(-5%, 5%) scale(0.95); }
     }
 
     .hero__content {
@@ -608,7 +591,7 @@ interface Testimonial {
 
     .brands__track {
       display: flex;
-      animation: scroll 30s linear infinite;
+      animation: scroll 45s linear infinite;
       width: max-content;
 
       &.paused {
@@ -1124,12 +1107,7 @@ interface Testimonial {
       position: absolute;
       inset: 0;
       background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
-      animation: ctaGradient 10s ease-in-out infinite alternate;
-    }
-
-    @keyframes ctaGradient {
-      0% { opacity: 1; }
-      100% { opacity: 0.7; }
+      /* No animation - static gradient */
     }
 
     .cta__content {
@@ -1266,10 +1244,8 @@ interface Testimonial {
 
     /* Reduced motion */
     @media (prefers-reduced-motion: reduce) {
-      .hero__gradient,
       .hero__scroll-wheel,
-      .brands__track,
-      .cta__gradient {
+      .brands__track {
         animation: none;
       }
 

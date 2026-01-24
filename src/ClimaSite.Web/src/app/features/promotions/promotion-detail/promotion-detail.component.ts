@@ -6,12 +6,11 @@ import { PromotionService } from '../../../core/services/promotion.service';
 import { CartService } from '../../../core/services/cart.service';
 import { Promotion, PromotionType } from '../../../core/models/promotion.model';
 import { ProductBrief } from '../../../core/models/product.model';
-import { ParallaxDirective } from '../../../shared/directives/parallax.directive';
 
 @Component({
   selector: 'app-promotion-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, TranslateModule, ParallaxDirective],
+  imports: [CommonModule, RouterLink, TranslateModule],
   template: `
     <div class="promotion-detail-page">
       @if (isLoading()) {
@@ -19,15 +18,11 @@ import { ParallaxDirective } from '../../../shared/directives/parallax.directive
       } @else if (error()) {
         <div class="error">{{ error() }}</div>
       } @else if (promotion()) {
-<!-- Hero Banner with Parallax -->
+<!-- Hero Banner -->
         <div class="promotion-hero">
           <div 
             class="hero-bg"
             [style.background-image]="promotion()?.bannerImageUrl ? 'url(' + promotion()?.bannerImageUrl + ')' : ''"
-            appParallax 
-            [speed]="0.2" 
-            [direction]="'down'" 
-            [scaleOnScroll]="1.1"
           ></div>
           <div class="hero-overlay">
             <div class="hero-content">
@@ -162,7 +157,7 @@ import { ParallaxDirective } from '../../../shared/directives/parallax.directive
 
     .hero-bg {
       position: absolute;
-      inset: -20%;
+      inset: 0;
       background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
       background-size: cover;
       background-position: center;

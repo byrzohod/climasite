@@ -2,7 +2,6 @@ import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
-import { ParallaxDirective } from '../../shared/directives/parallax.directive';
 
 interface ResourceCategory {
   id: string;
@@ -23,13 +22,13 @@ interface Resource {
 @Component({
   selector: 'app-resources',
   standalone: true,
-  imports: [CommonModule, RouterLink, TranslateModule, ParallaxDirective],
+imports: [CommonModule, RouterLink, TranslateModule],
   template: `
     <div class="resources-page">
-<!-- Hero Section with Parallax -->
+<!-- Hero Section -->
       <div class="hero-section">
-        <div class="hero-bg" appParallax [speed]="0.15" [direction]="'down'" [scaleOnScroll]="1.05"></div>
-        <div class="hero-content" appParallax [speed]="0.08" [direction]="'up'">
+        <div class="hero-bg"></div>
+        <div class="hero-content">
           <h1>{{ 'resources.title' | translate }}</h1>
           <p>{{ 'resources.subtitle' | translate }}</p>
         </div>
@@ -107,7 +106,7 @@ interface Resource {
 
     .hero-bg {
       position: absolute;
-      inset: -20%;
+      inset: 0;
       background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
       z-index: 0;
     }
