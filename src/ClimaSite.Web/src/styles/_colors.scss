@@ -1,8 +1,8 @@
 // =============================================================================
-// CLIMASITE COLOR SYSTEM - "Arctic Aurora" Theme
+// CLIMASITE COLOR SYSTEM - "Terra Luxe" Theme
 // =============================================================================
 // This file is THE SINGLE SOURCE OF TRUTH for all colors in the application.
-// Design Language: "Climate Flow" - evoking air, temperature, precision
+// Design Language: "Warm & Premium" - evoking luxury, comfort, sophistication
 // =============================================================================
 
 // -----------------------------------------------------------------------------
@@ -11,57 +11,57 @@
 $color-white: #ffffff;
 $color-black: #000000;
 
-// Gray Palette - Refined neutrals
-$color-gray-50: #f8fafc;
-$color-gray-100: #f1f5f9;
-$color-gray-200: #e2e8f0;
-$color-gray-300: #cbd5e1;
-$color-gray-400: #94a3b8;
-$color-gray-500: #64748b;
-$color-gray-600: #475569;
-$color-gray-700: #334155;
-$color-gray-800: #1e293b;
-$color-gray-900: #0f172a;
-$color-gray-950: #020617;
+// Gray Palette - Warm neutrals
+$color-gray-50: #FAF7F2;
+$color-gray-100: #F5F0E8;
+$color-gray-200: #E8E2D9;
+$color-gray-300: #D4CCC1;
+$color-gray-400: #A89F94;
+$color-gray-500: #6B6560;
+$color-gray-600: #4A4540;
+$color-gray-700: #332F2B;
+$color-gray-800: #1C1917;
+$color-gray-900: #0F0E0C;
+$color-gray-950: #0A0908;
 
-// Primary Palette - Arctic Blue (Fresh, clean air)
-$color-primary-50: #f0f9ff;
-$color-primary-100: #e0f2fe;
-$color-primary-200: #bae6fd;
-$color-primary-300: #7dd3fc;
-$color-primary-400: #38bdf8;
-$color-primary-500: #0ea5e9;
-$color-primary-600: #0284c7;
-$color-primary-700: #0369a1;
-$color-primary-800: #075985;
-$color-primary-900: #0c4a6e;
-$color-primary-950: #082f49;
+// Primary Palette - Terracotta (Warm, premium)
+$color-primary-50: #FDF5F0;
+$color-primary-100: #FCE8DB;
+$color-primary-200: #F9D0B6;
+$color-primary-300: #F4B089;
+$color-primary-400: #E88A5E;
+$color-primary-500: #C4785A;
+$color-primary-600: #A86348;
+$color-primary-700: #8A4E37;
+$color-primary-800: #6F3D2A;
+$color-primary-900: #5A3122;
+$color-primary-950: #3A1F14;
 
-// Secondary Palette - Slate (Premium neutrals)
-$color-secondary-50: #f8fafc;
-$color-secondary-100: #f1f5f9;
-$color-secondary-200: #e2e8f0;
-$color-secondary-300: #cbd5e1;
-$color-secondary-400: #94a3b8;
-$color-secondary-500: #64748b;
-$color-secondary-600: #475569;
-$color-secondary-700: #334155;
-$color-secondary-800: #1e293b;
-$color-secondary-900: #0f172a;
-$color-secondary-950: #020617;
+// Secondary Palette - Bronze (Sophisticated accent)
+$color-secondary-50: #F9F6F2;
+$color-secondary-100: #F0EAE0;
+$color-secondary-200: #E0D4C4;
+$color-secondary-300: #C9B8A1;
+$color-secondary-400: #A89778;
+$color-secondary-500: #8B7355;
+$color-secondary-600: #745F46;
+$color-secondary-700: #5E4C38;
+$color-secondary-800: #4A3C2C;
+$color-secondary-900: #3D3124;
+$color-secondary-950: #251E16;
 
-// Accent Palette - Glacier Cyan (Cooling systems)
-$color-accent-50: #ecfeff;
-$color-accent-100: #cffafe;
-$color-accent-200: #a5f3fc;
-$color-accent-300: #67e8f9;
-$color-accent-400: #22d3ee;
-$color-accent-500: #06b6d4;
-$color-accent-600: #0891b2;
-$color-accent-700: #0e7490;
-$color-accent-800: #155e75;
-$color-accent-900: #164e63;
-$color-accent-950: #083344;
+// Accent Palette - Deep Teal (Trust, success)
+$color-accent-50: #F0F7F7;
+$color-accent-100: #D9ECEC;
+$color-accent-200: #B3D9D9;
+$color-accent-300: #80BFBF;
+$color-accent-400: #4D9999;
+$color-accent-500: #2A5A5A;
+$color-accent-600: #234B4B;
+$color-accent-700: #1C3C3C;
+$color-accent-800: #162E2E;
+$color-accent-900: #112424;
+$color-accent-950: #0A1515;
 
 // Warm Palette - Sunset Amber/Orange (Heating theme)
 $color-warm-50: #fffbeb;
@@ -108,7 +108,7 @@ $color-success-100: #d1fae5;
 $color-success-200: #a7f3d0;
 $color-success-300: #6ee7b7;
 $color-success-400: #34d399;
-$color-success-500: #10b981;
+$color-success-500: #6B8E6B;
 $color-success-600: #059669;
 $color-success-700: #047857;
 $color-success-800: #065f46;
@@ -121,7 +121,7 @@ $color-warning-100: #fef3c7;
 $color-warning-200: #fde68a;
 $color-warning-300: #fcd34d;
 $color-warning-400: #fbbf24;
-$color-warning-500: #f59e0b;
+$color-warning-500: #D4A574;
 $color-warning-600: #d97706;
 $color-warning-700: #b45309;
 $color-warning-800: #92400e;
@@ -134,7 +134,7 @@ $color-error-100: #fee2e2;
 $color-error-200: #fecaca;
 $color-error-300: #fca5a5;
 $color-error-400: #f87171;
-$color-error-500: #ef4444;
+$color-error-500: #C75C5C;
 $color-error-600: #dc2626;
 $color-error-700: #b91c1c;
 $color-error-800: #991b1b;
@@ -301,10 +301,10 @@ $color-info-950: #082f49;
   --color-info-light: #{$color-info-50};
   --color-info-dark: #{$color-info-700};
 
-  // Shadow Colors
-  --shadow-color: rgba(15, 23, 42, 0.08);
-  --shadow-color-lg: rgba(15, 23, 42, 0.12);
-  --shadow-color-xl: rgba(15, 23, 42, 0.16);
+   // Shadow Colors
+   --shadow-color: rgba(28, 25, 23, 0.08);
+   --shadow-color-lg: rgba(28, 25, 23, 0.12);
+   --shadow-color-xl: rgba(28, 25, 23, 0.16);
 
   // Ring/Focus Colors
   --color-ring: #{$color-primary-500};
