@@ -82,3 +82,28 @@ public record ProductTranslationDto
     public string? MetaTitle { get; init; }
     public string? MetaDescription { get; init; }
 }
+
+public record RecommendedProductDto
+{
+    // ProductBriefDto fields
+    public Guid Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string Slug { get; init; } = string.Empty;
+    public string? ShortDescription { get; init; }
+    public decimal BasePrice { get; init; }
+    public decimal? SalePrice { get; init; }
+    public bool IsOnSale { get; init; }
+    public decimal DiscountPercentage { get; init; }
+    public string? Brand { get; init; }
+    public double AverageRating { get; init; }
+    public int ReviewCount { get; init; }
+    public string? PrimaryImageUrl { get; init; }
+    public bool InStock { get; init; }
+
+    // Recommendation-specific fields
+    public double Score { get; init; }
+    public string MatchReason { get; init; } = string.Empty;
+    public int BtuCapacity { get; init; }
+    public bool IsInverter { get; init; }
+    public int? NoiseLevel { get; init; }
+}

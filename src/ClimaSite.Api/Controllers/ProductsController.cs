@@ -212,4 +212,29 @@ public class ProductsController : ControllerBase
         var result = await _mediator.Send(query);
         return Ok(result);
     }
+
+    /// <summary>
+    /// Get product recommendations based on room area, type, and climate zone.
+    /// Uses rules-based weighted scoring algorithm to return top 3 matches.
+    /// </summary>
+    [HttpGet("recommendations")]
+    [ProducesResponseType(typeof(List<RecommendedProductDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetRecommendations(
+        [FromQuery] int area,
+        [FromQuery] string type,
+        [FromQuery] string? zone = null,
+        [FromQuery] string? lang = null)
+    {
+        var query = new GetRecommendationsQuery
+        {
+            AreaM2 = area,
+            RoomType = type,
+            ClimateZone = zone ?? "B",
+            LanguageCode = lang
+        };
+
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
 }
