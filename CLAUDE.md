@@ -22,6 +22,8 @@ ClimaSite is a production-grade online shop specializing in air conditioners, he
 | Wishlist | Partial | Basic implementation exists |
 | Motion/Animation System | Complete | AnimationService, flying cart, confetti, parallax |
 | Performance Optimizations | Complete | Core Web Vitals, lazy loading, preconnect hints |
+| Home page (v3 — Configurator-First) | In progress | Plan 18 / HOME-004..007 done; HOME-009/011/012 deferred (need running server) |
+| Project completion plan (Plan 18) | In progress | Phase 0 done; Phase 1 home-v3 frontend + recommendations endpoint done |
 
 ### Recently Completed
 

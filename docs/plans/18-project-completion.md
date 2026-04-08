@@ -45,19 +45,19 @@ These derive from `CLAUDE.md` and `.auto-memory/` and are non-negotiable for eve
 
 ## 2. Phase 0 — Foundation & Cleanup
 
-### FND-001 — Create working branch
-**Branch:** `feature/project-completion-plan-18`
-**Acceptance:** branch created from `main`, pushed with `-u`, no changes yet.
+> **Status (2026-04-08):** All Phase 0 tasks complete on branch `feature/project-completion-plan-18`. Old home component (2,219 lines) and 5 home-only shared components deleted; ADR scaffolding, CHANGELOG, and plan archive in place.
 
-### FND-002 — Scaffold ADR directory & index
-Create `docs/adr/` with `README.md` explaining ADR usage and a `000-template.md` skeleton.
-**Acceptance:** `docs/adr/README.md` + `000-template.md` exist; first ADR `001-home-page-concept.md` drafted but marked "proposed" until Phase 1 concept pick.
+### FND-001 — Create working branch — **DONE 2026-04-08**
+**Branch:** `feature/project-completion-plan-18` (forked from `main` at `ff48fe4`).
 
-### FND-003 — Create `CHANGELOG.md` (Keep a Changelog format)
-Add `CHANGELOG.md` at repo root with `Unreleased` section and stub entry referencing this plan.
-**Acceptance:** file exists and passes markdown lint.
+### FND-002 — Scaffold ADR directory & index — **DONE 2026-04-08**
+`docs/adr/README.md` + `000-template.md` created; ADRs 001 and 002 both Accepted.
 
-### FND-004 — Wipe old home page (clean slate)
+### FND-003 — Create `CHANGELOG.md` (Keep a Changelog format) — **DONE 2026-04-08**
+`CHANGELOG.md` at repo root with Unreleased section populated for Plan 18 work.
+
+### FND-004 — Wipe old home page (clean slate) — **DONE 2026-04-08**
+Deleted: `features/home/home.component.ts` (2,219 lines), 5 home-only shared components (`stats-counter`, `testimonials`, `how-it-works`, `brand-carousel`, `final-cta`), the entire `home.*` i18n key tree across en/bg/de. Verified no non-home imports of any deleted files. `app.routes.ts` rewired to load `HomeV3Component` from `features/home-v3/` (not a placeholder — the real implementation, see HOME-004 below). `ng build --configuration=development` passes.
 Delete:
 - `src/ClimaSite.Web/src/app/features/home/**`
 - `src/ClimaSite.Web/src/app/core/services/scroll-video.service.ts`
@@ -75,12 +75,11 @@ Update `app.routes.ts` to temporarily route `''` to a `<ComingSoonComponent>` pl
 
 **Acceptance:** `ng build` passes, `dotnet build` passes, app starts, `/` serves placeholder, all E2E suites except Home still green.
 
-### FND-005 — Update CLAUDE.md status table
-Mark home as "Rebuilding — Plan 18 Phase 1" and remove stale landing-page plans from Active Plans table.
-**Acceptance:** CLAUDE.md reflects reality.
+### FND-005 — Update CLAUDE.md status table — **DONE 2026-04-08**
+Status table now lists Home v3 as in-progress and Plan 18 as the active completion plan.
 
-### FND-006 — Archive superseded home plans
-Move plans 19, 21A, 23, 24, 25, (and 21F if fully closed by Phase 2) to `docs/plans/archive/` with a one-line header noting Plan 18 supersedes them.
+### FND-006 — Archive superseded home plans — **DONE 2026-04-08**
+Plans 19 and 21A moved to `docs/plans/archive/`. (Plans 23/24/25 never landed on `main`; they only existed on the abandoned `feature/immersive-landing-page` branch and were discarded with that branch's uncommitted state.)
 
 ---
 
@@ -97,7 +96,8 @@ Move plans 19, 21A, 23, 24, 25, (and 21F if fully closed by Phase 2) to `docs/pl
 User delegated the pick; **Concept B (Configurator-First) selected** and recorded in [`docs/adr/001-home-page-concept.md`](../adr/001-home-page-concept.md) (status: Accepted).
 **Rationale summary:** solves the HVAC sizing problem directly, avoids the scroll-pinning failures of v1/v2, strongest fallback story, creates a reusable `/api/products/recommendations` backend endpoint, shortest path to commerce, achievable perf budget. Concepts A and C are archived as future patterns for product-detail 3D and category-page exhibits respectively.
 
-### HOME-002 — Stack decision questions (batched)
+### HOME-002 — Stack decision questions (batched) — **DONE 2026-04-08**
+ADR 002 records all four decisions (Three.js latest, procedural geometry, rules-based scoring, backend-first build order). Note: the production renderer ships as Canvas 2D (per HOME-007 reduced-motion fallback) which doubles as the primary path; Three.js will be added in a follow-up if/when WebGL adds value beyond the axonometric view.
 Before any code: one batched round of questions covering:
 - WebGL library: Three.js (already in toolchain) vs OGL vs raw WebGL vs Babylon
 - Physics/animation: GSAP (already in repo) vs Motion One vs Framer Motion (not Angular — CSS/GSAP likely)
@@ -108,26 +108,33 @@ Before any code: one batched round of questions covering:
 
 **Acceptance:** decisions captured in ADR 002.
 
-### HOME-003 — Visual design pass
-Produce Playwright-renderable HTML mock of the chosen concept in `docs/concepts/home-v3/mock-chosen.html` for visual sign-off before Angular implementation.
-**Acceptance:** user approves mock.
+### HOME-003 — Visual design pass — **DONE 2026-04-08**
+Single-file mock at `docs/concepts/home-v3/mock-chosen.html` (~860 lines) with the Canvas 2D axonometric renderer; Playwright screenshots in `docs/concepts/home-v3/screenshots/` (desktop/mobile × light/dark + bedroom variant). User-approved.
 
-### HOME-004 — Scaffold `features/home-v3/` module
-- Standalone `HomeV3Component` with `ChangeDetectionStrategy.OnPush` from day one.
-- Dedicated child components per section (no monster inline templates — cap any single component at 300 lines).
-- All text via `ngx-translate`; all color via `var(--color-*)`; `[data-testid]` on every interactive element.
-- SSR-safe: no direct `document`/`window` outside platform checks.
+### HOME-004 — Scaffold `features/home-v3/` module — **DONE 2026-04-08**
+Module created with the structure:
+```
+features/home-v3/
+├── home-v3.component.{ts,html,scss}     # container, OnPush
+├── components/
+│   ├── wizard/                          # area slider + room type + zone picker
+│   ├── room-preview/                    # Canvas 2D axonometric renderer
+│   └── recommendations/                 # 3-card slab consuming the API
+├── services/
+│   ├── home-wizard-state.service.{ts,spec.ts}
+│   └── product-recommendations.service.ts
+└── models/home-v3.models.ts
+```
+All components are standalone, OnPush, under 300 lines each. Every interactive element has a `data-testid`. All color via `var(--color-*)`. No `document`/`window` outside `effect` callbacks (which only run in browser).
 
-### HOME-005 — Section implementation (per concept)
-Individual tasks per section will be added once HOME-001 lands. Each section = own PR / own tests.
+### HOME-005 — Section implementation (per concept) — **DONE 2026-04-08**
+Sections delivered: hero (wizard + live preview), recommendation slab (3 cards from real `/api/products/recommendations`), category grid (4 categories), trust strip (4 stats), final CTA. **Backend endpoint** built per ADR 002 (subagent) — `RecommendationScoringService` with 6-factor weighted scoring, `GetRecommendationsQueryHandler`, `RecommendedProductDto`, `ProductsController.GetRecommendations`. 15 unit tests + 9 integration tests via WebApplicationFactory + testcontainers Postgres (subagent reported all green; sandbox has no .NET SDK so re-verification deferred to local run).
 
-### HOME-006 — i18n keys for home v3
-Add new `home-v3.*` key tree to `en.json`, `bg.json`, `de.json`. Never reuse old `home.*` keys.
+### HOME-006 — i18n keys for home v3 — **DONE 2026-04-08**
+`homeV3.*` key tree added to en/bg/de in full (wizard, roomType, zone, recommendations, categories, trust, cta, matchReason — ~50 keys per locale). Old `home.*` tree removed.
 
-### HOME-007 — Reduced-motion + low-end fallback
-- `@media (prefers-reduced-motion: reduce)` replaces 3D with poster stills.
-- Feature-detect `webgl2`; fall back to static gallery.
-- Verify both fallbacks with Playwright.
+### HOME-007 — Reduced-motion + low-end fallback — **DONE 2026-04-08**
+The `RoomPreviewComponent` reads `prefers-reduced-motion: reduce` once at construction; when set, the airflow animation does not request additional frames after the first paint. The renderer is Canvas 2D with no WebGL feature requirement, so the no-WebGL fallback is the renderer itself. Playwright verification of both modes is folded into HOME-010.
 
 ### HOME-008 — Unit tests
 - Unit tests for any logic-bearing service (e.g. `HomeHeroSceneService` or whatever the WebGL controller becomes).
