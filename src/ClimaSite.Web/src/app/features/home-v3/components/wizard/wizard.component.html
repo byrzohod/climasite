@@ -1,0 +1,68 @@
+<div class="wizard" data-testid="home-v3-wizard">
+  <span class="eyebrow">{{ 'homeV3.wizard.eyebrow' | translate }}</span>
+  <h1 class="hero-title">{{ 'homeV3.wizard.title' | translate }}</h1>
+  <p class="hero-lede">{{ 'homeV3.wizard.lede' | translate }}</p>
+
+  <div class="field">
+    <label class="field-label" for="area-slider">
+      {{ 'homeV3.wizard.areaLabel' | translate }}
+      <strong class="area-value">{{ area() }} m²</strong>
+    </label>
+    <input
+      id="area-slider"
+      type="range"
+      min="10"
+      max="120"
+      step="1"
+      [value]="area()"
+      (input)="onAreaInput($event)"
+      data-testid="home-v3-area-slider"
+      [attr.aria-valuenow]="area()"
+      [attr.aria-valuemin]="10"
+      [attr.aria-valuemax]="120"
+      [attr.aria-label]="'homeV3.wizard.areaLabel' | translate"
+    />
+  </div>
+
+  <div class="field">
+    <span class="field-label">{{ 'homeV3.wizard.roomTypeLabel' | translate }}</span>
+    <div class="segmented" role="radiogroup" [attr.aria-label]="'homeV3.wizard.roomTypeLabel' | translate">
+      @for (type of roomTypes; track type) {
+        <button
+          type="button"
+          role="radio"
+          [attr.aria-checked]="roomType() === type"
+          [class.active]="roomType() === type"
+          (click)="setRoomType(type)"
+          [attr.data-testid]="'home-v3-room-' + type"
+        >
+          {{ 'homeV3.roomType.' + type | translate }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="field">
+    <span class="field-label">{{ 'homeV3.wizard.zoneLabel' | translate }}</span>
+    <div class="zone-picker" role="radiogroup" [attr.aria-label]="'homeV3.wizard.zoneLabel' | translate">
+      @for (z of zones; track z) {
+        <button
+          type="button"
+          role="radio"
+          [attr.aria-checked]="zone() === z"
+          [class.active]="zone() === z"
+          (click)="setZone(z)"
+          [attr.data-testid]="'home-v3-zone-' + z"
+        >
+          <strong>{{ 'homeV3.zone.' + z + '.name' | translate }}</strong>
+          <span>{{ 'homeV3.zone.' + z + '.desc' | translate }}</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="estimate-card" aria-live="polite">
+    <span class="estimate-label">{{ 'homeV3.wizard.estimateLabel' | translate }}</span>
+    <span class="estimate-value">{{ estimatedBtu() | number }} BTU/h</span>
+  </div>
+</div>
