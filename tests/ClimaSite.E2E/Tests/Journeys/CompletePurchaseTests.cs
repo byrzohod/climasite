@@ -68,8 +68,8 @@ public class CompletePurchaseTests : IAsyncLifetime
         await Assertions.Expect(_page.Locator("[data-testid='cart-count']")).ToBeVisibleAsync();
 
         // Step 5: Go to cart
-        await _page.ClickAsync("[data-testid='cart-icon']");
-        await _page.WaitForURLAsync(url => url.Contains("/cart"));
+        var cartPage = new CartPage(_page);
+        await cartPage.NavigateAsync();
 
         // Verify cart has items
         await Assertions.Expect(_page.Locator("[data-testid='cart-item']").First).ToBeVisibleAsync();

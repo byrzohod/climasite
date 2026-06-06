@@ -248,7 +248,7 @@ public class GetOrderByIdQueryTests
     }
 
     [Fact]
-    public async Task Handle_WhenNoUserIdProvided_ReturnsOrder()
+    public async Task Handle_WhenNoUserIdProvided_ReturnsFailure()
     {
         // Arrange - guest order scenario
         var product = CreateProduct();
@@ -267,8 +267,8 @@ public class GetOrderByIdQueryTests
         var result = await handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().NotBeNull();
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Contain("Authentication required");
     }
 
     [Fact]

@@ -73,8 +73,8 @@ export class HomeV3Component {
         this.recommendations.set(products);
         this.loading.set(false);
       },
-      error: (err) => {
-        this.error.set(err?.message ?? 'Unable to load recommendations');
+      error: () => {
+        this.error.set('homeV3.recommendations.loadError');
         this.loading.set(false);
       },
     });

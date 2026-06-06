@@ -9,7 +9,7 @@ import { InstallationService, ProductInstallationOptions } from '../../services/
 import { environment } from '../../../../../environments/environment';
 
 class FakeTranslateLoader implements TranslateLoader {
-  getTranslation(lang: string): Observable<Record<string, string>> {
+  getTranslation(_lang: string): Observable<Record<string, string>> {
     return of({
       'products.installation.title': 'Installation Service',
       'products.installation.subtitle': 'Professional installation',
@@ -227,7 +227,7 @@ describe('InstallationServiceComponent', () => {
 
     component.submitRequest();
 
-    const submitReq = httpMock.expectOne(`${environment.apiUrl}/installation/requests`);
+    const submitReq = httpMock.expectOne(`${environment.apiUrl}/api/installation/requests`);
     expect(submitReq.request.method).toBe('POST');
     expect(submitReq.request.body.installationType).toBe('Standard');
     submitReq.flush({ id: 'new-id' });
@@ -249,7 +249,7 @@ describe('InstallationServiceComponent', () => {
     component.submitRequest();
 
     // Should not make HTTP request
-    httpMock.expectNone(`${environment.apiUrl}/installation/requests`);
+    httpMock.expectNone(`${environment.apiUrl}/api/installation/requests`);
   }));
 
   it('should not submit if no option selected', fakeAsync(() => {
@@ -272,7 +272,7 @@ describe('InstallationServiceComponent', () => {
     component.submitRequest();
 
     // Should not make HTTP request
-    httpMock.expectNone(`${environment.apiUrl}/installation/requests`);
+    httpMock.expectNone(`${environment.apiUrl}/api/installation/requests`);
   }));
 
   it('should display message when installation not available', fakeAsync(() => {

@@ -44,6 +44,11 @@ public class WishlistTests : IAsyncLifetime
 
     private async Task ClearLocalStorageWishlist()
     {
+        if (_page.Url == "about:blank")
+        {
+            await _page.GotoAsync(_fixture.BaseUrl);
+        }
+
         await _page.EvaluateAsync("localStorage.removeItem('climasite_wishlist')");
     }
 

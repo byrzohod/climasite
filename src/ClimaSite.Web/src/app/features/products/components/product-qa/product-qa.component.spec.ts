@@ -15,7 +15,7 @@ class MockAuthService {
 }
 
 class FakeTranslateLoader implements TranslateLoader {
-  getTranslation(lang: string): Observable<Record<string, string>> {
+  getTranslation(_lang: string): Observable<Record<string, string>> {
     return of({
       'products.qa.title': 'Questions & Answers',
       'products.qa.totalQuestions': '{{count}} Questions',
@@ -249,7 +249,7 @@ describe('ProductQaComponent', () => {
     component.submitQuestion();
     fixture.detectChanges();
 
-    const submitReq = httpMock.expectOne(`${environment.apiUrl}/questions`);
+    const submitReq = httpMock.expectOne(`${environment.apiUrl}/api/questions`);
     expect(submitReq.request.method).toBe('POST');
     expect(submitReq.request.body.questionText).toBe('This is a test question about the product?');
     submitReq.flush({ id: 'new-id', message: 'Question submitted' });
@@ -288,7 +288,7 @@ describe('ProductQaComponent', () => {
     component.voteQuestion(question);
     fixture.detectChanges();
 
-    const voteReq = httpMock.expectOne(`${environment.apiUrl}/questions/q1/vote`);
+    const voteReq = httpMock.expectOne(`${environment.apiUrl}/api/questions/q1/vote`);
     voteReq.flush({ helpfulCount: initialCount + 1 });
     tick();
     fixture.detectChanges();
@@ -306,7 +306,7 @@ describe('ProductQaComponent', () => {
 
     // Add q1 to voted set
     component.voteQuestion(component.questions()[0]);
-    const voteReq = httpMock.expectOne(`${environment.apiUrl}/questions/q1/vote`);
+    const voteReq = httpMock.expectOne(`${environment.apiUrl}/api/questions/q1/vote`);
     voteReq.flush({ helpfulCount: 6 });
     tick();
 
@@ -316,7 +316,7 @@ describe('ProductQaComponent', () => {
     tick();
 
     // Should not make another HTTP request
-    httpMock.expectNone(`${environment.apiUrl}/questions/q1/vote`);
+    httpMock.expectNone(`${environment.apiUrl}/api/questions/q1/vote`);
 
     // Helpful count should remain the same
     expect(component.questions()[0].helpfulCount).toBe(initialHelpfulCount);
@@ -334,7 +334,7 @@ describe('ProductQaComponent', () => {
     component.voteAnswer(answer, true);
     fixture.detectChanges();
 
-    const voteReq = httpMock.expectOne(`${environment.apiUrl}/questions/answers/a1/vote`);
+    const voteReq = httpMock.expectOne(`${environment.apiUrl}/api/questions/answers/a1/vote`);
     expect(voteReq.request.body.isHelpful).toBeTruthy();
     voteReq.flush({ helpfulCount: 11, unhelpfulCount: 0 });
     tick();

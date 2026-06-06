@@ -6,10 +6,9 @@ import { Observable, of } from 'rxjs';
 import { Component } from '@angular/core';
 import { ProductTranslationEditorComponent } from './product-translation-editor.component';
 import { AdminTranslationsService, ProductTranslationsDto } from '../../services/admin-translations.service';
-import { environment } from '../../../../../../environments/environment';
 
 class FakeTranslateLoader implements TranslateLoader {
-  getTranslation(lang: string): Observable<Record<string, string>> {
+  getTranslation(_lang: string): Observable<Record<string, string>> {
     return of({
       'admin.products.translations.title': 'Product Translations',
       'admin.products.translations.subtitle': 'Manage product content',

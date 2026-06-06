@@ -32,6 +32,7 @@ import { EmptyStateComponent } from '../../shared/components/empty-state';
           [description]="'emptyState.cart.description' | translate"
           [actionLabel]="'emptyState.cart.action' | translate"
           actionRoute="/products"
+          actionTestId="continue-shopping"
           data-testid="empty-cart"
         />
       } @else {

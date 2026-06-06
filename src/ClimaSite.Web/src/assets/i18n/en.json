@@ -44,10 +44,17 @@
       "moveUp": "Move up",
       "moveDown": "Move down",
       "removeRelation": "Remove relation",
-      "mapLocation": "Map showing location"
+      "mapLocation": "Map showing location",
+      "mobileNavigation": "Mobile navigation",
+      "notifications": "Notifications"
     },
     "language": "Language",
-    "theme": "Theme"
+    "theme": "Theme",
+    "comingSoon": "Coming soon...",
+    "items": "Items",
+    "page": "Page",
+    "sale": "Sale",
+    "pagination": "Pagination"
   },
   "nav": {
     "home": "Home",
@@ -78,7 +85,8 @@
       "search": "Search",
       "cart": "Cart",
       "account": "Account"
-    }
+    },
+    "hot": "Hot"
   },
   "delivery": {
     "options": "Delivery Options",
@@ -154,7 +162,11 @@
     "item_removed": "{{name}} removed from cart",
     "item_restored": "Item restored to cart",
     "remove_failed": "Failed to remove item",
-    "restore_failed": "Failed to restore item"
+    "restore_failed": "Failed to restore item",
+    "added": "Added to cart",
+    "errors": {
+      "addFailed": "Failed to add item to cart"
+    }
   },
   "checkout": {
     "title": "Checkout",
@@ -238,6 +250,7 @@
       "needHelp": "Need Help?",
       "contactInfo": "Call us at",
       "or": "or email",
+      "supportEmail": "support@climasite.bg",
       "whatsNext": {
         "title": "What's Next?",
         "step1": "You'll receive a confirmation email shortly",
@@ -401,6 +414,7 @@
     },
     "copyright": "© {{year}} CDL. All rights reserved.",
     "phone": "0898 56 75 04",
+    "email": "info@cdl.bg",
     "address": "Bulgaria"
   },
   "errors": {
@@ -412,7 +426,8 @@
     "invalidCredentials": "Invalid email or password",
     "networkError": "Network error. Please try again.",
     "serverError": "Server error. Please try again later.",
-    "notFound": "Page not found"
+    "notFound": "Page not found",
+    "notFoundDescription": "The page you're looking for doesn't exist or has been moved."
   },
   "contact": {
     "title": "Contact Us",
@@ -466,13 +481,29 @@
     },
     "team": {
       "title": "Meet Our Team",
-      "subtitle": "Dedicated professionals committed to your comfort"
+      "subtitle": "Dedicated professionals committed to your comfort",
+      "members": {
+        "ivan": "Ivan Petrov",
+        "maria": "Maria Dimitrova",
+        "georgi": "Georgi Ivanov",
+        "elena": "Elena Todorova"
+      },
+      "roles": {
+        "ceo": "CEO & Founder",
+        "sales": "Head of Sales",
+        "technical": "Technical Director",
+        "support": "Customer Support Lead"
+      }
     },
     "stats": {
       "customers": "Happy Customers",
       "products": "Products Available",
       "years": "Years in Business",
       "support": "24/7 Support"
+    },
+    "cta": {
+      "title": "Ready to improve your comfort?",
+      "subtitle": "Browse our selection of premium HVAC products."
     }
   },
   "admin": {
@@ -551,7 +582,8 @@
       "reject": "Reject",
       "approveAsOfficial": "Approve as Official",
       "flag": "Flag for Review",
-      "official": "Official"
+      "official": "Official",
+      "reviewedBy": "By"
     }
   },
   "promotions": {
@@ -717,7 +749,8 @@
     "bracketsMounts": "Brackets & Mounts",
     "drainPumps": "Drain Pumps",
     "filters": "Filters",
-    "thermostats": "Thermostats"
+    "thermostats": "Thermostats",
+    "comingSoon": "Category list coming soon..."
   },
   "wishlist": {
     "title": "Wishlist",
@@ -907,7 +940,17 @@
       "bestMatch": "Best match",
       "inverter": "Inverter",
       "viewDetails": "View details",
-      "empty": "No products match this configuration. Try a different room size or zone."
+      "viewProduct": "View details for {{name}}",
+      "empty": "No products match this configuration. Try a different room size or zone.",
+      "loadError": "Unable to load recommendations. Please try again.",
+      "btuUnit": "BTU/h",
+      "noiseUnit": "dB"
+    },
+    "preview": {
+      "ariaLabel": "Axonometric preview of a {{area}} m² {{roomType}} in the {{zone}} climate zone",
+      "outside": "Outside",
+      "inside": "Inside",
+      "power": "Power"
     },
     "categories": {
       "eyebrow": "Browse the catalog",
@@ -940,6 +983,252 @@
       "coldClimate": "Rated for sub-zero performance",
       "budgetFriendly": "Strong fit at a friendly price",
       "fallback": "Closest match for your configuration"
+    }
+  },
+  "languages": {
+    "en": "English",
+    "bg": "Bulgarian",
+    "de": "German"
+  },
+  "auth": {
+    "login": {
+      "title": "Log in",
+      "subtitle": "Access your ClimaSite account",
+      "email": "Email",
+      "password": "Password",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "submit": "Log in",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up"
+    },
+    "register": {
+      "title": "Create Account",
+      "subtitle": "Join ClimaSite",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "passwordRequirements": "Use at least 8 characters with uppercase, lowercase, number, and symbol.",
+      "terms": "I agree to the terms and conditions",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "submit": "Create Account",
+      "success": "Account created successfully. Please log in.",
+      "error": "Registration failed. Please try again."
+    },
+    "forgotPassword": {
+      "title": "Forgot Password",
+      "subtitle": "Enter your email and we will send reset instructions.",
+      "email": "Email",
+      "submit": "Send reset link",
+      "backToLogin": "Back to login",
+      "success": "If an account exists for this email, reset instructions have been sent."
+    },
+    "resetPassword": {
+      "title": "Reset Password",
+      "newPassword": "New Password",
+      "confirmNewPassword": "Confirm New Password",
+      "reset": "Reset Password",
+      "success": "Password reset successfully.",
+      "error": "Failed to reset password. Please try again."
+    },
+    "validation": {
+      "emailRequired": "Email is required",
+      "emailInvalid": "Enter a valid email address",
+      "passwordRequired": "Password is required"
+    },
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "logout": "Log out"
+  },
+  "products": {
+    "title": "Products",
+    "all": "All Products",
+    "searchResults": "Search results",
+    "itemsFound": "{{count}} items found",
+    "noImage": "No image",
+    "noProducts": "No products found",
+    "outOfStock": "Out of stock",
+    "onSale": "On sale",
+    "freeShipping": "Free shipping",
+    "filter_sidebar": "Product filters",
+    "view": {
+      "grid": "Grid view",
+      "list": "List view",
+      "options": "View options"
+    },
+    "sort": {
+      "title": "Sort by",
+      "newest": "Newest",
+      "priceAsc": "Price: low to high",
+      "priceDesc": "Price: high to low",
+      "nameAsc": "Name: A to Z",
+      "nameDesc": "Name: Z to A"
+    },
+    "filters": {
+      "title": "Filters",
+      "brand": "Brand",
+      "priceRange": "Price range",
+      "minPrice": "Min price",
+      "maxPrice": "Max price",
+      "minPriceLabel": "Minimum price",
+      "maxPriceLabel": "Maximum price",
+      "priceFilterHint": "Filter products by price range",
+      "inStock": "In stock only",
+      "clearAll": "Clear all filters"
+    },
+    "details": {
+      "addToCart": "Add to cart",
+      "addToWishlist": "Add to wishlist",
+      "removeFromWishlist": "Remove from wishlist",
+      "description": "Description",
+      "specifications": "Specifications",
+      "reviews": "Reviews",
+      "features": "Features",
+      "inStock": "In stock",
+      "outOfStock": "Out of stock",
+      "quantity": "Quantity",
+      "decreaseQuantity": "Decrease quantity",
+      "increaseQuantity": "Increase quantity",
+      "sku": "SKU",
+      "model": "Model",
+      "noDescription": "No description available.",
+      "noSpecifications": "No specifications available."
+    },
+    "error": {
+      "tryAgain": "Please try again.",
+      "loadFailed": "Failed to load products"
+    },
+    "stock": {
+      "inStock": "In stock",
+      "lowStock": "Only {{count}} left",
+      "outOfStock": "Out of stock"
+    },
+    "comparison": {
+      "addToCompare": "Add to compare",
+      "removeFromCompare": "Remove from compare"
+    },
+    "consumables": {
+      "title": "Consumables"
+    },
+    "similar": {
+      "title": "Similar products"
+    },
+    "variants": {
+      "priceRange": "Price range"
+    },
+    "warranty": {
+      "title": "Warranty"
+    },
+    "returnPolicy": {
+      "days": "{{count}} day return policy"
+    },
+    "recentlyViewed": {
+      "title": "Recently viewed",
+      "clearHistory": "Clear history"
+    },
+    "share": {
+      "title": "Share",
+      "copyLink": "Copy link",
+      "copied": "Copied",
+      "shareVia": "Share via"
+    },
+    "frequentlyBought": {
+      "title": "Frequently bought together",
+      "subtitle": "Complete your setup with these recommended items.",
+      "included": "Included",
+      "totalItems": "Total items",
+      "bundleSavings": "Bundle savings",
+      "bundlePrice": "Bundle price",
+      "addBundle": "Add bundle to cart"
+    },
+    "financing": {
+      "title": "Financing options",
+      "zeroInterest": "0% interest",
+      "monthlyFrom": "From {{amount}}/month",
+      "months": "{{count}} months",
+      "interestRate": "{{rate}}% interest",
+      "monthlyPayment": "Monthly payment",
+      "totalCost": "Total cost",
+      "interest": "Interest",
+      "disclaimer": "*Representative example. Subject to credit approval. Terms and conditions apply."
+    },
+    "installation": {
+      "title": "Installation Service",
+      "subtitle": "Professional installation by certified technicians",
+      "recommended": "Recommended",
+      "fastest": "Fastest",
+      "estimatedTime": "{{days}} days",
+      "select": "Select",
+      "selected": "Selected",
+      "requestTitle": "Request installation",
+      "customerName": "Name",
+      "customerEmail": "Email",
+      "customerPhone": "Phone",
+      "namePlaceholder": "Enter your name",
+      "emailPlaceholder": "Enter your email",
+      "phonePlaceholder": "Enter your phone",
+      "address": "Address",
+      "addressPlaceholder": "Street address",
+      "addressLine2": "Address line 2",
+      "addressLine2Placeholder": "Apartment, suite, etc.",
+      "city": "City",
+      "cityPlaceholder": "City",
+      "postalCode": "Postal code",
+      "postalCodePlaceholder": "Postal code",
+      "country": "Country",
+      "selectCountry": "Select country",
+      "preferredDate": "Preferred date",
+      "preferredTime": "Preferred time",
+      "anyTime": "Any time",
+      "morning": "Morning",
+      "afternoon": "Afternoon",
+      "evening": "Evening",
+      "timeSlots": {
+        "morning": "09:00 - 12:00",
+        "afternoon": "12:00 - 17:00",
+        "evening": "17:00 - 20:00"
+      },
+      "notes": "Notes",
+      "notesPlaceholder": "Additional installation notes",
+      "selectedService": "Selected service",
+      "estimatedCost": "Estimated cost",
+      "submitRequest": "Submit request",
+      "submitting": "Submitting...",
+      "requestSubmitted": "Request submitted",
+      "requestSubmittedMessage": "We will contact you to confirm installation details.",
+      "requestInstallation": "Request installation",
+      "notAvailable": "Installation is not available for this product.",
+      "available": "Installation available"
+    },
+    "qa": {
+      "title": "Questions & Answers",
+      "totalQuestions": "{{count}} questions",
+      "answeredQuestions": "{{count}} answered",
+      "askQuestion": "Ask a question",
+      "yourQuestion": "Your question",
+      "questionPlaceholder": "Ask about this product",
+      "submitQuestion": "Submit question",
+      "submitting": "Submitting...",
+      "questionSubmittedSuccess": "Question submitted for review.",
+      "loginToAsk": "Log in to ask a question",
+      "loginNow": "Log in now",
+      "anonymous": "Anonymous",
+      "helpful": "Helpful",
+      "answer": "Answer",
+      "loginToAnswer": "Log in to answer",
+      "answerPlaceholder": "Write an answer",
+      "submitAnswer": "Submit answer",
+      "communityMember": "Community member",
+      "officialAnswer": "Official answer",
+      "noAnswersYet": "No answers yet",
+      "noQuestionsYet": "No questions yet",
+      "beFirstToAsk": "Be the first to ask a question.",
+      "errors": {
+        "questionTooShort": "Question must be at least 10 characters."
+      }
     }
   }
 }

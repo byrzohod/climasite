@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { AddressService } from '../../../core/services/address.service';
-import { SavedAddress, CreateAddressRequest, AddressType } from '../../../core/models/address.model';
+import { SavedAddress, CreateAddressRequest } from '../../../core/models/address.model';
 
 @Component({
   selector: 'app-addresses',
@@ -92,7 +92,7 @@ import { SavedAddress, CreateAddressRequest, AddressType } from '../../../core/m
           <div class="modal-content" (click)="$event.stopPropagation()" data-testid="address-modal">
             <div class="modal-header">
               <h2>{{ editingAddress() ? ('account.addresses.editAddress' | translate) : ('account.addresses.addAddress' | translate) }}</h2>
-              <button class="close-btn" (click)="closeModal()" aria-label="Close">&times;</button>
+              <button class="close-btn" (click)="closeModal()" [attr.aria-label]="'common.close' | translate">&times;</button>
             </div>
             <form (ngSubmit)="saveAddress()" #addressForm="ngForm">
               <div class="form-grid">

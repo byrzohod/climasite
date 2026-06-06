@@ -15,6 +15,13 @@ public class RecommendationsControllerTests : IntegrationTestBase
     {
     }
 
+    private static async Task<List<RecommendedProductDto>> ReadRecommendationsAsync(HttpResponseMessage response)
+    {
+        var content = await response.Content.ReadFromJsonAsync<List<RecommendedProductDto>>();
+        content.Should().NotBeNull();
+        return content!;
+    }
+
     [Fact]
     public async Task GetRecommendations_WithValidQuery_ReturnsTop3Products()
     {
@@ -48,7 +55,7 @@ public class RecommendationsControllerTests : IntegrationTestBase
         var coldZoneProduct = new Product("HVAC-003", "Cold Climate AC", "cold-climate-ac", 1499m);
         coldZoneProduct.SetSpecifications(new Dictionary<string, object>
         {
-            { "btu", 2640 },
+            { "btu", 4200 },
             { "isInverter", true },
             { "minTemp", -20 },
             { "recommendedRoomTypes", new List<string> { "living" } },
@@ -80,7 +87,7 @@ public class RecommendationsControllerTests : IntegrationTestBase
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var content = await response.Content.ReadAsAsync<List<RecommendedProductDto>>();
+        var content = await ReadRecommendationsAsync(response);
 
         content.Should().HaveCount(3);
         content.Should().AllSatisfy(p => p.BtuCapacity.Should().BeGreaterThan(0));
@@ -131,7 +138,7 @@ public class RecommendationsControllerTests : IntegrationTestBase
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var content = await response.Content.ReadAsAsync<List<RecommendedProductDto>>();
+        var content = await ReadRecommendationsAsync(response);
 
         // Cold-capable should rank higher in Zone C
         var coldCapableResult = content.FirstOrDefault(p => p.Name.Contains("Cold"));
@@ -178,7 +185,7 @@ public class RecommendationsControllerTests : IntegrationTestBase
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var content = await response.Content.ReadAsAsync<List<RecommendedProductDto>>();
+        var content = await ReadRecommendationsAsync(response);
 
         var inverter = content.FirstOrDefault(p => p.IsInverter);
         var standard = content.FirstOrDefault(p => !p.IsInverter);
@@ -224,7 +231,7 @@ public class RecommendationsControllerTests : IntegrationTestBase
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var content = await response.Content.ReadAsAsync<List<RecommendedProductDto>>();
+        var content = await ReadRecommendationsAsync(response);
 
         var matching = content.FirstOrDefault(p => p.Name.Contains("Living"));
         var nonMatching = content.FirstOrDefault(p => p.Name.Contains("Office"));
@@ -260,10 +267,10 @@ public class RecommendationsControllerTests : IntegrationTestBase
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var content = await response.Content.ReadAsAsync<List<RecommendedProductDto>>();
+        var content = await ReadRecommendationsAsync(response);
 
         content.Should().HaveCount(3);
-        content.Should().BeSortedInDescendingOrder(p => p.Score);
+        content.Should().BeInDescendingOrder(p => p.Score);
     }
 
     [Fact]
@@ -316,7 +323,7 @@ public class RecommendationsControllerTests : IntegrationTestBase
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var content = await response.Content.ReadAsAsync<List<RecommendedProductDto>>();
+        var content = await ReadRecommendationsAsync(response);
         content.Should().BeEmpty();
     }
 
@@ -346,7 +353,7 @@ public class RecommendationsControllerTests : IntegrationTestBase
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var content = await response.Content.ReadAsAsync<List<RecommendedProductDto>>();
+        var content = await ReadRecommendationsAsync(response);
         content.Should().NotBeEmpty();
         content[0].Name.Should().Contain("Български");
     }

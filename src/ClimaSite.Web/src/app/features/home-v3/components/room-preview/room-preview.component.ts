@@ -1,5 +1,34 @@
 import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, effect, inject, input, viewChild } from '@angular/core';
+import { TranslateModule } from '@ngx-translate/core';
 import type { ClimateZone, RoomType } from '../../models/home-v3.models';
+
+interface PaintSet {
+  top: string;
+  side: string;
+  front: string;
+}
+
+interface CanvasPalette {
+  background: string;
+  glow: string;
+  glowTransparent: string;
+  stroke: string;
+  strokeStrong: string;
+  floor: string;
+  wallBack: string;
+  wallSide: string;
+  ac: PaintSet;
+  ledCool: string;
+  ledWarm: string;
+  flowCool: string;
+  flowWarm: string;
+  furniture: {
+    wood: PaintSet;
+    fabric: PaintSet;
+    light: PaintSet;
+    dark: PaintSet;
+  };
+}
 
 /**
  * Canvas 2D axonometric room preview.
@@ -18,13 +47,31 @@ import type { ClimateZone, RoomType } from '../../models/home-v3.models';
   selector: 'app-room-preview',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [TranslateModule],
   template: `
-    <div class="preview-frame" role="img" [attr.aria-label]="ariaLabel()">
+    <div
+      class="preview-frame"
+      role="img"
+      [attr.aria-label]="'homeV3.preview.ariaLabel' | translate: {
+        area: area(),
+        roomType: ('homeV3.roomType.' + roomType() | translate),
+        zone: ('homeV3.zone.' + zone() + '.name' | translate)
+      }"
+    >
       <canvas #canvas width="900" height="620"></canvas>
       <div class="stat-chips">
-        <div class="chip"><span class="chip-label">Outside</span><span class="chip-value">{{ outsideC() }}°C</span></div>
-        <div class="chip"><span class="chip-label">Inside</span><span class="chip-value">{{ insideC() }}°C</span></div>
-        <div class="chip"><span class="chip-label">Power</span><span class="chip-value">{{ watts() }} W</span></div>
+        <div class="chip">
+          <span class="chip-label">{{ 'homeV3.preview.outside' | translate }}</span>
+          <span class="chip-value">{{ outsideC() }}°C</span>
+        </div>
+        <div class="chip">
+          <span class="chip-label">{{ 'homeV3.preview.inside' | translate }}</span>
+          <span class="chip-value">{{ insideC() }}°C</span>
+        </div>
+        <div class="chip">
+          <span class="chip-label">{{ 'homeV3.preview.power' | translate }}</span>
+          <span class="chip-value">{{ watts() }} W</span>
+        </div>
       </div>
     </div>
   `,
@@ -55,10 +102,6 @@ export class RoomPreviewComponent implements OnDestroy {
       // Schedule a render after the canvas is in the DOM.
       queueMicrotask(() => this.render());
     });
-  }
-
-  ariaLabel(): string {
-    return `Axonometric preview of a ${this.area()} square metre ${this.roomType()} room in climate zone ${this.zone()}`;
   }
 
   ngOnDestroy(): void {
@@ -102,15 +145,16 @@ export class RoomPreviewComponent implements OnDestroy {
   }
 
   private draw(ctx: CanvasRenderingContext2D, w: number, h: number, t: number): void {
-    const isDark = this.theme() === 'dark';
+    const palette = this.canvasPalette();
+
     // Background.
-    ctx.fillStyle = isDark ? '#0b0f14' : '#f6f8fb';
+    ctx.fillStyle = palette.background;
     ctx.fillRect(0, 0, w, h);
 
     // Soft radial highlight behind the room.
     const grd = ctx.createRadialGradient(w * 0.55, h * 0.45, 40, w * 0.55, h * 0.45, Math.max(w, h) * 0.7);
-    grd.addColorStop(0, isDark ? 'rgba(76,194,255,0.08)' : 'rgba(20,136,209,0.10)');
-    grd.addColorStop(1, 'rgba(0,0,0,0)');
+    grd.addColorStop(0, palette.glow);
+    grd.addColorStop(1, palette.glowTransparent);
     ctx.fillStyle = grd;
     ctx.fillRect(0, 0, w, h);
 
@@ -122,17 +166,13 @@ export class RoomPreviewComponent implements OnDestroy {
     const cy = h * 0.62;
     const scale = Math.min(42, 260 / side);
 
-    const floorCol = isDark ? '#12202f' : '#e2e8f0';
-    const wallBack = isDark ? '#1a2b3d' : '#f8fafc';
-    const wallSide = isDark ? '#13202e' : '#ecf1f7';
-
     // Floor.
     this.polygon(ctx, [
       this.project(0, 0, 0, cx, cy, scale),
       this.project(side, 0, 0, cx, cy, scale),
       this.project(side, 0, side, cx, cy, scale),
       this.project(0, 0, side, cx, cy, scale),
-    ], floorCol, 'rgba(0,0,0,0.25)');
+    ], palette.floor, palette.stroke);
 
     // Back wall.
     this.polygon(ctx, [
@@ -140,7 +180,7 @@ export class RoomPreviewComponent implements OnDestroy {
       this.project(side, 0, 0, cx, cy, scale),
       this.project(side, height, 0, cx, cy, scale),
       this.project(0, height, 0, cx, cy, scale),
-    ], wallBack, 'rgba(0,0,0,0.3)');
+    ], palette.wallBack, palette.strokeStrong);
 
     // Side wall.
     this.polygon(ctx, [
@@ -148,25 +188,40 @@ export class RoomPreviewComponent implements OnDestroy {
       this.project(side, 0, side, cx, cy, scale),
       this.project(side, height, side, cx, cy, scale),
       this.project(side, height, 0, cx, cy, scale),
-    ], wallSide, 'rgba(0,0,0,0.3)');
+    ], palette.wallSide, palette.strokeStrong);
 
     // Furniture.
-    for (const f of this.furniture(side)) {
-      this.box(ctx, f.wx, f.wy, f.wz, f.px, f.py, f.pz, f.top, f.side, f.front, cx, cy, scale);
+    for (const f of this.furniture(side, palette)) {
+      this.box(ctx, f.wx, f.wy, f.wz, f.px, f.py, f.pz, f.top, f.side, f.front, cx, cy, scale, palette.stroke);
     }
 
     // AC unit on back wall, upper-right.
     const acX = side - 1.8;
     const acY = height - 0.55;
     const acZ = 0.05;
-    this.box(ctx, 1.2, 0.35, 0.25, acX, acY, acZ, '#e6eef8', '#b9c6d6', '#d0dbe8', cx, cy, scale);
+    this.box(
+      ctx,
+      1.2,
+      0.35,
+      0.25,
+      acX,
+      acY,
+      acZ,
+      palette.ac.top,
+      palette.ac.side,
+      palette.ac.front,
+      cx,
+      cy,
+      scale,
+      palette.stroke,
+    );
     // LED stripe.
-    ctx.fillStyle = this.zone() === 'C' ? '#ff8a4c' : '#4cc2ff';
+    ctx.fillStyle = this.zone() === 'C' ? palette.ledWarm : palette.ledCool;
     const [lx, ly] = this.project(acX + 0.15, acY + 0.06, acZ + 0.26, cx, cy, scale);
     ctx.fillRect(lx, ly, 18, 2);
 
     // Airflow lines.
-    const flowCol = this.zone() === 'C' ? 'rgba(255,138,76,0.75)' : 'rgba(76,194,255,0.75)';
+    const flowCol = this.zone() === 'C' ? palette.flowWarm : palette.flowCool;
     ctx.strokeStyle = flowCol;
     ctx.lineWidth = 2;
     for (let i = 0; i < 5; i++) {
@@ -208,6 +263,7 @@ export class RoomPreviewComponent implements OnDestroy {
     px: number, py: number, pz: number,
     top: string, side: string, front: string,
     cx: number, cy: number, scale: number,
+    stroke: string,
   ): void {
     // Top face.
     this.polygon(ctx, [
@@ -215,67 +271,109 @@ export class RoomPreviewComponent implements OnDestroy {
       this.project(px + wx, py + wy, pz,      cx, cy, scale),
       this.project(px + wx, py + wy, pz + wz, cx, cy, scale),
       this.project(px,      py + wy, pz + wz, cx, cy, scale),
-    ], top, 'rgba(0,0,0,0.25)');
+    ], top, stroke);
     // Front face.
     this.polygon(ctx, [
       this.project(px,      py,      pz + wz, cx, cy, scale),
       this.project(px + wx, py,      pz + wz, cx, cy, scale),
       this.project(px + wx, py + wy, pz + wz, cx, cy, scale),
       this.project(px,      py + wy, pz + wz, cx, cy, scale),
-    ], front, 'rgba(0,0,0,0.25)');
+    ], front, stroke);
     // Right face.
     this.polygon(ctx, [
       this.project(px + wx, py,      pz,      cx, cy, scale),
       this.project(px + wx, py,      pz + wz, cx, cy, scale),
       this.project(px + wx, py + wy, pz + wz, cx, cy, scale),
       this.project(px + wx, py + wy, pz,      cx, cy, scale),
-    ], side, 'rgba(0,0,0,0.25)');
+    ], side, stroke);
   }
 
   /** Furniture recipes per room type. Positions are in metres inside the room box. */
-  private furniture(side: number): Array<{
+  private furniture(side: number, palette: CanvasPalette): Array<{
     wx: number; wy: number; wz: number;
     px: number; py: number; pz: number;
     top: string; side: string; front: string;
   }> {
-    const palette = {
-      wood: { top: '#8b6b48', side: '#6d5138', front: '#7a5d42' },
-      fabric: { top: '#4b6584', side: '#334764', front: '#3d5373' },
-      white: { top: '#e2e8f0', side: '#b5bfcc', front: '#cbd3df' },
-      dark: { top: '#2d3a4b', side: '#1e2a38', front: '#26323f' },
-    };
+    const furniture = palette.furniture;
     const type = this.roomType();
     const mid = side / 2;
     if (type === 'living') {
       return [
-        { wx: 2.2, wy: 0.5, wz: 0.9, px: 0.6, py: 0, pz: mid + 0.3, ...palette.fabric },
-        { wx: 1.0, wy: 0.4, wz: 0.5, px: 1.2, py: 0, pz: mid - 0.5, ...palette.wood },
-        { wx: 0.9, wy: 1.6, wz: 0.35, px: side - 1.1, py: 0, pz: 0.2, ...palette.wood },
-        { wx: 0.5, wy: 1.1, wz: 0.5, px: 0.2, py: 0, pz: mid, ...palette.dark },
+        { wx: 2.2, wy: 0.5, wz: 0.9, px: 0.6, py: 0, pz: mid + 0.3, ...furniture.fabric },
+        { wx: 1.0, wy: 0.4, wz: 0.5, px: 1.2, py: 0, pz: mid - 0.5, ...furniture.wood },
+        { wx: 0.9, wy: 1.6, wz: 0.35, px: side - 1.1, py: 0, pz: 0.2, ...furniture.wood },
+        { wx: 0.5, wy: 1.1, wz: 0.5, px: 0.2, py: 0, pz: mid, ...furniture.dark },
       ];
     }
     if (type === 'bedroom') {
       return [
-        { wx: 1.8, wy: 0.55, wz: 2.1, px: 0.6, py: 0, pz: mid - 0.2, ...palette.fabric },
-        { wx: 0.45, wy: 0.55, wz: 0.45, px: 0.1, py: 0, pz: mid - 0.4, ...palette.wood },
-        { wx: 0.45, wy: 0.55, wz: 0.45, px: 2.55, py: 0, pz: mid - 0.4, ...palette.wood },
-        { wx: 2.0, wy: 1.3, wz: 0.15, px: 0.5, py: 0, pz: mid - 0.35, ...palette.dark },
+        { wx: 1.8, wy: 0.55, wz: 2.1, px: 0.6, py: 0, pz: mid - 0.2, ...furniture.fabric },
+        { wx: 0.45, wy: 0.55, wz: 0.45, px: 0.1, py: 0, pz: mid - 0.4, ...furniture.wood },
+        { wx: 0.45, wy: 0.55, wz: 0.45, px: 2.55, py: 0, pz: mid - 0.4, ...furniture.wood },
+        { wx: 2.0, wy: 1.3, wz: 0.15, px: 0.5, py: 0, pz: mid - 0.35, ...furniture.dark },
       ];
     }
     if (type === 'office') {
       return [
-        { wx: 1.6, wy: 0.75, wz: 0.8, px: 0.7, py: 0, pz: 0.8, ...palette.wood },
-        { wx: 0.6, wy: 1.1, wz: 0.6, px: 1.2, py: 0, pz: 1.8, ...palette.dark },
-        { wx: 1.1, wy: 0.5, wz: 0.08, px: 0.9, py: 0.75, pz: 1.0, ...palette.dark },
-        { wx: 0.9, wy: 1.8, wz: 0.4, px: side - 1.1, py: 0, pz: 0.2, ...palette.wood },
+        { wx: 1.6, wy: 0.75, wz: 0.8, px: 0.7, py: 0, pz: 0.8, ...furniture.wood },
+        { wx: 0.6, wy: 1.1, wz: 0.6, px: 1.2, py: 0, pz: 1.8, ...furniture.dark },
+        { wx: 1.1, wy: 0.5, wz: 0.08, px: 0.9, py: 0.75, pz: 1.0, ...furniture.dark },
+        { wx: 0.9, wy: 1.8, wz: 0.4, px: side - 1.1, py: 0, pz: 0.2, ...furniture.wood },
       ];
     }
     // commercial — open layout with desks
     return [
-      { wx: 1.2, wy: 0.75, wz: 0.6, px: 0.6, py: 0, pz: 0.6, ...palette.white },
-      { wx: 1.2, wy: 0.75, wz: 0.6, px: 0.6, py: 0, pz: 2.0, ...palette.white },
-      { wx: 1.2, wy: 0.75, wz: 0.6, px: 2.2, py: 0, pz: 0.6, ...palette.white },
-      { wx: 1.2, wy: 0.75, wz: 0.6, px: 2.2, py: 0, pz: 2.0, ...palette.white },
+      { wx: 1.2, wy: 0.75, wz: 0.6, px: 0.6, py: 0, pz: 0.6, ...furniture.light },
+      { wx: 1.2, wy: 0.75, wz: 0.6, px: 0.6, py: 0, pz: 2.0, ...furniture.light },
+      { wx: 1.2, wy: 0.75, wz: 0.6, px: 2.2, py: 0, pz: 0.6, ...furniture.light },
+      { wx: 1.2, wy: 0.75, wz: 0.6, px: 2.2, py: 0, pz: 2.0, ...furniture.light },
     ];
+  }
+
+  private canvasPalette(): CanvasPalette {
+    const styles = getComputedStyle(this.hostRef.nativeElement);
+    const token = (name: string) => styles.getPropertyValue(name).trim();
+
+    return {
+      background: token('--home-v3-canvas-bg'),
+      glow: token('--home-v3-canvas-glow'),
+      glowTransparent: token('--home-v3-canvas-glow-transparent'),
+      stroke: token('--home-v3-canvas-stroke'),
+      strokeStrong: token('--home-v3-canvas-stroke-strong'),
+      floor: token('--home-v3-floor'),
+      wallBack: token('--home-v3-wall-back'),
+      wallSide: token('--home-v3-wall-side'),
+      ac: {
+        top: token('--home-v3-ac-top'),
+        side: token('--home-v3-ac-side'),
+        front: token('--home-v3-ac-front'),
+      },
+      ledCool: token('--home-v3-led-cool'),
+      ledWarm: token('--home-v3-led-warm'),
+      flowCool: token('--home-v3-flow-cool'),
+      flowWarm: token('--home-v3-flow-warm'),
+      furniture: {
+        wood: {
+          top: token('--home-v3-furniture-wood-top'),
+          side: token('--home-v3-furniture-wood-side'),
+          front: token('--home-v3-furniture-wood-front'),
+        },
+        fabric: {
+          top: token('--home-v3-furniture-fabric-top'),
+          side: token('--home-v3-furniture-fabric-side'),
+          front: token('--home-v3-furniture-fabric-front'),
+        },
+        light: {
+          top: token('--home-v3-furniture-light-top'),
+          side: token('--home-v3-furniture-light-side'),
+          front: token('--home-v3-furniture-light-front'),
+        },
+        dark: {
+          top: token('--home-v3-furniture-dark-top'),
+          side: token('--home-v3-furniture-dark-side'),
+          front: token('--home-v3-furniture-dark-front'),
+        },
+      },
+    };
   }
 }

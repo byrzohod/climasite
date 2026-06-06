@@ -5,7 +5,7 @@ import { TranslateModule } from '@ngx-translate/core';
 
 import { CheckoutService } from '../../../core/services/checkout.service';
 import { ConfettiService } from '../../../core/services/confetti.service';
-import { Order, OrderStatus, ORDER_STATUS_CONFIG, Address } from '../../../core/models/order.model';
+import { Order } from '../../../core/models/order.model';
 import { IconComponent } from '../../../shared/components/icon';
 
 /**
@@ -271,7 +271,7 @@ import { IconComponent } from '../../../shared/components/icon';
               {{ 'checkout.orderConfirmation.contactInfo' | translate }}
               <a href="tel:+35988812345">{{ 'footer.phone' | translate }}</a>
               {{ 'checkout.orderConfirmation.or' | translate }}
-              <a href="mailto:support@climasite.bg">support&#64;climasite.bg</a>
+              <a href="mailto:support@climasite.bg">{{ 'checkout.orderConfirmation.supportEmail' | translate }}</a>
             </p>
           </div>
         </div>

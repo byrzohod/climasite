@@ -4,6 +4,7 @@ using ClimaSite.Application.Features.Products.Queries;
 using ClimaSite.Core.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace ClimaSite.Api.Controllers;
 
@@ -218,6 +219,7 @@ public class ProductsController : ControllerBase
     /// Uses rules-based weighted scoring algorithm to return top 3 matches.
     /// </summary>
     [HttpGet("recommendations")]
+    [OutputCache(NoStore = true)]
     [ProducesResponseType(typeof(List<RecommendedProductDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetRecommendations(

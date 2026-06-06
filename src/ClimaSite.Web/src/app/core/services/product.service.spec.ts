@@ -4,11 +4,45 @@ import { ProductService } from './product.service';
 import { LanguageService } from './language.service';
 import { environment } from '../../../environments/environment';
 import { signal } from '@angular/core';
+import { Product, ProductBrief } from '../models/product.model';
 
 describe('ProductService', () => {
   let service: ProductService;
   let httpMock: HttpTestingController;
   let languageServiceMock: jasmine.SpyObj<LanguageService>;
+
+  const createProduct = (overrides: Partial<Product> = {}): Product => ({
+    id: '1',
+    sku: 'SKU-1',
+    name: 'Test Product',
+    slug: 'test-product',
+    basePrice: 100,
+    isOnSale: false,
+    discountPercentage: 0,
+    isActive: true,
+    isFeatured: false,
+    averageRating: 0,
+    reviewCount: 0,
+    images: [],
+    variants: [],
+    warrantyMonths: 12,
+    requiresInstallation: false,
+    createdAt: '2026-01-01T00:00:00Z',
+    ...overrides
+  });
+
+  const createProductBrief = (overrides: Partial<ProductBrief> = {}): ProductBrief => ({
+    id: '1',
+    name: 'Featured Product',
+    slug: 'featured-product',
+    basePrice: 100,
+    isOnSale: false,
+    discountPercentage: 0,
+    averageRating: 0,
+    reviewCount: 0,
+    inStock: true,
+    ...overrides
+  });
 
   beforeEach(() => {
     languageServiceMock = jasmine.createSpyObj('LanguageService', [], {
@@ -85,10 +119,10 @@ describe('ProductService', () => {
 
   describe('getProductBySlug', () => {
     it('should fetch product by slug without lang param when language is English', () => {
-      const mockProduct = { id: '1', name: 'Test Product', slug: 'test-product' };
+      const mockProduct = createProduct();
 
       service.getProductBySlug('test-product').subscribe(result => {
-        expect(result).toEqual(mockProduct as any);
+        expect(result).toEqual(mockProduct);
       });
 
       const req = httpMock.expectOne(`${environment.apiUrl}/api/products/test-product`);
@@ -102,10 +136,10 @@ describe('ProductService', () => {
         value: signal('de')
       });
 
-      const mockProduct = { id: '1', name: 'Test Produkt', slug: 'test-product' };
+      const mockProduct = createProduct({ name: 'Test Produkt' });
 
       service.getProductBySlug('test-product').subscribe(result => {
-        expect(result).toEqual(mockProduct as any);
+        expect(result).toEqual(mockProduct);
       });
 
       const req = httpMock.expectOne(req => req.url === `${environment.apiUrl}/api/products/test-product`);
@@ -117,10 +151,10 @@ describe('ProductService', () => {
 
   describe('getFeaturedProducts', () => {
     it('should fetch featured products with count', () => {
-      const mockProducts = [{ id: '1', name: 'Featured Product' }];
+      const mockProducts = [createProductBrief()];
 
       service.getFeaturedProducts(4).subscribe(result => {
-        expect(result).toEqual(mockProducts as any);
+        expect(result).toEqual(mockProducts);
       });
 
       const req = httpMock.expectOne(req => req.url === `${environment.apiUrl}/api/products/featured`);
@@ -175,10 +209,10 @@ describe('ProductService', () => {
 
   describe('getRelatedProducts', () => {
     it('should fetch related products', () => {
-      const mockProducts = [{ id: '2', name: 'Related Product' }];
+      const mockProducts = [createProductBrief({ id: '2', name: 'Related Product' })];
 
       service.getRelatedProducts('product-123', 4).subscribe(result => {
-        expect(result).toEqual(mockProducts as any);
+        expect(result).toEqual(mockProducts);
       });
 
       const req = httpMock.expectOne(req => req.url === `${environment.apiUrl}/api/products/product-123/related`);

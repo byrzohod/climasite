@@ -12,7 +12,7 @@ import { PaymentService } from '../../core/services/payment.service';
 import { ConfettiService } from '../../core/services/confetti.service';
 import { Address } from '../../core/models/order.model';
 import { SavedAddress } from '../../core/models/address.model';
-import { IconComponent, ICON_REGISTRY } from '../../shared/components/icon';
+import { IconComponent } from '../../shared/components/icon';
 
 @Component({
   selector: 'app-checkout',
@@ -146,11 +146,11 @@ import { IconComponent, ICON_REGISTRY } from '../../shared/components/icon';
                     <div class="form-group" data-testid="shipping-country">
                       <label for="country">{{ 'checkout.shipping.country' | translate }}</label>
                       <select id="country" formControlName="country">
-                        <option value="Bulgaria">Bulgaria</option>
-                        <option value="Germany">Germany</option>
-                        <option value="Austria">Austria</option>
-                        <option value="Romania">Romania</option>
-                        <option value="Greece">Greece</option>
+                        <option value="Bulgaria">{{ 'countries.bulgaria' | translate }}</option>
+                        <option value="Germany">{{ 'countries.germany' | translate }}</option>
+                        <option value="Austria">{{ 'countries.austria' | translate }}</option>
+                        <option value="Romania">{{ 'countries.romania' | translate }}</option>
+                        <option value="Greece">{{ 'countries.greece' | translate }}</option>
                       </select>
                     </div>
                   </div>
@@ -1196,12 +1196,12 @@ ngOnInit(): void {
             }
           },
           error: (err) => {
-            console.error('Order creation failed after payment:', err);
+            this.checkoutService.setError(err.error?.message || 'Failed to place order');
           }
         });
-      } catch (error: any) {
-        console.error('Payment error:', error);
-        this.checkoutService.setError(error.message || 'Payment failed');
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Payment failed';
+        this.checkoutService.setError(message);
       }
     } else {
 // Non-card payment (PayPal, bank transfer, etc.)

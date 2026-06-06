@@ -1,7 +1,7 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { CheckoutService, CheckoutStep } from './checkout.service';
+import { CheckoutService } from './checkout.service';
 import { Order, Address } from '../models/order.model';
 import { environment } from '../../../environments/environment';
 
@@ -227,7 +227,7 @@ describe('CheckoutService', () => {
     }));
 
     it('should throw error without shipping address', () => {
-      service.setShippingAddress(null as any);
+      service.setShippingAddress(null as unknown as Address);
 
       expect(() => service.createOrder('test@example.com')).toThrow();
       expect(service.error()).toBe('Shipping address is required');

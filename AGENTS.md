@@ -94,10 +94,13 @@ climasite/
 ## COMMANDS
 
 ```bash
+# Shared local infra (default for local app/E2E)
+cd ~/Projects/shared-infra && docker compose up -d postgres redis
+
 # Backend
 dotnet build
 dotnet test
-dotnet run --project src/ClimaSite.Api  # localhost:5000
+dotnet run --project src/ClimaSite.Api --launch-profile http  # localhost:5029
 
 # Frontend
 cd src/ClimaSite.Web
@@ -111,6 +114,17 @@ npx playwright test
 # Full test suite
 dotnet test && cd src/ClimaSite.Web && ng test --watch=false --browsers=ChromeHeadless
 ```
+
+## CODEX WORKFLOW MEMORY
+
+- Repo-local Claude skills in `.claude/skills/` have Codex-compatible summaries in `.codex/skills/`.
+- For local development and E2E app runs, use shared infra at `~/Projects/shared-infra`, not project-local compose, unless a service is unique to this repo.
+- Shared Postgres runs on `localhost:5432`; use a project database named `climasite`. Shared Redis runs on `localhost:6379`.
+- For local shared Postgres, prefer `ConnectionStrings__DefaultConnection` with `SSL Mode=Disable`; do not use `DATABASE_URL` for localhost because the app's URL converter treats non-Railway hosts as SSL-required.
+- Integration tests must NOT use shared infra. They use isolated Testcontainers.
+- Before PR merge: run backend tests, Angular unit tests, production build, lint, E2E against real app/services, then code review and security review.
+- UI changes require light/dark and responsive visual QA. User-facing text must be i18n and interactive elements need `data-testid`.
+- Treat repo-wide lint debt separately from branch-introduced blockers, but report both clearly.
 
 ## CHILD AGENTS.md
 

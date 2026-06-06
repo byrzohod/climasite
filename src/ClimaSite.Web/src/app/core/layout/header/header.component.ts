@@ -1,5 +1,4 @@
-import { Component, inject, signal, HostListener, ElementRef, ViewChild, OnDestroy, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { Component, inject, signal, HostListener, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -42,7 +41,7 @@ import { AuthService } from '../../../auth/services/auth.service';
                 <path d="M3 4a2 2 0 00-2 2v1.161l8.441 4.221a1.25 1.25 0 001.118 0L19 7.162V6a2 2 0 00-2-2H3z"/>
                 <path d="M19 8.839l-7.77 3.885a2.75 2.75 0 01-2.46 0L1 8.839V14a2 2 0 002 2h14a2 2 0 002-2V8.839z"/>
               </svg>
-              info&#64;cdl.bg
+              {{ 'footer.email' | translate }}
             </a>
           </div>
           <div class="top-bar-actions">
@@ -317,7 +316,7 @@ import { AuthService } from '../../../auth/services/auth.service';
           <a routerLink="/" class="mobile-nav-link" (click)="closeMobileMenu()">{{ 'nav.home' | translate }}</a>
           <a routerLink="/promotions" class="mobile-nav-link mobile-nav-link--promo" (click)="closeMobileMenu()">
             {{ 'nav.promotions' | translate }}
-            <span class="promo-badge">Hot</span>
+            <span class="promo-badge">{{ 'nav.hot' | translate }}</span>
           </a>
           <a routerLink="/products" class="mobile-nav-link" (click)="closeMobileMenu()">{{ 'nav.products' | translate }}</a>
           <a routerLink="/brands" class="mobile-nav-link" (click)="closeMobileMenu()">{{ 'nav.brands' | translate }}</a>

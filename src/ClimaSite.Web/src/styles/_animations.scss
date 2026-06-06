@@ -4,6 +4,8 @@
 // Timing, easing, keyframes, and animation utilities
 // =============================================================================
 
+@use 'sass:map';
+
 // -----------------------------------------------------------------------------
 // TIMING TOKENS
 // -----------------------------------------------------------------------------
@@ -52,12 +54,12 @@ $easings: (
 // -----------------------------------------------------------------------------
 :root {
   // Durations
-  --duration-instant: #{map-get($durations, 'instant')};
-  --duration-fast: #{map-get($durations, 'fast')};
-  --duration-normal: #{map-get($durations, 'normal')};
-  --duration-slow: #{map-get($durations, 'slow')};
-  --duration-slower: #{map-get($durations, 'slower')};
-  --duration-slowest: #{map-get($durations, 'slowest')};
+  --duration-instant: #{map.get($durations, 'instant')};
+  --duration-fast: #{map.get($durations, 'fast')};
+  --duration-normal: #{map.get($durations, 'normal')};
+  --duration-slow: #{map.get($durations, 'slow')};
+  --duration-slower: #{map.get($durations, 'slower')};
+  --duration-slowest: #{map.get($durations, 'slowest')};
   
   // Easings
   --ease-linear: linear;

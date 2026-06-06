@@ -11,17 +11,19 @@ import { AuthService } from '../../../../auth/services/auth.service';
   standalone: true,
   imports: [CommonModule, RouterLink, ReactiveFormsModule, TranslateModule],
   template: `
-    <section class="product-qa">
+    <section class="product-qa" data-testid="product-qa">
       <div class="qa-header">
         <h2>{{ 'products.qa.title' | translate }}</h2>
-        <div class="qa-stats" *ngIf="questionsData()">
-          <span class="total">
-            {{ 'products.qa.totalQuestions' | translate: { count: questionsData()!.totalQuestions } }}
-          </span>
-          <span class="answered">
-            {{ 'products.qa.answeredQuestions' | translate: { count: questionsData()!.answeredQuestions } }}
-          </span>
-        </div>
+        @if (questionsData()) {
+          <div class="qa-stats">
+            <span class="total">
+              {{ 'products.qa.totalQuestions' | translate: { count: questionsData()!.totalQuestions } }}
+            </span>
+            <span class="answered">
+              {{ 'products.qa.answeredQuestions' | translate: { count: questionsData()!.answeredQuestions } }}
+            </span>
+          </div>
+        }
       </div>
 
       <!-- Ask Question Form -->
@@ -36,45 +38,54 @@ import { AuthService } from '../../../../auth/services/auth.service';
             {{ 'products.qa.askQuestion' | translate }}
           </button>
 
-          <form
-            *ngIf="showAskForm()"
-            [formGroup]="questionForm"
-            (ngSubmit)="submitQuestion()"
-            class="question-form"
-            data-testid="question-form">
-            <div class="form-group">
-              <label for="questionText">{{ 'products.qa.yourQuestion' | translate }}</label>
-              <textarea
-                id="questionText"
-                formControlName="questionText"
-                [placeholder]="'products.qa.questionPlaceholder' | translate"
-                rows="3"
-                maxlength="2000"
-                data-testid="question-text">
-              </textarea>
-              <span class="char-count">{{ questionForm.get('questionText')?.value?.length || 0 }}/2000</span>
-              <span class="error" *ngIf="questionForm.get('questionText')?.errors?.['minlength']">
-                {{ 'products.qa.errors.questionTooShort' | translate }}
-              </span>
-            </div>
+          @if (showAskForm()) {
+            <form
+              [formGroup]="questionForm"
+              (ngSubmit)="submitQuestion()"
+              class="question-form"
+              data-testid="question-form">
+              <div class="form-group">
+                <label for="questionText">{{ 'products.qa.yourQuestion' | translate }}</label>
+                <textarea
+                  id="questionText"
+                  formControlName="questionText"
+                  [placeholder]="'products.qa.questionPlaceholder' | translate"
+                  rows="3"
+                  maxlength="2000"
+                  data-testid="question-text">
+                </textarea>
+                <span class="char-count">{{ questionForm.get('questionText')?.value?.length || 0 }}/2000</span>
+                @if (questionForm.get('questionText')?.errors?.['minlength']) {
+                  <span class="error">
+                    {{ 'products.qa.errors.questionTooShort' | translate }}
+                  </span>
+                }
+              </div>
 
-            <button
-              type="submit"
-              class="submit-question-btn"
-              [disabled]="questionForm.invalid || submittingQuestion()"
-              data-testid="submit-question-btn">
-              <span *ngIf="submittingQuestion()" class="spinner"></span>
-              {{ (submittingQuestion() ? 'products.qa.submitting' : 'products.qa.submitQuestion') | translate }}
-            </button>
+              <button
+                type="submit"
+                class="submit-question-btn"
+                [disabled]="questionForm.invalid || submittingQuestion()"
+                data-testid="submit-question-btn">
+                @if (submittingQuestion()) {
+                  <span class="spinner"></span>
+                }
+                {{ (submittingQuestion() ? 'products.qa.submitting' : 'products.qa.submitQuestion') | translate }}
+              </button>
 
-            <div class="success-message" *ngIf="questionSubmitted()">
-              {{ 'products.qa.questionSubmittedSuccess' | translate }}
-            </div>
+              @if (questionSubmitted()) {
+                <div class="success-message">
+                  {{ 'products.qa.questionSubmittedSuccess' | translate }}
+                </div>
+              }
 
-            <div class="error-message" *ngIf="questionError()">
-              {{ questionError() }}
-            </div>
-          </form>
+              @if (questionError()) {
+                <div class="error-message">
+                  {{ questionError() }}
+                </div>
+              }
+            </form>
+          }
         } @else {
           <div class="login-prompt" data-testid="qa-login-prompt">
             <span class="icon">?</span>
@@ -87,151 +98,175 @@ import { AuthService } from '../../../../auth/services/auth.service';
       </div>
 
       <!-- Questions List -->
-      <div class="questions-list" *ngIf="questions().length > 0">
-        <div class="question-card" *ngFor="let question of questions(); trackBy: trackQuestion">
-          <div class="question-content">
-            <div class="question-header">
-              <span class="question-icon">Q</span>
-              <span class="asker-name">{{ question.askerName || ('products.qa.anonymous' | translate) }}</span>
-              <span class="question-date">{{ question.createdAt | date:'mediumDate' }}</span>
-            </div>
-            <p class="question-text">{{ question.questionText }}</p>
-            <div class="question-actions">
-              <button
-                class="helpful-btn"
-                (click)="voteQuestion(question)"
-                [disabled]="votedQuestions().has(question.id)">
-                <span class="thumb-icon">&#128077;</span>
-                {{ 'products.qa.helpful' | translate }} ({{ question.helpfulCount }})
-              </button>
-              @if (isAuthenticated()) {
-                <button
-                  class="answer-btn"
-                  (click)="toggleAnswerForm(question.id)"
-                  data-testid="answer-btn">
-                  {{ 'products.qa.answer' | translate }}
-                </button>
-              } @else {
-                <a [routerLink]="['/auth/login']" class="answer-btn login-to-answer" data-testid="login-to-answer">
-                  {{ 'products.qa.loginToAnswer' | translate }}
-                </a>
+      @if (questions().length > 0) {
+        <div class="questions-list">
+          @for (question of questions(); track question.id) {
+            <div class="question-card">
+              <div class="question-content">
+                <div class="question-header">
+                  <span class="question-icon">Q</span>
+                  <span class="asker-name">{{ question.askerName || ('products.qa.anonymous' | translate) }}</span>
+                  <span class="question-date">{{ question.createdAt | date:'mediumDate' }}</span>
+                </div>
+                <p class="question-text">{{ question.questionText }}</p>
+                <div class="question-actions">
+                  <button
+                    class="helpful-btn"
+                    (click)="voteQuestion(question)"
+                    [disabled]="votedQuestions().has(question.id)">
+                    <span class="thumb-icon">&#128077;</span>
+                    {{ 'products.qa.helpful' | translate }} ({{ question.helpfulCount }})
+                  </button>
+                  @if (isAuthenticated()) {
+                    <button
+                      class="answer-btn"
+                      (click)="toggleAnswerForm(question.id)"
+                      data-testid="answer-btn">
+                      {{ 'products.qa.answer' | translate }}
+                    </button>
+                  } @else {
+                    <a [routerLink]="['/auth/login']" class="answer-btn login-to-answer" data-testid="login-to-answer">
+                      {{ 'products.qa.loginToAnswer' | translate }}
+                    </a>
+                  }
+                </div>
+              </div>
+
+              <!-- Answer Form -->
+              @if (showAnswerFormFor() === question.id) {
+                <form
+                  [formGroup]="answerForm"
+                  (ngSubmit)="submitAnswer(question.id)"
+                  class="answer-form"
+                  data-testid="answer-form">
+                  <div class="form-group">
+                    <textarea
+                      formControlName="answerText"
+                      [placeholder]="'products.qa.answerPlaceholder' | translate"
+                      rows="2"
+                      maxlength="5000"
+                      data-testid="answer-text">
+                    </textarea>
+                  </div>
+                  <div class="form-actions">
+                    <button
+                      type="submit"
+                      class="submit-answer-btn"
+                      [disabled]="answerForm.invalid || submittingAnswer()"
+                      data-testid="submit-answer-btn">
+                      @if (submittingAnswer()) {
+                        <span class="spinner"></span>
+                      }
+                      {{ 'products.qa.submitAnswer' | translate }}
+                    </button>
+                    <button
+                      type="button"
+                      class="cancel-answer-btn"
+                      (click)="showAnswerFormFor.set(null)">
+                      {{ 'common.cancel' | translate }}
+                    </button>
+                  </div>
+                  @if (answerError()) {
+                    <div class="error-message">
+                      {{ answerError() }}
+                    </div>
+                  }
+                </form>
+              }
+
+              <!-- Answers -->
+              @if (question.answers.length > 0) {
+                <div class="answers-list">
+                  @for (answer of question.answers; track answer.id) {
+                    <div class="answer-card" [class.official]="answer.isOfficial">
+                      <div class="answer-header">
+                        <span class="answer-icon" [class.official]="answer.isOfficial">A</span>
+                        <span class="answerer-name">
+                          {{ answer.answererName || ('products.qa.communityMember' | translate) }}
+                        </span>
+                        @if (answer.isOfficial) {
+                          <span class="official-badge">
+                            {{ 'products.qa.officialAnswer' | translate }}
+                          </span>
+                        }
+                        <span class="answer-date">{{ answer.createdAt | date:'mediumDate' }}</span>
+                      </div>
+                      <p class="answer-text">{{ answer.answerText }}</p>
+                      <div class="answer-actions">
+                        <button
+                          class="vote-btn helpful"
+                          (click)="voteAnswer(answer, true)"
+                          [disabled]="votedAnswers().has(answer.id)">
+                          <span class="thumb-icon">&#128077;</span> {{ answer.helpfulCount }}
+                        </button>
+                        <button
+                          class="vote-btn unhelpful"
+                          (click)="voteAnswer(answer, false)"
+                          [disabled]="votedAnswers().has(answer.id)">
+                          <span class="thumb-icon">&#128078;</span> {{ answer.unhelpfulCount }}
+                        </button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- No answers yet -->
+              @if (question.answers.length === 0) {
+                <div class="no-answers">
+                  <span class="icon">&#128172;</span>
+                  {{ 'products.qa.noAnswersYet' | translate }}
+                </div>
               }
             </div>
-          </div>
-
-          <!-- Answer Form -->
-          <form
-            *ngIf="showAnswerFormFor() === question.id"
-            [formGroup]="answerForm"
-            (ngSubmit)="submitAnswer(question.id)"
-            class="answer-form"
-            data-testid="answer-form">
-            <div class="form-group">
-              <textarea
-                formControlName="answerText"
-                [placeholder]="'products.qa.answerPlaceholder' | translate"
-                rows="2"
-                maxlength="5000"
-                data-testid="answer-text">
-              </textarea>
-            </div>
-            <div class="form-actions">
-              <button
-                type="submit"
-                class="submit-answer-btn"
-                [disabled]="answerForm.invalid || submittingAnswer()"
-                data-testid="submit-answer-btn">
-                <span *ngIf="submittingAnswer()" class="spinner"></span>
-                {{ 'products.qa.submitAnswer' | translate }}
-              </button>
-              <button
-                type="button"
-                class="cancel-answer-btn"
-                (click)="showAnswerFormFor.set(null)">
-                {{ 'common.cancel' | translate }}
-              </button>
-            </div>
-            <div class="error-message" *ngIf="answerError()">
-              {{ answerError() }}
-            </div>
-          </form>
-
-          <!-- Answers -->
-          <div class="answers-list" *ngIf="question.answers.length > 0">
-            <div
-              class="answer-card"
-              *ngFor="let answer of question.answers; trackBy: trackAnswer"
-              [class.official]="answer.isOfficial">
-              <div class="answer-header">
-                <span class="answer-icon" [class.official]="answer.isOfficial">A</span>
-                <span class="answerer-name">
-                  {{ answer.answererName || ('products.qa.communityMember' | translate) }}
-                </span>
-                <span class="official-badge" *ngIf="answer.isOfficial">
-                  {{ 'products.qa.officialAnswer' | translate }}
-                </span>
-                <span class="answer-date">{{ answer.createdAt | date:'mediumDate' }}</span>
-              </div>
-              <p class="answer-text">{{ answer.answerText }}</p>
-              <div class="answer-actions">
-                <button
-                  class="vote-btn helpful"
-                  (click)="voteAnswer(answer, true)"
-                  [disabled]="votedAnswers().has(answer.id)">
-                  <span class="thumb-icon">&#128077;</span> {{ answer.helpfulCount }}
-                </button>
-                <button
-                  class="vote-btn unhelpful"
-                  (click)="voteAnswer(answer, false)"
-                  [disabled]="votedAnswers().has(answer.id)">
-                  <span class="thumb-icon">&#128078;</span> {{ answer.unhelpfulCount }}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- No answers yet -->
-          <div class="no-answers" *ngIf="question.answers.length === 0">
-            <span class="icon">&#128172;</span>
-            {{ 'products.qa.noAnswersYet' | translate }}
-          </div>
+          }
         </div>
-      </div>
+      }
 
       <!-- Empty State -->
-      <div class="empty-state" *ngIf="!loading() && questions().length === 0">
-        <span class="icon">&#128172;</span>
-        <p>{{ 'products.qa.noQuestionsYet' | translate }}</p>
-        <p class="hint">{{ 'products.qa.beFirstToAsk' | translate }}</p>
-      </div>
+      @if (!loading() && questions().length === 0) {
+        <div class="empty-state">
+          <span class="icon">&#128172;</span>
+          <p>{{ 'products.qa.noQuestionsYet' | translate }}</p>
+          <p class="hint">{{ 'products.qa.beFirstToAsk' | translate }}</p>
+        </div>
+      }
 
       <!-- Loading State -->
-      <div class="loading" *ngIf="loading()">
-        <div class="spinner"></div>
-        <span>{{ 'common.loading' | translate }}</span>
-      </div>
+      @if (loading()) {
+        <div class="loading">
+          <div class="spinner"></div>
+          <span>{{ 'common.loading' | translate }}</span>
+        </div>
+      }
 
       <!-- Pagination -->
-      <div class="pagination" *ngIf="totalPages() > 1">
-        <button
-          class="page-btn prev"
-          (click)="previousPage()"
-          [disabled]="currentPage() === 1">
-          &laquo; {{ 'common.previous' | translate }}
-        </button>
-        <span class="page-info">
-          {{ 'common.page' | translate }} {{ currentPage() }} / {{ totalPages() }}
-        </span>
-        <button
-          class="page-btn next"
-          (click)="nextPage()"
-          [disabled]="currentPage() === totalPages()">
-          {{ 'common.next' | translate }} &raquo;
-        </button>
-      </div>
+      @if (totalPages() > 1) {
+        <div class="pagination">
+          <button
+            class="page-btn prev"
+            (click)="previousPage()"
+            [disabled]="currentPage() === 1">
+            &laquo; {{ 'common.previous' | translate }}
+          </button>
+          <span class="page-info">
+            {{ 'common.page' | translate }} {{ currentPage() }} / {{ totalPages() }}
+          </span>
+          <button
+            class="page-btn next"
+            (click)="nextPage()"
+            [disabled]="currentPage() === totalPages()">
+            {{ 'common.next' | translate }} &raquo;
+          </button>
+        </div>
+      }
     </section>
   `,
   styles: [`
+    :host {
+      display: block;
+    }
+
     .product-qa {
       padding: 1.5rem;
       background: var(--color-bg-card);

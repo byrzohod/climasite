@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
 using ClimaSite.Infrastructure.Data;
+using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Containers;
 using Testcontainers.PostgreSql;
 
 namespace ClimaSite.Api.Tests.Infrastructure;
@@ -16,7 +19,14 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
         .WithPassword("test_password")
         .Build();
 
+    private readonly IContainer _redisContainer = new ContainerBuilder()
+        .WithImage("redis:7-alpine")
+        .WithPortBinding(6379, true)
+        .WithWaitStrategy(Wait.ForUnixContainer().UntilCommandIsCompleted("redis-cli", "ping"))
+        .Build();
+
     public string ConnectionString => _dbContainer.GetConnectionString();
+    public string RedisConnectionString => $"{_redisContainer.Hostname}:{_redisContainer.GetMappedPublicPort(6379)}";
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -39,6 +49,12 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
             // Add test database
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseNpgsql(ConnectionString));
+
+            // Replace production health checks so integration tests don't depend on local services.
+            services.Configure<HealthCheckServiceOptions>(options => options.Registrations.Clear());
+            services.AddHealthChecks()
+                .AddNpgSql(ConnectionString)
+                .AddRedis(RedisConnectionString);
         });
 
         // Set environment to Testing to disable rate limiting
@@ -48,10 +64,12 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
     public async Task InitializeAsync()
     {
         await _dbContainer.StartAsync();
+        await _redisContainer.StartAsync();
     }
 
     public new async Task DisposeAsync()
     {
+        await _redisContainer.DisposeAsync();
         await _dbContainer.DisposeAsync();
     }
 }

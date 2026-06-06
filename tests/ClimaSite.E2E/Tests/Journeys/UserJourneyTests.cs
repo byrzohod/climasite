@@ -49,7 +49,7 @@ public class UserJourneyTests : IAsyncLifetime
 
         // Verify homepage loads
         var hasFeatured = await homePage.HasFeaturedProductsAsync();
-        hasFeatured.Should().BeTrue("Homepage should display featured products");
+        hasFeatured.Should().BeTrue("Homepage should display product recommendations");
 
         // Step 2: Login
         var loginPage = new LoginPage(_page);
@@ -231,7 +231,7 @@ public class UserJourneyTests : IAsyncLifetime
         // Step 5: Verify product detail page
         await _page.WaitForURLAsync(url => url.Contains("/products/"));
         await Assertions.Expect(_page.Locator("[data-testid='product-title']")).ToBeVisibleAsync();
-        await Assertions.Expect(_page.Locator("[data-testid='add-to-cart']")).ToBeVisibleAsync();
+        await Assertions.Expect(_page.Locator("[data-testid='product-detail'] [data-testid='add-to-cart']")).ToBeVisibleAsync();
     }
 
     /// <summary>
@@ -246,7 +246,11 @@ public class UserJourneyTests : IAsyncLifetime
 
         // Step 2: Click on cart icon
         await _page.ClickAsync("[data-testid='cart-icon']");
-        await _page.WaitForURLAsync(url => url.Contains("/cart"));
+        await Assertions.Expect(_page.Locator("[data-testid='mini-cart-drawer']"))
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+        await _page.Keyboard.PressAsync("Escape");
+        await Assertions.Expect(_page.Locator("[data-testid='mini-cart-drawer']"))
+            .ToBeHiddenAsync(new LocatorAssertionsToBeHiddenOptions { Timeout = 10000 });
 
         // Step 3: Navigate to home using logo (correct selector)
         await _page.ClickAsync("[data-testid='header-logo']");

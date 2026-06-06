@@ -12,7 +12,7 @@ import { TranslateModule } from '@ngx-translate/core';
       <div class="not-found-content">
         <h1>404</h1>
         <h2>{{ 'errors.notFound' | translate }}</h2>
-        <p>The page you're looking for doesn't exist or has been moved.</p>
+        <p>{{ 'errors.notFoundDescription' | translate }}</p>
         <a routerLink="/" class="home-button">{{ 'nav.home' | translate }}</a>
       </div>
     </div>

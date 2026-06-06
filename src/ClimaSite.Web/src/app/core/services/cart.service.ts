@@ -1,8 +1,8 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, tap, catchError, of, BehaviorSubject } from 'rxjs';
+import { Observable, tap, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Cart, CartItem, AddToCartRequest, UpdateCartItemRequest, CartSummary } from '../models/cart.model';
+import { Cart, AddToCartRequest, CartSummary } from '../models/cart.model';
 
 // TODO: SVC-001 - Error messages in this service are hardcoded (e.g., 'Failed to add item to cart').
 // These should be replaced with translation keys and use TranslateService for i18n support.

@@ -63,7 +63,7 @@ export interface CreateInstallationRequestData {
 })
 export class InstallationService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = `${environment.apiUrl}/installation`;
+  private readonly apiUrl = `${environment.apiUrl}/api/installation`;
 
   getInstallationOptions(productId: string): Observable<ProductInstallationOptions> {
     return this.http.get<ProductInstallationOptions>(`${this.apiUrl}/options/${productId}`);

@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, computed, PLATFORM_ID } from '@angular/core';
+import { Injectable, Injector, inject, signal, computed, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -80,7 +80,7 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
-  private readonly cartService = inject(CartService);
+  private readonly injector = inject(Injector);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
 
   private readonly apiUrl = environment.apiUrl;
@@ -132,7 +132,8 @@ export class AuthService {
       switchMap(response => {
         const guestSessionId = this.isBrowser ? localStorage.getItem(this.GUEST_SESSION_KEY) : null;
         if (guestSessionId) {
-          return this.cartService.mergeCart(response.user.id).pipe(
+          const cartService = this.injector.get(CartService);
+          return cartService.mergeCart(response.user.id).pipe(
             // Return the original login response regardless of merge result
             tap(() => this._isLoading.set(false)),
             catchError(() => {
@@ -275,13 +276,11 @@ export class AuthService {
       // Attempt to fetch user profile, but don't clear auth on failure
       // The token might still be valid even if this request fails (e.g., network issue)
       this.getCurrentUser().subscribe({
-        next: (user) => {
-          console.log('User profile loaded:', user.email);
+        next: () => {
           // AUTH-001 FIX: Mark auth as ready after user is loaded
           this._authReady.set(true);
         },
         error: (err) => {
-          console.error('Failed to load user profile:', err);
           // Only clear auth if it's a 401 (unauthorized) response
           if (err.status === 401) {
             this.clearAuth();

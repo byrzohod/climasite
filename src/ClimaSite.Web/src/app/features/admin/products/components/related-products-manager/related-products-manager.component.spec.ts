@@ -6,10 +6,9 @@ import { Observable, of } from 'rxjs';
 import { Component } from '@angular/core';
 import { RelatedProductsManagerComponent } from './related-products-manager.component';
 import { AdminRelatedProductsService, ProductRelationsDto } from '../../services/admin-related-products.service';
-import { environment } from '../../../../../../environments/environment';
 
 class FakeTranslateLoader implements TranslateLoader {
-  getTranslation(lang: string): Observable<Record<string, string>> {
+  getTranslation(_lang: string): Observable<Record<string, string>> {
     return of({
       'admin.products.relatedProducts': 'Related Products',
       'admin.products.noRelations': 'No related products',

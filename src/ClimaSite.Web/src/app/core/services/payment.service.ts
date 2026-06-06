@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, from, of, switchMap, tap, catchError } from 'rxjs';
+import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { loadStripe, Stripe, StripeElements, StripeCardElement } from '@stripe/stripe-js';
 
@@ -156,10 +156,11 @@ export class PaymentService {
       }
 
       return { success: false, error: 'Payment was not completed' };
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Payment failed';
       this._isProcessing.set(false);
-      this._error.set(err.message || 'Payment failed');
-      return { success: false, error: err.message };
+      this._error.set(message);
+      return { success: false, error: message };
     }
   }
 

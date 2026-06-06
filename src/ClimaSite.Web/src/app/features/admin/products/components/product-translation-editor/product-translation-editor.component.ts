@@ -1,11 +1,10 @@
-import { Component, OnInit, inject, input, signal, computed, effect } from '@angular/core';
+import { Component, OnInit, inject, input, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import {
   AdminTranslationsService,
   ProductTranslationsDto,
-  ProductTranslationDto,
   AddTranslationRequest,
   UpdateTranslationRequest
 } from '../../services/admin-translations.service';

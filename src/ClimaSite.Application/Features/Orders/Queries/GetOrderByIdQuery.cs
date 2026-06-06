@@ -41,6 +41,11 @@ public class GetOrderByIdQueryHandler : IRequestHandler<GetOrderByIdQuery, Resul
         }
 
         // Check if user owns the order (unless admin)
+        if (!userId.HasValue && !_currentUserService.IsAdmin)
+        {
+            return Result<OrderDto>.Failure("Authentication required");
+        }
+
         if (userId.HasValue && order.UserId != userId && !_currentUserService.IsAdmin)
         {
             return Result<OrderDto>.Failure("Access denied");

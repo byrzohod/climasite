@@ -4,19 +4,21 @@
 // 8px Grid System with responsive utilities
 // =============================================================================
 
+@use 'sass:map';
+
 // -----------------------------------------------------------------------------
 // SPACING SCALE (8px base unit)
 // -----------------------------------------------------------------------------
 $spacing: (
   '0': 0,
   'px': 1px,
-  '0.5': 0.125rem,   // 2px
+  '0-5': 0.125rem,   // 2px
   '1': 0.25rem,      // 4px
-  '1.5': 0.375rem,   // 6px
+  '1-5': 0.375rem,   // 6px
   '2': 0.5rem,       // 8px
-  '2.5': 0.625rem,   // 10px
+  '2-5': 0.625rem,   // 10px
   '3': 0.75rem,      // 12px
-  '3.5': 0.875rem,   // 14px
+  '3-5': 0.875rem,   // 14px
   '4': 1rem,         // 16px
   '5': 1.25rem,      // 20px
   '6': 1.5rem,       // 24px
@@ -120,12 +122,12 @@ $z-index: (
   }
   
   // Section Spacing
-  --section-xs: #{map-get($section-spacing, 'xs')};
-  --section-sm: #{map-get($section-spacing, 'sm')};
-  --section-md: #{map-get($section-spacing, 'md')};
-  --section-lg: #{map-get($section-spacing, 'lg')};
-  --section-xl: #{map-get($section-spacing, 'xl')};
-  --section-2xl: #{map-get($section-spacing, '2xl')};
+  --section-xs: #{map.get($section-spacing, 'xs')};
+  --section-sm: #{map.get($section-spacing, 'sm')};
+  --section-md: #{map.get($section-spacing, 'md')};
+  --section-lg: #{map.get($section-spacing, 'lg')};
+  --section-xl: #{map.get($section-spacing, 'xl')};
+  --section-2xl: #{map.get($section-spacing, '2xl')};
   
   // Container Widths
   @each $key, $value in $container-widths {
@@ -133,16 +135,16 @@ $z-index: (
   }
   
   // Border Radius
-  --radius-none: #{map-get($border-radius, 'none')};
-  --radius-sm: #{map-get($border-radius, 'sm')};
-  --radius: #{map-get($border-radius, 'DEFAULT')};
-  --radius-md: #{map-get($border-radius, 'md')};
-  --radius-lg: #{map-get($border-radius, 'lg')};
-  --radius-xl: #{map-get($border-radius, 'xl')};
-  --radius-2xl: #{map-get($border-radius, '2xl')};
-  --radius-3xl: #{map-get($border-radius, '3xl')};
-  --radius-4xl: #{map-get($border-radius, '4xl')};
-  --radius-full: #{map-get($border-radius, 'full')};
+  --radius-none: #{map.get($border-radius, 'none')};
+  --radius-sm: #{map.get($border-radius, 'sm')};
+  --radius: #{map.get($border-radius, 'DEFAULT')};
+  --radius-md: #{map.get($border-radius, 'md')};
+  --radius-lg: #{map.get($border-radius, 'lg')};
+  --radius-xl: #{map.get($border-radius, 'xl')};
+  --radius-2xl: #{map.get($border-radius, '2xl')};
+  --radius-3xl: #{map.get($border-radius, '3xl')};
+  --radius-4xl: #{map.get($border-radius, '4xl')};
+  --radius-full: #{map.get($border-radius, 'full')};
   
   // Z-Index
   @each $key, $value in $z-index {

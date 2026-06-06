@@ -39,7 +39,7 @@ export interface ReorderRelationsRequest {
 })
 export class AdminRelatedProductsService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = `${environment.apiUrl}/admin/products`;
+  private readonly apiUrl = `${environment.apiUrl}/api/admin/products`;
 
   getProductRelations(productId: string): Observable<ProductRelationsDto> {
     return this.http.get<ProductRelationsDto>(`${this.apiUrl}/${productId}/relations`);

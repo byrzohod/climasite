@@ -61,7 +61,8 @@ export class ScrollProgressDirective implements OnInit, OnDestroy {
   }
   
   ngOnDestroy(): void {
-    // Effect is automatically cleaned up by Angular
+    this.effectRef?.destroy();
+    this.effectRef = null;
   }
   
   private setupStyles(): void {
@@ -79,7 +80,7 @@ export class ScrollProgressDirective implements OnInit, OnDestroy {
       case 'opacity':
         this.renderer.setStyle(this.element, 'will-change', 'opacity');
         break;
-      case 'background':
+      case 'background': {
         this.renderer.setStyle(this.element, 'will-change', 'background-size');
         const colors = this.gradientColors();
         this.renderer.setStyle(
@@ -89,6 +90,7 @@ export class ScrollProgressDirective implements OnInit, OnDestroy {
         );
         this.renderer.setStyle(this.element, 'background-size', '200% 100%');
         break;
+      }
     }
   }
   
@@ -130,10 +132,11 @@ export class ScrollProgressDirective implements OnInit, OnDestroy {
         this.renderer.setStyle(this.element, 'opacity', String(value));
         break;
       
-      case 'background':
+      case 'background': {
         const position = progress * 100;
         this.renderer.setStyle(this.element, 'background-position', `${position}% 0`);
         break;
+      }
     }
   }
 }

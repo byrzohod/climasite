@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, tick, flush } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { FrequentlyBoughtComponent, BundleProduct } from './frequently-bought.component';
 import { TranslateModule } from '@ngx-translate/core';

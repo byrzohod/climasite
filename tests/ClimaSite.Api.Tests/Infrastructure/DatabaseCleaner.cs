@@ -1,5 +1,5 @@
-using ClimaSite.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using ClimaSite.Infrastructure.Data;
 
 namespace ClimaSite.Api.Tests.Infrastructure;
 
@@ -18,48 +18,40 @@ public class DatabaseCleaner
     /// </summary>
     public async Task CleanAsync()
     {
-        // Tables to clean in order (respecting foreign keys)
-        var tables = new[]
-        {
-            "order_items",
-            "orders",
-            "cart_items",
-            "carts",
-            "product_images",
-            "product_specifications",
-            "products",
-            "categories",
-            "user_addresses",
-            "users",
-            "audit_logs"
-        };
+        await _context.Database.ExecuteSqlRawAsync("""
+            DO $$
+            DECLARE
+                tables_to_clean text;
+            BEGIN
+                SELECT string_agg(format('%I.%I', schemaname, tablename), ', ')
+                INTO tables_to_clean
+                FROM pg_tables
+                WHERE schemaname = 'public'
+                  AND tablename NOT IN ('__EFMigrationsHistory', 'roles', 'role_claims');
 
-        foreach (var table in tables)
-        {
-            try
-            {
-                await _context.Database.ExecuteSqlRawAsync(
-                    $"TRUNCATE TABLE {table} CASCADE");
-            }
-            catch (Exception)
-            {
-                // Table might not exist yet, ignore
-            }
-        }
+                IF tables_to_clean IS NOT NULL THEN
+                    EXECUTE 'TRUNCATE TABLE ' || tables_to_clean || ' CASCADE';
+                END IF;
+            END $$;
+            """);
 
         // Reset sequences
         try
         {
-            await _context.Database.ExecuteSqlRawAsync(@"
+            await _context.Database.ExecuteSqlRawAsync("""
                 DO $$
                 DECLARE
-                    seq RECORD;
+                    sequence_name text;
                 BEGIN
-                    FOR seq IN SELECT sequencename FROM pg_sequences WHERE schemaname = 'public'
+                    FOR sequence_name IN
+                        SELECT format('%I.%I', schemaname, sequencename)
+                        FROM pg_sequences
+                        WHERE schemaname = 'public'
                     LOOP
-                        EXECUTE 'ALTER SEQUENCE ' || seq.sequencename || ' RESTART WITH 1';
+                        EXECUTE 'ALTER SEQUENCE ' || sequence_name || ' RESTART WITH 1';
                     END LOOP;
-                END $$;");
+                END $$;
+                """);
         }
         catch (Exception)
         {

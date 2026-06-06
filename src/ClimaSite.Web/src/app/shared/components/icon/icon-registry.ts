@@ -36,6 +36,7 @@ import {
   Wallet,
   Banknote,
   Building2,
+  BadgeCheck,
   
   // User
   User,
@@ -50,6 +51,7 @@ import {
   Mail,
   Phone,
   MapPin,
+  Headphones,
   
   // Actions
   Search,
@@ -85,6 +87,7 @@ import {
   Clock,
   Calendar,
   CalendarDays,
+  ShieldCheck,
   
   // Social
   Facebook,
@@ -182,6 +185,7 @@ export const ICON_REGISTRY = {
   Wallet,
   Banknote,
   Building2,
+  BadgeCheck,
   
   // User
   User,
@@ -196,6 +200,7 @@ export const ICON_REGISTRY = {
   Mail,
   Phone,
   MapPin,
+  Headphones,
   
   // Actions
   Search,
@@ -231,6 +236,7 @@ export const ICON_REGISTRY = {
   Clock,
   Calendar,
   CalendarDays,
+  ShieldCheck,
   
   // Social
   Facebook,
@@ -303,11 +309,11 @@ export const ICON_CATEGORIES = {
   ],
   commerce: [
     'shopping-cart', 'shopping-bag', 'heart', 'credit-card', 'package', 'truck',
-    'tag', 'percent', 'receipt', 'wallet', 'banknote', 'building-2'
+    'tag', 'percent', 'receipt', 'wallet', 'banknote', 'building-2', 'badge-check'
   ],
   user: [
     'user', 'user-plus', 'user-minus', 'user-check', 'users', 'settings',
-    'log-out', 'log-in', 'bell', 'mail', 'phone', 'map-pin'
+    'log-out', 'log-in', 'bell', 'mail', 'phone', 'map-pin', 'headphones'
   ],
   actions: [
     'search', 'filter', 'plus', 'minus', 'trash-2', 'edit', 'edit-2', 'edit-3',
@@ -316,7 +322,7 @@ export const ICON_CATEGORIES = {
   ],
   status: [
     'info', 'alert-triangle', 'alert-circle', 'check-circle', 'check-circle-2',
-    'x-circle', 'help-circle', 'clock', 'calendar', 'calendar-days'
+    'x-circle', 'help-circle', 'clock', 'calendar', 'calendar-days', 'shield-check'
   ],
   social: [
     'facebook', 'instagram', 'twitter', 'linkedin', 'youtube', 'github'

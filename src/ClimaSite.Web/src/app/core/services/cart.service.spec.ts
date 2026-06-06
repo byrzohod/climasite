@@ -449,7 +449,7 @@ describe('CartService', () => {
       });
 
       const newHttpMock = TestBed.inject(HttpTestingController);
-      const newService = TestBed.inject(CartService);
+      TestBed.inject(CartService);
 
       const req = newHttpMock.expectOne(req => req.url.includes('/api/cart'));
       req.flush(emptyCart);

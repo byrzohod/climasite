@@ -1,7 +1,7 @@
-import { Component, inject, input, output, signal, OnInit, OnDestroy, ElementRef } from '@angular/core';
+import { Component, inject, input, output, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
-import { ToastService, Toast, ToastType } from './toast.service';
+import { ToastService, Toast } from './toast.service';
 
 @Component({
   selector: 'app-toast-item',
@@ -432,13 +432,13 @@ export class ToastItemComponent implements OnInit, OnDestroy {
 @Component({
   selector: 'app-toast-container',
   standalone: true,
-  imports: [CommonModule, ToastItemComponent],
+  imports: [CommonModule, TranslateModule, ToastItemComponent],
   template: `
     <div 
       class="toast-container" 
       [attr.data-testid]="'toast-container'"
       role="region"
-      aria-label="Notifications"
+      [attr.aria-label]="'common.aria.notifications' | translate"
       [attr.aria-live]="'polite'"
     >
       @for (toast of toasts(); track toast.id) {

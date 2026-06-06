@@ -1,16 +1,15 @@
-import { Component, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { CheckoutService } from '../../../core/services/checkout.service';
-import { Order, OrderEvent, ORDER_STATUS_CONFIG, OrderStatus } from '../../../core/models/order.model';
-import { AddressCardComponent } from '../../../shared/components/address-card/address-card.component';
+import { Order, ORDER_STATUS_CONFIG, OrderStatus } from '../../../core/models/order.model';
 
 @Component({
   selector: 'app-order-details',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, AddressCardComponent],
+  imports: [CommonModule, RouterLink, FormsModule, TranslateModule],
   template: `
     <div class="order-details-container" data-testid="order-details-page">
       <a routerLink="/account/orders" class="back-link" data-testid="back-to-orders">

@@ -92,6 +92,16 @@ describe('EmptyStateComponent', () => {
     expect(actionElement.getAttribute('href')).toBe('/products');
   });
 
+  it('should allow a custom action test id', () => {
+    fixture.componentRef.setInput('actionLabel', 'Start Shopping');
+    fixture.componentRef.setInput('actionRoute', '/products');
+    fixture.componentRef.setInput('actionTestId', 'continue-shopping');
+    fixture.detectChanges();
+
+    const actionElement = fixture.nativeElement.querySelector('[data-testid="continue-shopping"]');
+    expect(actionElement).toBeTruthy();
+  });
+
   it('should not display action button when label is missing', () => {
     fixture.componentRef.setInput('actionRoute', '/products');
     fixture.detectChanges();

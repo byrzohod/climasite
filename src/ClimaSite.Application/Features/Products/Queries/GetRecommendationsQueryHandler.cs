@@ -5,6 +5,7 @@ using ClimaSite.Application.Features.Products.DTOs;
 using ClimaSite.Application.Features.Products.Scoring;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace ClimaSite.Application.Features.Products.Queries;
 
@@ -175,6 +176,9 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
         if (value is long longVal)
             return (int)longVal;
 
+        if (value is JsonElement jsonElement && jsonElement.TryGetInt32(out var jsonInt))
+            return jsonInt;
+
         return 0;
     }
 
@@ -185,6 +189,14 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
 
         if (value is bool boolVal)
             return boolVal;
+
+        if (value is JsonElement jsonElement)
+        {
+            if (jsonElement.ValueKind == JsonValueKind.True)
+                return true;
+            if (jsonElement.ValueKind == JsonValueKind.False)
+                return false;
+        }
 
         return false;
     }

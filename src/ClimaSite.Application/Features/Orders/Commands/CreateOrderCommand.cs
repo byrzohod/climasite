@@ -87,58 +87,64 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
             return Result<OrderDto>.Failure("Either user authentication or guest session ID is required");
         }
 
-        // Get cart
-        Core.Entities.Cart? cart = null;
-        if (userId.HasValue)
-        {
-            cart = await _context.Carts
-                .Include(c => c.Items)
-                .FirstOrDefaultAsync(c => c.UserId == userId, cancellationToken);
-        }
-        else if (!string.IsNullOrEmpty(request.GuestSessionId))
-        {
-            cart = await _context.Carts
-                .Include(c => c.Items)
-                .FirstOrDefaultAsync(c => c.SessionId == request.GuestSessionId, cancellationToken);
-        }
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return strategy is null
+            ? await CreateOrderAsync()
+            : await strategy.ExecuteAsync(CreateOrderAsync);
 
-        if (cart == null || !cart.Items.Any())
+        async Task<Result<OrderDto>> CreateOrderAsync()
         {
-            return Result<OrderDto>.Failure("Cart is empty");
-        }
+            // Use explicit transaction with proper isolation to ensure data integrity
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 
-        // Validate stock and get product data
-        var productIds = cart.Items.Select(i => i.ProductId).Distinct().ToList();
-        var products = await _context.Products
-            .Include(p => p.Variants)
-            .Include(p => p.Images)
-            .Where(p => productIds.Contains(p.Id))
-            .ToListAsync(cancellationToken);
-
-        foreach (var item in cart.Items)
-        {
-            var product = products.FirstOrDefault(p => p.Id == item.ProductId);
-            if (product == null || !product.IsActive)
+            // Get cart
+            Core.Entities.Cart? cart = null;
+            if (userId.HasValue)
             {
-                return Result<OrderDto>.Failure($"Product '{item.ProductId}' is no longer available");
+                cart = await _context.Carts
+                    .Include(c => c.Items)
+                    .FirstOrDefaultAsync(c => c.UserId == userId, cancellationToken);
+            }
+            else if (!string.IsNullOrEmpty(request.GuestSessionId))
+            {
+                cart = await _context.Carts
+                    .Include(c => c.Items)
+                    .FirstOrDefaultAsync(c => c.SessionId == request.GuestSessionId, cancellationToken);
             }
 
-            var variant = product.Variants.FirstOrDefault(v => v.Id == item.VariantId);
-            if (variant == null || !variant.IsActive)
+            if (cart == null || !cart.Items.Any())
             {
-                return Result<OrderDto>.Failure($"Product variant is no longer available");
+                return Result<OrderDto>.Failure("Cart is empty");
             }
 
-            if (variant.StockQuantity < item.Quantity)
-            {
-                return Result<OrderDto>.Failure($"Insufficient stock for '{product.Name}'");
-            }
-        }
+            // Validate stock and get product data
+            var productIds = cart.Items.Select(i => i.ProductId).Distinct().ToList();
+            var products = await _context.Products
+                .Include(p => p.Variants)
+                .Include(p => p.Images)
+                .Where(p => productIds.Contains(p.Id))
+                .ToListAsync(cancellationToken);
 
-        // Use explicit transaction with proper isolation to ensure data integrity
-        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-        try
-        {
+            foreach (var item in cart.Items)
+            {
+                var product = products.FirstOrDefault(p => p.Id == item.ProductId);
+                if (product == null || !product.IsActive)
+                {
+                    return Result<OrderDto>.Failure($"Product '{item.ProductId}' is no longer available");
+                }
+
+                var variant = product.Variants.FirstOrDefault(v => v.Id == item.VariantId);
+                if (variant == null || !variant.IsActive)
+                {
+                    return Result<OrderDto>.Failure("Product variant is no longer available");
+                }
+
+                if (variant.StockQuantity < item.Quantity)
+                {
+                    return Result<OrderDto>.Failure($"Insufficient stock for '{product.Name}'");
+                }
+            }
+
             // Generate order number using timestamp + random suffix for uniqueness (race-condition safe)
             var orderNumber = GenerateUniqueOrderNumber();
 
@@ -204,11 +210,6 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
             await transaction.CommitAsync(cancellationToken);
 
             return Result<OrderDto>.Success(MapToDto(order, products));
-        }
-        catch
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            throw;
         }
     }
 

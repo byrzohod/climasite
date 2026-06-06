@@ -44,10 +44,17 @@
       "moveUp": "Премести нагоре",
       "moveDown": "Премести надолу",
       "removeRelation": "Премахни връзка",
-      "mapLocation": "Карта с местоположение"
+      "mapLocation": "Карта с местоположение",
+      "mobileNavigation": "Мобилна навигация",
+      "notifications": "Известия"
     },
     "language": "Език",
-    "theme": "Тема"
+    "theme": "Тема",
+    "comingSoon": "Очаквайте скоро...",
+    "items": "Артикули",
+    "page": "Страница",
+    "sale": "Промоция",
+    "pagination": "Странициране"
   },
   "nav": {
     "home": "Начало",
@@ -78,7 +85,8 @@
       "search": "Търси",
       "cart": "Количка",
       "account": "Акаунт"
-    }
+    },
+    "hot": "Горещо"
   },
   "delivery": {
     "options": "Опции за доставка",
@@ -154,7 +162,11 @@
     "item_removed": "{{name}} премахнат от количката",
     "item_restored": "Артикулът е възстановен в количката",
     "remove_failed": "Неуспешно премахване на артикула",
-    "restore_failed": "Неуспешно възстановяване на артикула"
+    "restore_failed": "Неуспешно възстановяване на артикула",
+    "added": "Добавено в количката",
+    "errors": {
+      "addFailed": "Неуспешно добавяне в количката"
+    }
   },
   "checkout": {
     "title": "Плащане",
@@ -238,6 +250,7 @@
       "needHelp": "Нуждаете се от помощ?",
       "contactInfo": "Обадете се на",
       "or": "или пишете на",
+      "supportEmail": "support@climasite.bg",
       "whatsNext": {
         "title": "Какво следва?",
         "step1": "Ще получите имейл за потвърждение",
@@ -401,6 +414,7 @@
     },
     "copyright": "© {{year}} СиДиЕл. Всички права запазени.",
     "phone": "0898 56 75 04",
+    "email": "info@cdl.bg",
     "address": "България"
   },
   "errors": {
@@ -412,7 +426,8 @@
     "invalidCredentials": "Невалиден имейл или парола",
     "networkError": "Мрежова грешка. Моля, опитайте отново.",
     "serverError": "Сървърна грешка. Моля, опитайте по-късно.",
-    "notFound": "Страницата не е намерена"
+    "notFound": "Страницата не е намерена",
+    "notFoundDescription": "Страницата, която търсите, не съществува или е преместена."
   },
   "contact": {
     "title": "Свържете се с нас",
@@ -466,13 +481,29 @@
     },
     "team": {
       "title": "Нашият екип",
-      "subtitle": "Отдадени професионалисти, ангажирани с вашия комфорт"
+      "subtitle": "Отдадени професионалисти, ангажирани с вашия комфорт",
+      "members": {
+        "ivan": "Иван Петров",
+        "maria": "Мария Димитрова",
+        "georgi": "Георги Иванов",
+        "elena": "Елена Тодорова"
+      },
+      "roles": {
+        "ceo": "Изпълнителен директор и основател",
+        "sales": "Ръководител продажби",
+        "technical": "Технически директор",
+        "support": "Ръководител обслужване на клиенти"
+      }
     },
     "stats": {
       "customers": "Доволни клиенти",
       "products": "Налични продукти",
       "years": "Години в бизнеса",
       "support": "24/7 Поддръжка"
+    },
+    "cta": {
+      "title": "Готови ли сте да подобрите комфорта си?",
+      "subtitle": "Разгледайте нашата селекция от премиум HVAC продукти."
     }
   },
   "admin": {
@@ -551,7 +582,8 @@
       "reject": "Отхвърли",
       "approveAsOfficial": "Одобри като официален",
       "flag": "Маркирай за преглед",
-      "official": "Официален"
+      "official": "Официален",
+      "reviewedBy": "От"
     }
   },
   "promotions": {
@@ -717,7 +749,8 @@
     "bracketsMounts": "Стойки и конзоли",
     "drainPumps": "Дренажни помпи",
     "filters": "Филтри",
-    "thermostats": "Термостати"
+    "thermostats": "Термостати",
+    "comingSoon": "Списъкът с категории очаквайте скоро..."
   },
   "wishlist": {
     "title": "Любими",
@@ -907,7 +940,17 @@
       "bestMatch": "Най-добро съвпадение",
       "inverter": "Инвертор",
       "viewDetails": "Виж детайли",
-      "empty": "Няма продукти за тази конфигурация. Опитайте друг размер или зона."
+      "viewProduct": "Виж детайли за {{name}}",
+      "empty": "Няма продукти за тази конфигурация. Опитайте друг размер или зона.",
+      "loadError": "Не успяхме да заредим препоръките. Опитайте отново.",
+      "btuUnit": "BTU/ч",
+      "noiseUnit": "dB"
+    },
+    "preview": {
+      "ariaLabel": "Аксонометричен преглед на {{area}} m² {{roomType}} в климатична зона {{zone}}",
+      "outside": "Навън",
+      "inside": "Вътре",
+      "power": "Мощност"
     },
     "categories": {
       "eyebrow": "Разгледай каталога",
@@ -940,6 +983,252 @@
       "coldClimate": "Оразмерен за минусови температури",
       "budgetFriendly": "Силно съвпадение на достъпна цена",
       "fallback": "Най-близко съвпадение за вашата конфигурация"
+    }
+  },
+  "languages": {
+    "en": "Английски",
+    "bg": "Български",
+    "de": "Немски"
+  },
+  "auth": {
+    "login": {
+      "title": "Вход",
+      "subtitle": "Достъп до вашия ClimaSite профил",
+      "email": "Имейл",
+      "password": "Парола",
+      "rememberMe": "Запомни ме",
+      "forgotPassword": "Забравена парола?",
+      "submit": "Вход",
+      "noAccount": "Нямате профил?",
+      "signUp": "Регистрация"
+    },
+    "register": {
+      "title": "Създаване на профил",
+      "subtitle": "Присъединете се към ClimaSite",
+      "firstName": "Име",
+      "lastName": "Фамилия",
+      "email": "Имейл",
+      "password": "Парола",
+      "confirmPassword": "Потвърдете паролата",
+      "passwordRequirements": "Използвайте поне 8 символа с главна и малка буква, цифра и символ.",
+      "terms": "Съгласен/съгласна съм с условията",
+      "hasAccount": "Вече имате профил?",
+      "signIn": "Вход",
+      "submit": "Създай профил",
+      "success": "Профилът е създаден успешно. Моля, влезте.",
+      "error": "Регистрацията не бе успешна. Опитайте отново."
+    },
+    "forgotPassword": {
+      "title": "Забравена парола",
+      "subtitle": "Въведете имейла си и ще изпратим инструкции.",
+      "email": "Имейл",
+      "submit": "Изпрати линк",
+      "backToLogin": "Назад към вход",
+      "success": "Ако има профил с този имейл, инструкциите за нулиране са изпратени."
+    },
+    "resetPassword": {
+      "title": "Нулиране на парола",
+      "newPassword": "Нова парола",
+      "confirmNewPassword": "Потвърдете новата парола",
+      "reset": "Нулирай парола",
+      "success": "Паролата е нулирана успешно.",
+      "error": "Нулирането на паролата не бе успешно. Опитайте отново."
+    },
+    "validation": {
+      "emailRequired": "Имейлът е задължителен",
+      "emailInvalid": "Въведете валиден имейл",
+      "passwordRequired": "Паролата е задължителна"
+    },
+    "showPassword": "Покажи паролата",
+    "hidePassword": "Скрий паролата",
+    "logout": "Изход"
+  },
+  "products": {
+    "title": "Продукти",
+    "all": "Всички продукти",
+    "searchResults": "Резултати от търсене",
+    "itemsFound": "Намерени {{count}} артикула",
+    "noImage": "Няма изображение",
+    "noProducts": "Няма намерени продукти",
+    "outOfStock": "Изчерпан",
+    "onSale": "В промоция",
+    "freeShipping": "Безплатна доставка",
+    "filter_sidebar": "Филтри за продукти",
+    "view": {
+      "grid": "Изглед решетка",
+      "list": "Изглед списък",
+      "options": "Опции за изглед"
+    },
+    "sort": {
+      "title": "Сортирай по",
+      "newest": "Най-нови",
+      "priceAsc": "Цена: ниска към висока",
+      "priceDesc": "Цена: висока към ниска",
+      "nameAsc": "Име: А до Я",
+      "nameDesc": "Име: Я до А"
+    },
+    "filters": {
+      "title": "Филтри",
+      "brand": "Марка",
+      "priceRange": "Ценови диапазон",
+      "minPrice": "Мин. цена",
+      "maxPrice": "Макс. цена",
+      "minPriceLabel": "Минимална цена",
+      "maxPriceLabel": "Максимална цена",
+      "priceFilterHint": "Филтриране по ценови диапазон",
+      "inStock": "Само налични",
+      "clearAll": "Изчисти всички филтри"
+    },
+    "details": {
+      "addToCart": "Добави в количката",
+      "addToWishlist": "Добави в любими",
+      "removeFromWishlist": "Премахни от любими",
+      "description": "Описание",
+      "specifications": "Спецификации",
+      "reviews": "Отзиви",
+      "features": "Характеристики",
+      "inStock": "В наличност",
+      "outOfStock": "Изчерпан",
+      "quantity": "Количество",
+      "decreaseQuantity": "Намали количеството",
+      "increaseQuantity": "Увеличи количеството",
+      "sku": "SKU",
+      "model": "Модел",
+      "noDescription": "Няма налично описание.",
+      "noSpecifications": "Няма налични спецификации."
+    },
+    "error": {
+      "tryAgain": "Моля, опитайте отново.",
+      "loadFailed": "Неуспешно зареждане на продукти"
+    },
+    "stock": {
+      "inStock": "В наличност",
+      "lowStock": "Остават само {{count}}",
+      "outOfStock": "Изчерпан"
+    },
+    "comparison": {
+      "addToCompare": "Добави за сравнение",
+      "removeFromCompare": "Премахни от сравнение"
+    },
+    "consumables": {
+      "title": "Консумативи"
+    },
+    "similar": {
+      "title": "Подобни продукти"
+    },
+    "variants": {
+      "priceRange": "Ценови диапазон"
+    },
+    "warranty": {
+      "title": "Гаранция"
+    },
+    "returnPolicy": {
+      "days": "{{count}} дни право на връщане"
+    },
+    "recentlyViewed": {
+      "title": "Последно разглеждани",
+      "clearHistory": "Изчисти историята"
+    },
+    "share": {
+      "title": "Сподели",
+      "copyLink": "Копирай линк",
+      "copied": "Копирано",
+      "shareVia": "Сподели чрез"
+    },
+    "frequentlyBought": {
+      "title": "Често купувани заедно",
+      "subtitle": "Завършете комплекта с тези препоръчани артикули.",
+      "included": "Включено",
+      "totalItems": "Общо артикули",
+      "bundleSavings": "Спестяване от комплект",
+      "bundlePrice": "Цена на комплект",
+      "addBundle": "Добави комплект в количката"
+    },
+    "financing": {
+      "title": "Опции за финансиране",
+      "zeroInterest": "0% лихва",
+      "monthlyFrom": "От {{amount}}/месец",
+      "months": "{{count}} месеца",
+      "interestRate": "{{rate}}% лихва",
+      "monthlyPayment": "Месечна вноска",
+      "totalCost": "Обща цена",
+      "interest": "Лихва",
+      "disclaimer": "*Представителен пример. Подлежи на одобрение за кредит. Прилагат се условия."
+    },
+    "installation": {
+      "title": "Монтажна услуга",
+      "subtitle": "Професионален монтаж от сертифицирани техници",
+      "recommended": "Препоръчано",
+      "fastest": "Най-бързо",
+      "estimatedTime": "{{days}} дни",
+      "select": "Избери",
+      "selected": "Избрано",
+      "requestTitle": "Заявка за монтаж",
+      "customerName": "Име",
+      "customerEmail": "Имейл",
+      "customerPhone": "Телефон",
+      "namePlaceholder": "Въведете име",
+      "emailPlaceholder": "Въведете имейл",
+      "phonePlaceholder": "Въведете телефон",
+      "address": "Адрес",
+      "addressPlaceholder": "Улица и номер",
+      "addressLine2": "Адрес ред 2",
+      "addressLine2Placeholder": "Апартамент, вход и др.",
+      "city": "Град",
+      "cityPlaceholder": "Град",
+      "postalCode": "Пощенски код",
+      "postalCodePlaceholder": "Пощенски код",
+      "country": "Държава",
+      "selectCountry": "Изберете държава",
+      "preferredDate": "Предпочитана дата",
+      "preferredTime": "Предпочитан час",
+      "anyTime": "По всяко време",
+      "morning": "Сутрин",
+      "afternoon": "Следобед",
+      "evening": "Вечер",
+      "timeSlots": {
+        "morning": "09:00 - 12:00",
+        "afternoon": "12:00 - 17:00",
+        "evening": "17:00 - 20:00"
+      },
+      "notes": "Бележки",
+      "notesPlaceholder": "Допълнителни бележки за монтажа",
+      "selectedService": "Избрана услуга",
+      "estimatedCost": "Ориентировъчна цена",
+      "submitRequest": "Изпрати заявка",
+      "submitting": "Изпращане...",
+      "requestSubmitted": "Заявката е изпратена",
+      "requestSubmittedMessage": "Ще се свържем с вас за потвърждение.",
+      "requestInstallation": "Заяви монтаж",
+      "notAvailable": "Монтажът не е наличен за този продукт.",
+      "available": "Наличен монтаж"
+    },
+    "qa": {
+      "title": "Въпроси и отговори",
+      "totalQuestions": "{{count}} въпроса",
+      "answeredQuestions": "{{count}} отговорени",
+      "askQuestion": "Задай въпрос",
+      "yourQuestion": "Вашият въпрос",
+      "questionPlaceholder": "Попитайте за този продукт",
+      "submitQuestion": "Изпрати въпрос",
+      "submitting": "Изпращане...",
+      "questionSubmittedSuccess": "Въпросът е изпратен за преглед.",
+      "loginToAsk": "Влезте, за да зададете въпрос",
+      "loginNow": "Вход сега",
+      "anonymous": "Анонимен",
+      "helpful": "Полезно",
+      "answer": "Отговор",
+      "loginToAnswer": "Влезте, за да отговорите",
+      "answerPlaceholder": "Напишете отговор",
+      "submitAnswer": "Изпрати отговор",
+      "communityMember": "Потребител",
+      "officialAnswer": "Официален отговор",
+      "noAnswersYet": "Все още няма отговори",
+      "noQuestionsYet": "Все още няма въпроси",
+      "beFirstToAsk": "Бъдете първият, който задава въпрос.",
+      "errors": {
+        "questionTooShort": "Въпросът трябва да е поне 10 символа."
+      }
     }
   }
 }

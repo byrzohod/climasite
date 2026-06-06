@@ -36,8 +36,8 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
     protected async Task CleanDatabaseAsync()
     {
-        // This will be implemented once we have entities
         await DbContext.Database.EnsureCreatedAsync();
+        await new DatabaseCleaner(DbContext).CleanAsync();
     }
 
     protected async Task<string> AuthenticateAsync(

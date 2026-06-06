@@ -1,15 +1,13 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, tap, catchError, map } from 'rxjs';
+import { Observable, tap, catchError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   Order,
   CreateOrderRequest,
   Address,
-  OrderBrief,
   PaginatedOrders,
   OrdersFilterParams,
-  OrderStatus,
   ReorderResult
 } from '../models/order.model';
 

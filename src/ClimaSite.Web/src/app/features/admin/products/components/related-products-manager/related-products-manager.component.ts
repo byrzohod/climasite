@@ -5,8 +5,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import {
   AdminRelatedProductsService,
   ProductRelationsDto,
-  RelatedProductDto,
-  RelationGroupDto
+  RelatedProductDto
 } from '../../services/admin-related-products.service';
 
 @Component({

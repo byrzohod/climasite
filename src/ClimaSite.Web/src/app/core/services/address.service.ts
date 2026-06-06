@@ -2,7 +2,7 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { SavedAddress, CreateAddressRequest, UpdateAddressRequest } from '../models/address.model';
+import { SavedAddress, CreateAddressRequest } from '../models/address.model';
 
 export interface ApiResult<T> {
   succeeded: boolean;

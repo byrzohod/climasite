@@ -1,4 +1,4 @@
-import { Component, input, signal, computed, effect, inject } from '@angular/core';
+import { Component, input, signal, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -9,51 +9,60 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, TranslateModule],
   template: `
-    <section class="installation-service" *ngIf="options() && options()!.installationAvailable">
-      <div class="installation-header">
-        <h3>{{ 'products.installation.title' | translate }}</h3>
-        <p class="subtitle">{{ 'products.installation.subtitle' | translate }}</p>
-      </div>
-
-      <!-- Installation Options -->
-      <div class="options-grid">
-        <div
-          class="option-card"
-          *ngFor="let option of options()!.options"
-          [class.selected]="selectedOption()?.type === option.type"
-          [class.recommended]="option.type === 'Premium'"
-          (click)="selectOption(option)">
-          <div class="option-badge" *ngIf="option.type === 'Premium'">
-            {{ 'products.installation.recommended' | translate }}
-          </div>
-          <div class="option-badge express" *ngIf="option.type === 'Express'">
-            {{ 'products.installation.fastest' | translate }}
-          </div>
-          <h4 class="option-name">{{ option.name }}</h4>
-          <p class="option-description">{{ option.description }}</p>
-          <div class="option-price">
-            {{ 'common.currency' | translate: { amount: option.price | number:'1.2-2' } }}
-          </div>
-          <div class="option-timeline">
-            <span class="icon">&#128197;</span>
-            {{ 'products.installation.estimatedTime' | translate: { days: option.estimatedDays } }}
-          </div>
-          <ul class="option-features">
-            <li *ngFor="let feature of option.features">
-              <span class="check">&#10003;</span>
-              {{ feature }}
-            </li>
-          </ul>
-          <button class="select-btn" [class.selected]="selectedOption()?.type === option.type">
-            {{ (selectedOption()?.type === option.type ? 'products.installation.selected' : 'products.installation.select') | translate }}
-          </button>
+    @if (options() && options()!.installationAvailable) {
+      <section class="installation-service">
+        <div class="installation-header">
+          <h3>{{ 'products.installation.title' | translate }}</h3>
+          <p class="subtitle">{{ 'products.installation.subtitle' | translate }}</p>
         </div>
-      </div>
 
-      <!-- Request Form (shown when option selected) -->
-      <div class="request-form-section" *ngIf="selectedOption() && showForm()">
-        <h4>{{ 'products.installation.requestTitle' | translate }}</h4>
-        <form [formGroup]="requestForm" (ngSubmit)="submitRequest()">
+        <!-- Installation Options -->
+        <div class="options-grid">
+          @for (option of options()!.options; track option.type) {
+            <div
+              class="option-card"
+              [class.selected]="selectedOption()?.type === option.type"
+              [class.recommended]="option.type === 'Premium'"
+              (click)="selectOption(option)">
+              @if (option.type === 'Premium') {
+                <div class="option-badge">
+                  {{ 'products.installation.recommended' | translate }}
+                </div>
+              }
+              @if (option.type === 'Express') {
+                <div class="option-badge express">
+                  {{ 'products.installation.fastest' | translate }}
+                </div>
+              }
+              <h4 class="option-name">{{ option.name }}</h4>
+              <p class="option-description">{{ option.description }}</p>
+              <div class="option-price">
+                {{ 'common.currency' | translate: { amount: option.price | number:'1.2-2' } }}
+              </div>
+              <div class="option-timeline">
+                <span class="icon">&#128197;</span>
+                {{ 'products.installation.estimatedTime' | translate: { days: option.estimatedDays } }}
+              </div>
+              <ul class="option-features">
+                @for (feature of option.features; track feature) {
+                  <li>
+                    <span class="check">&#10003;</span>
+                    {{ feature }}
+                  </li>
+                }
+              </ul>
+              <button class="select-btn" [class.selected]="selectedOption()?.type === option.type">
+                {{ (selectedOption()?.type === option.type ? 'products.installation.selected' : 'products.installation.select') | translate }}
+              </button>
+            </div>
+          }
+        </div>
+
+        <!-- Request Form (shown when option selected) -->
+        @if (selectedOption() && showForm()) {
+          <div class="request-form-section">
+            <h4>{{ 'products.installation.requestTitle' | translate }}</h4>
+            <form [formGroup]="requestForm" (ngSubmit)="submitRequest()">
           <div class="form-row">
             <div class="form-group">
               <label for="customerName">{{ 'products.installation.customerName' | translate }} *</label>
@@ -172,36 +181,45 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
             </div>
           </div>
 
+              <button
+                type="submit"
+                class="submit-btn"
+                [disabled]="requestForm.invalid || submitting()">
+                @if (submitting()) {
+                  <span class="spinner"></span>
+                }
+                {{ (submitting() ? 'products.installation.submitting' : 'products.installation.submitRequest') | translate }}
+              </button>
+            </form>
+          </div>
+        }
+
+        <!-- Success Message -->
+        @if (requestSubmitted()) {
+          <div class="success-message">
+            <span class="icon">&#10003;</span>
+            <h4>{{ 'products.installation.requestSubmitted' | translate }}</h4>
+            <p>{{ 'products.installation.requestSubmittedMessage' | translate }}</p>
+          </div>
+        }
+
+        <!-- Toggle Form Button (when option is selected but form is hidden) -->
+        @if (selectedOption() && !showForm() && !requestSubmitted()) {
           <button
-            type="submit"
-            class="submit-btn"
-            [disabled]="requestForm.invalid || submitting()">
-            <span *ngIf="submitting()" class="spinner"></span>
-            {{ (submitting() ? 'products.installation.submitting' : 'products.installation.submitRequest') | translate }}
+            class="show-form-btn"
+            (click)="showForm.set(true)">
+            {{ 'products.installation.requestInstallation' | translate }}
           </button>
-        </form>
-      </div>
-
-      <!-- Success Message -->
-      <div class="success-message" *ngIf="requestSubmitted()">
-        <span class="icon">&#10003;</span>
-        <h4>{{ 'products.installation.requestSubmitted' | translate }}</h4>
-        <p>{{ 'products.installation.requestSubmittedMessage' | translate }}</p>
-      </div>
-
-      <!-- Toggle Form Button (when option is selected but form is hidden) -->
-      <button
-        *ngIf="selectedOption() && !showForm() && !requestSubmitted()"
-        class="show-form-btn"
-        (click)="showForm.set(true)">
-        {{ 'products.installation.requestInstallation' | translate }}
-      </button>
-    </section>
+        }
+      </section>
+    }
 
     <!-- No Installation Available -->
-    <div class="no-installation" *ngIf="options() && !options()!.installationAvailable">
-      <p>{{ 'products.installation.notAvailable' | translate }}</p>
-    </div>
+    @if (options() && !options()!.installationAvailable) {
+      <div class="no-installation">
+        <p>{{ 'products.installation.notAvailable' | translate }}</p>
+      </div>
+    }
   `,
   styles: [`
     .installation-service {

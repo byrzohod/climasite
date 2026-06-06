@@ -44,10 +44,17 @@
       "moveUp": "Nach oben",
       "moveDown": "Nach unten",
       "removeRelation": "Beziehung entfernen",
-      "mapLocation": "Karte mit Standort"
+      "mapLocation": "Karte mit Standort",
+      "mobileNavigation": "Mobile Navigation",
+      "notifications": "Benachrichtigungen"
     },
     "language": "Sprache",
-    "theme": "Design"
+    "theme": "Design",
+    "comingSoon": "Demnächst verfügbar...",
+    "items": "Artikel",
+    "page": "Seite",
+    "sale": "Angebot",
+    "pagination": "Seitennavigation"
   },
   "nav": {
     "home": "Startseite",
@@ -78,7 +85,8 @@
       "search": "Suche",
       "cart": "Warenkorb",
       "account": "Konto"
-    }
+    },
+    "hot": "Heiß"
   },
   "delivery": {
     "options": "Lieferoptionen",
@@ -154,7 +162,11 @@
     "item_removed": "{{name}} aus dem Warenkorb entfernt",
     "item_restored": "Artikel im Warenkorb wiederhergestellt",
     "remove_failed": "Artikel konnte nicht entfernt werden",
-    "restore_failed": "Artikel konnte nicht wiederhergestellt werden"
+    "restore_failed": "Artikel konnte nicht wiederhergestellt werden",
+    "added": "Zum Warenkorb hinzugefügt",
+    "errors": {
+      "addFailed": "Artikel konnte nicht zum Warenkorb hinzugefügt werden"
+    }
   },
   "checkout": {
     "title": "Kasse",
@@ -238,6 +250,7 @@
       "needHelp": "Brauchen Sie Hilfe?",
       "contactInfo": "Rufen Sie uns an",
       "or": "oder schreiben Sie an",
+      "supportEmail": "support@climasite.bg",
       "whatsNext": {
         "title": "Was kommt als Nächstes?",
         "step1": "Sie erhalten in Kürze eine Bestätigungs-E-Mail",
@@ -401,6 +414,7 @@
     },
     "copyright": "© {{year}} ClimaSite. Alle Rechte vorbehalten.",
     "phone": "0898 56 75 04",
+    "email": "info@cdl.bg",
     "address": "Bulgarien"
   },
   "errors": {
@@ -412,7 +426,8 @@
     "invalidCredentials": "Ungültige E-Mail oder Passwort",
     "networkError": "Netzwerkfehler. Bitte versuchen Sie es erneut.",
     "serverError": "Serverfehler. Bitte versuchen Sie es später erneut.",
-    "notFound": "Seite nicht gefunden"
+    "notFound": "Seite nicht gefunden",
+    "notFoundDescription": "Die gesuchte Seite existiert nicht oder wurde verschoben."
   },
   "contact": {
     "title": "Kontaktieren Sie uns",
@@ -466,13 +481,29 @@
     },
     "team": {
       "title": "Unser Team",
-      "subtitle": "Engagierte Fachleute, die sich Ihrem Komfort verschrieben haben"
+      "subtitle": "Engagierte Fachleute, die sich Ihrem Komfort verschrieben haben",
+      "members": {
+        "ivan": "Ivan Petrov",
+        "maria": "Maria Dimitrova",
+        "georgi": "Georgi Ivanov",
+        "elena": "Elena Todorova"
+      },
+      "roles": {
+        "ceo": "CEO und Gründer",
+        "sales": "Leitung Vertrieb",
+        "technical": "Technischer Direktor",
+        "support": "Leitung Kundensupport"
+      }
     },
     "stats": {
       "customers": "Zufriedene Kunden",
       "products": "Verfügbare Produkte",
       "years": "Jahre im Geschäft",
       "support": "24/7 Support"
+    },
+    "cta": {
+      "title": "Bereit für mehr Komfort?",
+      "subtitle": "Entdecken Sie unsere Auswahl an Premium-HVAC-Produkten."
     }
   },
   "admin": {
@@ -551,7 +582,8 @@
       "reject": "Ablehnen",
       "approveAsOfficial": "Als offiziell genehmigen",
       "flag": "Zur Überprüfung markieren",
-      "official": "Offiziell"
+      "official": "Offiziell",
+      "reviewedBy": "Von"
     }
   },
   "promotions": {
@@ -717,7 +749,8 @@
     "copperPipes": "Kupferrohre",
     "refrigerants": "Kältemittel",
     "bracketsMounts": "Halterungen",
-    "drainPumps": "Kondensatpumpen"
+    "drainPumps": "Kondensatpumpen",
+    "comingSoon": "Kategorieliste demnächst verfügbar..."
   },
   "wishlist": {
     "title": "Wunschliste",
@@ -907,7 +940,17 @@
       "bestMatch": "Beste Übereinstimmung",
       "inverter": "Inverter",
       "viewDetails": "Details ansehen",
-      "empty": "Keine Produkte passen zu dieser Konfiguration. Versuchen Sie eine andere Größe oder Zone."
+      "viewProduct": "Details zu {{name}} ansehen",
+      "empty": "Keine Produkte passen zu dieser Konfiguration. Versuchen Sie eine andere Größe oder Zone.",
+      "loadError": "Empfehlungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+      "btuUnit": "BTU/h",
+      "noiseUnit": "dB"
+    },
+    "preview": {
+      "ariaLabel": "Axonometrische Vorschau eines {{area}} m² großen Raums: {{roomType}}, Klimazone {{zone}}",
+      "outside": "Außen",
+      "inside": "Innen",
+      "power": "Leistung"
     },
     "categories": {
       "eyebrow": "Katalog durchsuchen",
@@ -940,6 +983,252 @@
       "coldClimate": "Für Minusgrade ausgelegt",
       "budgetFriendly": "Starke Passung zu einem fairen Preis",
       "fallback": "Nächste Übereinstimmung für Ihre Konfiguration"
+    }
+  },
+  "languages": {
+    "en": "Englisch",
+    "bg": "Bulgarisch",
+    "de": "Deutsch"
+  },
+  "auth": {
+    "login": {
+      "title": "Anmelden",
+      "subtitle": "Melden Sie sich bei Ihrem ClimaSite-Konto an",
+      "email": "E-Mail",
+      "password": "Passwort",
+      "rememberMe": "Angemeldet bleiben",
+      "forgotPassword": "Passwort vergessen?",
+      "submit": "Anmelden",
+      "noAccount": "Sie haben noch kein Konto?",
+      "signUp": "Registrieren"
+    },
+    "register": {
+      "title": "Konto erstellen",
+      "subtitle": "Werden Sie Teil von ClimaSite",
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "email": "E-Mail",
+      "password": "Passwort",
+      "confirmPassword": "Passwort bestätigen",
+      "passwordRequirements": "Mindestens 8 Zeichen mit Groß- und Kleinbuchstaben, Zahl und Symbol verwenden.",
+      "terms": "Ich akzeptiere die Bedingungen",
+      "hasAccount": "Sie haben bereits ein Konto?",
+      "signIn": "Anmelden",
+      "submit": "Konto erstellen",
+      "success": "Konto erfolgreich erstellt. Bitte melden Sie sich an.",
+      "error": "Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut."
+    },
+    "forgotPassword": {
+      "title": "Passwort vergessen",
+      "subtitle": "Geben Sie Ihre E-Mail ein und wir senden Anweisungen.",
+      "email": "E-Mail",
+      "submit": "Reset-Link senden",
+      "backToLogin": "Zurück zur Anmeldung",
+      "success": "Wenn ein Konto für diese E-Mail existiert, wurden die Anweisungen gesendet."
+    },
+    "resetPassword": {
+      "title": "Passwort zurücksetzen",
+      "newPassword": "Neues Passwort",
+      "confirmNewPassword": "Neues Passwort bestätigen",
+      "reset": "Passwort zurücksetzen",
+      "success": "Passwort erfolgreich zurückgesetzt.",
+      "error": "Passwort konnte nicht zurückgesetzt werden. Bitte versuchen Sie es erneut."
+    },
+    "validation": {
+      "emailRequired": "E-Mail ist erforderlich",
+      "emailInvalid": "Geben Sie eine gültige E-Mail-Adresse ein",
+      "passwordRequired": "Passwort ist erforderlich"
+    },
+    "showPassword": "Passwort anzeigen",
+    "hidePassword": "Passwort ausblenden",
+    "logout": "Abmelden"
+  },
+  "products": {
+    "title": "Produkte",
+    "all": "Alle Produkte",
+    "searchResults": "Suchergebnisse",
+    "itemsFound": "{{count}} Artikel gefunden",
+    "noImage": "Kein Bild",
+    "noProducts": "Keine Produkte gefunden",
+    "outOfStock": "Nicht vorrätig",
+    "onSale": "Im Angebot",
+    "freeShipping": "Kostenloser Versand",
+    "filter_sidebar": "Produktfilter",
+    "view": {
+      "grid": "Rasteransicht",
+      "list": "Listenansicht",
+      "options": "Ansichtsoptionen"
+    },
+    "sort": {
+      "title": "Sortieren nach",
+      "newest": "Neueste",
+      "priceAsc": "Preis: aufsteigend",
+      "priceDesc": "Preis: absteigend",
+      "nameAsc": "Name: A bis Z",
+      "nameDesc": "Name: Z bis A"
+    },
+    "filters": {
+      "title": "Filter",
+      "brand": "Marke",
+      "priceRange": "Preisspanne",
+      "minPrice": "Mindestpreis",
+      "maxPrice": "Höchstpreis",
+      "minPriceLabel": "Mindestpreis",
+      "maxPriceLabel": "Höchstpreis",
+      "priceFilterHint": "Produkte nach Preisspanne filtern",
+      "inStock": "Nur vorrätig",
+      "clearAll": "Alle Filter löschen"
+    },
+    "details": {
+      "addToCart": "In den Warenkorb",
+      "addToWishlist": "Zur Wunschliste hinzufügen",
+      "removeFromWishlist": "Von Wunschliste entfernen",
+      "description": "Beschreibung",
+      "specifications": "Spezifikationen",
+      "reviews": "Bewertungen",
+      "features": "Funktionen",
+      "inStock": "Vorrätig",
+      "outOfStock": "Nicht vorrätig",
+      "quantity": "Menge",
+      "decreaseQuantity": "Menge verringern",
+      "increaseQuantity": "Menge erhöhen",
+      "sku": "SKU",
+      "model": "Modell",
+      "noDescription": "Keine Beschreibung verfügbar.",
+      "noSpecifications": "Keine Spezifikationen verfügbar."
+    },
+    "error": {
+      "tryAgain": "Bitte versuchen Sie es erneut.",
+      "loadFailed": "Produkte konnten nicht geladen werden"
+    },
+    "stock": {
+      "inStock": "Vorrätig",
+      "lowStock": "Nur noch {{count}} verfügbar",
+      "outOfStock": "Nicht vorrätig"
+    },
+    "comparison": {
+      "addToCompare": "Zum Vergleich hinzufügen",
+      "removeFromCompare": "Aus Vergleich entfernen"
+    },
+    "consumables": {
+      "title": "Verbrauchsmaterial"
+    },
+    "similar": {
+      "title": "Ähnliche Produkte"
+    },
+    "variants": {
+      "priceRange": "Preisspanne"
+    },
+    "warranty": {
+      "title": "Garantie"
+    },
+    "returnPolicy": {
+      "days": "{{count}} Tage Rückgaberecht"
+    },
+    "recentlyViewed": {
+      "title": "Zuletzt angesehen",
+      "clearHistory": "Verlauf löschen"
+    },
+    "share": {
+      "title": "Teilen",
+      "copyLink": "Link kopieren",
+      "copied": "Kopiert",
+      "shareVia": "Teilen über"
+    },
+    "frequentlyBought": {
+      "title": "Häufig zusammen gekauft",
+      "subtitle": "Vervollständigen Sie Ihr Setup mit diesen empfohlenen Artikeln.",
+      "included": "Enthalten",
+      "totalItems": "Gesamtanzahl Artikel",
+      "bundleSavings": "Bundle-Ersparnis",
+      "bundlePrice": "Bundle-Preis",
+      "addBundle": "Bundle in den Warenkorb"
+    },
+    "financing": {
+      "title": "Finanzierungsoptionen",
+      "zeroInterest": "0% Zinsen",
+      "monthlyFrom": "Ab {{amount}}/Monat",
+      "months": "{{count}} Monate",
+      "interestRate": "{{rate}}% Zinsen",
+      "monthlyPayment": "Monatsrate",
+      "totalCost": "Gesamtkosten",
+      "interest": "Zinsen",
+      "disclaimer": "*Repräsentatives Beispiel. Bonitätsprüfung erforderlich. Es gelten Bedingungen."
+    },
+    "installation": {
+      "title": "Installationsservice",
+      "subtitle": "Professionelle Installation durch zertifizierte Techniker",
+      "recommended": "Empfohlen",
+      "fastest": "Am schnellsten",
+      "estimatedTime": "{{days}} Tage",
+      "select": "Auswählen",
+      "selected": "Ausgewählt",
+      "requestTitle": "Installation anfragen",
+      "customerName": "Name",
+      "customerEmail": "E-Mail",
+      "customerPhone": "Telefon",
+      "namePlaceholder": "Namen eingeben",
+      "emailPlaceholder": "E-Mail eingeben",
+      "phonePlaceholder": "Telefon eingeben",
+      "address": "Adresse",
+      "addressPlaceholder": "Straße und Hausnummer",
+      "addressLine2": "Adresszeile 2",
+      "addressLine2Placeholder": "Wohnung, Suite usw.",
+      "city": "Stadt",
+      "cityPlaceholder": "Stadt",
+      "postalCode": "Postleitzahl",
+      "postalCodePlaceholder": "Postleitzahl",
+      "country": "Land",
+      "selectCountry": "Land auswählen",
+      "preferredDate": "Wunschtermin",
+      "preferredTime": "Wunschzeit",
+      "anyTime": "Jederzeit",
+      "morning": "Morgen",
+      "afternoon": "Nachmittag",
+      "evening": "Abend",
+      "timeSlots": {
+        "morning": "09:00 - 12:00",
+        "afternoon": "12:00 - 17:00",
+        "evening": "17:00 - 20:00"
+      },
+      "notes": "Notizen",
+      "notesPlaceholder": "Zusätzliche Hinweise zur Installation",
+      "selectedService": "Ausgewählter Service",
+      "estimatedCost": "Geschätzte Kosten",
+      "submitRequest": "Anfrage senden",
+      "submitting": "Wird gesendet...",
+      "requestSubmitted": "Anfrage gesendet",
+      "requestSubmittedMessage": "Wir kontaktieren Sie zur Bestätigung der Details.",
+      "requestInstallation": "Installation anfragen",
+      "notAvailable": "Installation ist für dieses Produkt nicht verfügbar.",
+      "available": "Installation verfügbar"
+    },
+    "qa": {
+      "title": "Fragen & Antworten",
+      "totalQuestions": "{{count}} Fragen",
+      "answeredQuestions": "{{count}} beantwortet",
+      "askQuestion": "Frage stellen",
+      "yourQuestion": "Ihre Frage",
+      "questionPlaceholder": "Fragen Sie zu diesem Produkt",
+      "submitQuestion": "Frage senden",
+      "submitting": "Wird gesendet...",
+      "questionSubmittedSuccess": "Frage wurde zur Prüfung eingereicht.",
+      "loginToAsk": "Melden Sie sich an, um eine Frage zu stellen",
+      "loginNow": "Jetzt anmelden",
+      "anonymous": "Anonym",
+      "helpful": "Hilfreich",
+      "answer": "Antworten",
+      "loginToAnswer": "Anmelden, um zu antworten",
+      "answerPlaceholder": "Antwort schreiben",
+      "submitAnswer": "Antwort senden",
+      "communityMember": "Community-Mitglied",
+      "officialAnswer": "Offizielle Antwort",
+      "noAnswersYet": "Noch keine Antworten",
+      "noQuestionsYet": "Noch keine Fragen",
+      "beFirstToAsk": "Stellen Sie als Erste/r eine Frage.",
+      "errors": {
+        "questionTooShort": "Die Frage muss mindestens 10 Zeichen lang sein."
+      }
     }
   }
 }

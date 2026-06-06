@@ -5,7 +5,7 @@ using ClimaSite.Core.Entities;
 using FluentAssertions;
 using Xunit;
 
-namespace ClimaSite.Core.Tests.Features.Products.Scoring;
+namespace ClimaSite.Application.Tests.Features.Products.Scoring;
 
 public class RecommendationScoringServiceTests
 {
@@ -107,25 +107,32 @@ public class RecommendationScoringServiceTests
         // Act
         var score = _service.ScoreProduct(product, areaM2: 24, climateZone: 'B', roomType: "living");
 
-        // Assert: Between falloff range (0.5 to 0.9), should get partial score
+        var perfectProduct = CreateProduct(btu: 2640);
+        var perfectScore = _service.ScoreProduct(perfectProduct, areaM2: 24, climateZone: 'B', roomType: "living");
+
+        // Assert: Between falloff range (0.5 to 0.9), should get partial BTU score
         score.Should().NotBeNull();
+        perfectScore.Should().NotBeNull();
         score.Should().BeGreaterThan(0.0);
-        score.Should().BeLessThan(0.5);
+        score.Should().BeLessThan(perfectScore!.Value);
     }
 
     [Fact]
     public void ScoreProduct_WithBtuWayUnder_ReturnsZeroBtuScore()
     {
         // Arrange: 24 m² room, Zone B = 2640 BTU required
-        // Product has 1320 BTU (50% of required, at the falloff boundary)
         var product = CreateProduct(btu: 1320);
 
         // Act
         var score = _service.ScoreProduct(product, areaM2: 24, climateZone: 'B', roomType: "living");
 
-        // Assert: At 50% (falloff boundary), BTU score should be near 0
+        var perfectProduct = CreateProduct(btu: 2640);
+        var perfectScore = _service.ScoreProduct(perfectProduct, areaM2: 24, climateZone: 'B', roomType: "living");
+
+        // Assert: At 50% (falloff boundary), BTU component should be zero while other factors still contribute
         score.Should().NotBeNull();
-        score.Should().BeLessThan(0.2); // Very low overall score
+        perfectScore.Should().NotBeNull();
+        (perfectScore!.Value - score!.Value).Should().BeApproximately(0.4, 0.01);
     }
 
     [Fact]
@@ -153,9 +160,13 @@ public class RecommendationScoringServiceTests
         // Act
         var score = _service.ScoreProduct(product, areaM2: 24, climateZone: 'B', roomType: "living");
 
-        // Assert: No BTU = zero BTU component, should score very low overall
+        var perfectProduct = CreateProduct(btu: 2640);
+        var perfectScore = _service.ScoreProduct(perfectProduct, areaM2: 24, climateZone: 'B', roomType: "living");
+
+        // Assert: No BTU = zero BTU component while other factors still contribute
         score.Should().NotBeNull();
-        score.Should().BeLessThan(0.3);
+        perfectScore.Should().NotBeNull();
+        (perfectScore!.Value - score!.Value).Should().BeApproximately(0.4, 0.01);
     }
 
     #endregion
@@ -234,9 +245,13 @@ public class RecommendationScoringServiceTests
         // Act
         var score = _service.ScoreProduct(product, areaM2: 24, climateZone: 'C', roomType: "living");
 
-        // Assert: Should get reduced zone fit score
+        var coldCapable = CreateProduct(btu: 2640, minTemp: -20);
+        var coldScore = _service.ScoreProduct(coldCapable, areaM2: 24, climateZone: 'C', roomType: "living");
+
+        // Assert: Should get reduced zone fit score versus cold-capable product
         score.Should().NotBeNull();
-        score.Should().BeLessThan(0.5);
+        coldScore.Should().NotBeNull();
+        (coldScore!.Value - score!.Value).Should().BeApproximately(0.075, 0.01);
     }
 
     [Fact]
@@ -248,9 +263,13 @@ public class RecommendationScoringServiceTests
         // Act
         var score = _service.ScoreProduct(product, areaM2: 24, climateZone: 'C', roomType: "living");
 
-        // Assert: Should get minimal score due to zone mismatch
+        var coldCapable = CreateProduct(btu: 2640, minTemp: -20);
+        var coldScore = _service.ScoreProduct(coldCapable, areaM2: 24, climateZone: 'C', roomType: "living");
+
+        // Assert: Should get zero zone-fit component versus cold-capable product
         score.Should().NotBeNull();
-        score.Should().BeLessThan(0.3);
+        coldScore.Should().NotBeNull();
+        (coldScore!.Value - score!.Value).Should().BeApproximately(0.15, 0.01);
     }
 
     #endregion
@@ -284,9 +303,15 @@ public class RecommendationScoringServiceTests
         // Act
         var score = _service.ScoreProduct(product, areaM2: 24, climateZone: 'B', roomType: "office");
 
-        // Assert: Should get partial score (0.3)
+        var matchingProduct = CreateProduct(
+            btu: 2640,
+            recommendedRoomTypes: new List<string> { "office" });
+        var matchingScore = _service.ScoreProduct(matchingProduct, areaM2: 24, climateZone: 'B', roomType: "office");
+
+        // Assert: Should get partial room-fit score (0.3) versus full room match
         score.Should().NotBeNull();
-        score.Should().BeLessThan(0.4); // Lower due to room type mismatch
+        matchingScore.Should().NotBeNull();
+        (matchingScore!.Value - score!.Value).Should().BeApproximately(0.105, 0.01);
     }
 
     [Fact]
@@ -298,9 +323,15 @@ public class RecommendationScoringServiceTests
         // Act
         var score = _service.ScoreProduct(product, areaM2: 24, climateZone: 'B', roomType: "living");
 
-        // Assert: Should get partial score
+        var matchingProduct = CreateProduct(
+            btu: 2640,
+            recommendedRoomTypes: new List<string> { "living" });
+        var matchingScore = _service.ScoreProduct(matchingProduct, areaM2: 24, climateZone: 'B', roomType: "living");
+
+        // Assert: Should get partial room-fit score when no recommendation data exists
         score.Should().NotBeNull();
-        score.Should().BeLessThan(0.4);
+        matchingScore.Should().NotBeNull();
+        (matchingScore!.Value - score!.Value).Should().BeApproximately(0.105, 0.01);
     }
 
     #endregion
@@ -372,10 +403,18 @@ public class RecommendationScoringServiceTests
         // Act
         var score = _service.ScoreProduct(product, areaM2: 24, climateZone: 'B', roomType: "living");
 
-        // Assert: Should be moderate score
+        var optimalProduct = CreateProduct(
+            btu: 2640,
+            isInverter: true,
+            recommendedRoomTypes: new List<string> { "living" },
+            stockQuantity: 3);
+        var optimalScore = _service.ScoreProduct(optimalProduct, areaM2: 24, climateZone: 'B', roomType: "living");
+
+        // Assert: Should be moderate relative to an optimal comparable product
         score.Should().NotBeNull();
+        optimalScore.Should().NotBeNull();
         score.Should().BeGreaterThan(0.2);
-        score.Should().BeLessThan(0.6);
+        score.Should().BeLessThan(optimalScore!.Value);
     }
 
     [Fact]

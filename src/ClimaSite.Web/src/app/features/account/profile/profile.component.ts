@@ -1,8 +1,8 @@
-import { Component, inject, signal, OnInit, effect } from '@angular/core';
+import { Component, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { AuthService, User, UpdateProfileRequest } from '../../../auth/services/auth.service';
+import { AuthService, UpdateProfileRequest } from '../../../auth/services/auth.service';
 
 @Component({
   selector: 'app-profile',
@@ -117,9 +117,9 @@ import { AuthService, User, UpdateProfileRequest } from '../../../auth/services/
                 formControlName="preferredLanguage"
                 data-testid="profile-language"
               >
-                <option value="en">English</option>
-                <option value="bg">Български</option>
-                <option value="de">Deutsch</option>
+                <option value="en">{{ 'languages.en' | translate }}</option>
+                <option value="bg">{{ 'languages.bg' | translate }}</option>
+                <option value="de">{{ 'languages.de' | translate }}</option>
               </select>
             </div>
 
@@ -356,7 +356,7 @@ import { AuthService, User, UpdateProfileRequest } from '../../../auth/services/
     }
   `]
 })
-export class ProfileComponent implements OnInit {
+export class ProfileComponent {
   private readonly authService = inject(AuthService);
   private readonly translateService = inject(TranslateService);
   private readonly fb = inject(FormBuilder);
@@ -412,10 +412,6 @@ export class ProfileComponent implements OnInit {
         });
       }
     });
-  }
-
-  ngOnInit(): void {
-    // Forms are now updated via effect when user data changes
   }
 
   private passwordMatchValidator(control: AbstractControl): ValidationErrors | null {

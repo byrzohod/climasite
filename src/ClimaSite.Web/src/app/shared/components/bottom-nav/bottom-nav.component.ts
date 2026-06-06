@@ -2,10 +2,8 @@ import {
   Component, 
   inject, 
   signal, 
-  computed, 
   effect, 
   OnDestroy, 
-  HostBinding,
   PLATFORM_ID 
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
@@ -53,7 +51,7 @@ export interface BottomNavItem {
       class="bottom-nav"
       [class.hidden]="isHidden()"
       role="navigation"
-      aria-label="Mobile navigation"
+      [attr.aria-label]="'common.aria.mobileNavigation' | translate"
       data-testid="bottom-nav"
     >
       @for (item of navItems; track item.testId) {
@@ -73,7 +71,7 @@ export interface BottomNavItem {
                   class="badge"
                   [class.pulse]="badgePulse()"
                   aria-live="polite"
-                  [attr.aria-label]="cartItemCount() + ' items in cart'"
+                  [attr.aria-label]="'cart.items' | translate:{ count: cartItemCount() }"
                 >
                   {{ cartItemCount() > 99 ? '99+' : cartItemCount() }}
                 </span>
@@ -434,7 +432,6 @@ export class BottomNavComponent implements OnDestroy {
       this.router.navigate(['/products'], { queryParams: { search: 'open' } });
     } else if (action === 'menu') {
       // Future: Open mobile menu sheet
-      console.log('Menu action triggered');
     }
   }
 }

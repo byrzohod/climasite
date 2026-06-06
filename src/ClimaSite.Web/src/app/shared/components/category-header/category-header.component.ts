@@ -24,11 +24,12 @@ imports: [CommonModule, RouterLink, TranslateModule],
   template: `
     <div class="category-header" [class.has-image]="category()?.imageUrl" data-testid="category-header">
 <!-- Background Image Overlay -->
-      <div 
-        class="header-background" 
-        *ngIf="category()?.imageUrl" 
-        [style.backgroundImage]="'url(' + category()!.imageUrl + ')'"
-      ></div>
+      @if (category()?.imageUrl) {
+        <div
+          class="header-background"
+          [style.backgroundImage]="'url(' + category()!.imageUrl + ')'"
+        ></div>
+      }
 
       <div class="header-content">
         <!-- Breadcrumb -->
@@ -36,33 +37,39 @@ imports: [CommonModule, RouterLink, TranslateModule],
           <a routerLink="/" class="breadcrumb-link">{{ 'nav.home' | translate }}</a>
           <span class="separator">/</span>
           <a routerLink="/products" class="breadcrumb-link">{{ 'nav.products' | translate }}</a>
-          <ng-container *ngIf="category()?.parentCategory">
+          @if (category()?.parentCategory; as parentCategory) {
             <span class="separator">/</span>
-            <a [routerLink]="['/products/category', category()!.parentCategory!.slug]" class="breadcrumb-link">
-              {{ category()!.parentCategory!.name }}
+            <a [routerLink]="['/products/category', parentCategory.slug]" class="breadcrumb-link">
+              {{ parentCategory.name }}
             </a>
-          </ng-container>
+          }
           <span class="separator">/</span>
           <span class="breadcrumb-current">{{ category()?.name }}</span>
         </nav>
 
         <!-- Category Icon -->
-        <div class="category-icon" *ngIf="category()?.icon && !category()?.imageUrl">
-          <span>{{ getIconEmoji(category()!.icon!) }}</span>
-        </div>
+        @if (category()?.icon && !category()?.imageUrl) {
+          <div class="category-icon">
+            <span>{{ getIconEmoji(category()!.icon!) }}</span>
+          </div>
+        }
 
         <!-- Category Title -->
         <h1 class="category-title" data-testid="category-title">{{ category()?.name }}</h1>
 
         <!-- Category Description -->
-        <p class="category-description" *ngIf="category()?.description" data-testid="category-description">
-          {{ category()?.description }}
-        </p>
+        @if (category()?.description) {
+          <p class="category-description" data-testid="category-description">
+            {{ category()?.description }}
+          </p>
+        }
 
         <!-- Product Count -->
-        <div class="product-count" *ngIf="category()?.productCount !== undefined" data-testid="product-count">
-          {{ 'products.itemsFound' | translate: { count: category()!.productCount } }}
-        </div>
+        @if (category()?.productCount !== undefined) {
+          <div class="product-count" data-testid="product-count">
+            {{ 'products.itemsFound' | translate: { count: category()!.productCount } }}
+          </div>
+        }
       </div>
     </div>
   `,

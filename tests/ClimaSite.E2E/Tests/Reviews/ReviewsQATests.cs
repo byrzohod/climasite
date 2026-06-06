@@ -32,6 +32,26 @@ public class ReviewsQATests : IAsyncLifetime
         await _page.Context.CloseAsync();
     }
 
+    private async Task OpenReviewsTabAsync()
+    {
+        var reviewsTab = _page.Locator("[data-testid='tab-reviews']");
+        await Assertions.Expect(reviewsTab)
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+        await reviewsTab.ClickAsync();
+        await Assertions.Expect(_page.Locator("[data-testid='product-reviews']"))
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+    }
+
+    private async Task OpenQaTabAsync()
+    {
+        var qaTab = _page.Locator("[data-testid='tab-qa']");
+        await Assertions.Expect(qaTab)
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+        await qaTab.ClickAsync();
+        await Assertions.Expect(_page.Locator("[data-testid='product-qa']"))
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+    }
+
     #region Reviews Display Tests
 
     [Fact]
@@ -43,9 +63,7 @@ public class ReviewsQATests : IAsyncLifetime
         // Act - Navigate to the product page
         var productPage = new ProductPage(_page);
         await productPage.NavigateAsync(product.Slug);
-
-        // Wait for reviews section to load
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await OpenReviewsTabAsync();
 
         // Assert - Reviews section should be visible
         var reviewsSection = _page.Locator("[data-testid='product-reviews']");
@@ -65,8 +83,7 @@ public class ReviewsQATests : IAsyncLifetime
         // Act - Navigate to product page
         var productPage = new ProductPage(_page);
         await productPage.NavigateAsync(product.Slug);
-
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await OpenReviewsTabAsync();
 
         // Assert - Summary section should be visible with rating display
         var reviewsSummary = _page.Locator("[data-testid='reviews-summary']");
@@ -89,8 +106,7 @@ public class ReviewsQATests : IAsyncLifetime
         // Act - Navigate to product page
         var productPage = new ProductPage(_page);
         await productPage.NavigateAsync(product.Slug);
-
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await OpenReviewsTabAsync();
 
         // Assert - Rating distribution section should be visible
         var reviewsSummary = _page.Locator("[data-testid='reviews-summary']");
@@ -122,8 +138,7 @@ public class ReviewsQATests : IAsyncLifetime
         // Navigate to product page
         var productPage = new ProductPage(_page);
         await productPage.NavigateAsync(product.Slug);
-
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await OpenReviewsTabAsync();
 
         // Assert - Write review button should be visible for logged in users
         var writeReviewBtn = _page.Locator("[data-testid='write-review-btn']");
@@ -154,13 +169,19 @@ public class ReviewsQATests : IAsyncLifetime
         // Wait for submission (form should close or success message appears)
         await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-        // The form should be hidden after successful submission
-        // (or error message if already reviewed)
-        var formStillVisible = await reviewForm.IsVisibleAsync();
+        var formError = _page.Locator(".form-error");
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+        while (DateTime.UtcNow < deadline &&
+               await reviewForm.IsVisibleAsync() &&
+               !(await formError.IsVisibleAsync()))
+        {
+            await Task.Delay(250);
+        }
 
-        // Either the form closed (success) or an error message is shown
-        // Both are valid outcomes depending on test data state
-        (formStillVisible == false || await _page.Locator(".form-error").IsVisibleAsync())
+        var formHidden = !(await reviewForm.IsVisibleAsync());
+        var hasFormError = await formError.IsVisibleAsync();
+
+        (formHidden || hasFormError)
             .Should().BeTrue("Review form should close on success or show error if duplicate");
     }
 
@@ -173,8 +194,7 @@ public class ReviewsQATests : IAsyncLifetime
         // Act - Navigate to product page without logging in
         var productPage = new ProductPage(_page);
         await productPage.NavigateAsync(product.Slug);
-
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await OpenReviewsTabAsync();
 
         // Assert - Write review button should NOT be visible
         var writeReviewBtn = _page.Locator("[data-testid='write-review-btn']");
@@ -203,8 +223,7 @@ public class ReviewsQATests : IAsyncLifetime
         // Act - Navigate to product page
         var productPage = new ProductPage(_page);
         await productPage.NavigateAsync(product.Slug);
-
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await OpenReviewsTabAsync();
 
         // Assert - Check for reviews section
         var reviewsSection = _page.Locator("[data-testid='product-reviews']");
@@ -232,8 +251,7 @@ public class ReviewsQATests : IAsyncLifetime
         // Act - Navigate to product page
         var productPage = new ProductPage(_page);
         await productPage.NavigateAsync(product.Slug);
-
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await OpenReviewsTabAsync();
 
         // Assert - Sort/filter dropdown should be visible
         var sortDropdown = _page.Locator("#sort-by");
@@ -269,30 +287,15 @@ public class ReviewsQATests : IAsyncLifetime
         // Act - Navigate to product page
         var productPage = new ProductPage(_page);
         await productPage.NavigateAsync(product.Slug);
-
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await OpenQaTabAsync();
 
         // Assert - Q&A section should be present on product page
-        // Look for the Q&A component or section
         var qaSection = _page.Locator(".product-qa");
-        var isQAVisible = await qaSection.IsVisibleAsync();
+        await Assertions.Expect(qaSection).ToBeVisibleAsync();
 
-        // If Q&A section exists, verify its structure
-        if (isQAVisible)
-        {
-            // Q&A header should be visible
-            var qaHeader = _page.Locator(".qa-header h2");
-            await Assertions.Expect(qaHeader).ToBeVisibleAsync();
-        }
-        else
-        {
-            // Q&A may be in a tab or accordion - check for any Q&A related content
-            var pageContent = await _page.ContentAsync();
-
-            // The page should have Q&A functionality available
-            (pageContent.Contains("product-qa") || pageContent.Contains("Q&A") || pageContent.Contains("Questions"))
-                .Should().BeTrue("Product page should have Q&A functionality");
-        }
+        // Q&A header should be visible
+        var qaHeader = _page.Locator(".qa-header h2");
+        await Assertions.Expect(qaHeader).ToBeVisibleAsync();
     }
 
     [Fact]
@@ -310,24 +313,14 @@ public class ReviewsQATests : IAsyncLifetime
         // Navigate to product page
         var productPage = new ProductPage(_page);
         await productPage.NavigateAsync(product.Slug);
-
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-        // Look for Q&A section
-        var qaSection = _page.Locator(".product-qa");
-        var isQAVisible = await qaSection.IsVisibleAsync();
-
-        if (!isQAVisible)
-        {
-            // Q&A might be in a different location or tab - skip if not visible
-            return;
-        }
+        await OpenQaTabAsync();
 
         // Assert - Ask question button should be visible for logged in users
         var askQuestionBtn = _page.Locator("[data-testid='ask-question-btn']");
         await Assertions.Expect(askQuestionBtn).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
 
         // Act - Click to open question form
+        await askQuestionBtn.ScrollIntoViewIfNeededAsync();
         await askQuestionBtn.ClickAsync();
 
         // Question form should appear
@@ -372,18 +365,7 @@ public class ReviewsQATests : IAsyncLifetime
         // Navigate to product page
         var productPage = new ProductPage(_page);
         await productPage.NavigateAsync(product.Slug);
-
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-        // Look for Q&A section
-        var qaSection = _page.Locator(".product-qa");
-        var isQAVisible = await qaSection.IsVisibleAsync();
-
-        if (!isQAVisible)
-        {
-            // Q&A might be in a different location - skip if not visible
-            return;
-        }
+        await OpenQaTabAsync();
 
         // Check if there are any questions to answer
         var questionCards = _page.Locator(".question-card");
@@ -440,23 +422,7 @@ public class ReviewsQATests : IAsyncLifetime
         // Act - Navigate to product page without logging in
         var productPage = new ProductPage(_page);
         await productPage.NavigateAsync(product.Slug);
-
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-        // Look for Q&A section
-        var qaSection = _page.Locator(".product-qa");
-        var isQAVisible = await qaSection.IsVisibleAsync();
-
-        if (!isQAVisible)
-        {
-            // Q&A might be in a different location - check for login prompt in page
-            var pageContent = await _page.ContentAsync();
-
-            // Q&A functionality should require login for asking questions
-            (pageContent.Contains("qa-login-prompt") || pageContent.Contains("login"))
-                .Should().BeTrue("Q&A should indicate login requirement for guests");
-            return;
-        }
+        await OpenQaTabAsync();
 
         // Assert - Ask question button should NOT be visible for guests
         var askQuestionBtn = _page.Locator("[data-testid='ask-question-btn']");
@@ -483,17 +449,7 @@ public class ReviewsQATests : IAsyncLifetime
         // Act - Navigate to product page without logging in
         var productPage = new ProductPage(_page);
         await productPage.NavigateAsync(product.Slug);
-
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-        // Look for Q&A section
-        var qaSection = _page.Locator(".product-qa");
-        var isQAVisible = await qaSection.IsVisibleAsync();
-
-        if (!isQAVisible)
-        {
-            return; // Q&A not visible on this page layout
-        }
+        await OpenQaTabAsync();
 
         // Check if there are any questions
         var questionCards = _page.Locator(".question-card");

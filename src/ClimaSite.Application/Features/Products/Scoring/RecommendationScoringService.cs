@@ -226,8 +226,10 @@ public class RecommendationScoringService
 
         if (value is JsonElement jsonElement)
         {
-            if (jsonElement.TryGetBoolean(out var jsonBool))
-                return jsonBool;
+            if (jsonElement.ValueKind == JsonValueKind.True)
+                return true;
+            if (jsonElement.ValueKind == JsonValueKind.False)
+                return false;
         }
 
         return false;

@@ -19,20 +19,22 @@ type TabType = 'questions' | 'answers' | 'reviews';
       </div>
 
       <!-- Stats -->
-      <div class="stats-row" *ngIf="data()">
-        <div class="stat-card pending">
-          <span class="stat-value">{{ data()!.pendingQuestions }}</span>
-          <span class="stat-label">{{ 'admin.moderation.pendingQuestions' | translate }}</span>
+      @if (data()) {
+        <div class="stats-row">
+          <div class="stat-card pending">
+            <span class="stat-value">{{ data()!.pendingQuestions }}</span>
+            <span class="stat-label">{{ 'admin.moderation.pendingQuestions' | translate }}</span>
+          </div>
+          <div class="stat-card pending">
+            <span class="stat-value">{{ data()!.pendingAnswers }}</span>
+            <span class="stat-label">{{ 'admin.moderation.pendingAnswers' | translate }}</span>
+          </div>
+          <div class="stat-card pending">
+            <span class="stat-value">{{ reviewData()?.pendingReviews || 0 }}</span>
+            <span class="stat-label">{{ 'admin.moderation.pendingReviews' | translate }}</span>
+          </div>
         </div>
-        <div class="stat-card pending">
-          <span class="stat-value">{{ data()!.pendingAnswers }}</span>
-          <span class="stat-label">{{ 'admin.moderation.pendingAnswers' | translate }}</span>
-        </div>
-        <div class="stat-card pending">
-          <span class="stat-value">{{ reviewData()?.pendingReviews || 0 }}</span>
-          <span class="stat-label">{{ 'admin.moderation.pendingReviews' | translate }}</span>
-        </div>
-      </div>
+      }
 
       <!-- Tabs -->
       <div class="tabs">
@@ -42,7 +44,9 @@ type TabType = 'questions' | 'answers' | 'reviews';
           (click)="setTab('questions')"
           data-testid="questions-tab">
           {{ 'admin.moderation.questionsTab' | translate }}
-          <span class="badge" *ngIf="data()?.pendingQuestions">{{ data()!.pendingQuestions }}</span>
+          @if (data()?.pendingQuestions) {
+            <span class="badge">{{ data()!.pendingQuestions }}</span>
+          }
         </button>
         <button
           class="tab"
@@ -50,7 +54,9 @@ type TabType = 'questions' | 'answers' | 'reviews';
           (click)="setTab('answers')"
           data-testid="answers-tab">
           {{ 'admin.moderation.answersTab' | translate }}
-          <span class="badge" *ngIf="data()?.pendingAnswers">{{ data()!.pendingAnswers }}</span>
+          @if (data()?.pendingAnswers) {
+            <span class="badge">{{ data()!.pendingAnswers }}</span>
+          }
         </button>
         <button
           class="tab"
@@ -58,181 +64,231 @@ type TabType = 'questions' | 'answers' | 'reviews';
           (click)="setTab('reviews')"
           data-testid="reviews-tab">
           {{ 'admin.moderation.reviewsTab' | translate }}
-          <span class="badge" *ngIf="reviewData()?.pendingReviews">{{ reviewData()!.pendingReviews }}</span>
+          @if (reviewData()?.pendingReviews) {
+            <span class="badge">{{ reviewData()!.pendingReviews }}</span>
+          }
         </button>
       </div>
 
       <!-- Loading State -->
-      <div class="loading" *ngIf="loading()">
-        <div class="spinner"></div>
-        <span>{{ 'common.loading' | translate }}</span>
-      </div>
+      @if (loading()) {
+        <div class="loading">
+          <div class="spinner"></div>
+          <span>{{ 'common.loading' | translate }}</span>
+        </div>
+      }
 
       <!-- Questions List -->
-      <div class="items-list" *ngIf="!loading() && activeTab() === 'questions'">
-        <div class="empty-state" *ngIf="data()?.questions?.length === 0">
-          <span class="icon">&#10003;</span>
-          <p>{{ 'admin.moderation.noQuestions' | translate }}</p>
-        </div>
-
-        <div class="moderation-item" *ngFor="let question of data()?.questions" data-testid="question-item">
-          <div class="item-header">
-            <span class="status-badge" [class]="question.status.toLowerCase()">
-              {{ question.status }}
-            </span>
-            <a [routerLink]="['/products', question.productSlug]" class="product-link">
-              {{ question.productName }}
-            </a>
-            <span class="date">{{ question.createdAt | date:'medium' }}</span>
-          </div>
-
-          <div class="item-content">
-            <p class="question-text">{{ question.questionText }}</p>
-            <div class="meta">
-              <span *ngIf="question.askerName">
-                <strong>{{ 'admin.moderation.askedBy' | translate }}:</strong> {{ question.askerName }}
-              </span>
-              <span *ngIf="question.askerEmail">
-                ({{ question.askerEmail }})
-              </span>
+      @if (!loading() && activeTab() === 'questions') {
+        <div class="items-list">
+          @if (data()?.questions?.length === 0) {
+            <div class="empty-state">
+              <span class="icon">&#10003;</span>
+              <p>{{ 'admin.moderation.noQuestions' | translate }}</p>
             </div>
-          </div>
+          }
 
-          <div class="item-actions">
-            <button
-              class="action-btn approve"
-              (click)="approveQuestion(question)"
-              [disabled]="processingId() === question.id"
-              data-testid="approve-question">
-              <span *ngIf="processingId() !== question.id">{{ 'admin.moderation.approve' | translate }}</span>
-              <span *ngIf="processingId() === question.id" class="spinner small"></span>
-            </button>
-            <button
-              class="action-btn reject"
-              (click)="rejectQuestion(question)"
-              [disabled]="processingId() === question.id"
-              data-testid="reject-question">
-              {{ 'admin.moderation.reject' | translate }}
-            </button>
-          </div>
+          @for (question of data()?.questions ?? []; track question.id) {
+            <div class="moderation-item" data-testid="question-item">
+              <div class="item-header">
+                <span class="status-badge" [class]="question.status.toLowerCase()">
+                  {{ question.status }}
+                </span>
+                <a [routerLink]="['/products', question.productSlug]" class="product-link">
+                  {{ question.productName }}
+                </a>
+                <span class="date">{{ question.createdAt | date:'medium' }}</span>
+              </div>
+
+              <div class="item-content">
+                <p class="question-text">{{ question.questionText }}</p>
+                <div class="meta">
+                  @if (question.askerName) {
+                    <span>
+                      <strong>{{ 'admin.moderation.askedBy' | translate }}:</strong> {{ question.askerName }}
+                    </span>
+                  }
+                  @if (question.askerEmail) {
+                    <span>
+                      ({{ question.askerEmail }})
+                    </span>
+                  }
+                </div>
+              </div>
+
+              <div class="item-actions">
+                <button
+                  class="action-btn approve"
+                  (click)="approveQuestion(question)"
+                  [disabled]="processingId() === question.id"
+                  data-testid="approve-question">
+                  @if (processingId() !== question.id) {
+                    <span>{{ 'admin.moderation.approve' | translate }}</span>
+                  }
+                  @if (processingId() === question.id) {
+                    <span class="spinner small"></span>
+                  }
+                </button>
+                <button
+                  class="action-btn reject"
+                  (click)="rejectQuestion(question)"
+                  [disabled]="processingId() === question.id"
+                  data-testid="reject-question">
+                  {{ 'admin.moderation.reject' | translate }}
+                </button>
+              </div>
+            </div>
+          }
         </div>
-      </div>
+      }
 
       <!-- Answers List -->
-      <div class="items-list" *ngIf="!loading() && activeTab() === 'answers'">
-        <div class="empty-state" *ngIf="data()?.answers?.length === 0">
-          <span class="icon">&#10003;</span>
-          <p>{{ 'admin.moderation.noAnswers' | translate }}</p>
-        </div>
-
-        <div class="moderation-item" *ngFor="let answer of data()?.answers" data-testid="answer-item">
-          <div class="item-header">
-            <span class="status-badge" [class]="answer.status.toLowerCase()">
-              {{ answer.status }}
-            </span>
-            <a [routerLink]="['/products', answer.productSlug]" class="product-link">
-              {{ answer.productName }}
-            </a>
-            <span class="date">{{ answer.createdAt | date:'medium' }}</span>
-          </div>
-
-          <div class="item-content">
-            <p class="context-text">
-              <strong>{{ 'admin.moderation.question' | translate }}:</strong> {{ answer.questionText }}
-            </p>
-            <p class="answer-text">{{ answer.answerText }}</p>
-            <div class="meta">
-              <span *ngIf="answer.answererName">
-                <strong>{{ 'admin.moderation.answeredBy' | translate }}:</strong> {{ answer.answererName }}
-              </span>
-              <span class="official-badge" *ngIf="answer.isOfficial">{{ 'admin.moderation.official' | translate }}</span>
+      @if (!loading() && activeTab() === 'answers') {
+        <div class="items-list">
+          @if (data()?.answers?.length === 0) {
+            <div class="empty-state">
+              <span class="icon">&#10003;</span>
+              <p>{{ 'admin.moderation.noAnswers' | translate }}</p>
             </div>
-          </div>
+          }
 
-          <div class="item-actions">
-            <button
-              class="action-btn approve"
-              (click)="approveAnswer(answer, false)"
-              [disabled]="processingId() === answer.id"
-              data-testid="approve-answer">
-              <span *ngIf="processingId() !== answer.id">{{ 'admin.moderation.approve' | translate }}</span>
-              <span *ngIf="processingId() === answer.id" class="spinner small"></span>
-            </button>
-            <button
-              class="action-btn approve-official"
-              (click)="approveAnswer(answer, true)"
-              [disabled]="processingId() === answer.id"
-              data-testid="approve-official">
-              {{ 'admin.moderation.approveAsOfficial' | translate }}
-            </button>
-            <button
-              class="action-btn reject"
-              (click)="rejectAnswer(answer)"
-              [disabled]="processingId() === answer.id"
-              data-testid="reject-answer">
-              {{ 'admin.moderation.reject' | translate }}
-            </button>
-          </div>
+          @for (answer of data()?.answers ?? []; track answer.id) {
+            <div class="moderation-item" data-testid="answer-item">
+              <div class="item-header">
+                <span class="status-badge" [class]="answer.status.toLowerCase()">
+                  {{ answer.status }}
+                </span>
+                <a [routerLink]="['/products', answer.productSlug]" class="product-link">
+                  {{ answer.productName }}
+                </a>
+                <span class="date">{{ answer.createdAt | date:'medium' }}</span>
+              </div>
+
+              <div class="item-content">
+                <p class="context-text">
+                  <strong>{{ 'admin.moderation.question' | translate }}:</strong> {{ answer.questionText }}
+                </p>
+                <p class="answer-text">{{ answer.answerText }}</p>
+                <div class="meta">
+                  @if (answer.answererName) {
+                    <span>
+                      <strong>{{ 'admin.moderation.answeredBy' | translate }}:</strong> {{ answer.answererName }}
+                    </span>
+                  }
+                  @if (answer.isOfficial) {
+                    <span class="official-badge">{{ 'admin.moderation.official' | translate }}</span>
+                  }
+                </div>
+              </div>
+
+              <div class="item-actions">
+                <button
+                  class="action-btn approve"
+                  (click)="approveAnswer(answer, false)"
+                  [disabled]="processingId() === answer.id"
+                  data-testid="approve-answer">
+                  @if (processingId() !== answer.id) {
+                    <span>{{ 'admin.moderation.approve' | translate }}</span>
+                  }
+                  @if (processingId() === answer.id) {
+                    <span class="spinner small"></span>
+                  }
+                </button>
+                <button
+                  class="action-btn approve-official"
+                  (click)="approveAnswer(answer, true)"
+                  [disabled]="processingId() === answer.id"
+                  data-testid="approve-official">
+                  {{ 'admin.moderation.approveAsOfficial' | translate }}
+                </button>
+                <button
+                  class="action-btn reject"
+                  (click)="rejectAnswer(answer)"
+                  [disabled]="processingId() === answer.id"
+                  data-testid="reject-answer">
+                  {{ 'admin.moderation.reject' | translate }}
+                </button>
+              </div>
+            </div>
+          }
         </div>
-      </div>
+      }
 
       <!-- Reviews List -->
-      <div class="items-list" *ngIf="!loading() && activeTab() === 'reviews'">
-        <div class="empty-state" *ngIf="reviewData()?.reviews?.length === 0">
-          <span class="icon">&#10003;</span>
-          <p>{{ 'admin.moderation.noReviews' | translate }}</p>
-        </div>
-
-        <div class="moderation-item" *ngFor="let review of reviewData()?.reviews" data-testid="review-item">
-          <div class="item-header">
-            <span class="status-badge" [class]="review.status.toLowerCase()">
-              {{ review.status }}
-            </span>
-            <div class="rating">
-              <span class="stars">{{ '★'.repeat(review.rating) }}{{ '☆'.repeat(5 - review.rating) }}</span>
+      @if (!loading() && activeTab() === 'reviews') {
+        <div class="items-list">
+          @if (reviewData()?.reviews?.length === 0) {
+            <div class="empty-state">
+              <span class="icon">&#10003;</span>
+              <p>{{ 'admin.moderation.noReviews' | translate }}</p>
             </div>
-            <a [routerLink]="['/products', review.productSlug]" class="product-link">
-              {{ review.productName }}
-            </a>
-            <span class="date">{{ review.createdAt | date:'medium' }}</span>
-          </div>
+          }
 
-          <div class="item-content">
-            <p class="review-title" *ngIf="review.title"><strong>{{ review.title }}</strong></p>
-            <p class="review-text">{{ review.content }}</p>
-            <div class="meta">
-              <span *ngIf="review.reviewerName">
-                <strong>By:</strong> {{ review.reviewerName }}
-              </span>
-              <span class="verified-badge" *ngIf="review.isVerifiedPurchase">Verified Purchase</span>
+          @for (review of reviewData()?.reviews ?? []; track review.id) {
+            <div class="moderation-item" data-testid="review-item">
+              <div class="item-header">
+                <span class="status-badge" [class]="review.status.toLowerCase()">
+                  {{ review.status }}
+                </span>
+                <div class="rating">
+                  <span class="stars">{{ '★'.repeat(review.rating) }}{{ '☆'.repeat(5 - review.rating) }}</span>
+                </div>
+                <a [routerLink]="['/products', review.productSlug]" class="product-link">
+                  {{ review.productName }}
+                </a>
+                <span class="date">{{ review.createdAt | date:'medium' }}</span>
+              </div>
+
+              <div class="item-content">
+                @if (review.title) {
+                  <p class="review-title"><strong>{{ review.title }}</strong></p>
+                }
+                <p class="review-text">{{ review.content }}</p>
+                <div class="meta">
+                  @if (review.reviewerName) {
+                    <span>
+                      <strong>{{ 'admin.moderation.reviewedBy' | translate }}:</strong> {{ review.reviewerName }}
+                    </span>
+                  }
+                  @if (review.isVerifiedPurchase) {
+                    <span class="verified-badge">{{ 'reviews.verifiedPurchase' | translate }}</span>
+                  }
+                </div>
+              </div>
+
+              <div class="item-actions">
+                <button
+                  class="action-btn approve"
+                  (click)="approveReview(review)"
+                  [disabled]="processingId() === review.id"
+                  data-testid="approve-review">
+                  @if (processingId() !== review.id) {
+                    <span>{{ 'admin.moderation.approve' | translate }}</span>
+                  }
+                  @if (processingId() === review.id) {
+                    <span class="spinner small"></span>
+                  }
+                </button>
+                <button
+                  class="action-btn reject"
+                  (click)="rejectReview(review)"
+                  [disabled]="processingId() === review.id"
+                  data-testid="reject-review">
+                  {{ 'admin.moderation.reject' | translate }}
+                </button>
+              </div>
             </div>
-          </div>
-
-          <div class="item-actions">
-            <button
-              class="action-btn approve"
-              (click)="approveReview(review)"
-              [disabled]="processingId() === review.id"
-              data-testid="approve-review">
-              <span *ngIf="processingId() !== review.id">{{ 'admin.moderation.approve' | translate }}</span>
-              <span *ngIf="processingId() === review.id" class="spinner small"></span>
-            </button>
-            <button
-              class="action-btn reject"
-              (click)="rejectReview(review)"
-              [disabled]="processingId() === review.id"
-              data-testid="reject-review">
-              {{ 'admin.moderation.reject' | translate }}
-            </button>
-          </div>
+          }
         </div>
-      </div>
+      }
 
       <!-- Error Message -->
-      <div class="error-message" *ngIf="error()">
-        <span>{{ error() }}</span>
-        <button (click)="loadData()">{{ 'common.retry' | translate }}</button>
-      </div>
+      @if (error()) {
+        <div class="error-message">
+          <span>{{ error() }}</span>
+          <button (click)="loadData()">{{ 'common.retry' | translate }}</button>
+        </div>
+      }
     </div>
   `,
   styles: [`

@@ -27,7 +27,7 @@ public class CheckoutPage : BasePage
     private const string PreviousStepButton = "[data-testid='previous-step']";
 
     // Confirmation
-    private const string OrderConfirmation = "[data-testid='order-confirmation']";
+    private const string OrderConfirmation = "[data-testid='order-confirmation'], [data-testid='order-confirmation-page']";
     private const string OrderNumber = "[data-testid='order-number']";
 
     public CheckoutPage(IPage page) : base(page) { }

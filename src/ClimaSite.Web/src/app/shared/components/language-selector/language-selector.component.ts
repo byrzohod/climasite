@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LanguageService, SupportedLanguage, LanguageInfo } from '../../../core/services/language.service';
+import { LanguageService, SupportedLanguage } from '../../../core/services/language.service';
 
 @Component({
   selector: 'app-language-selector',

@@ -1,4 +1,4 @@
-import { Component, inject, input, signal, OnInit, computed } from '@angular/core';
+import { Component, inject, input, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -50,7 +50,7 @@ import { Review, ReviewSummary, PaginatedReviews } from '../../../core/models/re
       @if (submitError() && !authService.isAuthenticated()) {
         <div class="session-error" data-testid="session-error">
           <p>{{ submitError() }}</p>
-          <a routerLink="/login" class="login-link">{{ 'auth.login' | translate }}</a>
+          <a routerLink="/login" class="login-link">{{ 'nav.login' | translate }}</a>
         </div>
       }
 

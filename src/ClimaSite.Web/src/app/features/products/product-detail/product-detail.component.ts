@@ -130,10 +130,10 @@ import { RevealDirective } from '../../../shared/directives/reveal.directive';
 
               <!-- Add to Cart Section -->
               <div class="add-to-cart-section">
-              <div class="quantity-wrapper" data-testid="quantity-input">
+              <div class="quantity-wrapper">
                   <label id="quantity-label">{{ 'products.details.quantity' | translate }}:</label>
                   <div class="quantity-controls">
-                    <button type="button" (click)="decreaseQuantity()" [disabled]="quantity() <= 1" aria-label="Decrease quantity">−</button>
+                    <button type="button" (click)="decreaseQuantity()" [disabled]="quantity() <= 1" [attr.aria-label]="'products.details.decreaseQuantity' | translate">−</button>
                     <input
                       type="number"
                       [value]="quantity()"
@@ -145,8 +145,9 @@ import { RevealDirective } from '../../../shared/directives/reveal.directive';
                       aria-valuemax="99"
                       [attr.aria-valuenow]="quantity()"
                       aria-labelledby="quantity-label"
+                      data-testid="quantity-input"
                     />
-                    <button type="button" (click)="increaseQuantity()" aria-label="Increase quantity">+</button>
+                    <button type="button" (click)="increaseQuantity()" [attr.aria-label]="'products.details.increaseQuantity' | translate">+</button>
                   </div>
                 </div>
 
@@ -710,8 +711,9 @@ import { RevealDirective } from '../../../shared/directives/reveal.directive';
                         }
 
                         &.active {
-                          color: var(--color-primary);
+                          color: var(--color-primary-active);
                           background: var(--color-bg-primary);
+                          font-weight: 700;
 
                           &::after {
                             width: 60%;

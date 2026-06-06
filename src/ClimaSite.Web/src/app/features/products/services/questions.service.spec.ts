@@ -43,7 +43,7 @@ describe('QuestionsService', () => {
       });
 
       const req = httpMock.expectOne(
-        `${environment.apiUrl}/questions/product/${productId}?pageNumber=1&pageSize=10&includeUnanswered=true`
+        `${environment.apiUrl}/api/questions/product/${productId}?pageNumber=1&pageSize=10&includeUnanswered=true`
       );
       expect(req.request.method).toBe('GET');
       req.flush(mockResponse);
@@ -63,7 +63,7 @@ describe('QuestionsService', () => {
       });
 
       const req = httpMock.expectOne(
-        `${environment.apiUrl}/questions/product/${productId}?pageNumber=2&pageSize=20&includeUnanswered=false`
+        `${environment.apiUrl}/api/questions/product/${productId}?pageNumber=2&pageSize=20&includeUnanswered=false`
       );
       expect(req.request.method).toBe('GET');
       req.flush(mockResponse);
@@ -84,7 +84,7 @@ describe('QuestionsService', () => {
         expect(result).toEqual(mockResponse);
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/questions`);
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/questions`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual(request);
       req.flush(mockResponse);
@@ -104,7 +104,7 @@ describe('QuestionsService', () => {
         expect(result).toEqual(mockResponse);
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/questions/${questionId}/answers`);
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/questions/${questionId}/answers`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual(request);
       req.flush(mockResponse);
@@ -120,7 +120,7 @@ describe('QuestionsService', () => {
         expect(result).toEqual(mockResponse);
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/questions/${questionId}/vote`);
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/questions/${questionId}/vote`);
       expect(req.request.method).toBe('POST');
       req.flush(mockResponse);
     });
@@ -135,7 +135,7 @@ describe('QuestionsService', () => {
         expect(result).toEqual(mockResponse);
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/questions/answers/${answerId}/vote`);
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/questions/answers/${answerId}/vote`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({ isHelpful: true });
       req.flush(mockResponse);
@@ -149,7 +149,7 @@ describe('QuestionsService', () => {
         expect(result).toEqual(mockResponse);
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/questions/answers/${answerId}/vote`);
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/questions/answers/${answerId}/vote`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({ isHelpful: false });
       req.flush(mockResponse);
