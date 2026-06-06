@@ -150,7 +150,7 @@ describe('RecentlyViewedService', () => {
     localStorage.setItem('climasite_recently_viewed', JSON.stringify(storedData));
 
     // Create a new service instance to test loading
-    const newService = TestBed.inject(RecentlyViewedService);
+    TestBed.inject(RecentlyViewedService);
     // Note: Since it's a singleton, we need to test differently
     // For this test, we verify the storage mechanism works
 

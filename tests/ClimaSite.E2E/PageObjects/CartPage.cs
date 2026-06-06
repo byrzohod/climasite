@@ -101,9 +101,7 @@ public class CartPage : BasePage
         {
             var input = quantityInputs[index];
 
-            // Triple-click to select all, then type new value
-            await input.ClickAsync(new ElementHandleClickOptions { ClickCount = 3 });
-            await input.TypeAsync(quantity.ToString());
+            await input.FillAsync(quantity.ToString());
 
             // Trigger the change event by dispatching blur event
             await input.DispatchEventAsync("change", new { });

@@ -6,8 +6,8 @@ public class HomePage : BasePage
 {
     private const string SearchInput = "[data-testid='search-input']";
     private const string SearchButton = "[data-testid='search-button']";
-    private const string FeaturedProducts = "[data-testid='featured-products']";
-    private const string CategoryCard = "[data-testid='category-card']";
+    private const string FeaturedProducts = "[data-testid='home-v3-recommendations']";
+    private const string CategoryCard = "[data-testid^='home-v3-cat-']";
     private const string LoginButton = "[data-testid='login-button']";
     private const string CartIcon = "[data-testid='cart-icon']";
     private const string CartCount = "[data-testid='cart-count']";

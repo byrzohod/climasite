@@ -41,7 +41,7 @@ public class AddressesController : ControllerBase
         if (!result.IsSuccess)
             return BadRequest(new { message = result.Error });
 
-        return CreatedAtAction(nameof(GetAddress), new { id = result.Value }, result.Value);
+        return CreatedAtAction(nameof(GetAddress), new { id = result.Value!.Id }, result.Value);
     }
 
     [HttpPut("{id:guid}")]
@@ -72,6 +72,6 @@ public class AddressesController : ControllerBase
         if (!result.IsSuccess)
             return BadRequest(new { message = result.Error });
 
-        return Ok(new { message = "Address set as default" });
+        return Ok(result.Value);
     }
 }

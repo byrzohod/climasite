@@ -61,7 +61,7 @@ describe('AdminRelatedProductsService', () => {
         expect(result).toEqual(mockResponse);
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/admin/products/${productId}/relations`);
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/admin/products/${productId}/relations`);
       expect(req.request.method).toBe('GET');
       req.flush(mockResponse);
     });
@@ -79,7 +79,7 @@ describe('AdminRelatedProductsService', () => {
         expect(result).toEqual(mockResponse);
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/admin/products/${productId}/relations`);
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/admin/products/${productId}/relations`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual(request);
       req.flush(mockResponse);
@@ -94,7 +94,7 @@ describe('AdminRelatedProductsService', () => {
         expect(result.success).toBe(true);
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/admin/products/${productId}/relations/${relationId}`);
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/admin/products/${productId}/relations/${relationId}`);
       expect(req.request.method).toBe('DELETE');
       req.flush({ success: true });
     });
@@ -111,7 +111,7 @@ describe('AdminRelatedProductsService', () => {
         expect(result.success).toBe(true);
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/admin/products/${productId}/relations/reorder`);
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/admin/products/${productId}/relations/reorder`);
       expect(req.request.method).toBe('PUT');
       expect(req.request.body).toEqual(request);
       req.flush({ success: true });

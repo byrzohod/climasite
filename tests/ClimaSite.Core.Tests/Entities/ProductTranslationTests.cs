@@ -37,13 +37,13 @@ public class ProductTranslationTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void LanguageCode_WithEmptyValue_ThrowsArgumentException(string languageCode)
+    public void LanguageCode_WithEmptyValue_ThrowsArgumentException(string? languageCode)
     {
         // Arrange
         var productId = Guid.NewGuid();
 
         // Act & Assert
-        var act = () => new ProductTranslation(productId, languageCode, "Test");
+        var act = () => new ProductTranslation(productId, languageCode!, "Test");
         act.Should().Throw<ArgumentException>()
            .WithMessage("*Language code is required*");
     }
@@ -67,13 +67,13 @@ public class ProductTranslationTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void Name_WithEmptyValue_ThrowsArgumentException(string name)
+    public void Name_WithEmptyValue_ThrowsArgumentException(string? name)
     {
         // Arrange
         var productId = Guid.NewGuid();
 
         // Act & Assert
-        var act = () => new ProductTranslation(productId, "bg", name);
+        var act = () => new ProductTranslation(productId, "bg", name!);
         act.Should().Throw<ArgumentException>()
            .WithMessage("*Name is required*");
     }

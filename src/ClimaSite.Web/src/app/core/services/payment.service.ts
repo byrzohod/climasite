@@ -1,8 +1,9 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, from, of, switchMap, tap, catchError } from 'rxjs';
+import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { loadStripe, Stripe, StripeElements, StripeCardElement } from '@stripe/stripe-js';
+import { toTranslationKey } from '../utils/translation-key.util';
 
 export interface PaymentConfig {
   publishableKey: string;
@@ -49,14 +50,14 @@ export class PaymentService {
       const config = await this.http.get<PaymentConfig>(`${this.apiUrl}/config`).toPromise();
 
       if (!config?.publishableKey) {
-        this._error.set('Payment configuration not available');
+        this._error.set('checkout.payment.errors.configUnavailable');
         return false;
       }
 
       this.stripe = await loadStripe(config.publishableKey);
 
       if (!this.stripe) {
-        this._error.set('Failed to initialize Stripe');
+        this._error.set('checkout.payment.errors.stripeInitFailed');
         return false;
       }
 
@@ -65,14 +66,14 @@ export class PaymentService {
       return true;
     } catch (error) {
       console.error('Failed to initialize payment service:', error);
-      this._error.set('Failed to initialize payment service');
+      this._error.set('checkout.payment.errors.serviceInitFailed');
       return false;
     }
   }
 
   createElements(containerId: string): StripeCardElement | null {
     if (!this.stripe) {
-      this._error.set('Stripe not initialized');
+      this._error.set('checkout.payment.errors.stripeNotInitialized');
       return null;
     }
 
@@ -130,7 +131,7 @@ export class PaymentService {
     };
   }): Promise<{ success: boolean; paymentIntentId?: string; error?: string }> {
     if (!this.stripe || !this.cardElement) {
-      return { success: false, error: 'Payment not initialized' };
+      return { success: false, error: 'checkout.payment.errors.notInitialized' };
     }
 
     this._isProcessing.set(true);
@@ -147,19 +148,21 @@ export class PaymentService {
       this._isProcessing.set(false);
 
       if (error) {
-        this._error.set(error.message || 'Payment failed');
-        return { success: false, error: error.message };
+        const errorKey = toTranslationKey(error.message, 'checkout.payment.errors.failed');
+        this._error.set(errorKey);
+        return { success: false, error: errorKey };
       }
 
       if (paymentIntent?.status === 'succeeded') {
         return { success: true, paymentIntentId: paymentIntent.id };
       }
 
-      return { success: false, error: 'Payment was not completed' };
-    } catch (err: any) {
+      return { success: false, error: 'checkout.payment.errors.notCompleted' };
+    } catch (err: unknown) {
+      const message = toTranslationKey(err instanceof Error ? err.message : null, 'checkout.payment.errors.failed');
       this._isProcessing.set(false);
-      this._error.set(err.message || 'Payment failed');
-      return { success: false, error: err.message };
+      this._error.set(message);
+      return { success: false, error: message };
     }
   }
 

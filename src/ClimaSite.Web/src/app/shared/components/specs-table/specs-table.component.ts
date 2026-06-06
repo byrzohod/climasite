@@ -42,14 +42,16 @@ export interface SpecificationGroup {
           </div>
         }
       } @else {
-        <div class="search-wrapper" *ngIf="searchable()">
-          <input
-            type="text"
-            class="search-input"
-            [placeholder]="'common.search' | translate"
-            (input)="onSearch($event)"
-            data-testid="specs-search" />
-        </div>
+        @if (searchable()) {
+          <div class="search-wrapper">
+            <input
+              type="text"
+              class="search-input"
+              [placeholder]="'common.search' | translate"
+              (input)="onSearch($event)"
+              data-testid="specs-search" />
+          </div>
+        }
 
         <table class="specs">
           <tbody>

@@ -81,30 +81,30 @@ import { TranslateModule } from '@ngx-translate/core';
         <div class="team-grid">
           <div class="team-member">
             <div class="member-avatar">👨‍💼</div>
-            <h4>Ivan Petrov</h4>
-            <span>CEO & Founder</span>
+            <h4>{{ 'about.team.members.ivan' | translate }}</h4>
+            <span>{{ 'about.team.roles.ceo' | translate }}</span>
           </div>
           <div class="team-member">
             <div class="member-avatar">👩‍💼</div>
-            <h4>Maria Dimitrova</h4>
-            <span>Head of Sales</span>
+            <h4>{{ 'about.team.members.maria' | translate }}</h4>
+            <span>{{ 'about.team.roles.sales' | translate }}</span>
           </div>
           <div class="team-member">
             <div class="member-avatar">👨‍🔧</div>
-            <h4>Georgi Ivanov</h4>
-            <span>Technical Director</span>
+            <h4>{{ 'about.team.members.georgi' | translate }}</h4>
+            <span>{{ 'about.team.roles.technical' | translate }}</span>
           </div>
           <div class="team-member">
             <div class="member-avatar">👩‍💻</div>
-            <h4>Elena Todorova</h4>
-            <span>Customer Support Lead</span>
+            <h4>{{ 'about.team.members.elena' | translate }}</h4>
+            <span>{{ 'about.team.roles.support' | translate }}</span>
           </div>
         </div>
       </section>
 
       <section class="cta-section">
-        <h2>Ready to improve your comfort?</h2>
-        <p>Browse our selection of premium HVAC products.</p>
+        <h2>{{ 'about.cta.title' | translate }}</h2>
+        <p>{{ 'about.cta.subtitle' | translate }}</p>
         <a routerLink="/products" class="cta-button" data-testid="about-cta">
           {{ 'common.viewAll' | translate }} {{ 'nav.products' | translate }}
         </a>

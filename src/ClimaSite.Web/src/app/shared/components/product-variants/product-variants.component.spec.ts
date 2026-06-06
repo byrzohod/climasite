@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
-import { ProductVariantsComponent, VariantGroup, ProductVariantOption } from './product-variants.component';
+import { ProductVariantsComponent, VariantGroup } from './product-variants.component';
 import { TranslateModule } from '@ngx-translate/core';
 
 describe('ProductVariantsComponent', () => {

@@ -2,7 +2,6 @@ import {
   Component, 
   input, 
   output, 
-  signal, 
   effect, 
   inject, 
   ElementRef, 
@@ -33,24 +32,26 @@ import { TranslateModule } from '@ngx-translate/core';
           [attr.data-testid]="testId()"
         >
           <!-- Header -->
-          <div class="modal-header" *ngIf="hasHeader()">
-            <h2 [id]="titleId" class="modal-title">
-              <ng-content select="[modal-header]"></ng-content>
-            </h2>
-            @if (showCloseButton()) {
-              <button
-                type="button"
-                class="modal-close"
-                (click)="close()"
-                [attr.aria-label]="'common.close' | translate"
-                data-testid="modal-close-button"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                </svg>
-              </button>
-            }
-          </div>
+          @if (hasHeader()) {
+            <div class="modal-header">
+              <h2 [id]="titleId" class="modal-title">
+                <ng-content select="[modal-header]"></ng-content>
+              </h2>
+              @if (showCloseButton()) {
+                <button
+                  type="button"
+                  class="modal-close"
+                  (click)="close()"
+                  [attr.aria-label]="'common.close' | translate"
+                  data-testid="modal-close-button"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                  </svg>
+                </button>
+              }
+            </div>
+          }
 
           <!-- Body -->
           <div class="modal-body">
@@ -58,9 +59,11 @@ import { TranslateModule } from '@ngx-translate/core';
           </div>
 
           <!-- Footer -->
-          <div class="modal-footer" *ngIf="hasFooter()">
-            <ng-content select="[modal-footer]"></ng-content>
-          </div>
+          @if (hasFooter()) {
+            <div class="modal-footer">
+              <ng-content select="[modal-footer]"></ng-content>
+            </div>
+          }
         </div>
       </div>
     }
@@ -369,7 +372,7 @@ export class ModalComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  protected onBackdropClick(event: MouseEvent): void {
+  protected onBackdropClick(_event: MouseEvent): void {
     if (this.closeOnBackdropClick()) {
       this.close();
     }

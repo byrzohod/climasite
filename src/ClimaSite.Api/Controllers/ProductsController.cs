@@ -4,6 +4,7 @@ using ClimaSite.Application.Features.Products.Queries;
 using ClimaSite.Core.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace ClimaSite.Api.Controllers;
 
@@ -209,6 +210,32 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> GetFilterOptions([FromQuery] string? categorySlug = null)
     {
         var query = new GetFilterOptionsQuery { CategorySlug = categorySlug };
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Get product recommendations based on room area, type, and climate zone.
+    /// Uses rules-based weighted scoring algorithm to return top 3 matches.
+    /// </summary>
+    [HttpGet("recommendations")]
+    [OutputCache(NoStore = true)]
+    [ProducesResponseType(typeof(List<RecommendedProductDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetRecommendations(
+        [FromQuery] int area,
+        [FromQuery] string type,
+        [FromQuery] string? zone = null,
+        [FromQuery] string? lang = null)
+    {
+        var query = new GetRecommendationsQuery
+        {
+            AreaM2 = area,
+            RoomType = type,
+            ClimateZone = zone ?? "B",
+            LanguageCode = lang
+        };
+
         var result = await _mediator.Send(query);
         return Ok(result);
     }

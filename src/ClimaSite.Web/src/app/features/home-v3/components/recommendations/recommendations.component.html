@@ -1,0 +1,87 @@
+<section class="recommendations" data-testid="home-v3-recommendations" aria-live="polite">
+  <header class="rec-header">
+    <span class="eyebrow">{{ 'homeV3.recommendations.eyebrow' | translate }}</span>
+    <h2>{{ 'homeV3.recommendations.title' | translate }}</h2>
+    <p>{{ 'homeV3.recommendations.lede' | translate }}</p>
+  </header>
+
+  @if (loading()) {
+    <div class="rec-grid">
+      @for (i of [1, 2, 3]; track i) {
+        <article class="rec-card skeleton" aria-hidden="true">
+          <div class="rec-image"></div>
+          <div class="rec-body">
+            <div class="line w70"></div>
+            <div class="line w50"></div>
+            <div class="line w30"></div>
+          </div>
+        </article>
+      }
+    </div>
+  } @else if (error()) {
+    <p class="rec-error" role="alert">{{ error() | translate }}</p>
+  } @else if (hasResults()) {
+    <div class="rec-grid">
+      @for (product of products(); track product.id; let idx = $index) {
+        <article class="rec-card" [class.featured]="idx === 0" [attr.data-testid]="'home-v3-rec-card-' + idx">
+          @if (idx === 0) {
+            <span class="badge">{{ 'homeV3.recommendations.bestMatch' | translate }}</span>
+          }
+          <a
+            [routerLink]="['/products', product.slug]"
+            class="rec-image-link"
+            [attr.aria-label]="'homeV3.recommendations.viewProduct' | translate:{ name: product.name }"
+            [attr.data-testid]="'home-v3-rec-image-' + idx"
+          >
+            @if (product.primaryImageUrl) {
+              <img [src]="product.primaryImageUrl" [alt]="product.name" loading="lazy" />
+            } @else {
+              <div class="rec-image-placeholder" aria-hidden="true"></div>
+            }
+          </a>
+          <div class="rec-body">
+            @if (product.brand) {
+              <span class="rec-brand">{{ product.brand }}</span>
+            }
+            <h3>
+              <a [routerLink]="['/products', product.slug]" [attr.data-testid]="'home-v3-rec-title-' + idx">
+                {{ product.name }}
+              </a>
+            </h3>
+            <p class="rec-reason">{{ product.matchReason | translate }}</p>
+            <ul class="rec-specs">
+              @if (product.btuCapacity) {
+                <li><strong>{{ product.btuCapacity | number }}</strong> {{ 'homeV3.recommendations.btuUnit' | translate }}</li>
+              }
+              @if (product.isInverter) {
+                <li>{{ 'homeV3.recommendations.inverter' | translate }}</li>
+              }
+              @if (product.noiseLevel) {
+                <li>{{ product.noiseLevel }} {{ 'homeV3.recommendations.noiseUnit' | translate }}</li>
+              }
+            </ul>
+            <div class="rec-footer">
+              <div class="rec-price">
+                @if (product.isOnSale && product.salePrice) {
+                  <span class="sale">{{ product.salePrice | currency:'EUR' }}</span>
+                  <span class="strike">{{ product.basePrice | currency:'EUR' }}</span>
+                } @else {
+                  <span>{{ product.basePrice | currency:'EUR' }}</span>
+                }
+              </div>
+              <a
+                [routerLink]="['/products', product.slug]"
+                class="rec-cta"
+                [attr.data-testid]="'home-v3-rec-cta-' + idx"
+              >
+                {{ 'homeV3.recommendations.viewDetails' | translate }}
+              </a>
+            </div>
+          </div>
+        </article>
+      }
+    </div>
+  } @else {
+    <p class="rec-empty">{{ 'homeV3.recommendations.empty' | translate }}</p>
+  }
+</section>

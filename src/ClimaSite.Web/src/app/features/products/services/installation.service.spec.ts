@@ -51,7 +51,7 @@ describe('InstallationService', () => {
         expect(result).toEqual(mockResponse);
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/installation/options/${productId}`);
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/installation/options/${productId}`);
       expect(req.request.method).toBe('GET');
       req.flush(mockResponse);
     });
@@ -84,7 +84,7 @@ describe('InstallationService', () => {
         expect(result).toEqual(mockResponse);
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/installation/requests`);
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/installation/requests`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual(requestData);
       req.flush(mockResponse);
@@ -109,7 +109,7 @@ describe('InstallationService', () => {
 
       service.createInstallationRequest(requestData).subscribe();
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/installation/requests`);
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/installation/requests`);
       expect(req.request.body.addressLine2).toBe('Apt 5');
       expect(req.request.body.preferredDate).toBe('2024-02-01');
       expect(req.request.body.preferredTimeSlot).toBe('morning');

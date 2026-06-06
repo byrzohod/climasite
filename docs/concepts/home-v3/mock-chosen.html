@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>ClimaSite — Home v3 mock (Concept B, Configurator-First)</title>
+<style>
+  /* ---------- design tokens (aligned with src/styles/_colors.scss intent) ---------- */
+  :root {
+    --c-bg:              #0b0f14;
+    --c-bg-alt:          #0f1722;
+    --c-surface:         rgba(255,255,255,0.035);
+    --c-surface-strong:  rgba(255,255,255,0.06);
+    --c-border:          rgba(255,255,255,0.08);
+    --c-border-strong:   rgba(255,255,255,0.16);
+    --c-text-primary:    #e6edf5;
+    --c-text-secondary:  #9aa7b8;
+    --c-text-muted:      #687384;
+    --c-accent:          #4cc2ff;
+    --c-accent-strong:   #14a0e8;
+    --c-accent-warm:     #ff8a4c;
+    --c-success:         #3ccb7f;
+    --c-shadow:          0 30px 80px -20px rgba(0,0,0,0.55);
+    --radius-lg:         20px;
+    --radius-md:         12px;
+    --radius-sm:         8px;
+    --font-sans:         -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+    --font-display:      "Inter", -apple-system, sans-serif;
+    --space-1:  4px;   --space-2:  8px;   --space-3: 12px;  --space-4: 16px;
+    --space-5: 24px;   --space-6: 32px;   --space-7: 48px;  --space-8: 64px;  --space-9: 96px;
+  }
+  [data-theme="light"] {
+    --c-bg:              #f6f8fb;
+    --c-bg-alt:          #ffffff;
+    --c-surface:         rgba(15,23,34,0.04);
+    --c-surface-strong:  rgba(15,23,34,0.08);
+    --c-border:          rgba(15,23,34,0.08);
+    --c-border-strong:   rgba(15,23,34,0.16);
+    --c-text-primary:    #0b1320;
+    --c-text-secondary:  #475569;
+    --c-text-muted:      #64748b;
+    --c-accent:          #1488d1;
+    --c-accent-strong:   #0b6aa8;
+    --c-accent-warm:     #d86c1f;
+    --c-success:         #198f5d;
+    --c-shadow:          0 24px 60px -18px rgba(15,23,34,0.25);
+  }
+  *,*::before,*::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--c-bg); color: var(--c-text-primary); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+  body { min-height: 100vh; line-height: 1.5; }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+
+  /* ---------- header ---------- */
+  header.top {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: var(--space-4) var(--space-7);
+    background: color-mix(in oklab, var(--c-bg) 85%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--c-border);
+  }
+  .brand { display: flex; align-items: center; gap: var(--space-3); font-weight: 700; letter-spacing: -0.01em; }
+  .brand-mark { width: 28px; height: 28px; border-radius: 8px;
+    background: conic-gradient(from 180deg at 50% 50%, var(--c-accent), var(--c-accent-warm), var(--c-accent));
+    box-shadow: 0 0 0 1px var(--c-border-strong);
+  }
+  nav.top-nav { display: flex; gap: var(--space-6); color: var(--c-text-secondary); font-size: 14px; }
+  nav.top-nav a:hover { color: var(--c-text-primary); }
+  .top-actions { display: flex; gap: var(--space-3); align-items: center; }
+  .theme-toggle, .lang-pick {
+    border: 1px solid var(--c-border-strong); border-radius: 999px;
+    padding: 6px 14px; font-size: 13px; color: var(--c-text-secondary);
+  }
+  .theme-toggle:hover, .lang-pick:hover { color: var(--c-text-primary); border-color: var(--c-text-primary); }
+  @media (max-width: 820px) { nav.top-nav { display: none; } header.top { padding: var(--space-3) var(--space-4); } }
+
+  /* ---------- layout ---------- */
+  main { max-width: 1440px; margin: 0 auto; padding: 0 var(--space-7); }
+  section { padding: var(--space-9) 0; }
+  @media (max-width: 820px) { main { padding: 0 var(--space-4); } section { padding: var(--space-7) 0; } }
+
+  /* ---------- 1. hero wizard split ---------- */
+  .hero {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: var(--space-7); align-items: stretch;
+    min-height: calc(100vh - 180px);
+  }
+  @media (max-width: 900px) { .hero { grid-template-columns: 1fr; min-height: auto; } }
+
+  .wizard {
+    display: flex; flex-direction: column; gap: var(--space-6);
+    background: var(--c-surface); border: 1px solid var(--c-border);
+    border-radius: var(--radius-lg); padding: var(--space-7);
+    box-shadow: var(--c-shadow);
+  }
+  .eyebrow { color: var(--c-accent); text-transform: uppercase; letter-spacing: 0.18em; font-size: 12px; font-weight: 600; }
+  h1.hero-title {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(32px, 4.6vw, 56px); line-height: 1.02; letter-spacing: -0.02em;
+    margin: 0 0 var(--space-3);
+  }
+  .hero-lede { color: var(--c-text-secondary); font-size: 16px; margin: 0; max-width: 46ch; }
+
+  .wizard-steps { display: flex; flex-direction: column; gap: var(--space-5); margin-top: var(--space-4); }
+  .step { display: flex; flex-direction: column; gap: var(--space-2); }
+  .step-label { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; color: var(--c-text-secondary); }
+  .step-label .num { color: var(--c-text-muted); font-variant-numeric: tabular-nums; }
+  .step-readout { color: var(--c-text-primary); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* slider */
+  .slider { width: 100%; appearance: none; height: 6px; border-radius: 999px;
+    background: linear-gradient(90deg, var(--c-accent), var(--c-accent-warm));
+    outline: none;
+  }
+  .slider::-webkit-slider-thumb {
+    appearance: none; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--c-bg-alt); border: 2px solid var(--c-accent);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4); cursor: grab;
+  }
+  .slider::-moz-range-thumb {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--c-bg-alt); border: 2px solid var(--c-accent);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4); cursor: grab;
+  }
+
+  /* segmented control */
+  .segmented { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-2); background: var(--c-surface-strong); padding: 4px; border-radius: var(--radius-md); border: 1px solid var(--c-border); }
+  .segmented button {
+    padding: 10px 8px; border-radius: 8px; font-size: 13px; color: var(--c-text-secondary);
+    transition: background 0.15s, color 0.15s;
+  }
+  .segmented button[aria-pressed="true"] { background: var(--c-accent); color: #001018; font-weight: 600; }
+  .segmented button:focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; }
+
+  /* zone picker */
+  .zone-picker { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+  .zone-picker button {
+    border: 1px solid var(--c-border-strong); border-radius: 999px;
+    padding: 8px 14px; font-size: 13px; color: var(--c-text-secondary);
+  }
+  .zone-picker button[aria-pressed="true"] { border-color: var(--c-accent); color: var(--c-text-primary); background: color-mix(in oklab, var(--c-accent) 15%, transparent); }
+
+  .cta-row { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-4); }
+  .btn-primary, .btn-secondary, .btn-link {
+    padding: 14px 22px; border-radius: 12px; font-weight: 600; font-size: 15px; letter-spacing: -0.005em;
+    display: inline-flex; align-items: center; gap: var(--space-2); transition: transform 0.12s, background 0.15s, border-color 0.15s;
+  }
+  .btn-primary { background: var(--c-accent); color: #001018; }
+  .btn-primary:hover { background: var(--c-accent-strong); transform: translateY(-1px); }
+  .btn-secondary { background: transparent; color: var(--c-text-primary); border: 1px solid var(--c-border-strong); }
+  .btn-secondary:hover { border-color: var(--c-text-primary); }
+  .btn-link { color: var(--c-text-secondary); padding: 14px 0; }
+  .btn-link:hover { color: var(--c-text-primary); }
+
+  /* preview pane */
+  .preview {
+    position: relative;
+    border-radius: var(--radius-lg);
+    background: radial-gradient(ellipse at 70% 10%, color-mix(in oklab, var(--c-accent) 18%, transparent), transparent 60%), var(--c-bg-alt);
+    border: 1px solid var(--c-border);
+    overflow: hidden;
+    min-height: 520px;
+    box-shadow: var(--c-shadow);
+  }
+  .preview canvas { display: block; width: 100% !important; height: 100% !important; position: absolute; inset: 0; }
+  .preview-overlay {
+    position: absolute; left: var(--space-5); bottom: var(--space-5); right: var(--space-5);
+    display: flex; gap: var(--space-3); flex-wrap: wrap;
+  }
+  .stat-chip {
+    background: color-mix(in oklab, var(--c-bg) 75%, transparent);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--c-border-strong);
+    border-radius: 999px; padding: 10px 16px; font-size: 13px;
+    display: inline-flex; align-items: center; gap: var(--space-2);
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c-accent); box-shadow: 0 0 12px var(--c-accent); }
+  .stat-dot.warm { background: var(--c-accent-warm); box-shadow: 0 0 12px var(--c-accent-warm); }
+  .stat-dot.ok { background: var(--c-success); box-shadow: 0 0 12px var(--c-success); }
+  .preview-caption { position: absolute; top: var(--space-5); left: var(--space-5); font-size: 12px; color: var(--c-text-muted); text-transform: uppercase; letter-spacing: 0.18em; }
+
+  /* ---------- 2. recommendation slab ---------- */
+  .section-head { display: flex; justify-content: space-between; align-items: end; margin-bottom: var(--space-6); gap: var(--space-4); flex-wrap: wrap; }
+  .section-title { font-family: var(--font-display); font-weight: 800; font-size: clamp(28px, 3.4vw, 40px); margin: 0; letter-spacing: -0.02em; }
+  .section-sub { color: var(--c-text-secondary); margin: 0; font-size: 15px; max-width: 52ch; }
+  .recs { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-5); }
+  @media (max-width: 900px) { .recs { grid-template-columns: 1fr; } }
+  .rec-card {
+    background: var(--c-surface); border: 1px solid var(--c-border);
+    border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column;
+    transition: transform 0.18s, border-color 0.18s;
+  }
+  .rec-card:hover { transform: translateY(-2px); border-color: var(--c-border-strong); }
+  .rec-thumb { aspect-ratio: 4 / 3; background: linear-gradient(160deg, var(--c-surface-strong), transparent), var(--c-bg-alt); position: relative; overflow: hidden; }
+  .rec-thumb svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .rec-body { padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-3); flex: 1; }
+  .rec-badge { align-self: flex-start; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; padding: 4px 10px; border-radius: 999px; background: color-mix(in oklab, var(--c-accent) 18%, transparent); color: var(--c-accent); border: 1px solid color-mix(in oklab, var(--c-accent) 35%, transparent); }
+  .rec-name { font-size: 20px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .rec-why { color: var(--c-text-secondary); font-size: 14px; margin: 0; }
+  .rec-specs { display: flex; gap: var(--space-4); font-size: 12px; color: var(--c-text-muted); font-variant-numeric: tabular-nums; border-top: 1px solid var(--c-border); padding-top: var(--space-3); margin-top: auto; }
+  .rec-specs span { display: flex; flex-direction: column; gap: 2px; }
+  .rec-specs strong { color: var(--c-text-primary); font-size: 15px; font-weight: 600; }
+  .rec-footer { padding: var(--space-4) var(--space-5); border-top: 1px solid var(--c-border); display: flex; justify-content: space-between; align-items: center; background: var(--c-surface-strong); }
+  .rec-price { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+  .rec-cta { font-size: 14px; color: var(--c-accent); font-weight: 600; }
+
+  /* ---------- 3. category rail ---------- */
+  .cat-rail { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); }
+  @media (max-width: 900px) { .cat-rail { grid-template-columns: repeat(2, 1fr); } }
+  .cat-card { position: relative; aspect-ratio: 4/5; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--c-border); background: var(--c-bg-alt); display: flex; flex-direction: column; justify-content: end; padding: var(--space-5); cursor: pointer; transition: transform 0.2s; }
+  .cat-card:hover { transform: translateY(-3px); }
+  .cat-card::before { content: ''; position: absolute; inset: 0; background: var(--cat-grad); opacity: 0.9; }
+  .cat-card::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.6)); }
+  .cat-card > * { position: relative; z-index: 1; }
+  .cat-card h3 { font-size: 24px; font-weight: 700; letter-spacing: -0.01em; color: #fff; text-shadow: 0 2px 12px rgba(0,0,0,0.5); margin: 0 0 var(--space-1); }
+  .cat-card p { color: rgba(255,255,255,0.85); font-size: 13px; margin: 0; text-shadow: 0 2px 12px rgba(0,0,0,0.5); }
+
+  /* ---------- 4. social proof ---------- */
+  .proof { display: grid; grid-template-columns: 1.2fr 1fr; gap: var(--space-6); }
+  @media (max-width: 900px) { .proof { grid-template-columns: 1fr; } }
+  .proof-lead { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--radius-lg); padding: var(--space-7); }
+  .proof-lead q { font-size: 24px; line-height: 1.35; letter-spacing: -0.01em; display: block; margin-bottom: var(--space-5); font-weight: 500; }
+  .proof-byline { display: flex; align-items: center; gap: var(--space-3); color: var(--c-text-secondary); font-size: 14px; }
+  .avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--c-accent), var(--c-accent-warm)); }
+  .proof-grid { display: grid; gap: var(--space-4); }
+  .proof-cell { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--radius-md); padding: var(--space-5); font-size: 14px; color: var(--c-text-secondary); }
+  .proof-cell q { color: var(--c-text-primary); display: block; margin-bottom: var(--space-2); }
+
+  /* ---------- 5. partner map ---------- */
+  .map { position: relative; border-radius: var(--radius-lg); border: 1px solid var(--c-border); background: var(--c-surface); padding: var(--space-7); overflow: hidden; }
+  .map svg { display: block; width: 100%; max-width: 900px; margin: 0 auto; }
+  .map-stats { display: flex; gap: var(--space-6); justify-content: center; margin-top: var(--space-5); color: var(--c-text-secondary); font-size: 13px; }
+  .map-stats strong { display: block; color: var(--c-text-primary); font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* ---------- 6. footer cta ---------- */
+  .footer-cta { text-align: center; padding: var(--space-9) var(--space-5); background: linear-gradient(180deg, transparent, color-mix(in oklab, var(--c-accent) 8%, transparent)); border-top: 1px solid var(--c-border); border-radius: var(--radius-lg); }
+  .footer-cta h2 { font-family: var(--font-display); font-size: clamp(32px, 4vw, 56px); font-weight: 800; letter-spacing: -0.02em; margin: 0 0 var(--space-3); }
+  .footer-cta p { color: var(--c-text-secondary); font-size: 17px; margin: 0 0 var(--space-6); }
+
+  /* reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><span class="brand-mark" aria-hidden="true"></span> ClimaSite</div>
+  <nav class="top-nav" aria-label="Primary">
+    <a href="#">Cooling</a><a href="#">Heating</a><a href="#">Ventilation</a><a href="#">Parts</a><a href="#">Installers</a>
+  </nav>
+  <div class="top-actions">
+    <button class="lang-pick" type="button">EN</button>
+    <button class="theme-toggle" type="button" id="themeToggle">☾ Dark</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ============ 1. HERO WIZARD ============ -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wizard">
+      <span class="eyebrow">The Sizing Lab</span>
+      <h1 id="hero-title" class="hero-title">Find your unit in three questions.</h1>
+      <p class="hero-lede">Wrong-sized AC wastes money for a decade. Tell us about your space, watch the room respond, and we'll pick the three units that actually fit.</p>
+
+      <div class="wizard-steps">
+        <!-- step 1 -->
+        <div class="step">
+          <div class="step-label">
+            <span><span class="num">01 ·</span> How big is your space?</span>
+            <span class="step-readout" id="area-readout">35 m² · ~12,000 BTU</span>
+          </div>
+          <input class="slider" type="range" min="10" max="120" value="35" id="area" aria-label="Room area in square meters" />
+        </div>
+
+        <!-- step 2 -->
+        <div class="step">
+          <div class="step-label">
+            <span><span class="num">02 ·</span> What kind of room?</span>
+            <span class="step-readout" id="type-readout">Living</span>
+          </div>
+          <div class="segmented" role="group" aria-label="Room type">
+            <button type="button" data-type="living" aria-pressed="true">Living</button>
+            <button type="button" data-type="bedroom" aria-pressed="false">Bedroom</button>
+            <button type="button" data-type="office" aria-pressed="false">Office</button>
+            <button type="button" data-type="commercial" aria-pressed="false">Commercial</button>
+          </div>
+        </div>
+
+        <!-- step 3 -->
+        <div class="step">
+          <div class="step-label">
+            <span><span class="num">03 ·</span> Climate zone?</span>
+            <span class="step-readout" id="zone-readout">Zone B · Continental</span>
+          </div>
+          <div class="zone-picker" role="group" aria-label="Climate zone">
+            <button type="button" data-zone="A" aria-pressed="false">Zone A · Mediterranean</button>
+            <button type="button" data-zone="B" aria-pressed="true">Zone B · Continental</button>
+            <button type="button" data-zone="C" aria-pressed="false">Zone C · Alpine</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="cta-row">
+        <button class="btn-primary" type="button">See my 3 recommendations →</button>
+        <a class="btn-link" href="#">Skip, just show me the catalog</a>
+      </div>
+    </div>
+
+    <div class="preview" aria-hidden="true">
+      <span class="preview-caption">Live preview</span>
+      <canvas id="room-canvas"></canvas>
+      <div class="preview-overlay">
+        <div class="stat-chip"><span class="stat-dot warm"></span>Outside <strong id="outside-val">32°C</strong></div>
+        <div class="stat-chip"><span class="stat-dot"></span>Inside <strong id="inside-val">23°C</strong></div>
+        <div class="stat-chip"><span class="stat-dot ok"></span>Draw <strong id="draw-val">0.87 kW</strong></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2. RECOMMENDATIONS ============ -->
+  <section aria-labelledby="recs-title">
+    <div class="section-head">
+      <div>
+        <h2 id="recs-title" class="section-title">For your space.</h2>
+        <p class="section-sub">Three units, chosen by BTU fit, zone capability, stock, and how quietly they run. Scoring is deterministic — no magic.</p>
+      </div>
+      <a class="btn-secondary" href="#">Explain the scoring →</a>
+    </div>
+    <div class="recs">
+      <!-- card 1 -->
+      <article class="rec-card">
+        <div class="rec-thumb">
+          <svg viewBox="0 0 200 150"><rect x="20" y="30" width="160" height="50" rx="6" fill="#eaf4ff" stroke="#4cc2ff" stroke-width="2"/><line x1="30" y1="50" x2="170" y2="50" stroke="#4cc2ff" stroke-width="1" opacity="0.6"/><line x1="30" y1="60" x2="170" y2="60" stroke="#4cc2ff" stroke-width="1" opacity="0.6"/><line x1="30" y1="70" x2="170" y2="70" stroke="#4cc2ff" stroke-width="1" opacity="0.6"/><circle cx="160" cy="40" r="3" fill="#3ccb7f"/></svg>
+        </div>
+        <div class="rec-body">
+          <span class="rec-badge">Best fit</span>
+          <h3 class="rec-name">Nordic Whisper 12</h3>
+          <p class="rec-why">Ideal for 30–40 m² living rooms in Zone B. Inverter, 42 dB at night mode, A+++ efficiency.</p>
+          <div class="rec-specs">
+            <span>BTU<strong>12,000</strong></span>
+            <span>Noise<strong>42 dB</strong></span>
+            <span>Rating<strong>A+++</strong></span>
+          </div>
+        </div>
+        <div class="rec-footer"><span class="rec-price">€1,249</span><span class="rec-cta">View details →</span></div>
+      </article>
+
+      <!-- card 2 -->
+      <article class="rec-card">
+        <div class="rec-thumb">
+          <svg viewBox="0 0 200 150"><rect x="20" y="30" width="160" height="50" rx="6" fill="#fff4ea" stroke="#ff8a4c" stroke-width="2"/><line x1="30" y1="50" x2="170" y2="50" stroke="#ff8a4c" stroke-width="1" opacity="0.6"/><line x1="30" y1="60" x2="170" y2="60" stroke="#ff8a4c" stroke-width="1" opacity="0.6"/><line x1="30" y1="70" x2="170" y2="70" stroke="#ff8a4c" stroke-width="1" opacity="0.6"/><circle cx="160" cy="40" r="3" fill="#3ccb7f"/></svg>
+        </div>
+        <div class="rec-body">
+          <span class="rec-badge" style="color: var(--c-accent-warm); background: color-mix(in oklab, var(--c-accent-warm) 18%, transparent); border-color: color-mix(in oklab, var(--c-accent-warm) 35%, transparent);">Cold climate</span>
+          <h3 class="rec-name">Fjord Heat 14</h3>
+          <p class="rec-why">Runs to −25°C outside. Ideal for Zone B/C winters, 14,000 BTU heating, 12,000 cooling.</p>
+          <div class="rec-specs">
+            <span>BTU<strong>14,000</strong></span>
+            <span>Min temp<strong>−25°C</strong></span>
+            <span>Rating<strong>A++</strong></span>
+          </div>
+        </div>
+        <div class="rec-footer"><span class="rec-price">€1,489</span><span class="rec-cta">View details →</span></div>
+      </article>
+
+      <!-- card 3 -->
+      <article class="rec-card">
+        <div class="rec-thumb">
+          <svg viewBox="0 0 200 150"><rect x="20" y="30" width="160" height="50" rx="6" fill="#eaf8f1" stroke="#3ccb7f" stroke-width="2"/><line x1="30" y1="50" x2="170" y2="50" stroke="#3ccb7f" stroke-width="1" opacity="0.6"/><line x1="30" y1="60" x2="170" y2="60" stroke="#3ccb7f" stroke-width="1" opacity="0.6"/><line x1="30" y1="70" x2="170" y2="70" stroke="#3ccb7f" stroke-width="1" opacity="0.6"/><circle cx="160" cy="40" r="3" fill="#3ccb7f"/></svg>
+        </div>
+        <div class="rec-body">
+          <span class="rec-badge" style="color: var(--c-success); background: color-mix(in oklab, var(--c-success) 18%, transparent); border-color: color-mix(in oklab, var(--c-success) 35%, transparent);">Budget pick</span>
+          <h3 class="rec-name">Baltic Flex 10</h3>
+          <p class="rec-why">Best €/BTU in the line. 10,000 BTU, inverter, solid for mid-sized living rooms and bedrooms.</p>
+          <div class="rec-specs">
+            <span>BTU<strong>10,000</strong></span>
+            <span>Noise<strong>46 dB</strong></span>
+            <span>Rating<strong>A++</strong></span>
+          </div>
+        </div>
+        <div class="rec-footer"><span class="rec-price">€899</span><span class="rec-cta">View details →</span></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ 3. CATEGORY RAIL ============ -->
+  <section aria-labelledby="cat-title">
+    <div class="section-head"><h2 id="cat-title" class="section-title">Or just browse.</h2></div>
+    <div class="cat-rail">
+      <div class="cat-card" style="--cat-grad: linear-gradient(160deg,#1e6ea8,#0a2a47);"><h3>Cooling</h3><p>134 models</p></div>
+      <div class="cat-card" style="--cat-grad: linear-gradient(160deg,#b4521a,#3b1b08);"><h3>Heating</h3><p>87 models</p></div>
+      <div class="cat-card" style="--cat-grad: linear-gradient(160deg,#1f7a5a,#07251b);"><h3>Ventilation</h3><p>42 models</p></div>
+      <div class="cat-card" style="--cat-grad: linear-gradient(160deg,#555c6a,#1a1e26);"><h3>Parts</h3><p>260+ items</p></div>
+    </div>
+  </section>
+
+  <!-- ============ 4. SOCIAL PROOF ============ -->
+  <section aria-labelledby="proof-title">
+    <div class="section-head"><h2 id="proof-title" class="section-title">Quieter than it sounds.</h2></div>
+    <div class="proof">
+      <div class="proof-lead">
+        <q>I was nervous about picking the wrong size — the wizard got me a unit that heats our flat to 22°C in fifteen minutes and I can't hear it. No regret and no overpay.</q>
+        <div class="proof-byline"><div class="avatar" aria-hidden="true"></div><div><strong style="color: var(--c-text-primary)">Elena K.</strong><br/>Plovdiv · Nordic Whisper 12</div></div>
+      </div>
+      <div class="proof-grid">
+        <div class="proof-cell"><q>"Installed in 3 hours. Invoice matched the quote."</q>Martin · München</div>
+        <div class="proof-cell"><q>"Bought a second one for the bedroom."</q>Galin · Sofia</div>
+        <div class="proof-cell"><q>"Support answered on a Sunday."</q>Anna · Varna</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 5. PARTNER MAP ============ -->
+  <section aria-labelledby="map-title">
+    <div class="section-head"><h2 id="map-title" class="section-title">Installers near you.</h2></div>
+    <div class="map">
+      <svg viewBox="0 0 900 400" aria-label="Partner installer coverage map">
+        <path d="M120 90 C 180 60, 260 70, 340 80 S 500 130, 600 140 S 780 120, 820 200 S 720 330, 600 310 S 400 340, 320 320 S 160 280, 120 200 Z"
+              fill="none" stroke="currentColor" stroke-opacity="0.25" stroke-width="2"/>
+        <g fill="currentColor">
+          <circle cx="210" cy="180" r="6"/><circle cx="310" cy="160" r="6"/><circle cx="420" cy="190" r="6"/>
+          <circle cx="500" cy="150" r="6"/><circle cx="560" cy="220" r="6"/><circle cx="640" cy="180" r="6"/>
+          <circle cx="720" cy="250" r="6"/><circle cx="380" cy="250" r="6"/><circle cx="250" cy="240" r="6"/>
+        </g>
+        <g fill="var(--c-accent)">
+          <circle cx="420" cy="190" r="10" opacity="0.3"/><circle cx="500" cy="150" r="10" opacity="0.3"/>
+        </g>
+      </svg>
+      <div class="map-stats">
+        <div><strong>340</strong> certified installers</div>
+        <div><strong>9</strong> countries</div>
+        <div><strong>48h</strong> avg scheduling</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 6. FOOTER CTA ============ -->
+  <section>
+    <div class="footer-cta">
+      <h2>Ready when you are.</h2>
+      <p>Browse the full catalog, or book a free consultation with a certified installer.</p>
+      <div class="cta-row" style="justify-content: center;">
+        <button class="btn-primary" type="button">Browse catalog</button>
+        <button class="btn-secondary" type="button">Book consultation</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* ==================================================================
+   Home v3 mock — preview renderer (Canvas 2D axonometric)
+   ------------------------------------------------------------------
+   In production, the primary renderer is Three.js (see ADR 002).
+   This mock uses a Canvas 2D axonometric projection so it works
+   offline and doubles as the reduced-motion / no-WebGL fallback
+   that Concept B requires anyway. Same state model, same wizard
+   wiring — only the draw function is replaced in production.
+   ================================================================== */
+
+const state = { area: 35, type: 'living', zone: 'B' };
+
+const canvas = document.getElementById('room-canvas');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width  = Math.floor(rect.width  * dpr);
+  canvas.height = Math.floor(rect.height * dpr);
+  canvas.style.width  = rect.width  + 'px';
+  canvas.style.height = rect.height + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+resize();
+window.addEventListener('resize', () => { resize(); draw(); });
+
+// axonometric projection: world (x, y, z) -> screen (sx, sy)
+// x = depth-right, y = up, z = depth-forward
+const ISO_ANGLE_X = 0.52;   // ~30°
+const ISO_ANGLE_Z = 0.52;
+function project(x, y, z, cx, cy, scale) {
+  const sx = cx + (x - z) * Math.cos(ISO_ANGLE_X) * scale;
+  const sy = cy + ((x + z) * Math.sin(ISO_ANGLE_Z) - y) * scale;
+  return [sx, sy];
+}
+
+// draw a filled + outlined axonometric box
+function axBox(wx, wy, wz, px, py, pz, fill, top, side, cx, cy, scale) {
+  const p = (x, y, z) => project(px + x, py + y, pz + z, cx, cy, scale);
+
+  // top face
+  ctx.fillStyle = top;
+  ctx.beginPath();
+  const t1 = p(0, wy, 0), t2 = p(wx, wy, 0), t3 = p(wx, wy, wz), t4 = p(0, wy, wz);
+  ctx.moveTo(...t1); ctx.lineTo(...t2); ctx.lineTo(...t3); ctx.lineTo(...t4); ctx.closePath(); ctx.fill();
+
+  // front face (facing camera: +z)
+  ctx.fillStyle = fill;
+  ctx.beginPath();
+  const f1 = p(0, 0, wz), f2 = p(wx, 0, wz), f3 = p(wx, wy, wz), f4 = p(0, wy, wz);
+  ctx.moveTo(...f1); ctx.lineTo(...f2); ctx.lineTo(...f3); ctx.lineTo(...f4); ctx.closePath(); ctx.fill();
+
+  // right face (+x)
+  ctx.fillStyle = side;
+  ctx.beginPath();
+  const r1 = p(wx, 0, 0), r2 = p(wx, 0, wz), r3 = p(wx, wy, wz), r4 = p(wx, wy, 0);
+  ctx.moveTo(...r1); ctx.lineTo(...r2); ctx.lineTo(...r3); ctx.lineTo(...r4); ctx.closePath(); ctx.fill();
+}
+
+function themeColors() {
+  const dark = document.documentElement.getAttribute('data-theme') !== 'light';
+  return dark ? {
+    bg:        '#0f1722',
+    wallFront: '#152031',
+    wallTop:   '#1c2a3e',
+    wallSide:  '#0e1826',
+    floor:     '#0b1320',
+    floorTop:  '#16202e',
+    floorSide: '#070d17',
+    rim:       '#4cc2ff',
+  } : {
+    bg:        '#eef3f9',
+    wallFront: '#d8e1ee',
+    wallTop:   '#e8eef6',
+    wallSide:  '#c1ccdb',
+    floor:     '#c7d1df',
+    floorTop:  '#d6dfeb',
+    floorSide: '#a9b4c4',
+    rim:       '#1488d1',
+  };
+}
+
+function furniture(type) {
+  // returns array of boxes: [wx, wy, wz, px, py, pz, baseColor]
+  if (type === 'living') return [
+    [4.2, 1.0, 1.6, -2.1, 0, -0.8, '#6c88a8'], // sofa
+    [1.8, 0.4, 1.0, -0.9, 0, 1.2, '#3d4a5a'],  // coffee table
+    [2.8, 1.6, 0.3, -4.0, 0, -1.5, '#28323f'], // shelf against left wall
+    [0.6, 1.4, 0.6, 3.2, 0, -1.5, '#2c3544'],  // plant
+  ];
+  if (type === 'bedroom') return [
+    [4.0, 1.0, 2.6, -2.0, 0, -1.3, '#7b6a5c'],  // bed
+    [0.9, 0.9, 0.8, -3.2, 0, -1.3, '#3d4a5a'],  // left nightstand
+    [0.9, 0.9, 0.8, 2.3, 0, -1.3, '#3d4a5a'],   // right nightstand
+    [2.4, 0.1, 1.0, -1.2, 1.0, -1.3, '#4c3e32'],// headboard top
+  ];
+  if (type === 'office') return [
+    [3.0, 0.1, 1.4, -1.5, 1.1, -0.4, '#55636f'],// desk top
+    [0.2, 1.1, 0.2, -1.4, 0, -0.4, '#2c3544'],  // desk leg
+    [0.2, 1.1, 0.2,  1.2, 0, -0.4, '#2c3544'],  // desk leg
+    [0.2, 1.1, 0.2, -1.4, 0, 0.8,  '#2c3544'],  // desk leg
+    [0.2, 1.1, 0.2,  1.2, 0, 0.8,  '#2c3544'],  // desk leg
+    [1.0, 1.6, 1.0, -0.5, 0, 1.6, '#2c3544'],   // chair
+    [1.6, 1.0, 0.15, -0.8, 1.2, -0.35, '#111'], // monitor
+  ];
+  // commercial
+  const out = [];
+  for (let i = -4; i <= 4; i += 2) out.push([1.4, 0.9, 1.4, i - 0.7, 0, -0.7, '#4a5768']);
+  return out;
+}
+
+function shade(hex, amt) {
+  // amt -1..1
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.max(0, Math.min(255, ((n >> 16) & 255) + Math.round(amt * 255)));
+  const g = Math.max(0, Math.min(255, ((n >> 8)  & 255) + Math.round(amt * 255)));
+  const b = Math.max(0, Math.min(255, (n & 255) + Math.round(amt * 255)));
+  return `rgb(${r},${g},${b})`;
+}
+
+function draw() {
+  const W = canvas.clientWidth, H = canvas.clientHeight;
+  const col = themeColors();
+
+  // gradient bg
+  const g = ctx.createRadialGradient(W * 0.72, H * 0.15, 10, W * 0.5, H * 0.6, Math.max(W, H));
+  g.addColorStop(0, col.rim + '33');
+  g.addColorStop(0.5, col.bg);
+  g.addColorStop(1, col.bg);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  // room scales with area (10 -> 0.85, 120 -> 1.4)
+  const areaScale = 0.85 + ((state.area - 10) / 110) * 0.55;
+  const baseScale = Math.min(W, H) / 18;
+  const scale = baseScale * areaScale;
+
+  const cx = W * 0.5;
+  const cy = H * 0.58;
+
+  // floor
+  axBox(7, 0.2, 7,  -3.5, -0.2, -3.5, col.floor, col.floorTop, col.floorSide, cx, cy, scale);
+  // back wall
+  axBox(7, 4.2, 0.2,  -3.5, 0, -3.5, col.wallFront, col.wallTop, col.wallSide, cx, cy, scale);
+  // left wall
+  axBox(0.2, 4.2, 7,  -3.5, 0, -3.5, col.wallSide, col.wallTop, shade(col.wallSide, -0.05), cx, cy, scale);
+
+  // furniture
+  for (const [wx, wy, wz, px, py, pz, color] of furniture(state.type)) {
+    axBox(wx, wy, wz, px, py, pz, color, shade(color, 0.12), shade(color, -0.12), cx, cy, scale);
+  }
+
+  // AC unit on the back wall, centered
+  const acW = 2.4, acH = 0.7, acD = 0.5;
+  const acPx = -acW / 2, acPy = 3.0, acPz = -3.3;
+  axBox(acW, acH, acD, acPx, acPy, acPz, '#f5f8fc', '#ffffff', '#c8d3e1', cx, cy, scale);
+
+  // vent strip — color by zone
+  const ventColor = state.zone === 'C' ? '#ff8a4c' : '#4cc2ff';
+  axBox(acW - 0.2, 0.1, 0.55, acPx + 0.1, acPy - 0.15, acPz + 0.05, ventColor, shade(ventColor, 0.2), shade(ventColor, -0.2), cx, cy, scale);
+
+  // airflow lines from vent (soft arcs)
+  ctx.strokeStyle = ventColor + 'aa';
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i < 4; i++) {
+    const phase = (Date.now() * 0.001 + i * 0.5) % 1.2;
+    ctx.globalAlpha = Math.max(0, 1 - phase / 1.2);
+    const [x0, y0] = project(0, acPy - 0.3, acPz + 0.4, cx, cy, scale);
+    const [x1, y1] = project(0, acPy - 0.3 - phase * 1.5, acPz + 0.4 + phase * 2.5, cx, cy, scale);
+    ctx.beginPath();
+    ctx.moveTo(x0 + (i - 1.5) * 12, y0);
+    ctx.quadraticCurveTo((x0 + x1) / 2 + (i - 1.5) * 10, (y0 + y1) / 2 - 20, x1 + (i - 1.5) * 8, y1);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ---------- wizard wiring ----------
+const themeBtn = document.getElementById('themeToggle');
+themeBtn.addEventListener('click', () => {
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  themeBtn.textContent = next === 'dark' ? '☾ Dark' : '☀ Light';
+  draw();
+});
+
+const areaEl = document.getElementById('area');
+const areaRead = document.getElementById('area-readout');
+const outside = document.getElementById('outside-val');
+const inside = document.getElementById('inside-val');
+const drawEl = document.getElementById('draw-val');
+
+function recalc() {
+  const a = state.area;
+  const btu = Math.round(a * 340 / 1000) * 1000;
+  areaRead.textContent = `${a} m² · ~${btu.toLocaleString()} BTU`;
+  const outMap = { A: 38, B: 32, C: 22 };
+  outside.textContent = `${outMap[state.zone]}°C`;
+  inside.textContent = `23°C`;
+  drawEl.textContent = `${(0.4 + (a / 120) * 1.1).toFixed(2)} kW`;
+  draw();
+}
+
+areaEl.addEventListener('input', e => { state.area = +e.target.value; recalc(); });
+
+document.querySelectorAll('.segmented button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.segmented button').forEach(x => x.setAttribute('aria-pressed','false'));
+    b.setAttribute('aria-pressed','true');
+    state.type = b.dataset.type;
+    document.getElementById('type-readout').textContent = b.textContent;
+    draw();
+  });
+});
+document.querySelectorAll('.zone-picker button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.zone-picker button').forEach(x => x.setAttribute('aria-pressed','false'));
+    b.setAttribute('aria-pressed','true');
+    state.zone = b.dataset.zone;
+    document.getElementById('zone-readout').textContent = b.textContent;
+    recalc();
+  });
+});
+
+recalc();
+
+// gentle animation loop so airflow lines drift
+let last = 0;
+function tick(now) {
+  if (now - last > 80) { draw(); last = now; }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+</script>
+
+</body>
+</html>

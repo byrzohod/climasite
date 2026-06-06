@@ -1,8 +1,9 @@
-import { Component, inject, signal, OnInit, effect } from '@angular/core';
+import { Component, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { AuthService, User, UpdateProfileRequest } from '../../../auth/services/auth.service';
+import { AuthService, UpdateProfileRequest } from '../../../auth/services/auth.service';
+import { apiErrorToTranslationKey } from '../../../core/utils/translation-key.util';
 
 @Component({
   selector: 'app-profile',
@@ -117,9 +118,9 @@ import { AuthService, User, UpdateProfileRequest } from '../../../auth/services/
                 formControlName="preferredLanguage"
                 data-testid="profile-language"
               >
-                <option value="en">English</option>
-                <option value="bg">Български</option>
-                <option value="de">Deutsch</option>
+                <option value="en">{{ 'languages.en' | translate }}</option>
+                <option value="bg">{{ 'languages.bg' | translate }}</option>
+                <option value="de">{{ 'languages.de' | translate }}</option>
               </select>
             </div>
 
@@ -356,7 +357,7 @@ import { AuthService, User, UpdateProfileRequest } from '../../../auth/services/
     }
   `]
 })
-export class ProfileComponent implements OnInit {
+export class ProfileComponent {
   private readonly authService = inject(AuthService);
   private readonly translateService = inject(TranslateService);
   private readonly fb = inject(FormBuilder);
@@ -414,10 +415,6 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {
-    // Forms are now updated via effect when user data changes
-  }
-
   private passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
     const newPassword = control.get('newPassword');
     const confirmPassword = control.get('confirmPassword');
@@ -449,7 +446,7 @@ export class ProfileComponent implements OnInit {
       },
       error: (err) => {
         this.isUpdatingProfile.set(false);
-        this.profileError.set(err.error?.message || 'Failed to update profile');
+        this.profileError.set(this.translateService.instant(apiErrorToTranslationKey(err, 'profile.updateError')));
       }
     });
   }
@@ -476,7 +473,7 @@ export class ProfileComponent implements OnInit {
       error: (err) => {
         this.isUpdatingPreferences.set(false);
         this.preferencesSuccess.set(false);
-        this.preferencesError.set(err.error?.message || 'Failed to update preferences');
+        this.preferencesError.set(this.translateService.instant(apiErrorToTranslationKey(err, 'profile.preferencesError')));
       }
     });
   }
@@ -500,7 +497,7 @@ export class ProfileComponent implements OnInit {
       },
       error: (err) => {
         this.isChangingPassword.set(false);
-        this.passwordError.set(err.error?.message || 'Failed to change password');
+        this.passwordError.set(this.translateService.instant(apiErrorToTranslationKey(err, 'profile.passwordError')));
       }
     });
   }

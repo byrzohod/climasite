@@ -10,7 +10,7 @@ import { AuthService } from '../services/auth.service';
  * This prevents the issue where users get logged out when navigating to protected routes
  * on page refresh because the guard runs before the auth state is restored.
  */
-export const authGuard: CanActivateFn = (route, state): Observable<boolean | UrlTree> => {
+export const authGuard: CanActivateFn = (_route, state): Observable<boolean | UrlTree> => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
@@ -31,7 +31,7 @@ export const authGuard: CanActivateFn = (route, state): Observable<boolean | Url
   );
 };
 
-export const adminGuard: CanActivateFn = (route, state): Observable<boolean | UrlTree> => {
+export const adminGuard: CanActivateFn = (_route, state): Observable<boolean | UrlTree> => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
@@ -55,7 +55,7 @@ export const adminGuard: CanActivateFn = (route, state): Observable<boolean | Ur
   );
 };
 
-export const guestGuard: CanActivateFn = (route, state): Observable<boolean | UrlTree> => {
+export const guestGuard: CanActivateFn = (_route, _state): Observable<boolean | UrlTree> => {
   const authService = inject(AuthService);
   const router = inject(Router);
 

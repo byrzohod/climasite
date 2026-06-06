@@ -6,6 +6,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../services/auth.service';
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { apiErrorToTranslationKey } from '../../../core/utils/translation-key.util';
 
 @Component({
   selector: 'app-reset-password',
@@ -120,9 +121,7 @@ export class ResetPasswordComponent implements OnInit {
       },
       error: (error) => {
         this.isLoading.set(false);
-        this.translate.get('auth.resetPassword.error').subscribe(defaultMsg => {
-          this.errorMessage.set(error.error?.message || defaultMsg);
-        });
+        this.errorMessage.set(this.translate.instant(apiErrorToTranslationKey(error, 'auth.resetPassword.error')));
       }
     });
   }

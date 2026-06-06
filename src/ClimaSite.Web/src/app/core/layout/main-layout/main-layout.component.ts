@@ -1,7 +1,7 @@
 import { Component, inject, HostBinding } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, RouterOutlet, ChildrenOutletContexts } from '@angular/router';
-import { trigger, transition, style, animate, query, group, AnimationMetadata } from '@angular/animations';
+import { trigger, transition, style, animate, query } from '@angular/animations';
 import { HeaderComponent } from '../header/header.component';
 import { FooterComponent } from '../footer/footer.component';
 import { ToastContainerComponent } from '../../../shared/components/toast/toast.component';

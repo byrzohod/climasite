@@ -45,7 +45,7 @@ export interface UpdateTranslationRequest {
 })
 export class AdminTranslationsService {
   private http = inject(HttpClient);
-  private baseUrl = `${environment.apiUrl}/admin/products`;
+  private baseUrl = `${environment.apiUrl}/api/admin/products`;
 
   getProductTranslations(productId: string): Observable<ProductTranslationsDto> {
     return this.http.get<ProductTranslationsDto>(`${this.baseUrl}/${productId}/translations`);

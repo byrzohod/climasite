@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslateModule } from '@ngx-translate/core';
 import { PaymentTrustStripComponent } from './payment-trust-strip.component';
 import { PaymentIconComponent, PaymentBrand, PaymentIconSize } from './payment-icon.component';
 

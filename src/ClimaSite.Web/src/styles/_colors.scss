@@ -255,51 +255,51 @@ $color-info-950: #082f49;
   // Border Colors (Light Theme)
   --color-border-primary: #{$color-gray-200};
   --color-border-secondary: #{$color-gray-300};
-  --color-border-focus: #{$color-primary-500};
+  --color-border-focus: #{$color-primary-700};
   --color-border-error: #{$color-error-500};
 
   // Brand Colors
-  --color-primary: #{$color-primary-500};
-  --color-primary-hover: #{$color-primary-600};
-  --color-primary-active: #{$color-primary-700};
+  --color-primary: #{$color-primary-700};
+  --color-primary-hover: #{$color-primary-800};
+  --color-primary-active: #{$color-primary-900};
   --color-primary-light: #{$color-primary-50};
-  --color-primary-dark: #{$color-primary-700};
+  --color-primary-dark: #{$color-primary-800};
 
   --color-secondary: #{$color-secondary-500};
   --color-secondary-hover: #{$color-secondary-600};
   --color-secondary-active: #{$color-secondary-700};
 
-  --color-accent: #{$color-accent-500};
-  --color-accent-hover: #{$color-accent-600};
-  --color-accent-active: #{$color-accent-700};
+  --color-accent: #{$color-accent-700};
+  --color-accent-hover: #{$color-accent-800};
+  --color-accent-active: #{$color-accent-900};
 
-  --color-warm: #{$color-warm-500};
-  --color-warm-hover: #{$color-warm-600};
+  --color-warm: #{$color-warm-700};
+  --color-warm-hover: #{$color-warm-800};
 
-  --color-ember: #{$color-ember-500};
-  --color-ember-hover: #{$color-ember-600};
+  --color-ember: #{$color-ember-700};
+  --color-ember-hover: #{$color-ember-800};
 
-  --color-aurora: #{$color-aurora-500};
-  --color-aurora-hover: #{$color-aurora-600};
+  --color-aurora: #{$color-aurora-700};
+  --color-aurora-hover: #{$color-aurora-800};
 
   // Semantic Colors
-  --color-success: #{$color-success-500};
+  --color-success: #{$color-success-700};
   --color-success-light: #{$color-success-50};
-  --color-success-dark: #{$color-success-700};
+  --color-success-dark: #{$color-success-800};
   --color-success-bg: #{$color-success-50};
 
-  --color-warning: #{$color-warning-500};
+  --color-warning: #{$color-warning-700};
   --color-warning-light: #{$color-warning-50};
-  --color-warning-dark: #{$color-warning-700};
+  --color-warning-dark: #{$color-warning-800};
 
   --color-error: #{$color-error-500};
   --color-error-light: #{$color-error-50};
   --color-error-dark: #{$color-error-700};
   --color-error-bg: #{$color-error-50};
 
-  --color-info: #{$color-info-500};
+  --color-info: #{$color-info-700};
   --color-info-light: #{$color-info-50};
-  --color-info-dark: #{$color-info-700};
+  --color-info-dark: #{$color-info-800};
 
   // Shadow Colors
   --shadow-color: rgba(15, 23, 42, 0.08);
@@ -307,7 +307,7 @@ $color-info-950: #082f49;
   --shadow-color-xl: rgba(15, 23, 42, 0.16);
 
   // Ring/Focus Colors
-  --color-ring: #{$color-primary-500};
+  --color-ring: #{$color-primary-700};
   --color-ring-offset: #{$color-white};
 
   // Glow Effects
@@ -324,6 +324,37 @@ $color-info-950: #082f49;
   --glass-bg-heavy: rgba(255, 255, 255, 0.9);
   --glass-border: rgba(255, 255, 255, 0.3);
   --glass-shadow: rgba(15, 23, 42, 0.1);
+
+  // Home v3 canvas + showcase colors
+  --home-v3-elevated-shadow: var(--shadow-color-xl);
+  --home-v3-chip-bg: rgba(15, 23, 42, 0.04);
+  --home-v3-canvas-bg: #{$color-gray-50};
+  --home-v3-canvas-glow: rgba(2, 132, 199, 0.1);
+  --home-v3-canvas-glow-transparent: rgba(0, 0, 0, 0);
+  --home-v3-canvas-stroke: rgba(0, 0, 0, 0.25);
+  --home-v3-canvas-stroke-strong: rgba(0, 0, 0, 0.3);
+  --home-v3-floor: #{$color-gray-200};
+  --home-v3-wall-back: #{$color-gray-50};
+  --home-v3-wall-side: #{$color-gray-100};
+  --home-v3-ac-top: #{$color-gray-200};
+  --home-v3-ac-side: #{$color-gray-400};
+  --home-v3-ac-front: #{$color-gray-300};
+  --home-v3-led-cool: #{$color-accent-300};
+  --home-v3-led-warm: #{$color-ember-400};
+  --home-v3-flow-cool: rgba(103, 232, 249, 0.75);
+  --home-v3-flow-warm: rgba(251, 146, 60, 0.75);
+  --home-v3-furniture-wood-top: #{$color-warm-700};
+  --home-v3-furniture-wood-side: #{$color-warm-900};
+  --home-v3-furniture-wood-front: #{$color-warm-800};
+  --home-v3-furniture-fabric-top: #{$color-primary-700};
+  --home-v3-furniture-fabric-side: #{$color-primary-900};
+  --home-v3-furniture-fabric-front: #{$color-primary-800};
+  --home-v3-furniture-light-top: #{$color-gray-200};
+  --home-v3-furniture-light-side: #{$color-gray-400};
+  --home-v3-furniture-light-front: #{$color-gray-300};
+  --home-v3-furniture-dark-top: #{$color-gray-700};
+  --home-v3-furniture-dark-side: #{$color-gray-900};
+  --home-v3-furniture-dark-front: #{$color-gray-800};
 
   // Backwards compatibility aliases
   --color-border: var(--color-border-primary);
@@ -400,7 +431,7 @@ $color-info-950: #082f49;
   --color-text-inverse: #{$color-gray-900};
   --color-text-disabled: #{$color-gray-500};
   --color-text-placeholder: #{$color-gray-500};
-  --color-text-muted: #{$color-gray-500};
+  --color-text-muted: #{$color-gray-400};
 
   // Border Colors (Dark Theme)
   --color-border-primary: #{$color-gray-700};
@@ -469,6 +500,37 @@ $color-info-950: #082f49;
   --glass-bg-heavy: rgba(30, 41, 59, 0.9);
   --glass-border: rgba(255, 255, 255, 0.1);
   --glass-shadow: rgba(0, 0, 0, 0.3);
+
+  // Home v3 canvas + showcase colors
+  --home-v3-elevated-shadow: var(--shadow-color-xl);
+  --home-v3-chip-bg: rgba(255, 255, 255, 0.06);
+  --home-v3-canvas-bg: #{$color-gray-950};
+  --home-v3-canvas-glow: rgba(125, 211, 252, 0.08);
+  --home-v3-canvas-glow-transparent: rgba(0, 0, 0, 0);
+  --home-v3-canvas-stroke: rgba(0, 0, 0, 0.25);
+  --home-v3-canvas-stroke-strong: rgba(0, 0, 0, 0.3);
+  --home-v3-floor: #{$color-primary-950};
+  --home-v3-wall-back: #{$color-gray-800};
+  --home-v3-wall-side: #{$color-gray-900};
+  --home-v3-ac-top: #{$color-gray-200};
+  --home-v3-ac-side: #{$color-gray-400};
+  --home-v3-ac-front: #{$color-gray-300};
+  --home-v3-led-cool: #{$color-accent-300};
+  --home-v3-led-warm: #{$color-ember-400};
+  --home-v3-flow-cool: rgba(103, 232, 249, 0.75);
+  --home-v3-flow-warm: rgba(251, 146, 60, 0.75);
+  --home-v3-furniture-wood-top: #{$color-warm-700};
+  --home-v3-furniture-wood-side: #{$color-warm-900};
+  --home-v3-furniture-wood-front: #{$color-warm-800};
+  --home-v3-furniture-fabric-top: #{$color-primary-700};
+  --home-v3-furniture-fabric-side: #{$color-primary-900};
+  --home-v3-furniture-fabric-front: #{$color-primary-800};
+  --home-v3-furniture-light-top: #{$color-gray-200};
+  --home-v3-furniture-light-side: #{$color-gray-400};
+  --home-v3-furniture-light-front: #{$color-gray-300};
+  --home-v3-furniture-dark-top: #{$color-gray-700};
+  --home-v3-furniture-dark-side: #{$color-gray-900};
+  --home-v3-furniture-dark-front: #{$color-gray-800};
 
   // Backwards compatibility aliases
   --color-border: var(--color-border-primary);

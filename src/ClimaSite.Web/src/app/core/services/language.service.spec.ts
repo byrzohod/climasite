@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { LanguageService, SUPPORTED_LANGUAGES } from './language.service';
+import { LanguageService, SupportedLanguage } from './language.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { PLATFORM_ID } from '@angular/core';
 
@@ -76,7 +76,7 @@ describe('LanguageService', () => {
 
   it('should not set invalid language', () => {
     const originalLang = service.currentLanguage();
-    service.setLanguage('invalid' as any);
+    service.setLanguage('invalid' as SupportedLanguage);
     expect(service.currentLanguage()).toBe(originalLang);
   });
 

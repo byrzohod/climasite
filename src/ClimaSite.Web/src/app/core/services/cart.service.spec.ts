@@ -170,7 +170,7 @@ describe('CartService', () => {
       tick();
 
       expect(errorOccurred).toBeTrue();
-      expect(service.error()).toBe('Failed to add item to cart');
+      expect(service.error()).toBe('cart.errors.addFailed');
       expect(service.isLoading()).toBeFalse();
     }));
 
@@ -219,7 +219,7 @@ describe('CartService', () => {
       tick();
 
       expect(errorOccurred).toBeTrue();
-      expect(service.error()).toBe('Failed to update item quantity');
+      expect(service.error()).toBe('cart.errors.updateQuantityFailed');
     }));
   });
 
@@ -252,7 +252,7 @@ describe('CartService', () => {
       tick();
 
       expect(errorOccurred).toBeTrue();
-      expect(service.error()).toBe('Failed to remove item from cart');
+      expect(service.error()).toBe('cart.errors.removeFailed');
     }));
   });
 
@@ -290,7 +290,7 @@ describe('CartService', () => {
       tick();
 
       expect(errorOccurred).toBeTrue();
-      expect(service.error()).toBe('Failed to clear cart');
+      expect(service.error()).toBe('cart.errors.clearFailed');
     }));
   });
 
@@ -449,7 +449,7 @@ describe('CartService', () => {
       });
 
       const newHttpMock = TestBed.inject(HttpTestingController);
-      const newService = TestBed.inject(CartService);
+      TestBed.inject(CartService);
 
       const req = newHttpMock.expectOne(req => req.url.includes('/api/cart'));
       req.flush(emptyCart);

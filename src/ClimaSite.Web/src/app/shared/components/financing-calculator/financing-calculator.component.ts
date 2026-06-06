@@ -70,14 +70,14 @@ const DEFAULT_OPTIONS: FinancingOption[] = [
         </div>
         @if (interestCost() > 0) {
           <div class="result-row interest">
-            <span class="label">Interest:</span>
+            <span class="label">{{ 'products.financing.interest' | translate }}:</span>
             <span class="value">{{ interestCost() | currency:'EUR' }}</span>
           </div>
         }
       </div>
 
       <p class="disclaimer">
-        *Representative example. Subject to credit approval. Terms and conditions apply.
+        {{ 'products.financing.disclaimer' | translate }}
       </p>
     </div>
   `,

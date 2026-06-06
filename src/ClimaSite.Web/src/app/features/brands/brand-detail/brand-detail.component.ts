@@ -16,7 +16,7 @@ import { ProductBrief } from '../../../core/models/product.model';
       @if (isLoading()) {
         <div class="loading">{{ 'common.loading' | translate }}</div>
       } @else if (error()) {
-        <div class="error">{{ error() }}</div>
+        <div class="error">{{ error() | translate }}</div>
       } @else if (brand()) {
 <!-- Hero Banner -->
         <div class="brand-hero">
@@ -452,7 +452,7 @@ export class BrandDetailComponent implements OnInit {
     if (slug) {
       this.loadBrand(slug);
     } else {
-      this.error.set('Brand not found');
+      this.error.set('brands.errors.notFound');
       this.isLoading.set(false);
     }
   }
@@ -466,7 +466,7 @@ export class BrandDetailComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to load brand:', err);
-        this.error.set('Brand not found');
+        this.error.set('brands.errors.notFound');
         this.isLoading.set(false);
       }
     });

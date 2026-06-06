@@ -55,7 +55,7 @@ export interface VoteResult {
 })
 export class QuestionsService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = `${environment.apiUrl}/questions`;
+  private readonly apiUrl = `${environment.apiUrl}/api/questions`;
 
   getProductQuestions(
     productId: string,

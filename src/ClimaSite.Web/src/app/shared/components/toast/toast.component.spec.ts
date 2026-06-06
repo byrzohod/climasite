@@ -124,7 +124,7 @@ describe('ToastContainerComponent', () => {
   });
 
   it('should dismiss toast when item emits dismissed event', fakeAsync(() => {
-    const id = toastService.success('Test message');
+    toastService.success('Test message');
     fixture.detectChanges();
     
     expect(toastService.toasts().length).toBe(1);

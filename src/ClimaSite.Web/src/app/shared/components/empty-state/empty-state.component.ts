@@ -104,7 +104,7 @@ const VARIANT_ICONS: Record<EmptyStateVariant, string> = {
         <a 
           [routerLink]="actionRoute()" 
           class="empty-state__action"
-          data-testid="empty-state-action">
+          [attr.data-testid]="actionTestId()">
           {{ actionLabel() }}
         </a>
       }
@@ -335,6 +335,12 @@ export class EmptyStateComponent {
    * Router link for the action button
    */
   readonly actionRoute = input<string>('');
+
+  /**
+   * Test id for screens that expose a domain-specific empty-state action.
+   * @default 'empty-state-action'
+   */
+  readonly actionTestId = input<string>('empty-state-action');
 
   /**
    * Whether to show the icon

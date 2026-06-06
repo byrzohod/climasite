@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, HostListener, ElementRef, Output, EventEmitter, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, inject, signal, OnInit, HostListener, ElementRef, Output, EventEmitter, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';

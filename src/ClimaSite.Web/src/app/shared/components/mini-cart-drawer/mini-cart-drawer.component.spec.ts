@@ -1,9 +1,9 @@
-import { ComponentFixture, TestBed, fakeAsync, tick, flush } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 import { TranslateModule } from '@ngx-translate/core';
 import { signal, WritableSignal } from '@angular/core';
-import { of, Subject } from 'rxjs';
+import { of } from 'rxjs';
 
 import { MiniCartDrawerComponent } from './mini-cart-drawer.component';
 import { MiniCartItemComponent } from './mini-cart-item.component';

@@ -4,7 +4,7 @@ import { authGuard, adminGuard, guestGuard } from './auth/guards/auth.guard';
 export const routes: Routes = [
   {
     path: '',
-    loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent),
+    loadComponent: () => import('./features/home-v3/home-v3.component').then(m => m.HomeV3Component),
     data: { animation: 'home' }
   },
   {

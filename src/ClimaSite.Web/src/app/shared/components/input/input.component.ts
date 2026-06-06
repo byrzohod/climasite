@@ -436,8 +436,8 @@ export class InputComponent implements ControlValueAccessor {
     return this.type();
   });
 
-  private onChange: (value: string) => void = () => {};
-  private onTouched: () => void = () => {};
+  private onChange: (value: string) => void = (_value: string) => { return; };
+  private onTouched: () => void = () => { return; };
 
   constructor() {
     // Effect to trigger shake animation when error appears
@@ -462,7 +462,7 @@ export class InputComponent implements ControlValueAccessor {
     this.onTouched = fn;
   }
 
-  setDisabledState(isDisabled: boolean): void {
+  setDisabledState(_isDisabled: boolean): void {
     // Handled by input signal
   }
 

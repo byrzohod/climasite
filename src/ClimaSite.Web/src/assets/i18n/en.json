@@ -1,5 +1,5 @@
 {
-"common": {
+  "common": {
     "appName": "CDL",
     "tagline": "Climate & Water Purification Solutions",
     "loading": "Loading...",
@@ -44,10 +44,17 @@
       "moveUp": "Move up",
       "moveDown": "Move down",
       "removeRelation": "Remove relation",
-      "mapLocation": "Map showing location"
+      "mapLocation": "Map showing location",
+      "mobileNavigation": "Mobile navigation",
+      "notifications": "Notifications"
     },
     "language": "Language",
-    "theme": "Theme"
+    "theme": "Theme",
+    "comingSoon": "Coming soon...",
+    "items": "Items",
+    "page": "Page",
+    "sale": "Sale",
+    "pagination": "Pagination"
   },
   "nav": {
     "home": "Home",
@@ -78,7 +85,8 @@
       "search": "Search",
       "cart": "Cart",
       "account": "Account"
-    }
+    },
+    "hot": "Hot"
   },
   "delivery": {
     "options": "Delivery Options",
@@ -154,9 +162,16 @@
     "item_removed": "{{name}} removed from cart",
     "item_restored": "Item restored to cart",
     "remove_failed": "Failed to remove item",
-    "restore_failed": "Failed to restore item"
+    "restore_failed": "Failed to restore item",
+    "added": "Added to cart",
+    "errors": {
+      "addFailed": "Failed to add item to cart",
+      "updateQuantityFailed": "Failed to update item quantity",
+      "removeFailed": "Failed to remove item from cart",
+      "clearFailed": "Failed to clear cart"
+    }
   },
-"checkout": {
+  "checkout": {
     "title": "Checkout",
     "progress_navigation": "Checkout progress",
     "step_completed": "Completed",
@@ -206,7 +221,17 @@
       "bank": "Bank Transfer",
       "weAccept": "We accept",
       "acceptedMethods": "Accepted payment methods",
-      "securePayment": "Secure payment"
+      "securePayment": "Secure payment",
+      "errors": {
+        "configUnavailable": "Payment configuration is not available",
+        "stripeInitFailed": "Failed to initialize card payments",
+        "serviceInitFailed": "Failed to initialize payment service",
+        "intentInitFailed": "Failed to initialize payment",
+        "stripeNotInitialized": "Card payments are not initialized",
+        "notInitialized": "Payment is not initialized",
+        "failed": "Payment failed",
+        "notCompleted": "Payment was not completed"
+      }
     },
     "review": {
       "title": "Review Your Order",
@@ -217,7 +242,7 @@
     "placeOrder": "Place Order",
     "processing": "Processing your order...",
     "backToCart": "Back to Cart",
-"orderComplete": {
+    "orderComplete": {
       "title": "Order Confirmed!",
       "message": "Thank you for your order. You will receive a confirmation email shortly.",
       "orderNumber": "Order Number",
@@ -238,12 +263,28 @@
       "needHelp": "Need Help?",
       "contactInfo": "Call us at",
       "or": "or email",
+      "supportEmail": "support@climasite.bg",
       "whatsNext": {
         "title": "What's Next?",
         "step1": "You'll receive a confirmation email shortly",
         "step2": "We'll email you when your order ships with tracking info",
         "step3": "Estimated delivery: {{date}}"
+      },
+      "errors": {
+        "orderIdNotFound": "Order ID not found",
+        "loadFailed": "Failed to load order details"
       }
+    },
+    "errors": {
+      "shippingAddressRequired": "Shipping address is required",
+      "placeOrderFailed": "Failed to place order",
+      "firstNameRequired": "First name is required",
+      "lastNameRequired": "Last name is required",
+      "streetAddressRequired": "Street address is required",
+      "cityRequired": "City is required",
+      "postalCodeRequired": "Postal code is required",
+      "countryRequired": "Country is required",
+      "phoneRequired": "Phone number is required"
     }
   },
   "account": {
@@ -327,7 +368,11 @@
         "partial": "{{added}} item(s) added, {{skipped}} item(s) skipped due to unavailability",
         "error": "Failed to add items to cart"
       },
-      "notes": "Notes"
+      "notes": "Notes",
+      "errors": {
+        "notFound": "Order not found",
+        "loadFailed": "Failed to load order"
+      }
     },
     "addresses": {
       "title": "Saved Addresses",
@@ -356,7 +401,14 @@
       "typeBilling": "Billing",
       "typeBoth": "Both",
       "confirmDelete": "Delete Address",
-      "confirmDeleteMessage": "Are you sure you want to delete this address? This action cannot be undone."
+      "confirmDeleteMessage": "Are you sure you want to delete this address? This action cannot be undone.",
+      "errors": {
+        "loadFailed": "Failed to load addresses",
+        "createFailed": "Failed to create address",
+        "updateFailed": "Failed to update address",
+        "deleteFailed": "Failed to delete address",
+        "setDefaultFailed": "Failed to set default address"
+      }
     },
     "profile": {
       "title": "Profile Settings",
@@ -401,6 +453,7 @@
     },
     "copyright": "© {{year}} CDL. All rights reserved.",
     "phone": "0898 56 75 04",
+    "email": "info@cdl.bg",
     "address": "Bulgaria"
   },
   "errors": {
@@ -412,229 +465,8 @@
     "invalidCredentials": "Invalid email or password",
     "networkError": "Network error. Please try again.",
     "serverError": "Server error. Please try again later.",
-    "notFound": "Page not found"
-  },
-  "home": {
-    "hero": {
-      "title": "Climate & Water Solutions",
-      "titleLine1": "Perfect Climate,",
-      "titleLine2": "Pure Water",
-      "eyebrow": "Nordic Tech Climate Systems",
-      "title1": "Perfect Climate.",
-      "title2": "Precision Engineered.",
-      "line1": "Perfect Climate,",
-      "line2": "Pure Water",
-      "subtitle": "Premium HVAC solutions for homes and businesses. Energy-efficient. Professionally installed.",
-      "cta": "View Products",
-      "cta.primary": "Shop All Products",
-      "cta.secondary": "Find Your System",
-      "secondaryCta": "Get Expert Advice",
-      "badge": "Trusted by 10,000+ Customers",
-      "scroll": "Scroll to explore",
-      "searchPlaceholder": "Search for products, brands, categories...",
-      "shopBy": "Shop by:",
-      "featuredBadge": "Featured",
-      "featuredProduct": "Premium Split AC",
-      "featuredTagline": "Energy-efficient cooling for any space",
-      "visualLabel": "Energy Savings",
-      "visualValue": "Up to 40%",
-      "cooling": "Cooling",
-      "heating": "Heating",
-      "ventilation": "Ventilation"
-    },
-    "promo": {
-      "banner": {
-        "winter": "Winter Sale: Up to 30% off heating systems",
-        "summer": "Summer Sale: Cool savings on air conditioners",
-        "cta": "Shop Now"
-      },
-      "sale": {
-        "title": "Winter Sale",
-        "description": "Up to 30% off on selected items"
-      },
-      "new": {
-        "title": "New Arrivals",
-        "description": "Check out the latest products"
-      },
-      "bundle": {
-        "title": "Bundle Deals",
-        "description": "Save more when you buy together"
-      }
-    },
-    "slides": {
-      "summer": {
-        "title": "Stay Cool This Summer",
-        "subtitle": "Premium air conditioners with energy-efficient technology. Beat the heat with systems that save you money.",
-        "cta": "Shop Air Conditioners"
-      },
-      "winter": {
-        "title": "Warm Up Your Home",
-        "subtitle": "Efficient heating systems for the coldest days. Stay cozy while keeping energy bills low.",
-        "cta": "Shop Heating Systems"
-      }
-    },
-    "brands": {
-      "trustedBy": "Trusted by leading HVAC professionals worldwide",
-      "label": "Trusted by leading brands"
-    },
-    "stats": {
-      "title": "Why Thousands Choose ClimaSite",
-      "subtitle": "Join our community of satisfied customers who trust us for their climate control needs",
-      "customers": "Happy Customers",
-      "products": "Products Available",
-      "experience": "Years Experience",
-      "years": "Years Experience",
-      "rating": "Customer Rating"
-    },
-    "marquee": {
-      "text": "Free shipping on orders over $500 • 5-year warranty • Professional installation available • 24/7 support"
-    },
-    "howItWorks": {
-      "label": "How It Works",
-      "title": "How It Works",
-      "subtitle": "From browsing to installation in 4 simple steps",
-      "steps": {
-        "browse": {
-          "title": "Browse",
-          "desc": "Explore our catalog of premium HVAC equipment"
-        },
-        "compare": {
-          "title": "Compare",
-          "desc": "Compare specs, energy ratings, and prices"
-        },
-        "order": {
-          "title": "Order",
-          "desc": "Secure checkout with fast delivery"
-        },
-        "install": {
-          "title": "Install",
-          "desc": "Professional installation by certified techs"
-        }
-      }
-    },
-    "featured": {
-      "label": "Top Picks",
-      "title": "Featured Products",
-      "subtitle": "Handpicked selection of our best-selling climate solutions",
-      "viewAll": "View All"
-    },
-    "categories": {
-      "label": "Shop by Category",
-      "title": "Find Your Perfect Climate Solution",
-      "subtitle": "Browse our curated selection of HVAC equipment for every need",
-      "viewProducts": "View Products",
-      "explore": "Explore",
-      "popular": "Most Popular",
-      "productsLabel": "products",
-      "coolingDesc": "Energy-efficient air conditioners and cooling systems for maximum comfort during hot summer months.",
-      "heatingDesc": "Keep your space warm with our range of heating solutions.",
-      "ventilationDesc": "Fresh air circulation systems for healthier indoor environments.",
-      "accessoriesDesc": "Essential parts, filters, and accessories for your HVAC systems.",
-      "taglines": {
-        "airConditioning": "Stay cool with premium split ACs and inverter technology",
-        "heating": "Efficient warmth for every room in your home",
-        "ventilation": "Fresh air circulation for healthier living",
-        "water": "Crystal clear, pure water every day"
-      }
-    },
-    "benefits": {
-      "title": "Why Choose ClimaSite",
-      "freeShipping": "Free Shipping",
-      "freeShippingDesc": "On orders over $500",
-      "warranty": "Extended Warranty",
-      "warrantyDesc": "Up to 5 years coverage",
-      "support": "Expert Support",
-      "supportDesc": "24/7 customer service",
-      "installation": "Professional Installation",
-      "installationDesc": "By certified technicians"
-    },
-    "values": {
-      "shipping": "Free Shipping",
-      "shippingDetail": "On orders over $500",
-      "warranty": "5-Year Warranty",
-      "support": "24/7 Support",
-      "installation": "Pro Installation"
-    },
-    "process": {
-      "title": "How It Works",
-      "subtitle": "From browsing to installation in 4 simple steps",
-      "step1": {
-        "title": "Browse Products",
-        "desc": "Explore our catalog of premium HVAC equipment"
-      },
-      "step2": {
-        "title": "Compare & Choose",
-        "desc": "Compare specs, energy ratings, and prices"
-      },
-      "step3": {
-        "title": "Place Your Order",
-        "desc": "Secure checkout with multiple payment options"
-      },
-      "step4": {
-        "title": "Professional Install",
-        "desc": "Expert installation by certified technicians"
-      }
-    },
-    "products": {
-      "title": "Featured Products",
-      "subtitle": "Handpicked selection of our best-selling climate solutions",
-      "viewAll": "View All Products"
-    },
-    "cta": {
-      "title": "Ready to Transform Your Climate?",
-      "button": "Shop All Products"
-    },
-    "newsletter": {
-      "title": "Stay Updated",
-      "subtitle": "Subscribe to our newsletter for exclusive deals, energy-saving tips, and new product alerts",
-      "placeholder": "Enter your email address",
-      "subscribe": "Subscribe to newsletter",
-      "button": "Subscribe",
-      "success": "Thank you for subscribing!",
-      "errorRequired": "Please enter your email address",
-      "errorInvalid": "Please enter a valid email address",
-      "disclaimer": "We respect your privacy. Unsubscribe at any time."
-    },
-    "trust": {
-      "customers": "Happy Customers",
-      "products": "Products",
-      "years": "Years Experience",
-      "rating": "Customer Rating"
-    },
-    "testimonials": {
-      "title": "What Our Customers Say",
-      "subtitle": "Real reviews from satisfied customers",
-      "verified": "Verified Purchase",
-      "items": {
-        "1": {
-          "name": "Maria Petrova",
-          "location": "Sofia, Bulgaria",
-          "text": "The installation team was very professional and the air conditioner works perfectly. Energy consumption is lower than expected. I recommend CDL to everyone!",
-          "role": "Homeowner",
-          "date": "2 weeks ago"
-        },
-        "2": {
-          "name": "George Dimitrov",
-          "location": "Plovdiv, Bulgaria",
-          "text": "The water purification system changed our lives. The water at home now has excellent taste and quality. Installation was quick and hassle-free.",
-          "role": "Restaurant Owner",
-          "date": "1 month ago"
-        },
-        "3": {
-          "name": "Stefan Ivanov",
-          "location": "Varna, Bulgaria",
-          "text": "Excellent prices and fast delivery. The 5-year warranty gives me peace of mind. Customer support was incredibly helpful with my questions.",
-          "role": "Property Manager",
-          "date": "3 weeks ago"
-        }
-      }
-    },
-    "finalCta": {
-      "title": "Ready to Transform Your Climate?",
-      "subtitle": "Browse our complete selection of HVAC solutions and find the perfect system for your space. Expert support available 24/7.",
-      "shopNow": "Shop All Products",
-      "contactExpert": "Talk to an Expert"
-    }
+    "notFound": "Page not found",
+    "notFoundDescription": "The page you're looking for doesn't exist or has been moved."
   },
   "contact": {
     "title": "Contact Us",
@@ -688,13 +520,29 @@
     },
     "team": {
       "title": "Meet Our Team",
-      "subtitle": "Dedicated professionals committed to your comfort"
+      "subtitle": "Dedicated professionals committed to your comfort",
+      "members": {
+        "ivan": "Ivan Petrov",
+        "maria": "Maria Dimitrova",
+        "georgi": "Georgi Ivanov",
+        "elena": "Elena Todorova"
+      },
+      "roles": {
+        "ceo": "CEO & Founder",
+        "sales": "Head of Sales",
+        "technical": "Technical Director",
+        "support": "Customer Support Lead"
+      }
     },
     "stats": {
       "customers": "Happy Customers",
       "products": "Products Available",
       "years": "Years in Business",
       "support": "24/7 Support"
+    },
+    "cta": {
+      "title": "Ready to improve your comfort?",
+      "subtitle": "Browse our selection of premium HVAC products."
     }
   },
   "admin": {
@@ -716,13 +564,27 @@
         "Bundle": "Bundles",
         "FrequentlyBoughtTogether": "Frequently Bought Together"
       },
+      "relatedProductsManager": {
+        "errors": {
+          "loadFailed": "Failed to load relations",
+          "addFailed": "Failed to add relation",
+          "removeFailed": "Failed to remove relation",
+          "reorderFailed": "Failed to reorder relations"
+        }
+      },
       "translations": {
         "title": "Product Translations",
         "subtitle": "Manage product content in different languages",
         "addTranslation": "Add Translation",
         "defaultLanguageNotice": "English is the default language. Edit the main product to change this content.",
         "seoSection": "SEO Settings",
-        "confirmDelete": "Are you sure you want to delete the {{language}} translation?"
+        "confirmDelete": "Are you sure you want to delete the {{language}} translation?",
+        "errors": {
+          "loadFailed": "Failed to load translations",
+          "addFailed": "Failed to add translation",
+          "updateFailed": "Failed to update translation",
+          "deleteFailed": "Failed to delete translation"
+        }
       },
       "name": "Name",
       "shortDescription": "Short Description",
@@ -773,7 +635,11 @@
       "reject": "Reject",
       "approveAsOfficial": "Approve as Official",
       "flag": "Flag for Review",
-      "official": "Official"
+      "official": "Official",
+      "reviewedBy": "By",
+      "errors": {
+        "loadFailed": "Failed to load moderation data"
+      }
     }
   },
   "promotions": {
@@ -788,7 +654,10 @@
     "limitedTime": "Limited Time Offer",
     "discount": "{{value}}% OFF",
     "minOrder": "Minimum order: {{amount}}",
-    "products": "products"
+    "products": "products",
+    "errors": {
+      "notFound": "Promotion not found"
+    }
   },
   "brands": {
     "title": "Our Brands",
@@ -798,7 +667,11 @@
     "noBrands": "No brands available at the moment",
     "countryOfOrigin": "Country",
     "foundedYear": "Founded",
-    "visitWebsite": "Visit Website"
+    "visitWebsite": "Visit Website",
+    "errors": {
+      "loadFailed": "Failed to load brands",
+      "notFound": "Brand not found"
+    }
   },
   "resources": {
     "title": "Resources & Guides",
@@ -939,7 +812,8 @@
     "bracketsMounts": "Brackets & Mounts",
     "drainPumps": "Drain Pumps",
     "filters": "Filters",
-    "thermostats": "Thermostats"
+    "thermostats": "Thermostats",
+    "comingSoon": "Category list coming soon..."
   },
   "wishlist": {
     "title": "Wishlist",
@@ -962,7 +836,10 @@
     "currentPassword": "Current Password",
     "newPassword": "New Password",
     "updatePassword": "Update Password",
-    "passwordSuccess": "Password changed successfully"
+    "passwordSuccess": "Password changed successfully",
+    "updateError": "Failed to update profile",
+    "preferencesError": "Failed to update preferences",
+    "passwordError": "Failed to change password"
   },
   "countries": {
     "austria": "Austria",
@@ -1090,6 +967,341 @@
       "title": "Nothing here yet",
       "description": "This section is currently empty.",
       "action": "Go Back"
+    }
+  },
+  "homeV3": {
+    "wizard": {
+      "eyebrow": "Sized for your space",
+      "title": "The right comfort, sized for your room.",
+      "lede": "Tell us your room. We’ll show you the air conditioner that fits — not the one we want to sell you.",
+      "areaLabel": "Room area",
+      "roomTypeLabel": "Room type",
+      "zoneLabel": "Climate zone",
+      "estimateLabel": "Estimated cooling capacity needed"
+    },
+    "roomType": {
+      "living": "Living room",
+      "bedroom": "Bedroom",
+      "office": "Office",
+      "commercial": "Commercial"
+    },
+    "zone": {
+      "A": {
+        "name": "Coastal",
+        "desc": "Mild winters"
+      },
+      "B": {
+        "name": "Temperate",
+        "desc": "Moderate"
+      },
+      "C": {
+        "name": "Alpine",
+        "desc": "Cold, freezing"
+      }
+    },
+    "recommendations": {
+      "eyebrow": "Picked for you",
+      "title": "Three units, ranked by fit",
+      "lede": "Our scoring weighs sizing, energy efficiency, room type, climate, and stock.",
+      "bestMatch": "Best match",
+      "inverter": "Inverter",
+      "viewDetails": "View details",
+      "viewProduct": "View details for {{name}}",
+      "empty": "No products match this configuration. Try a different room size or zone.",
+      "loadError": "Unable to load recommendations. Please try again.",
+      "btuUnit": "BTU/h",
+      "noiseUnit": "dB"
+    },
+    "preview": {
+      "ariaLabel": "Axonometric preview of a {{area}} m² {{roomType}} in the {{zone}} climate zone",
+      "outside": "Outside",
+      "inside": "Inside",
+      "power": "Power"
+    },
+    "categories": {
+      "eyebrow": "Browse the catalog",
+      "title": "Or explore by category",
+      "airConditioners": "Air conditioners",
+      "airConditionersDesc": "Split, multi-split, and portable units",
+      "heatPumps": "Heat pumps",
+      "heatPumpsDesc": "Heating + cooling, year-round comfort",
+      "dehumidifiers": "Dehumidifiers",
+      "dehumidifiersDesc": "Moisture control for any room",
+      "accessories": "Accessories",
+      "accessoriesDesc": "Mounts, covers, smart controllers"
+    },
+    "trust": {
+      "heading": "Trust signals",
+      "installs": "Installations",
+      "rating": "Average rating",
+      "warranty": "Warranty",
+      "delivery": "Delivery"
+    },
+    "cta": {
+      "title": "Not sure yet? Talk to a real person.",
+      "lede": "Free 15-minute consultation with a certified HVAC engineer.",
+      "button": "Browse all products"
+    },
+    "matchReason": {
+      "perfectFit": "Perfectly sized for your space",
+      "efficient": "Best efficiency in this size class",
+      "powerful": "Extra capacity for demanding conditions",
+      "quietBedroom": "Quietest option for bedrooms",
+      "coldClimate": "Rated for sub-zero performance",
+      "budgetFriendly": "Strong fit at a friendly price",
+      "fallback": "Closest match for your configuration"
+    }
+  },
+  "languages": {
+    "en": "English",
+    "bg": "Bulgarian",
+    "de": "German"
+  },
+  "auth": {
+    "login": {
+      "title": "Log in",
+      "subtitle": "Access your ClimaSite account",
+      "email": "Email",
+      "password": "Password",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "submit": "Log in",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up",
+      "error": "Login failed. Please try again."
+    },
+    "register": {
+      "title": "Create Account",
+      "subtitle": "Join ClimaSite",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "passwordRequirements": "Use at least 8 characters with uppercase, lowercase, number, and symbol.",
+      "terms": "I agree to the terms and conditions",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "submit": "Create Account",
+      "success": "Account created successfully. Please log in.",
+      "error": "Registration failed. Please try again."
+    },
+    "forgotPassword": {
+      "title": "Forgot Password",
+      "subtitle": "Enter your email and we will send reset instructions.",
+      "email": "Email",
+      "submit": "Send reset link",
+      "backToLogin": "Back to login",
+      "success": "If an account exists for this email, reset instructions have been sent."
+    },
+    "resetPassword": {
+      "title": "Reset Password",
+      "newPassword": "New Password",
+      "confirmNewPassword": "Confirm New Password",
+      "reset": "Reset Password",
+      "success": "Password reset successfully.",
+      "error": "Failed to reset password. Please try again."
+    },
+    "validation": {
+      "emailRequired": "Email is required",
+      "emailInvalid": "Enter a valid email address",
+      "passwordRequired": "Password is required"
+    },
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "logout": "Log out"
+  },
+  "products": {
+    "title": "Products",
+    "all": "All Products",
+    "searchResults": "Search results",
+    "itemsFound": "{{count}} items found",
+    "noImage": "No image",
+    "noProducts": "No products found",
+    "outOfStock": "Out of stock",
+    "onSale": "On sale",
+    "freeShipping": "Free shipping",
+    "filter_sidebar": "Product filters",
+    "view": {
+      "grid": "Grid view",
+      "list": "List view",
+      "options": "View options"
+    },
+    "sort": {
+      "title": "Sort by",
+      "newest": "Newest",
+      "priceAsc": "Price: low to high",
+      "priceDesc": "Price: high to low",
+      "nameAsc": "Name: A to Z",
+      "nameDesc": "Name: Z to A"
+    },
+    "filters": {
+      "title": "Filters",
+      "brand": "Brand",
+      "priceRange": "Price range",
+      "minPrice": "Min price",
+      "maxPrice": "Max price",
+      "minPriceLabel": "Minimum price",
+      "maxPriceLabel": "Maximum price",
+      "priceFilterHint": "Filter products by price range",
+      "inStock": "In stock only",
+      "clearAll": "Clear all filters"
+    },
+    "details": {
+      "addToCart": "Add to cart",
+      "addToWishlist": "Add to wishlist",
+      "removeFromWishlist": "Remove from wishlist",
+      "description": "Description",
+      "specifications": "Specifications",
+      "reviews": "Reviews",
+      "features": "Features",
+      "inStock": "In stock",
+      "outOfStock": "Out of stock",
+      "quantity": "Quantity",
+      "decreaseQuantity": "Decrease quantity",
+      "increaseQuantity": "Increase quantity",
+      "sku": "SKU",
+      "model": "Model",
+      "noDescription": "No description available.",
+      "noSpecifications": "No specifications available.",
+      "notFound": "Product not found",
+      "loadError": "Failed to load product. Please try again."
+    },
+    "error": {
+      "tryAgain": "Please try again.",
+      "loadFailed": "Failed to load products"
+    },
+    "stock": {
+      "inStock": "In stock",
+      "lowStock": "Only {{count}} left",
+      "outOfStock": "Out of stock"
+    },
+    "comparison": {
+      "addToCompare": "Add to compare",
+      "removeFromCompare": "Remove from compare"
+    },
+    "consumables": {
+      "title": "Consumables"
+    },
+    "similar": {
+      "title": "Similar products"
+    },
+    "variants": {
+      "priceRange": "Price range"
+    },
+    "warranty": {
+      "title": "Warranty"
+    },
+    "returnPolicy": {
+      "days": "{{count}} day return policy"
+    },
+    "recentlyViewed": {
+      "title": "Recently viewed",
+      "clearHistory": "Clear history"
+    },
+    "share": {
+      "title": "Share",
+      "copyLink": "Copy link",
+      "copied": "Copied",
+      "shareVia": "Share via"
+    },
+    "frequentlyBought": {
+      "title": "Frequently bought together",
+      "subtitle": "Complete your setup with these recommended items.",
+      "included": "Included",
+      "totalItems": "Total items",
+      "bundleSavings": "Bundle savings",
+      "bundlePrice": "Bundle price",
+      "addBundle": "Add bundle to cart"
+    },
+    "financing": {
+      "title": "Financing options",
+      "zeroInterest": "0% interest",
+      "monthlyFrom": "From {{amount}}/month",
+      "months": "{{count}} months",
+      "interestRate": "{{rate}}% interest",
+      "monthlyPayment": "Monthly payment",
+      "totalCost": "Total cost",
+      "interest": "Interest",
+      "disclaimer": "*Representative example. Subject to credit approval. Terms and conditions apply."
+    },
+    "installation": {
+      "title": "Installation Service",
+      "subtitle": "Professional installation by certified technicians",
+      "recommended": "Recommended",
+      "fastest": "Fastest",
+      "estimatedTime": "{{days}} days",
+      "select": "Select",
+      "selected": "Selected",
+      "requestTitle": "Request installation",
+      "customerName": "Name",
+      "customerEmail": "Email",
+      "customerPhone": "Phone",
+      "namePlaceholder": "Enter your name",
+      "emailPlaceholder": "Enter your email",
+      "phonePlaceholder": "Enter your phone",
+      "address": "Address",
+      "addressPlaceholder": "Street address",
+      "addressLine2": "Address line 2",
+      "addressLine2Placeholder": "Apartment, suite, etc.",
+      "city": "City",
+      "cityPlaceholder": "City",
+      "postalCode": "Postal code",
+      "postalCodePlaceholder": "Postal code",
+      "country": "Country",
+      "selectCountry": "Select country",
+      "preferredDate": "Preferred date",
+      "preferredTime": "Preferred time",
+      "anyTime": "Any time",
+      "morning": "Morning",
+      "afternoon": "Afternoon",
+      "evening": "Evening",
+      "timeSlots": {
+        "morning": "09:00 - 12:00",
+        "afternoon": "12:00 - 17:00",
+        "evening": "17:00 - 20:00"
+      },
+      "notes": "Notes",
+      "notesPlaceholder": "Additional installation notes",
+      "selectedService": "Selected service",
+      "estimatedCost": "Estimated cost",
+      "submitRequest": "Submit request",
+      "submitting": "Submitting...",
+      "requestSubmitted": "Request submitted",
+      "requestSubmittedMessage": "We will contact you to confirm installation details.",
+      "requestInstallation": "Request installation",
+      "notAvailable": "Installation is not available for this product.",
+      "available": "Installation available"
+    },
+    "qa": {
+      "title": "Questions & Answers",
+      "totalQuestions": "{{count}} questions",
+      "answeredQuestions": "{{count}} answered",
+      "askQuestion": "Ask a question",
+      "yourQuestion": "Your question",
+      "questionPlaceholder": "Ask about this product",
+      "submitQuestion": "Submit question",
+      "submitting": "Submitting...",
+      "questionSubmittedSuccess": "Question submitted for review.",
+      "loginToAsk": "Log in to ask a question",
+      "loginNow": "Log in now",
+      "anonymous": "Anonymous",
+      "helpful": "Helpful",
+      "answer": "Answer",
+      "loginToAnswer": "Log in to answer",
+      "answerPlaceholder": "Write an answer",
+      "submitAnswer": "Submit answer",
+      "communityMember": "Community member",
+      "officialAnswer": "Official answer",
+      "noAnswersYet": "No answers yet",
+      "noQuestionsYet": "No questions yet",
+      "beFirstToAsk": "Be the first to ask a question.",
+      "errors": {
+        "questionTooShort": "Question must be at least 10 characters.",
+        "sessionExpired": "Your session has expired. Please log in again.",
+        "submitQuestionFailed": "Failed to submit question. Please try again.",
+        "submitAnswerFailed": "Failed to submit answer. Please try again."
+      }
     }
   }
 }

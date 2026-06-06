@@ -1,13 +1,28 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslateLoader, TranslateModule, TranslateService } from '@ngx-translate/core';
 import { signal } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
+import { Observable, of } from 'rxjs';
 
 import { BottomNavComponent } from './bottom-nav.component';
 import { CartService } from '../../../core/services/cart.service';
 import { AnimationService } from '../../../core/services/animation.service';
 import { ICON_REGISTRY } from '../icon';
+
+class FakeTranslateLoader implements TranslateLoader {
+  getTranslation(_lang: string): Observable<Record<string, string>> {
+    return of({
+      'common.aria.mobileNavigation': 'Mobile navigation',
+      'nav.bottom.home': 'Home',
+      'nav.bottom.categories': 'Categories',
+      'nav.bottom.search': 'Search',
+      'nav.bottom.cart': 'Cart',
+      'nav.bottom.account': 'Account',
+      'cart.items': '{{count}} item(s)'
+    });
+  }
+}
 
 describe('BottomNavComponent', () => {
   let component: BottomNavComponent;
@@ -31,7 +46,9 @@ describe('BottomNavComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         BottomNavComponent,
-        TranslateModule.forRoot(),
+        TranslateModule.forRoot({
+          loader: { provide: TranslateLoader, useClass: FakeTranslateLoader }
+        }),
         LucideAngularModule.pick(ICON_REGISTRY)
       ],
       providers: [
@@ -40,6 +57,10 @@ describe('BottomNavComponent', () => {
         { provide: AnimationService, useValue: animationServiceMock }
       ]
     }).compileComponents();
+
+    const translateService = TestBed.inject(TranslateService);
+    translateService.setDefaultLang('en');
+    translateService.use('en');
 
     fixture = TestBed.createComponent(BottomNavComponent);
     component = fixture.componentInstance;

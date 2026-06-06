@@ -1,5 +1,5 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { ToastService, Toast } from './toast.service';
+import { ToastService } from './toast.service';
 
 describe('ToastService', () => {
   let service: ToastService;

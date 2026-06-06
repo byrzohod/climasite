@@ -42,40 +42,51 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, Res
     {
         var userId = _currentUserService.UserId;
 
-        var order = await _context.Orders
-            .Include(o => o.Items)
-            .Include(o => o.Events)
-            .FirstOrDefaultAsync(o => o.Id == request.OrderId, cancellationToken);
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return strategy is null
+            ? await CancelOrderAsync()
+            : await strategy.ExecuteAsync(CancelOrderAsync);
 
-        if (order == null)
+        async Task<Result<OrderDto>> CancelOrderAsync()
         {
-            return Result<OrderDto>.Failure("Order not found");
-        }
+            // Use explicit transaction to ensure stock restoration and order status update are atomic
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 
-        // Check if user owns the order (unless admin)
-        if (userId.HasValue && order.UserId != userId && !_currentUserService.IsAdmin)
-        {
-            return Result<OrderDto>.Failure("Access denied");
-        }
+            var order = await _context.Orders
+                .Include(o => o.Items)
+                .Include(o => o.Events)
+                .FirstOrDefaultAsync(o => o.Id == request.OrderId, cancellationToken);
 
-        // Check if order can be cancelled
-        if (!order.CanBeCancelled)
-        {
-            return Result<OrderDto>.Failure($"Order cannot be cancelled. Current status: {order.Status}");
-        }
+            if (order == null)
+            {
+                return Result<OrderDto>.Failure("Order not found");
+            }
 
-        // Restore stock for all items
-        var productIds = order.Items.Select(i => i.ProductId).Distinct().ToList();
-        var products = await _context.Products
-            .Include(p => p.Variants)
-            .Include(p => p.Images)
-            .Where(p => productIds.Contains(p.Id))
-            .ToListAsync(cancellationToken);
+            // Check if user owns the order (unless admin)
+            if (userId.HasValue && order.UserId != userId && !_currentUserService.IsAdmin)
+            {
+                return Result<OrderDto>.Failure("Access denied");
+            }
 
-        // Use explicit transaction to ensure stock restoration and order status update are atomic
-        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-        try
-        {
+            if (!userId.HasValue && !_currentUserService.IsAdmin)
+            {
+                return Result<OrderDto>.Failure("Authentication required");
+            }
+
+            // Check if order can be cancelled
+            if (!order.CanBeCancelled)
+            {
+                return Result<OrderDto>.Failure($"Order cannot be cancelled. Current status: {order.Status}");
+            }
+
+            // Restore stock for all items
+            var productIds = order.Items.Select(i => i.ProductId).Distinct().ToList();
+            var products = await _context.Products
+                .Include(p => p.Variants)
+                .Include(p => p.Images)
+                .Where(p => productIds.Contains(p.Id))
+                .ToListAsync(cancellationToken);
+
             foreach (var item in order.Items)
             {
                 var product = products.FirstOrDefault(p => p.Id == item.ProductId);
@@ -92,14 +103,9 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, Res
 
             await _context.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
-        }
-        catch
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            throw;
-        }
 
-        return Result<OrderDto>.Success(MapToDto(order, products));
+            return Result<OrderDto>.Success(MapToDto(order, products));
+        }
     }
 
     private static OrderDto MapToDto(Order order, List<Product> products)

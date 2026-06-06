@@ -1,7 +1,7 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { CheckoutService, CheckoutStep } from './checkout.service';
+import { CheckoutService } from './checkout.service';
 import { Order, Address } from '../models/order.model';
 import { environment } from '../../../environments/environment';
 
@@ -227,10 +227,10 @@ describe('CheckoutService', () => {
     }));
 
     it('should throw error without shipping address', () => {
-      service.setShippingAddress(null as any);
+      service.setShippingAddress(null as unknown as Address);
 
       expect(() => service.createOrder('test@example.com')).toThrow();
-      expect(service.error()).toBe('Shipping address is required');
+      expect(service.error()).toBe('checkout.errors.shippingAddressRequired');
       expect(service.isProcessing()).toBeFalse();
     });
 
@@ -250,7 +250,7 @@ describe('CheckoutService', () => {
       expect(service.isProcessing()).toBeFalse();
     }));
 
-    it('should set error message from API response', fakeAsync(() => {
+    it('should map raw API error messages to a translation key', fakeAsync(() => {
       let errorOccurred = false;
       service.createOrder('test@example.com').subscribe({
         error: () => { errorOccurred = true; }
@@ -262,7 +262,8 @@ describe('CheckoutService', () => {
       tick();
 
       expect(errorOccurred).toBeTrue();
-      expect(service.error()).toBe('Insufficient stock');
+      expect(service.error()).toBe('checkout.errors.placeOrderFailed');
+      expect(service.error()).not.toBe('Insufficient stock');
     }));
   });
 
@@ -324,37 +325,37 @@ describe('CheckoutService', () => {
 
     it('should return error for missing firstName', () => {
       const errors = service.validateShippingAddress({ ...mockAddress, firstName: '' });
-      expect(errors).toContain('First name is required');
+      expect(errors).toContain('checkout.errors.firstNameRequired');
     });
 
     it('should return error for missing lastName', () => {
       const errors = service.validateShippingAddress({ ...mockAddress, lastName: '' });
-      expect(errors).toContain('Last name is required');
+      expect(errors).toContain('checkout.errors.lastNameRequired');
     });
 
     it('should return error for missing addressLine1', () => {
       const errors = service.validateShippingAddress({ ...mockAddress, addressLine1: '' });
-      expect(errors).toContain('Street address is required');
+      expect(errors).toContain('checkout.errors.streetAddressRequired');
     });
 
     it('should return error for missing city', () => {
       const errors = service.validateShippingAddress({ ...mockAddress, city: '' });
-      expect(errors).toContain('City is required');
+      expect(errors).toContain('checkout.errors.cityRequired');
     });
 
     it('should return error for missing postalCode', () => {
       const errors = service.validateShippingAddress({ ...mockAddress, postalCode: '' });
-      expect(errors).toContain('Postal code is required');
+      expect(errors).toContain('checkout.errors.postalCodeRequired');
     });
 
     it('should return error for missing country', () => {
       const errors = service.validateShippingAddress({ ...mockAddress, country: '' });
-      expect(errors).toContain('Country is required');
+      expect(errors).toContain('checkout.errors.countryRequired');
     });
 
     it('should return error for missing phone', () => {
       const errors = service.validateShippingAddress({ ...mockAddress, phone: '' });
-      expect(errors).toContain('Phone number is required');
+      expect(errors).toContain('checkout.errors.phoneRequired');
     });
 
     it('should return multiple errors for multiple missing fields', () => {
@@ -369,16 +370,16 @@ describe('CheckoutService', () => {
         state: 'Sofia'
       });
 
-      expect(errors).toContain('First name is required');
-      expect(errors).toContain('Last name is required');
-      expect(errors).toContain('City is required');
-      expect(errors).toContain('Phone number is required');
+      expect(errors).toContain('checkout.errors.firstNameRequired');
+      expect(errors).toContain('checkout.errors.lastNameRequired');
+      expect(errors).toContain('checkout.errors.cityRequired');
+      expect(errors).toContain('checkout.errors.phoneRequired');
       expect(errors.length).toBe(4);
     });
 
     it('should trim whitespace from fields', () => {
       const errors = service.validateShippingAddress({ ...mockAddress, firstName: '   ' });
-      expect(errors).toContain('First name is required');
+      expect(errors).toContain('checkout.errors.firstNameRequired');
     });
 
     it('should not require addressLine2 field', () => {

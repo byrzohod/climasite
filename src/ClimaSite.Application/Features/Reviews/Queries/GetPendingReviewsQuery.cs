@@ -50,7 +50,9 @@ public class GetPendingReviewsQueryHandler : IRequestHandler<GetPendingReviewsQu
                 Rating = r.Rating,
                 Title = r.Title,
                 Content = r.Content,
-                ReviewerName = r.User.FirstName != null ? $"{r.User.FirstName} {r.User.LastName}" : r.User.Email,
+                ReviewerName = r.User.FirstName != null
+                    ? $"{r.User.FirstName} {r.User.LastName}".Trim()
+                    : r.User.Email ?? string.Empty,
                 ReviewerEmail = r.User.Email,
                 IsVerifiedPurchase = r.IsVerifiedPurchase,
                 Status = r.Status,

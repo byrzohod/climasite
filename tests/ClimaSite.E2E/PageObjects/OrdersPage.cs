@@ -7,18 +7,25 @@ namespace ClimaSite.E2E.PageObjects;
 /// </summary>
 public class OrdersPage : BasePage
 {
+    private const string OrderListSettledSelector =
+        "[data-testid='order-card'], [data-testid='orders-empty'], [data-testid='orders-empty-filtered'], [data-testid='login-email']";
+
     public OrdersPage(IPage page) : base(page) { }
 
     public async Task NavigateAsync()
     {
         await Page.GotoAsync("/account/orders");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await Page.WaitForSelectorAsync(OrderListSettledSelector, new PageWaitForSelectorOptions { Timeout = 10000 });
     }
 
     public async Task NavigateToOrderDetailsAsync(string orderId)
     {
         await Page.GotoAsync($"/account/orders/{orderId}");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await Page.WaitForSelectorAsync(
+            "[data-testid='order-number'], [data-testid='error-message']",
+            new PageWaitForSelectorOptions { Timeout = 10000 });
     }
 
     // Orders List Methods
@@ -26,8 +33,8 @@ public class OrdersPage : BasePage
     {
         try
         {
-            await Page.WaitForSelectorAsync("[data-testid='orders-empty'], [data-testid='order-card']", new PageWaitForSelectorOptions { Timeout = 5000 });
-            var noOrders = await Page.QuerySelectorAsync("[data-testid='orders-empty']");
+            await Page.WaitForSelectorAsync(OrderListSettledSelector, new PageWaitForSelectorOptions { Timeout = 5000 });
+            var noOrders = await Page.QuerySelectorAsync("[data-testid='orders-empty'], [data-testid='orders-empty-filtered']");
             return noOrders != null;
         }
         catch
@@ -38,7 +45,7 @@ public class OrdersPage : BasePage
 
     public async Task<int> GetOrderCountAsync()
     {
-        await Page.WaitForSelectorAsync("[data-testid='order-card'], [data-testid='orders-empty']", new PageWaitForSelectorOptions { Timeout = 5000 });
+        await Page.WaitForSelectorAsync(OrderListSettledSelector, new PageWaitForSelectorOptions { Timeout = 5000 });
         var orderItems = await Page.QuerySelectorAllAsync("[data-testid='order-card']");
         return orderItems.Count;
     }
@@ -185,6 +192,7 @@ public class OrdersPage : BasePage
 
     public async Task CancelOrderAsync(string? reason = null)
     {
+        await Page.WaitForSelectorAsync("[data-testid='cancel-order-btn']", new PageWaitForSelectorOptions { Timeout = 10000 });
         await Page.ClickAsync("[data-testid='cancel-order-btn']");
 
         // Wait for confirmation modal
@@ -209,6 +217,7 @@ public class OrdersPage : BasePage
 
     public async Task ReorderAsync()
     {
+        await Page.WaitForSelectorAsync("[data-testid='reorder-btn']", new PageWaitForSelectorOptions { Timeout = 10000 });
         await Page.ClickAsync("[data-testid='reorder-btn']");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 

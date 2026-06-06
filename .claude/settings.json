@@ -2,5 +2,65 @@
   "permissions": {
     "allow": ["*"],
     "defaultMode": "bypassPermissions"
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/workflow-check.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git *)",
+            "command": "bash -c 'CMD=$(jq -r .tool_input.command); if echo \"$CMD\" | grep -qE \"git\\s+(reset\\s+--hard|push\\s+(-f|--force)|checkout\\s+--\\s+\\.|clean\\s+-f|branch\\s+-D|stash\\s+(drop|clear))\"; then echo \"BLOCKED: Destructive git operation. If truly needed, ask the user for explicit approval.\" >&2; exit 2; fi'",
+            "statusMessage": "Checking git safety..."
+          },
+          {
+            "type": "command",
+            "if": "Bash(git push*)",
+            "command": "bash -c 'CMD=$(jq -r .tool_input.command); if echo \"$CMD\" | grep -qE \"git\\s+push\\s+.*\\b(main|master)\\b\"; then echo \"BLOCKED: Cannot push directly to main/master. Use a feature branch and PR.\" >&2; exit 2; fi'",
+            "statusMessage": "Checking push target..."
+          },
+          {
+            "type": "command",
+            "if": "Bash(git checkout -b*)",
+            "command": "bash -c 'CMD=$(jq -r .tool_input.command); BRANCH=$(echo \"$CMD\" | grep -oP \"(?<=(checkout\\s-b|switch\\s-c)\\s)\\S+\"); if [ -n \"$BRANCH\" ] && ! echo \"$BRANCH\" | grep -qE \"^(feature|fix|hotfix|release|chore)/[a-z0-9._-]+$\"; then echo \"BLOCKED: Branch name must match: (feature|fix|hotfix|release|chore)/description. Got: $BRANCH\" >&2; exit 2; fi'",
+            "statusMessage": "Checking branch name..."
+          },
+          {
+            "type": "command",
+            "if": "Bash(git switch -c*)",
+            "command": "bash -c 'CMD=$(jq -r .tool_input.command); BRANCH=$(echo \"$CMD\" | grep -oP \"(?<=switch\\s-c\\s)\\S+\"); if [ -n \"$BRANCH\" ] && ! echo \"$BRANCH\" | grep -qE \"^(feature|fix|hotfix|release|chore)/[a-z0-9._-]+$\"; then echo \"BLOCKED: Branch name must match: (feature|fix|hotfix|release|chore)/description. Got: $BRANCH\" >&2; exit 2; fi'",
+            "statusMessage": "Checking branch name..."
+          },
+          {
+            "type": "command",
+            "if": "Bash(git commit*)",
+            "command": "bash -c 'CMD=$(jq -r .tool_input.command); MSG=\"\"; if echo \"$CMD\" | grep -qP \"\\-m\\s\"; then MSG=$(echo \"$CMD\" | grep -oP \"(?<=-m\\s[\\x27\\\"]).*?(?=[\\x27\\\"])\"); elif echo \"$CMD\" | grep -q \"cat <<\"; then MSG=$(echo \"$CMD\" | sed -n \"s/.*cat <<[\\x27]*EOF[\\x27]*//p\" | head -1 | sed \"s/^[[:space:]]*//\"); fi; if [ -n \"$MSG\" ] && ! echo \"$MSG\" | grep -qE \"^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\\(.+\\))?(!)?:\\s\"; then echo \"BLOCKED: Commit message must use conventional format (e.g., feat: add login). Got: $MSG\" >&2; exit 2; fi'",
+            "statusMessage": "Checking commit format..."
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'FILE=$(jq -r \".tool_input.file_path\"); if echo \"$FILE\" | grep -qiE \"\\.(env|pem|key|p12|pfx)$|credentials\\.json|secrets\\.(yml|yaml|json)\"; then echo \"BLOCKED: Cannot write to sensitive file: $FILE. Use .env.example for documentation, keep actual secrets out of the repo.\" >&2; exit 2; fi'",
+            "statusMessage": "Checking file safety..."
+          }
+        ]
+      }
+    ]
   }
 }

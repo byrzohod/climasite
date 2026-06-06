@@ -5,9 +5,9 @@ import { TranslateModule } from '@ngx-translate/core';
 import {
   AdminRelatedProductsService,
   ProductRelationsDto,
-  RelatedProductDto,
-  RelationGroupDto
+  RelatedProductDto
 } from '../../services/admin-related-products.service';
+import { apiErrorToTranslationKey } from '../../../../../core/utils/translation-key.util';
 
 @Component({
   selector: 'app-related-products-manager',
@@ -142,7 +142,7 @@ import {
       }
 
       @if (error()) {
-        <div class="error-state">{{ error() }}</div>
+        <div class="error-state">{{ error() | translate }}</div>
       }
     </div>
   `,
@@ -429,7 +429,7 @@ export class RelatedProductsManagerComponent {
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set(err.error?.message || 'Failed to load relations');
+        this.error.set(apiErrorToTranslationKey(err, 'admin.products.relatedProductsManager.errors.loadFailed'));
         this.loading.set(false);
       }
     });
@@ -461,7 +461,7 @@ export class RelatedProductsManagerComponent {
         this.searchResults.set([]);
       },
       error: (err) => {
-        this.error.set(err.error?.message || 'Failed to add relation');
+        this.error.set(apiErrorToTranslationKey(err, 'admin.products.relatedProductsManager.errors.addFailed'));
       }
     });
   }
@@ -474,7 +474,7 @@ export class RelatedProductsManagerComponent {
         this.loadRelations(productId);
       },
       error: (err) => {
-        this.error.set(err.error?.message || 'Failed to remove relation');
+        this.error.set(apiErrorToTranslationKey(err, 'admin.products.relatedProductsManager.errors.removeFailed'));
       }
     });
   }
@@ -507,7 +507,7 @@ export class RelatedProductsManagerComponent {
         this.loadRelations(productId);
       },
       error: (err) => {
-        this.error.set(err.error?.message || 'Failed to reorder relations');
+        this.error.set(apiErrorToTranslationKey(err, 'admin.products.relatedProductsManager.errors.reorderFailed'));
       }
     });
   }

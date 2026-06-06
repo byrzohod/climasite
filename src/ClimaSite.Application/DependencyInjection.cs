@@ -1,6 +1,7 @@
 using System.Reflection;
 using ClimaSite.Application.Common.Behaviors;
 using ClimaSite.Application.Common.Mappings;
+using ClimaSite.Application.Features.Products.Scoring;
 using FluentValidation;
 using Mapster;
 using MediatR;
@@ -26,6 +27,9 @@ public static class DependencyInjection
         // Mapster
         var config = MappingConfig.GetConfiguration();
         services.AddSingleton(config);
+
+        // Scoring services
+        services.AddScoped<RecommendationScoringService>();
 
         return services;
     }

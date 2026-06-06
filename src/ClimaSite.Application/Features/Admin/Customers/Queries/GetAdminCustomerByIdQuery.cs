@@ -70,7 +70,7 @@ public class GetAdminCustomerByIdQueryHandler : IRequestHandler<GetAdminCustomer
                 AddressLine1 = a.AddressLine1,
                 AddressLine2 = a.AddressLine2,
                 City = a.City,
-                State = a.State,
+                State = a.State ?? string.Empty,
                 PostalCode = a.PostalCode,
                 Country = a.Country,
                 IsDefault = a.IsDefault

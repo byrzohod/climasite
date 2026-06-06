@@ -32,12 +32,12 @@ import { RevealDirective } from '../../../shared/directives/reveal.directive';
         </div>
       } @else if (error()) {
         <div class="error" data-testid="error">
-          {{ error() }}
+          {{ error() | translate }}
         </div>
       } @else if (product()) {
         <div class="product-content">
           <!-- Breadcrumb -->
-          <nav class="breadcrumb" data-testid="breadcrumb">
+          <nav class="breadcrumb" [attr.aria-label]="'common.aria.breadcrumb' | translate" data-testid="breadcrumb">
             <a routerLink="/" data-testid="breadcrumb-home">{{ 'nav.home' | translate }}</a>
             <span class="separator">/</span>
             <a routerLink="/products" data-testid="breadcrumb-products">{{ 'nav.products' | translate }}</a>
@@ -130,10 +130,10 @@ import { RevealDirective } from '../../../shared/directives/reveal.directive';
 
               <!-- Add to Cart Section -->
               <div class="add-to-cart-section">
-              <div class="quantity-wrapper" data-testid="quantity-input">
+              <div class="quantity-wrapper">
                   <label id="quantity-label">{{ 'products.details.quantity' | translate }}:</label>
                   <div class="quantity-controls">
-                    <button type="button" (click)="decreaseQuantity()" [disabled]="quantity() <= 1" aria-label="Decrease quantity">−</button>
+                    <button type="button" (click)="decreaseQuantity()" [disabled]="quantity() <= 1" [attr.aria-label]="'products.details.decreaseQuantity' | translate">−</button>
                     <input
                       type="number"
                       [value]="quantity()"
@@ -145,8 +145,9 @@ import { RevealDirective } from '../../../shared/directives/reveal.directive';
                       aria-valuemax="99"
                       [attr.aria-valuenow]="quantity()"
                       aria-labelledby="quantity-label"
+                      data-testid="quantity-input"
                     />
-                    <button type="button" (click)="increaseQuantity()" aria-label="Increase quantity">+</button>
+                    <button type="button" (click)="increaseQuantity()" [attr.aria-label]="'products.details.increaseQuantity' | translate">+</button>
                   </div>
                 </div>
 
@@ -245,7 +246,7 @@ import { RevealDirective } from '../../../shared/directives/reveal.directive';
                   }
 
                   @if (product()?.features) {
-                    <h4>{{ 'products.details.features' | translate }}</h4>
+                    <h2>{{ 'products.details.features' | translate }}</h2>
                     <ul class="features-list">
                       @for (feature of getFeatures(); track $index) {
                         <li>{{ feature }}</li>
@@ -710,8 +711,9 @@ import { RevealDirective } from '../../../shared/directives/reveal.directive';
                         }
 
                         &.active {
-                          color: var(--color-primary);
+                          color: var(--color-primary-active);
                           background: var(--color-bg-primary);
+                          font-weight: 700;
 
                           &::after {
                             width: 60%;
@@ -736,7 +738,8 @@ import { RevealDirective } from '../../../shared/directives/reveal.directive';
         color: var(--color-text-secondary);
         line-height: 1.7;
 
-        h4 {
+        h2 {
+          font-size: 1.25rem;
           color: var(--color-text-primary);
           margin: 1.5rem 0 1rem;
           font-weight: 600;
@@ -891,7 +894,7 @@ private readonly route = inject(ActivatedRoute);
       this.currentSlug = slug;
       this.loadProduct(slug);
     } else {
-      this.error.set('Product not found');
+      this.error.set('products.details.notFound');
       this.isLoading.set(false);
     }
   }
@@ -906,7 +909,7 @@ private readonly route = inject(ActivatedRoute);
       error: () => {
         // Error details are intentionally not logged in production
         // Consider implementing a logging service for production error tracking
-        this.error.set('Failed to load product. Please try again.');
+        this.error.set('products.details.loadError');
         this.isLoading.set(false);
       }
     });

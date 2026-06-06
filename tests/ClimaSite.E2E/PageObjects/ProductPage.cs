@@ -6,8 +6,8 @@ public class ProductPage : BasePage
 {
     private const string ProductTitle = "[data-testid='product-title']";
     private const string ProductPrice = "[data-testid='product-price']";
-    private const string AddToCartButton = "[data-testid='add-to-cart']";
-    private const string QuantityInput = "[data-testid='quantity-input'] input";
+    private const string AddToCartButton = "[data-testid='product-detail'] [data-testid='add-to-cart']";
+    private const string QuantityInput = "[data-testid='product-detail'] [data-testid='quantity-input']";
     private const string CartNotification = "[data-testid='cart-notification']";
     private const string ProductCard = "[data-testid='product-card']";
     private const string ProductName = "[data-testid='product-name']";
@@ -18,12 +18,18 @@ public class ProductPage : BasePage
     {
         await Page.GotoAsync($"/products/{slug}");
         await WaitForLoadAsync();
+        await Page.WaitForSelectorAsync(
+            $"{ProductTitle}, [data-testid='error']",
+            new PageWaitForSelectorOptions { Timeout = 10000 });
     }
 
     public async Task NavigateByIdAsync(Guid productId)
     {
         await Page.GotoAsync($"/products/{productId}");
         await WaitForLoadAsync();
+        await Page.WaitForSelectorAsync(
+            $"{ProductTitle}, [data-testid='error']",
+            new PageWaitForSelectorOptions { Timeout = 10000 });
     }
 
     public async Task NavigateToListAsync()

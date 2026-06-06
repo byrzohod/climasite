@@ -246,7 +246,7 @@ public class CheckoutTests : IAsyncLifetime
             "Should either warn about stock or limit to available quantity");
     }
 
-    [Fact(Skip = "Address API endpoint needs debugging - form submission not persisting")]
+    [Fact]
     public async Task Checkout_SavedAddress_CanBeUsed()
     {
         // Arrange - Create user, product and a saved address

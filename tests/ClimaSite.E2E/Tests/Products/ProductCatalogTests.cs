@@ -300,7 +300,7 @@ public class ProductCatalogTests : IAsyncLifetime
         if (await sortDropdown.IsVisibleAsync())
         {
             // Change sort via dropdown
-            await sortDropdown.SelectOptionAsync(new SelectOptionValue { Label = "Name" });
+            await sortDropdown.SelectOptionAsync(new SelectOptionValue { Value = "name-asc" });
             await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         }
 

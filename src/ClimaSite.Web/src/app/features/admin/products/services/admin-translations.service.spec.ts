@@ -60,7 +60,7 @@ describe('AdminTranslationsService', () => {
         expect(result.translations[0].languageCode).toBe('bg');
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/admin/products/${productId}/translations`);
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/admin/products/${productId}/translations`);
       expect(req.request.method).toBe('GET');
       req.flush(mockResponse);
     });
@@ -80,7 +80,7 @@ describe('AdminTranslationsService', () => {
         expect(result).toEqual(mockResponse);
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/admin/products/${productId}/translations`);
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/admin/products/${productId}/translations`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual(request);
       req.flush(mockResponse);
@@ -100,7 +100,7 @@ describe('AdminTranslationsService', () => {
         expect(result.success).toBe(true);
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/admin/products/${productId}/translations/${languageCode}`);
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/admin/products/${productId}/translations/${languageCode}`);
       expect(req.request.method).toBe('PUT');
       expect(req.request.body).toEqual(request);
       req.flush({ success: true });
@@ -115,7 +115,7 @@ describe('AdminTranslationsService', () => {
         expect(result.success).toBe(true);
       });
 
-      const req = httpMock.expectOne(`${environment.apiUrl}/admin/products/${productId}/translations/${languageCode}`);
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/admin/products/${productId}/translations/${languageCode}`);
       expect(req.request.method).toBe('DELETE');
       req.flush({ success: true });
     });

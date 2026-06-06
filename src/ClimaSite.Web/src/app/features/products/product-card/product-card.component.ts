@@ -131,22 +131,24 @@ import { FlyingCartService } from '../../../core/services/flying-cart.service';
           </div>
         }
 
-        <div class="product-rating" *ngIf="product.reviewCount > 0">
-          <div class="stars">
-            @for (star of stars; track $index) {
-              <svg 
-                class="star-icon" 
-                [class.filled]="star <= Math.floor(product.averageRating)"
-                [class.half]="star === Math.ceil(product.averageRating) && product.averageRating % 1 >= 0.5"
-                xmlns="http://www.w3.org/2000/svg" 
-                viewBox="0 0 24 24"
-              >
-                <path d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z"/>
-              </svg>
-            }
+        @if (product.reviewCount > 0) {
+          <div class="product-rating">
+            <div class="stars">
+              @for (star of stars; track $index) {
+                <svg
+                  class="star-icon"
+                  [class.filled]="star <= Math.floor(product.averageRating)"
+                  [class.half]="star === Math.ceil(product.averageRating) && product.averageRating % 1 >= 0.5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z"/>
+                </svg>
+              }
+            </div>
+            <span class="review-count">({{ product.reviewCount }})</span>
           </div>
-          <span class="review-count">({{ product.reviewCount }})</span>
-        </div>
+        }
 
         <div class="product-price" data-testid="product-price">
           @if (product.isOnSale && product.salePrice) {
@@ -569,7 +571,7 @@ import { FlyingCartService } from '../../../core/services/flying-cart.service';
       justify-content: center;
       gap: 0.5rem;
       padding: 0.75rem 1rem;
-      background: var(--color-primary);
+      background: var(--color-primary-active);
       color: var(--color-text-inverse);
       border: none;
       border-radius: var(--radius-lg);
@@ -595,7 +597,7 @@ import { FlyingCartService } from '../../../core/services/flying-cart.service';
       }
 
       &:hover:not(:disabled) {
-        background: var(--color-primary-hover);
+        background: var(--color-primary-dark);
         box-shadow: var(--glow-sm-primary);
         transform: translateY(-1px);
       }
@@ -624,6 +626,20 @@ import { FlyingCartService } from '../../../core/services/flying-cart.service';
 
       &.loading {
         pointer-events: none;
+      }
+    }
+
+    :host-context([data-theme="dark"]) .btn-add-to-cart,
+    :host-context(.dark) .btn-add-to-cart {
+      background: var(--color-primary-active);
+
+      &:hover:not(:disabled) {
+        background: var(--color-primary-hover);
+      }
+
+      &.added,
+      &.added:hover:not(:disabled) {
+        background: var(--color-success);
       }
     }
     

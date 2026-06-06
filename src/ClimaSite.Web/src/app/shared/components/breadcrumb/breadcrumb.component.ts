@@ -1,4 +1,4 @@
-import { Component, inject, computed, input, OnInit, DestroyRef } from '@angular/core';
+import { Component, inject, computed, input } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { Router, ActivatedRoute, NavigationEnd, RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';

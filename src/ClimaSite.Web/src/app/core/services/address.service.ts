@@ -1,8 +1,8 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap, catchError, of } from 'rxjs';
+import { Observable, tap, catchError, map, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { SavedAddress, CreateAddressRequest, UpdateAddressRequest } from '../models/address.model';
+import { SavedAddress, CreateAddressRequest } from '../models/address.model';
 
 export interface ApiResult<T> {
   succeeded: boolean;
@@ -47,7 +47,7 @@ export class AddressService {
         catchError(error => {
           console.error('Failed to load addresses:', error);
           this._addresses.set([]);
-          this._error.set('Failed to load addresses');
+          this._error.set('account.addresses.errors.loadFailed');
           this._isLoading.set(false);
           return of([]);
         })
@@ -69,26 +69,25 @@ export class AddressService {
     this._isLoading.set(true);
     this._error.set(null);
 
-    return this.http.post<ApiResult<SavedAddress>>(this.apiUrl, request)
+    return this.http.post<SavedAddress>(this.apiUrl, request)
       .pipe(
-        tap(result => {
-          if (result.succeeded && result.value) {
-            const currentAddresses = this._addresses();
-            // If new address is default, update other addresses
-            if (result.value.isDefault) {
-              const updated = currentAddresses.map(a => ({ ...a, isDefault: false }));
-              this._addresses.set([...updated, result.value]);
-            } else {
-              this._addresses.set([...currentAddresses, result.value]);
-            }
+        map(address => {
+          const currentAddresses = this._addresses();
+          // If new address is default, update other addresses
+          if (address.isDefault) {
+            const updated = currentAddresses.map(a => ({ ...a, isDefault: false }));
+            this._addresses.set([...updated, address]);
+          } else {
+            this._addresses.set([...currentAddresses, address]);
           }
           this._isLoading.set(false);
+          return { succeeded: true, value: address };
         }),
         catchError(error => {
           console.error('Failed to create address:', error);
-          this._error.set('Failed to create address');
+          this._error.set('account.addresses.errors.createFailed');
           this._isLoading.set(false);
-          return of({ succeeded: false, error: 'Failed to create address' });
+          return of({ succeeded: false, error: 'account.addresses.errors.createFailed' });
         })
       );
   }
@@ -97,30 +96,29 @@ export class AddressService {
     this._isLoading.set(true);
     this._error.set(null);
 
-    return this.http.put<ApiResult<SavedAddress>>(`${this.apiUrl}/${id}`, { ...request, addressId: id })
+    return this.http.put<SavedAddress>(`${this.apiUrl}/${id}`, { ...request, addressId: id })
       .pipe(
-        tap(result => {
-          if (result.succeeded && result.value) {
-            const currentAddresses = this._addresses();
-            // If updated address is default, update other addresses
-            const updated = currentAddresses.map(a => {
-              if (a.id === id) {
-                return result.value!;
-              }
-              if (result.value!.isDefault) {
-                return { ...a, isDefault: false };
-              }
-              return a;
-            });
-            this._addresses.set(updated);
-          }
+        map(address => {
+          const currentAddresses = this._addresses();
+          // If updated address is default, update other addresses
+          const updated = currentAddresses.map(a => {
+            if (a.id === id) {
+              return address;
+            }
+            if (address.isDefault) {
+              return { ...a, isDefault: false };
+            }
+            return a;
+          });
+          this._addresses.set(updated);
           this._isLoading.set(false);
+          return { succeeded: true, value: address };
         }),
         catchError(error => {
           console.error('Failed to update address:', error);
-          this._error.set('Failed to update address');
+          this._error.set('account.addresses.errors.updateFailed');
           this._isLoading.set(false);
-          return of({ succeeded: false, error: 'Failed to update address' });
+          return of({ succeeded: false, error: 'account.addresses.errors.updateFailed' });
         })
       );
   }
@@ -129,20 +127,19 @@ export class AddressService {
     this._isLoading.set(true);
     this._error.set(null);
 
-    return this.http.delete<ApiResult<boolean>>(`${this.apiUrl}/${id}`)
+    return this.http.delete<void>(`${this.apiUrl}/${id}`)
       .pipe(
-        tap(result => {
-          if (result.succeeded) {
-            const currentAddresses = this._addresses();
-            this._addresses.set(currentAddresses.filter(a => a.id !== id));
-          }
+        map(() => {
+          const currentAddresses = this._addresses();
+          this._addresses.set(currentAddresses.filter(a => a.id !== id));
           this._isLoading.set(false);
+          return { succeeded: true, value: true };
         }),
         catchError(error => {
           console.error('Failed to delete address:', error);
-          this._error.set('Failed to delete address');
+          this._error.set('account.addresses.errors.deleteFailed');
           this._isLoading.set(false);
-          return of({ succeeded: false, error: 'Failed to delete address' });
+          return of({ succeeded: false, error: 'account.addresses.errors.deleteFailed' });
         })
       );
   }
@@ -151,24 +148,25 @@ export class AddressService {
     this._isLoading.set(true);
     this._error.set(null);
 
-    return this.http.put<ApiResult<SavedAddress>>(`${this.apiUrl}/${id}/default`, {})
+    return this.http.put<SavedAddress>(`${this.apiUrl}/${id}/default`, {})
       .pipe(
-        tap(result => {
-          if (result.succeeded && result.value) {
-            const currentAddresses = this._addresses();
-            const updated = currentAddresses.map(a => ({
-              ...a,
-              isDefault: a.id === id
-            }));
-            this._addresses.set(updated);
-          }
+        map(address => {
+          const currentAddresses = this._addresses();
+          const updated = currentAddresses.map(a => {
+            if (a.id === id) {
+              return address;
+            }
+            return { ...a, isDefault: false };
+          });
+          this._addresses.set(updated);
           this._isLoading.set(false);
+          return { succeeded: true, value: address };
         }),
         catchError(error => {
           console.error('Failed to set default address:', error);
-          this._error.set('Failed to set default address');
+          this._error.set('account.addresses.errors.setDefaultFailed');
           this._isLoading.set(false);
-          return of({ succeeded: false, error: 'Failed to set default address' });
+          return of({ succeeded: false, error: 'account.addresses.errors.setDefaultFailed' });
         })
       );
   }

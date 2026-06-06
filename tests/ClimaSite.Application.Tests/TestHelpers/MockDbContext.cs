@@ -179,7 +179,7 @@ public class MockDbContext : IApplicationDbContext
 
         mockSet.Setup(m => m.AddAsync(It.IsAny<T>(), It.IsAny<CancellationToken>()))
             .Callback<T, CancellationToken>((entity, _) => data.Add(entity))
-            .Returns((T entity, CancellationToken _) => ValueTask.FromResult(new Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<T>(null!)));
+            .Returns((T _, CancellationToken _) => default(ValueTask<Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<T>>));
 
         mockSet.Setup(m => m.Add(It.IsAny<T>()))
             .Callback<T>(entity => data.Add(entity));

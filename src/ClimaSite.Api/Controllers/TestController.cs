@@ -1,4 +1,3 @@
-#if DEBUG
 using ClimaSite.Core.Entities;
 using ClimaSite.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
@@ -9,8 +8,7 @@ namespace ClimaSite.Api.Controllers;
 
 /// <summary>
 /// Test-only endpoints for E2E testing.
-/// These endpoints are only available in Development environment.
-/// This controller is only compiled in DEBUG builds.
+/// These endpoints are only available in Development or Testing environments.
 /// </summary>
 [ApiController]
 [Route("api/test")]
@@ -33,13 +31,16 @@ public class TestController : ControllerBase
         _configuration = configuration;
     }
 
+    private bool IsTestEnvironment() =>
+        _environment.IsDevelopment() || _environment.IsEnvironment("Testing");
+
     /// <summary>
-    /// Elevates a user to Admin role. Only works in Development environment.
+    /// Elevates a user to Admin role. Only works in Development or Testing environments.
     /// </summary>
     [HttpPost("elevate-admin")]
     public async Task<IActionResult> ElevateToAdmin([FromBody] ElevateAdminRequest request)
     {
-        if (!_environment.IsDevelopment())
+        if (!IsTestEnvironment())
         {
             return NotFound();
         }
@@ -79,7 +80,7 @@ public class TestController : ControllerBase
     }
 
     /// <summary>
-    /// Cleans up test data by correlation ID. Only works in Development environment.
+    /// Cleans up test data by correlation ID. Only works in Development or Testing environments.
     /// Test data is identified by:
     /// - Users with emails containing the correlation ID
     /// - Products with SKUs starting with "TEST-" and containing the correlation ID
@@ -87,7 +88,7 @@ public class TestController : ControllerBase
     [HttpDelete("cleanup/{correlationId}")]
     public async Task<IActionResult> CleanupTestData(string correlationId)
     {
-        if (!_environment.IsDevelopment())
+        if (!IsTestEnvironment())
         {
             return NotFound();
         }
@@ -190,12 +191,12 @@ public class TestController : ControllerBase
     }
 
     /// <summary>
-    /// Seeds sample products for testing. Only works in Development environment.
+    /// Seeds sample products for testing. Only works in Development or Testing environments.
     /// </summary>
     [HttpPost("seed-products")]
     public async Task<IActionResult> SeedProducts([FromBody] SeedProductsRequest request)
     {
-        if (!_environment.IsDevelopment())
+        if (!IsTestEnvironment())
         {
             return NotFound();
         }
@@ -249,7 +250,7 @@ public class TestController : ControllerBase
     [HttpGet("health")]
     public IActionResult Health()
     {
-        if (!_environment.IsDevelopment())
+        if (!IsTestEnvironment())
         {
             return NotFound();
         }
@@ -271,4 +272,3 @@ public record CleanupResult
     public int NotificationsDeleted { get; set; }
 }
 public record SeededProduct(Guid Id, string Name, string Slug, decimal Price);
-#endif

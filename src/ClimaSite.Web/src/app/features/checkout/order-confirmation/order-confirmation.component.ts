@@ -5,8 +5,9 @@ import { TranslateModule } from '@ngx-translate/core';
 
 import { CheckoutService } from '../../../core/services/checkout.service';
 import { ConfettiService } from '../../../core/services/confetti.service';
-import { Order, OrderStatus, ORDER_STATUS_CONFIG, Address } from '../../../core/models/order.model';
+import { Order } from '../../../core/models/order.model';
 import { IconComponent } from '../../../shared/components/icon';
+import { apiErrorToTranslationKey } from '../../../core/utils/translation-key.util';
 
 /**
  * Order Confirmation Component
@@ -39,7 +40,7 @@ import { IconComponent } from '../../../shared/components/icon';
             <app-icon name="alert-circle" size="xl" />
           </div>
           <h2>{{ 'errors.serverError' | translate }}</h2>
-          <p>{{ error() }}</p>
+          <p>{{ error() | translate }}</p>
           <div class="error-actions">
             <button class="btn-primary" (click)="retryLoad()" data-testid="retry-btn">
               {{ 'common.retry' | translate }}
@@ -271,7 +272,7 @@ import { IconComponent } from '../../../shared/components/icon';
               {{ 'checkout.orderConfirmation.contactInfo' | translate }}
               <a href="tel:+35988812345">{{ 'footer.phone' | translate }}</a>
               {{ 'checkout.orderConfirmation.or' | translate }}
-              <a href="mailto:support@climasite.bg">support&#64;climasite.bg</a>
+              <a href="mailto:support@climasite.bg">{{ 'checkout.orderConfirmation.supportEmail' | translate }}</a>
             </p>
           </div>
         </div>
@@ -915,7 +916,7 @@ export class OrderConfirmationComponent implements OnInit, OnDestroy {
     if (orderId) {
       this.loadOrder(orderId);
     } else {
-      this.error.set('Order ID not found');
+      this.error.set('checkout.orderConfirmation.errors.orderIdNotFound');
       this.loading.set(false);
     }
   }
@@ -947,7 +948,7 @@ export class OrderConfirmationComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         console.error('Failed to load order:', err);
-        this.error.set(err.error?.message || 'Failed to load order details');
+        this.error.set(apiErrorToTranslationKey(err, 'checkout.orderConfirmation.errors.loadFailed'));
         this.loading.set(false);
       }
     });

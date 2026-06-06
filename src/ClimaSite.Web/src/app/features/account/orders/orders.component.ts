@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { CheckoutService } from '../../../core/services/checkout.service';
-import { OrderBrief, OrdersFilterParams, PaginatedOrders, ORDER_STATUS_CONFIG, OrderStatus } from '../../../core/models/order.model';
+import { OrdersFilterParams, PaginatedOrders, ORDER_STATUS_CONFIG, OrderStatus } from '../../../core/models/order.model';
 import { EmptyStateComponent } from '../../../shared/components/empty-state';
 
 @Component({
@@ -806,7 +806,7 @@ export class OrdersComponent implements OnInit {
   currentPage = 1;
   pageSize = 10;
 
-  private searchDebounceTimer: any;
+  private searchDebounceTimer?: ReturnType<typeof setTimeout>;
 
   ngOnInit(): void {
     this.loadStatuses();

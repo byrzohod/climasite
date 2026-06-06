@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit, OnDestroy, effect, ViewChild, ElementRef, HostListener } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, OnDestroy, effect, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -7,7 +7,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { ProductService } from '../../../core/services/product.service';
 import { CategoryService } from '../../../core/services/category.service';
 import { LanguageService } from '../../../core/services/language.service';
-import { ProductBrief, FilterOptions, ProductFilter, PaginatedResult } from '../../../core/models/product.model';
+import { ProductBrief, FilterOptions, ProductFilter } from '../../../core/models/product.model';
 import { Category } from '../../../core/models/category.model';
 import { ProductCardComponent } from '../product-card/product-card.component';
 import { CategoryHeaderComponent, CategoryInfo } from '../../../shared/components/category-header/category-header.component';
@@ -63,8 +63,6 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state';
           #filterSidebarRef
           class="filter-sidebar" 
           [class.open]="filterOpen()"
-          role="dialog"
-          aria-modal="true"
           [attr.aria-label]="'products.filter_sidebar' | translate"
           (keydown)="onFilterSidebarKeydown($event)">
           <div class="filter-header">
@@ -189,14 +187,14 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state';
           </div>
         </aside>
 
-        <main class="product-grid-container">
+        <div class="product-grid-container">
           <div class="toolbar">
             <button class="filter-toggle" (click)="openFilterSidebar()" [attr.aria-label]="'products.filters.title' | translate">
               <svg class="filter-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
               {{ 'products.filters.title' | translate }}
             </button>
 
-            <div class="view-options" role="group" aria-label="View options">
+            <div class="view-options" role="group" [attr.aria-label]="'products.view.options' | translate">
               <button
                 class="view-btn"
                 [class.active]="viewMode() === 'grid'"
@@ -218,12 +216,17 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state';
             </div>
 
             <div class="sort-options">
-              <label>{{ 'products.sort.title' | translate }}:</label>
-              <select [(ngModel)]="sortBy" (change)="applyFilters()" data-testid="sort-dropdown">
+              <label for="product-sort-dropdown">{{ 'products.sort.title' | translate }}:</label>
+              <select
+                id="product-sort-dropdown"
+                [(ngModel)]="sortBy"
+                (change)="applyFilters()"
+                data-testid="sort-dropdown"
+              >
                 <option value="newest">{{ 'products.sort.newest' | translate }}</option>
-                <option value="price">{{ 'products.sort.priceAsc' | translate }}</option>
+                <option value="price-asc">{{ 'products.sort.priceAsc' | translate }}</option>
                 <option value="price-desc">{{ 'products.sort.priceDesc' | translate }}</option>
-                <option value="name">{{ 'products.sort.nameAsc' | translate }}</option>
+                <option value="name-asc">{{ 'products.sort.nameAsc' | translate }}</option>
                 <option value="name-desc">{{ 'products.sort.nameDesc' | translate }}</option>
               </select>
             </div>
@@ -278,7 +281,7 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state';
             </div>
 
             @if (totalPages() > 1) {
-              <nav class="pagination" role="navigation" aria-label="Pagination" data-testid="pagination">
+              <nav class="pagination" role="navigation" [attr.aria-label]="'common.pagination' | translate" data-testid="pagination">
                 <button
                   class="page-btn"
                   [disabled]="currentPage() === 1"
@@ -314,7 +317,7 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state';
               </nav>
             }
           }
-        </main>
+        </div>
       </div>
     </div>
   `,
@@ -1292,7 +1295,11 @@ export class ProductListComponent implements OnInit, OnDestroy {
       maxPrice: this.maxPrice ?? undefined,
       inStock: this.inStockOnly() || undefined,
       onSale: this.onSaleOnly() || undefined,
-      sortBy: this.sortBy === 'price-desc' ? 'price' : this.sortBy,
+      sortBy: this.sortBy === 'price-asc' || this.sortBy === 'price-desc'
+        ? 'price'
+        : this.sortBy === 'name-asc' || this.sortBy === 'name-desc'
+          ? 'name'
+          : this.sortBy,
       sortDescending: this.sortBy === 'price-desc' || this.sortBy === 'name-desc'
     };
 

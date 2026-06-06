@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
 import { Component } from '@angular/core';
 import { ButtonComponent, ButtonVariant, ButtonSize } from './button.component';
 

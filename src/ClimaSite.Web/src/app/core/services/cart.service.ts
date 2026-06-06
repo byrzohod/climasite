@@ -1,12 +1,8 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, tap, catchError, of, BehaviorSubject } from 'rxjs';
+import { Observable, tap, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Cart, CartItem, AddToCartRequest, UpdateCartItemRequest, CartSummary } from '../models/cart.model';
-
-// TODO: SVC-001 - Error messages in this service are hardcoded (e.g., 'Failed to add item to cart').
-// These should be replaced with translation keys and use TranslateService for i18n support.
-// Example: this._error.set(this.translate.instant('cart.errors.addFailed'));
+import { Cart, AddToCartRequest, CartSummary } from '../models/cart.model';
 
 @Injectable({
   providedIn: 'root'
@@ -114,7 +110,7 @@ export class CartService {
         }),
         catchError(error => {
           console.error('Failed to add to cart:', error);
-          this._error.set('Failed to add item to cart');
+          this._error.set('cart.errors.addFailed');
           this._isLoading.set(false);
           throw error;
         })
@@ -135,7 +131,7 @@ export class CartService {
         }),
         catchError(error => {
           console.error('Failed to update cart item:', error);
-          this._error.set('Failed to update item quantity');
+          this._error.set('cart.errors.updateQuantityFailed');
           this._isLoading.set(false);
           throw error;
         })
@@ -155,7 +151,7 @@ export class CartService {
         }),
         catchError(error => {
           console.error('Failed to remove cart item:', error);
-          this._error.set('Failed to remove item from cart');
+          this._error.set('cart.errors.removeFailed');
           this._isLoading.set(false);
           throw error;
         })
@@ -175,7 +171,7 @@ export class CartService {
         }),
         catchError(error => {
           console.error('Failed to clear cart:', error);
-          this._error.set('Failed to clear cart');
+          this._error.set('cart.errors.clearFailed');
           this._isLoading.set(false);
           throw error;
         })

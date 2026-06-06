@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { provideRouter, ActivatedRoute } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TranslateModule } from '@ngx-translate/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { of, throwError } from 'rxjs';
@@ -198,7 +198,7 @@ describe('OrderConfirmationComponent', () => {
   describe('when order fails to load', () => {
     beforeEach(() => {
       checkoutService.getOrder.and.returnValue(throwError(() => ({ 
-        error: { message: 'Order not found' } 
+        error: { message: 'Raw order load failure' }
       })));
       fixture = TestBed.createComponent(OrderConfirmationComponent);
       component = fixture.componentInstance;
@@ -211,7 +211,8 @@ describe('OrderConfirmationComponent', () => {
     });
 
     it('should display error message', () => {
-      expect(component.error()).toBe('Order not found');
+      expect(component.error()).toBe('checkout.orderConfirmation.errors.loadFailed');
+      expect(component.error()).not.toBe('Raw order load failure');
     });
 
     it('should not trigger confetti', () => {

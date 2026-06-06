@@ -32,6 +32,7 @@ public class ExceptionHandlingMiddleware
         var (statusCode, message) = exception switch
         {
             NotFoundException notFound => (HttpStatusCode.NotFound, notFound.Message),
+            ClimaSite.Application.Common.Exceptions.ValidationException validation => (HttpStatusCode.BadRequest, FlattenValidationErrors(validation.Errors)),
             FluentValidation.ValidationException validation => (HttpStatusCode.BadRequest, string.Join("; ", validation.Errors.Select(e => e.ErrorMessage))),
             UnauthorizedAccessException => (HttpStatusCode.Unauthorized, "Unauthorized access"),
             ArgumentException arg => (HttpStatusCode.BadRequest, arg.Message),
@@ -47,7 +48,10 @@ public class ExceptionHandlingMiddleware
         {
             status = (int)statusCode,
             message = message,
-            detail = exception is NotFoundException or FluentValidation.ValidationException or ArgumentException
+            detail = exception is NotFoundException
+                or ClimaSite.Application.Common.Exceptions.ValidationException
+                or FluentValidation.ValidationException
+                or ArgumentException
                 ? exception.Message
                 : null
         };
@@ -58,6 +62,11 @@ public class ExceptionHandlingMiddleware
         });
 
         await context.Response.WriteAsync(jsonResponse);
+    }
+
+    private static string FlattenValidationErrors(IDictionary<string, string[]> errors)
+    {
+        return string.Join("; ", errors.SelectMany(kvp => kvp.Value));
     }
 }
 

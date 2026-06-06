@@ -2,21 +2,20 @@ import { ApplicationConfig, importProvidersFrom, provideZoneChangeDetection } fr
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors, HttpClient } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
-import { TranslateHttpLoader } from '@ngx-translate/http-loader';
-import { Observable, of } from 'rxjs';
+import { TranslateModule, TranslateLoader, TranslationObject } from '@ngx-translate/core';
+import { LucideAngularModule } from 'lucide-angular';
+import { Observable } from 'rxjs';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './auth/interceptors/auth.interceptor';
+import { ICON_REGISTRY } from './shared/components/icon';
 
-// Custom HTTP loader that logs loading
 class CustomHttpLoader implements TranslateLoader {
   constructor(private http: HttpClient) {}
 
-  getTranslation(lang: string): Observable<any> {
+  getTranslation(lang: string): Observable<TranslationObject> {
     const url = `/assets/i18n/${lang}.json`;
-    console.log(`[Translate] Loading translations from: ${url}`);
-    return this.http.get(url);
+    return this.http.get<TranslationObject>(url);
   }
 }
 
@@ -31,6 +30,7 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     provideHttpClient(withInterceptors([authInterceptor])),
     importProvidersFrom(
+      LucideAngularModule.pick(ICON_REGISTRY),
       TranslateModule.forRoot({
         defaultLanguage: 'en',
         loader: {

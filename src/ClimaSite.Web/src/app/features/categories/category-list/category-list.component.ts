@@ -9,7 +9,7 @@ import { TranslateModule } from '@ngx-translate/core';
   template: `
     <div class="category-list-container">
       <h1>{{ 'nav.categories' | translate }}</h1>
-      <p>Category list coming soon...</p>
+      <p>{{ 'categories.comingSoon' | translate }}</p>
     </div>
   `,
   styles: [`
