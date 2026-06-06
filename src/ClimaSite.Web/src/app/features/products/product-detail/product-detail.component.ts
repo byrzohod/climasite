@@ -32,12 +32,12 @@ import { RevealDirective } from '../../../shared/directives/reveal.directive';
         </div>
       } @else if (error()) {
         <div class="error" data-testid="error">
-          {{ error() }}
+          {{ error() | translate }}
         </div>
       } @else if (product()) {
         <div class="product-content">
           <!-- Breadcrumb -->
-          <nav class="breadcrumb" data-testid="breadcrumb">
+          <nav class="breadcrumb" [attr.aria-label]="'common.aria.breadcrumb' | translate" data-testid="breadcrumb">
             <a routerLink="/" data-testid="breadcrumb-home">{{ 'nav.home' | translate }}</a>
             <span class="separator">/</span>
             <a routerLink="/products" data-testid="breadcrumb-products">{{ 'nav.products' | translate }}</a>
@@ -246,7 +246,7 @@ import { RevealDirective } from '../../../shared/directives/reveal.directive';
                   }
 
                   @if (product()?.features) {
-                    <h4>{{ 'products.details.features' | translate }}</h4>
+                    <h2>{{ 'products.details.features' | translate }}</h2>
                     <ul class="features-list">
                       @for (feature of getFeatures(); track $index) {
                         <li>{{ feature }}</li>
@@ -738,7 +738,8 @@ import { RevealDirective } from '../../../shared/directives/reveal.directive';
         color: var(--color-text-secondary);
         line-height: 1.7;
 
-        h4 {
+        h2 {
+          font-size: 1.25rem;
           color: var(--color-text-primary);
           margin: 1.5rem 0 1rem;
           font-weight: 600;
@@ -893,7 +894,7 @@ private readonly route = inject(ActivatedRoute);
       this.currentSlug = slug;
       this.loadProduct(slug);
     } else {
-      this.error.set('Product not found');
+      this.error.set('products.details.notFound');
       this.isLoading.set(false);
     }
   }
@@ -908,7 +909,7 @@ private readonly route = inject(ActivatedRoute);
       error: () => {
         // Error details are intentionally not logged in production
         // Consider implementing a logging service for production error tracking
-        this.error.set('Failed to load product. Please try again.');
+        this.error.set('products.details.loadError');
         this.isLoading.set(false);
       }
     });

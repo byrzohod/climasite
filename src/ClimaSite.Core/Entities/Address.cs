@@ -129,5 +129,6 @@ public class Address : BaseEntity
 public enum AddressType
 {
     Shipping,
-    Billing
+    Billing,
+    Both
 }

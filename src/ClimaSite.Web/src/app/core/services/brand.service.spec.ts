@@ -106,6 +106,8 @@ describe('BrandService', () => {
         req.url.includes('/api/brands') &&
         req.params.get('lang') === 'bg'
       );
+      expect(req.request.method).toBe('GET');
+      expect(req.request.params.get('lang')).toBe('bg');
       req.flush(mockBrandListResponse);
     });
   });
@@ -133,6 +135,9 @@ describe('BrandService', () => {
         req.params.get('productPage') === '2' &&
         req.params.get('productPageSize') === '24'
       );
+      expect(req.request.method).toBe('GET');
+      expect(req.request.params.get('productPage')).toBe('2');
+      expect(req.request.params.get('productPageSize')).toBe('24');
       req.flush(mockBrand);
     });
   });
@@ -159,6 +164,8 @@ describe('BrandService', () => {
         req.url.includes('/api/brands/featured') &&
         req.params.get('limit') === '4'
       );
+      expect(req.request.method).toBe('GET');
+      expect(req.request.params.get('limit')).toBe('4');
       req.flush([mockBrandBrief]);
     });
   });

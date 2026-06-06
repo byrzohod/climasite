@@ -571,7 +571,7 @@ import { FlyingCartService } from '../../../core/services/flying-cart.service';
       justify-content: center;
       gap: 0.5rem;
       padding: 0.75rem 1rem;
-      background: var(--color-primary);
+      background: var(--color-primary-active);
       color: var(--color-text-inverse);
       border: none;
       border-radius: var(--radius-lg);
@@ -597,7 +597,7 @@ import { FlyingCartService } from '../../../core/services/flying-cart.service';
       }
 
       &:hover:not(:disabled) {
-        background: var(--color-primary-hover);
+        background: var(--color-primary-dark);
         box-shadow: var(--glow-sm-primary);
         transform: translateY(-1px);
       }
@@ -626,6 +626,20 @@ import { FlyingCartService } from '../../../core/services/flying-cart.service';
 
       &.loading {
         pointer-events: none;
+      }
+    }
+
+    :host-context([data-theme="dark"]) .btn-add-to-cart,
+    :host-context(.dark) .btn-add-to-cart {
+      background: var(--color-primary-active);
+
+      &:hover:not(:disabled) {
+        background: var(--color-primary-hover);
+      }
+
+      &.added,
+      &.added:hover:not(:disabled) {
+        background: var(--color-success);
       }
     }
     

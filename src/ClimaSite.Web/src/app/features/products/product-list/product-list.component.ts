@@ -63,8 +63,6 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state';
           #filterSidebarRef
           class="filter-sidebar" 
           [class.open]="filterOpen()"
-          role="dialog"
-          aria-modal="true"
           [attr.aria-label]="'products.filter_sidebar' | translate"
           (keydown)="onFilterSidebarKeydown($event)">
           <div class="filter-header">
@@ -189,7 +187,7 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state';
           </div>
         </aside>
 
-        <main class="product-grid-container">
+        <div class="product-grid-container">
           <div class="toolbar">
             <button class="filter-toggle" (click)="openFilterSidebar()" [attr.aria-label]="'products.filters.title' | translate">
               <svg class="filter-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg>
@@ -319,7 +317,7 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state';
               </nav>
             }
           }
-        </main>
+        </div>
       </div>
     </div>
   `,

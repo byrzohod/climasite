@@ -12,7 +12,7 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
     @if (options() && options()!.installationAvailable) {
       <section class="installation-service">
         <div class="installation-header">
-          <h3>{{ 'products.installation.title' | translate }}</h3>
+          <h2>{{ 'products.installation.title' | translate }}</h2>
           <p class="subtitle">{{ 'products.installation.subtitle' | translate }}</p>
         </div>
 
@@ -34,7 +34,7 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
                   {{ 'products.installation.fastest' | translate }}
                 </div>
               }
-              <h4 class="option-name">{{ option.name }}</h4>
+              <h3 class="option-name">{{ option.name }}</h3>
               <p class="option-description">{{ option.description }}</p>
               <div class="option-price">
                 {{ 'common.currency' | translate: { amount: option.price | number:'1.2-2' } }}
@@ -61,7 +61,7 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
         <!-- Request Form (shown when option selected) -->
         @if (selectedOption() && showForm()) {
           <div class="request-form-section">
-            <h4>{{ 'products.installation.requestTitle' | translate }}</h4>
+            <h3>{{ 'products.installation.requestTitle' | translate }}</h3>
             <form [formGroup]="requestForm" (ngSubmit)="submitRequest()">
           <div class="form-row">
             <div class="form-group">
@@ -198,7 +198,7 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
         @if (requestSubmitted()) {
           <div class="success-message">
             <span class="icon">&#10003;</span>
-            <h4>{{ 'products.installation.requestSubmitted' | translate }}</h4>
+            <h3>{{ 'products.installation.requestSubmitted' | translate }}</h3>
             <p>{{ 'products.installation.requestSubmittedMessage' | translate }}</p>
           </div>
         }
@@ -232,7 +232,7 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
       text-align: center;
       margin-bottom: 2rem;
 
-      h3 {
+      h2 {
         font-size: 1.5rem;
         color: var(--color-text-primary);
         margin: 0 0 0.75rem;
@@ -369,7 +369,7 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
       border: 1px solid var(--color-border-primary);
       margin-top: 1.5rem;
 
-      h4 {
+      h3 {
         font-size: 1.25rem;
         color: var(--color-text-primary);
         margin: 0 0 1.5rem;
@@ -502,7 +502,7 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
         font-size: 24px;
       }
 
-      h4 {
+      h3 {
         color: var(--color-success);
         margin: 0 0 0.75rem;
       }

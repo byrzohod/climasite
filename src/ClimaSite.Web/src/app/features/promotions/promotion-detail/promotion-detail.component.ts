@@ -16,7 +16,7 @@ import { ProductBrief } from '../../../core/models/product.model';
       @if (isLoading()) {
         <div class="loading">{{ 'common.loading' | translate }}</div>
       } @else if (error()) {
-        <div class="error">{{ error() }}</div>
+        <div class="error">{{ error() | translate }}</div>
       } @else if (promotion()) {
 <!-- Hero Banner -->
         <div class="promotion-hero">
@@ -482,7 +482,7 @@ export class PromotionDetailComponent implements OnInit {
     if (slug) {
       this.loadPromotion(slug);
     } else {
-      this.error.set('Promotion not found');
+      this.error.set('promotions.errors.notFound');
       this.isLoading.set(false);
     }
   }
@@ -496,7 +496,7 @@ export class PromotionDetailComponent implements OnInit {
       },
       error: (err) => {
         console.error('Failed to load promotion:', err);
-        this.error.set('Promotion not found');
+        this.error.set('promotions.errors.notFound');
         this.isLoading.set(false);
       }
     });

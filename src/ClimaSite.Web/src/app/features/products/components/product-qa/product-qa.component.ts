@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { TranslateModule } from '@ngx-translate/core';
 import { QuestionsService, Question, Answer, ProductQuestions } from '../../services/questions.service';
 import { AuthService } from '../../../../auth/services/auth.service';
+import { apiErrorToTranslationKey } from '../../../../core/utils/translation-key.util';
 
 @Component({
   selector: 'app-product-qa',
@@ -81,7 +82,7 @@ import { AuthService } from '../../../../auth/services/auth.service';
 
               @if (questionError()) {
                 <div class="error-message">
-                  {{ questionError() }}
+                  {{ questionError() | translate }}
                 </div>
               }
             </form>
@@ -168,7 +169,7 @@ import { AuthService } from '../../../../auth/services/auth.service';
                   </div>
                   @if (answerError()) {
                     <div class="error-message">
-                      {{ answerError() }}
+                      {{ answerError() | translate }}
                     </div>
                   }
                 </form>
@@ -854,9 +855,9 @@ export class ProductQaComponent {
       error: (err) => {
         this.submittingQuestion.set(false);
         if (err.status === 401) {
-          this.questionError.set('Your session has expired. Please log in again.');
+          this.questionError.set('products.qa.errors.sessionExpired');
         } else {
-          this.questionError.set(err.error?.message || 'Failed to submit question. Please try again.');
+          this.questionError.set(apiErrorToTranslationKey(err, 'products.qa.errors.submitQuestionFailed'));
         }
       }
     });
@@ -893,9 +894,9 @@ export class ProductQaComponent {
       error: (err) => {
         this.submittingAnswer.set(false);
         if (err.status === 401) {
-          this.answerError.set('Your session has expired. Please log in again.');
+          this.answerError.set('products.qa.errors.sessionExpired');
         } else {
-          this.answerError.set(err.error?.message || 'Failed to submit answer. Please try again.');
+          this.answerError.set(apiErrorToTranslationKey(err, 'products.qa.errors.submitAnswerFailed'));
         }
       }
     });

@@ -165,7 +165,10 @@
     "restore_failed": "Failed to restore item",
     "added": "Added to cart",
     "errors": {
-      "addFailed": "Failed to add item to cart"
+      "addFailed": "Failed to add item to cart",
+      "updateQuantityFailed": "Failed to update item quantity",
+      "removeFailed": "Failed to remove item from cart",
+      "clearFailed": "Failed to clear cart"
     }
   },
   "checkout": {
@@ -218,7 +221,17 @@
       "bank": "Bank Transfer",
       "weAccept": "We accept",
       "acceptedMethods": "Accepted payment methods",
-      "securePayment": "Secure payment"
+      "securePayment": "Secure payment",
+      "errors": {
+        "configUnavailable": "Payment configuration is not available",
+        "stripeInitFailed": "Failed to initialize card payments",
+        "serviceInitFailed": "Failed to initialize payment service",
+        "intentInitFailed": "Failed to initialize payment",
+        "stripeNotInitialized": "Card payments are not initialized",
+        "notInitialized": "Payment is not initialized",
+        "failed": "Payment failed",
+        "notCompleted": "Payment was not completed"
+      }
     },
     "review": {
       "title": "Review Your Order",
@@ -256,7 +269,22 @@
         "step1": "You'll receive a confirmation email shortly",
         "step2": "We'll email you when your order ships with tracking info",
         "step3": "Estimated delivery: {{date}}"
+      },
+      "errors": {
+        "orderIdNotFound": "Order ID not found",
+        "loadFailed": "Failed to load order details"
       }
+    },
+    "errors": {
+      "shippingAddressRequired": "Shipping address is required",
+      "placeOrderFailed": "Failed to place order",
+      "firstNameRequired": "First name is required",
+      "lastNameRequired": "Last name is required",
+      "streetAddressRequired": "Street address is required",
+      "cityRequired": "City is required",
+      "postalCodeRequired": "Postal code is required",
+      "countryRequired": "Country is required",
+      "phoneRequired": "Phone number is required"
     }
   },
   "account": {
@@ -340,7 +368,11 @@
         "partial": "{{added}} item(s) added, {{skipped}} item(s) skipped due to unavailability",
         "error": "Failed to add items to cart"
       },
-      "notes": "Notes"
+      "notes": "Notes",
+      "errors": {
+        "notFound": "Order not found",
+        "loadFailed": "Failed to load order"
+      }
     },
     "addresses": {
       "title": "Saved Addresses",
@@ -369,7 +401,14 @@
       "typeBilling": "Billing",
       "typeBoth": "Both",
       "confirmDelete": "Delete Address",
-      "confirmDeleteMessage": "Are you sure you want to delete this address? This action cannot be undone."
+      "confirmDeleteMessage": "Are you sure you want to delete this address? This action cannot be undone.",
+      "errors": {
+        "loadFailed": "Failed to load addresses",
+        "createFailed": "Failed to create address",
+        "updateFailed": "Failed to update address",
+        "deleteFailed": "Failed to delete address",
+        "setDefaultFailed": "Failed to set default address"
+      }
     },
     "profile": {
       "title": "Profile Settings",
@@ -525,13 +564,27 @@
         "Bundle": "Bundles",
         "FrequentlyBoughtTogether": "Frequently Bought Together"
       },
+      "relatedProductsManager": {
+        "errors": {
+          "loadFailed": "Failed to load relations",
+          "addFailed": "Failed to add relation",
+          "removeFailed": "Failed to remove relation",
+          "reorderFailed": "Failed to reorder relations"
+        }
+      },
       "translations": {
         "title": "Product Translations",
         "subtitle": "Manage product content in different languages",
         "addTranslation": "Add Translation",
         "defaultLanguageNotice": "English is the default language. Edit the main product to change this content.",
         "seoSection": "SEO Settings",
-        "confirmDelete": "Are you sure you want to delete the {{language}} translation?"
+        "confirmDelete": "Are you sure you want to delete the {{language}} translation?",
+        "errors": {
+          "loadFailed": "Failed to load translations",
+          "addFailed": "Failed to add translation",
+          "updateFailed": "Failed to update translation",
+          "deleteFailed": "Failed to delete translation"
+        }
       },
       "name": "Name",
       "shortDescription": "Short Description",
@@ -583,7 +636,10 @@
       "approveAsOfficial": "Approve as Official",
       "flag": "Flag for Review",
       "official": "Official",
-      "reviewedBy": "By"
+      "reviewedBy": "By",
+      "errors": {
+        "loadFailed": "Failed to load moderation data"
+      }
     }
   },
   "promotions": {
@@ -598,7 +654,10 @@
     "limitedTime": "Limited Time Offer",
     "discount": "{{value}}% OFF",
     "minOrder": "Minimum order: {{amount}}",
-    "products": "products"
+    "products": "products",
+    "errors": {
+      "notFound": "Promotion not found"
+    }
   },
   "brands": {
     "title": "Our Brands",
@@ -608,7 +667,11 @@
     "noBrands": "No brands available at the moment",
     "countryOfOrigin": "Country",
     "foundedYear": "Founded",
-    "visitWebsite": "Visit Website"
+    "visitWebsite": "Visit Website",
+    "errors": {
+      "loadFailed": "Failed to load brands",
+      "notFound": "Brand not found"
+    }
   },
   "resources": {
     "title": "Resources & Guides",
@@ -773,7 +836,10 @@
     "currentPassword": "Current Password",
     "newPassword": "New Password",
     "updatePassword": "Update Password",
-    "passwordSuccess": "Password changed successfully"
+    "passwordSuccess": "Password changed successfully",
+    "updateError": "Failed to update profile",
+    "preferencesError": "Failed to update preferences",
+    "passwordError": "Failed to change password"
   },
   "countries": {
     "austria": "Austria",
@@ -979,6 +1045,7 @@
     "matchReason": {
       "perfectFit": "Perfectly sized for your space",
       "efficient": "Best efficiency in this size class",
+      "powerful": "Extra capacity for demanding conditions",
       "quietBedroom": "Quietest option for bedrooms",
       "coldClimate": "Rated for sub-zero performance",
       "budgetFriendly": "Strong fit at a friendly price",
@@ -1000,7 +1067,8 @@
       "forgotPassword": "Forgot password?",
       "submit": "Log in",
       "noAccount": "Don't have an account?",
-      "signUp": "Sign up"
+      "signUp": "Sign up",
+      "error": "Login failed. Please try again."
     },
     "register": {
       "title": "Create Account",
@@ -1095,7 +1163,9 @@
       "sku": "SKU",
       "model": "Model",
       "noDescription": "No description available.",
-      "noSpecifications": "No specifications available."
+      "noSpecifications": "No specifications available.",
+      "notFound": "Product not found",
+      "loadError": "Failed to load product. Please try again."
     },
     "error": {
       "tryAgain": "Please try again.",
@@ -1227,7 +1297,10 @@
       "noQuestionsYet": "No questions yet",
       "beFirstToAsk": "Be the first to ask a question.",
       "errors": {
-        "questionTooShort": "Question must be at least 10 characters."
+        "questionTooShort": "Question must be at least 10 characters.",
+        "sessionExpired": "Your session has expired. Please log in again.",
+        "submitQuestionFailed": "Failed to submit question. Please try again.",
+        "submitAnswerFailed": "Failed to submit answer. Please try again."
       }
     }
   }

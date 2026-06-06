@@ -6,6 +6,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../services/auth.service';
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { apiErrorToTranslationKey } from '../../../core/utils/translation-key.util';
 
 @Component({
   selector: 'app-register',
@@ -356,9 +357,7 @@ export class RegisterComponent {
         }, 3000);
       },
       error: (error) => {
-        this.translate.get('auth.register.error').subscribe(defaultMsg => {
-          this.errorMessage.set(error.error?.message || defaultMsg);
-        });
+        this.errorMessage.set(this.translate.instant(apiErrorToTranslationKey(error, 'auth.register.error')));
       }
     });
   }

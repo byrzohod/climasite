@@ -6,11 +6,21 @@ import process from 'node:process';
 const appRoot = path.resolve('src/app');
 const i18nRoot = path.resolve('src/assets/i18n');
 const languages = ['en', 'bg', 'de'];
+const dynamicTranslationKeys = new Map([
+  ['homeV3.matchReason.perfectFit', 'backend recommendations match reason'],
+  ['homeV3.matchReason.efficient', 'backend recommendations match reason'],
+  ['homeV3.matchReason.powerful', 'backend recommendations match reason'],
+  ['homeV3.matchReason.quietBedroom', 'backend recommendations match reason'],
+  ['homeV3.matchReason.coldClimate', 'backend recommendations match reason'],
+  ['homeV3.matchReason.budgetFriendly', 'backend recommendations match reason'],
+  ['homeV3.matchReason.fallback', 'backend recommendations match reason']
+]);
 
 const keyPatterns = [
   /['"]([A-Za-z0-9_.-]+)['"]\s*\|\s*translate/g,
   /(?:this\.)?(?:translate|translateService|languageService)\s*\.\s*(?:instant|get)\(\s*['"]([A-Za-z0-9_.-]+)['"]/g,
-  /translationKey\s*:\s*['"]([A-Za-z0-9_.-]+)['"]/g
+  /translationKey\s*:\s*['"]([A-Za-z0-9_.-]+)['"]/g,
+  /(?:apiErrorToTranslationKey|toTranslationKey)\([\s\S]*?,\s*['"]([A-Za-z0-9_.-]+)['"]\s*\)/g
 ];
 
 const staticAttributeNames = new Set(['placeholder', 'aria-label', 'title', 'alt']);
@@ -197,6 +207,57 @@ function collectHardcodedTemplateText(files) {
   return findings;
 }
 
+const userFacingSignalSetters = [
+  'error',
+  '_error',
+  'errorMessage',
+  'questionError',
+  'answerError'
+];
+
+function isTranslationKey(value) {
+  return /^[A-Za-z][A-Za-z0-9]*(?:[._-][A-Za-z0-9]+)+$/.test(value);
+}
+
+function collectSignalErrorUsage(files) {
+  const findings = [];
+  const keys = new Map();
+  const setterPattern = new RegExp(
+    `(?:this\\.)?(?:${userFacingSignalSetters.map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\.set\\(\\s*['"]([^'"]+)['"]`,
+    'g'
+  );
+  const setErrorPattern = /\.setError\(\s*['"]([^'"]+)['"]/g;
+  const fallbackSetterPattern = new RegExp(
+    `(?:this\\.)?(?:${userFacingSignalSetters.map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\.set\\([\\s\\S]*?\\|\\|\\s*['"]([^'"]+)['"]\\s*\\)`,
+    'g'
+  );
+  const fallbackSetErrorPattern = /\.setError\([\s\S]*?\|\|\s*['"]([^'"]+)['"]\s*\)/g;
+
+  for (const file of files.filter(candidate => candidate.endsWith('.ts'))) {
+    const source = fs.readFileSync(file, 'utf8');
+    for (const pattern of [setterPattern, setErrorPattern, fallbackSetterPattern, fallbackSetErrorPattern]) {
+      let match;
+      while ((match = pattern.exec(source))) {
+        const value = match[1];
+        if (isTranslationKey(value)) {
+          if (!keys.has(value)) {
+            keys.set(value, new Set());
+          }
+          keys.get(value).add(path.relative(process.cwd(), file));
+        } else if (isLikelyVisibleCopy(value)) {
+          findings.push({
+            file: path.relative(process.cwd(), file),
+            type: 'signal-error',
+            value
+          });
+        }
+      }
+    }
+  }
+
+  return { findings, keys };
+}
+
 function main() {
   const files = getProductionFiles();
   const dictionaries = Object.fromEntries(
@@ -207,6 +268,22 @@ function main() {
   );
 
   const staticKeys = collectStaticTranslationKeys(files);
+  const signalErrorUsage = collectSignalErrorUsage(files);
+  for (const [key, locations] of signalErrorUsage.keys) {
+    if (!staticKeys.has(key)) {
+      staticKeys.set(key, new Set());
+    }
+
+    for (const location of locations) {
+      staticKeys.get(key).add(location);
+    }
+  }
+
+  for (const [key, source] of dynamicTranslationKeys) {
+    if (!staticKeys.has(key)) {
+      staticKeys.set(key, new Set([source]));
+    }
+  }
   const missingKeys = [];
 
   for (const [key, locations] of staticKeys) {
@@ -222,8 +299,9 @@ function main() {
   }
 
   const hardcodedText = collectHardcodedTemplateText(files);
+  const hardcodedSignalErrors = signalErrorUsage.findings;
 
-  if (missingKeys.length === 0 && hardcodedText.length === 0) {
+  if (missingKeys.length === 0 && hardcodedText.length === 0 && hardcodedSignalErrors.length === 0) {
     console.log(`i18n check passed: ${staticKeys.size} static keys verified across ${languages.join(', ')}`);
     return;
   }
@@ -238,6 +316,13 @@ function main() {
   if (hardcodedText.length > 0) {
     console.error('\nHardcoded visible template text:');
     for (const finding of hardcodedText) {
+      console.error(`- ${finding.type}: ${finding.file}: ${finding.value}`);
+    }
+  }
+
+  if (hardcodedSignalErrors.length > 0) {
+    console.error('\nHardcoded user-facing signal error text:');
+    for (const finding of hardcodedSignalErrors) {
       console.error(`- ${finding.type}: ${finding.file}: ${finding.value}`);
     }
   }

@@ -6,6 +6,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ReviewService, ReviewSortBy } from '../../../core/services/review.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { Review, ReviewSummary, PaginatedReviews } from '../../../core/models/review.model';
+import { apiErrorToTranslationKey } from '../../../core/utils/translation-key.util';
 
 @Component({
   selector: 'app-product-reviews',
@@ -842,12 +843,11 @@ export class ProductReviewsComponent implements OnInit {
         this.isSubmitting.set(false);
         // Check if it's an authentication error (session expired)
         if (err.status === 401) {
-          this.submitError.set(this.translate.instant('reviews.sessionExpired') || 'Your session has expired. Please log in again.');
+          this.submitError.set(this.translate.instant('reviews.sessionExpired'));
           // Hide the form since user is no longer authenticated
           this.showReviewForm.set(false);
         } else {
-          const message = err.error?.message || this.translate.instant('reviews.submitError') || 'Failed to submit review';
-          this.submitError.set(message);
+          this.submitError.set(this.translate.instant(apiErrorToTranslationKey(err, 'reviews.submitError')));
         }
       }
     });

@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { CheckoutService } from '../../../core/services/checkout.service';
 import { Order, ORDER_STATUS_CONFIG, OrderStatus } from '../../../core/models/order.model';
+import { apiErrorToTranslationKey } from '../../../core/utils/translation-key.util';
 
 @Component({
   selector: 'app-order-details',
@@ -23,7 +24,7 @@ import { Order, ORDER_STATUS_CONFIG, OrderStatus } from '../../../core/models/or
         </div>
       } @else if (error()) {
         <div class="error-container" data-testid="error-message">
-          <p class="error-message" data-testid="not-found">{{ error() }}</p>
+          <p class="error-message" data-testid="not-found">{{ error() | translate }}</p>
           <a routerLink="/account/orders" class="btn-primary">{{ 'account.orders.backToOrders' | translate }}</a>
         </div>
       } @else if (order()) {
@@ -963,7 +964,7 @@ export class OrderDetailsComponent implements OnInit {
     if (orderId) {
       this.loadOrder(orderId);
     } else {
-      this.error.set('Order not found');
+      this.error.set('account.orders.errors.notFound');
       this.isLoading.set(false);
     }
   }
@@ -976,7 +977,7 @@ export class OrderDetailsComponent implements OnInit {
         this.isLoading.set(false);
       },
       error: () => {
-        this.error.set('Failed to load order');
+        this.error.set('account.orders.errors.loadFailed');
         this.isLoading.set(false);
       }
     });
@@ -1047,7 +1048,7 @@ export class OrderDetailsComponent implements OnInit {
         this.isReordering.set(false);
         this.reorderSuccess.set(false);
         this.reorderMessage.set(
-          err.error?.message || this.translate.instant('account.orders.reorder.error')
+          this.translate.instant(apiErrorToTranslationKey(err, 'account.orders.reorder.error'))
         );
       }
     });

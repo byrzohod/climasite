@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService, UpdateProfileRequest } from '../../../auth/services/auth.service';
+import { apiErrorToTranslationKey } from '../../../core/utils/translation-key.util';
 
 @Component({
   selector: 'app-profile',
@@ -445,7 +446,7 @@ export class ProfileComponent {
       },
       error: (err) => {
         this.isUpdatingProfile.set(false);
-        this.profileError.set(err.error?.message || 'Failed to update profile');
+        this.profileError.set(this.translateService.instant(apiErrorToTranslationKey(err, 'profile.updateError')));
       }
     });
   }
@@ -472,7 +473,7 @@ export class ProfileComponent {
       error: (err) => {
         this.isUpdatingPreferences.set(false);
         this.preferencesSuccess.set(false);
-        this.preferencesError.set(err.error?.message || 'Failed to update preferences');
+        this.preferencesError.set(this.translateService.instant(apiErrorToTranslationKey(err, 'profile.preferencesError')));
       }
     });
   }
@@ -496,7 +497,7 @@ export class ProfileComponent {
       },
       error: (err) => {
         this.isChangingPassword.set(false);
-        this.passwordError.set(err.error?.message || 'Failed to change password');
+        this.passwordError.set(this.translateService.instant(apiErrorToTranslationKey(err, 'profile.passwordError')));
       }
     });
   }

@@ -31,13 +31,13 @@ public class ProductTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void SetSku_WithEmptyValue_ThrowsArgumentException(string sku)
+    public void SetSku_WithEmptyValue_ThrowsArgumentException(string? sku)
     {
         // Arrange
         var product = CreateValidProduct();
 
         // Act & Assert
-        var act = () => product.SetSku(sku);
+        var act = () => product.SetSku(sku!);
         act.Should().Throw<ArgumentException>()
            .WithMessage("*SKU cannot be empty*");
     }
@@ -72,13 +72,13 @@ public class ProductTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void SetName_WithEmptyValue_ThrowsArgumentException(string name)
+    public void SetName_WithEmptyValue_ThrowsArgumentException(string? name)
     {
         // Arrange
         var product = CreateValidProduct();
 
         // Act & Assert
-        var act = () => product.SetName(name);
+        var act = () => product.SetName(name!);
         act.Should().Throw<ArgumentException>()
            .WithMessage("*Product name cannot be empty*");
     }
@@ -113,13 +113,13 @@ public class ProductTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void SetSlug_WithEmptyValue_ThrowsArgumentException(string slug)
+    public void SetSlug_WithEmptyValue_ThrowsArgumentException(string? slug)
     {
         // Arrange
         var product = CreateValidProduct();
 
         // Act & Assert
-        var act = () => product.SetSlug(slug);
+        var act = () => product.SetSlug(slug!);
         act.Should().Throw<ArgumentException>()
            .WithMessage("*Product slug cannot be empty*");
     }

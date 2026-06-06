@@ -32,6 +32,9 @@ class FakeTranslateLoader implements TranslateLoader {
       'products.qa.submitting': 'Submitting...',
       'products.qa.questionSubmittedSuccess': 'Question submitted for review!',
       'products.qa.errors.questionTooShort': 'Question must be at least 10 characters',
+      'products.qa.errors.sessionExpired': 'Session expired',
+      'products.qa.errors.submitQuestionFailed': 'Question submit failed',
+      'products.qa.errors.submitAnswerFailed': 'Answer submit failed',
       'products.qa.helpful': 'Helpful',
       'products.qa.answer': 'Answer',
       'products.qa.answerPlaceholder': 'Type your answer here...',
@@ -257,6 +260,46 @@ describe('ProductQaComponent', () => {
     fixture.detectChanges();
 
     expect(component.questionSubmitted()).toBeTruthy();
+  }));
+
+  it('should map raw question submission errors to a translation key', fakeAsync(() => {
+    fixture.detectChanges();
+    const req = httpMock.expectOne(req => req.url.includes('/questions/product/'));
+    req.flush(mockQuestions);
+    tick();
+
+    component.showAskForm.set(true);
+    component.questionForm.patchValue({
+      questionText: 'This is a test question about the product?'
+    });
+
+    component.submitQuestion();
+    const submitReq = httpMock.expectOne(`${environment.apiUrl}/api/questions`);
+    submitReq.flush({ message: 'Raw backend question error' }, { status: 500, statusText: 'Server Error' });
+    tick();
+
+    expect(component.questionError()).toBe('products.qa.errors.submitQuestionFailed');
+    expect(component.questionError()).not.toBe('Raw backend question error');
+  }));
+
+  it('should map raw answer submission errors to a translation key', fakeAsync(() => {
+    fixture.detectChanges();
+    const req = httpMock.expectOne(req => req.url.includes('/questions/product/'));
+    req.flush(mockQuestions);
+    tick();
+
+    component.toggleAnswerForm('q1');
+    component.answerForm.patchValue({
+      answerText: 'This is a detailed test answer.'
+    });
+
+    component.submitAnswer('q1');
+    const submitReq = httpMock.expectOne(`${environment.apiUrl}/api/questions/q1/answers`);
+    submitReq.flush({ message: 'Raw backend answer error' }, { status: 500, statusText: 'Server Error' });
+    tick();
+
+    expect(component.answerError()).toBe('products.qa.errors.submitAnswerFailed');
+    expect(component.answerError()).not.toBe('Raw backend answer error');
   }));
 
   it('should toggle answer form for a question', fakeAsync(() => {

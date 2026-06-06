@@ -6,6 +6,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../services/auth.service';
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { apiErrorToTranslationKey } from '../../../core/utils/translation-key.util';
 
 @Component({
   selector: 'app-login',
@@ -28,7 +29,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 
         @if (errorMessage()) {
           <div class="error-alert" data-testid="login-error">
-            {{ errorMessage() }}
+            {{ errorMessage() | translate }}
           </div>
         }
 
@@ -277,7 +278,7 @@ export class LoginComponent {
         this.router.navigateByUrl(returnUrl);
       },
       error: (error) => {
-        this.errorMessage.set(error.error?.message || 'Login failed. Please try again.');
+        this.errorMessage.set(apiErrorToTranslationKey(error, 'auth.login.error'));
       }
     });
   }

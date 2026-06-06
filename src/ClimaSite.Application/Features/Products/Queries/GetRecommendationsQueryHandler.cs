@@ -31,17 +31,15 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
         var roomType = request.RoomType.ToLowerInvariant();
         var climateZone = char.ToUpperInvariant(request.ClimateZone[0]);
 
-        // Load all active products with their variants and images
-        var products = await _context.Products
+        // Score every eligible product before taking the top results; pre-score truncation can exclude the best fit.
+        var candidates = await _context.Products
             .AsNoTracking()
-            .Include(p => p.Variants.Where(v => v.IsActive))
-            .Include(p => p.Images)
-            .Include(p => p.Translations)
-            .Where(p => p.IsActive)
+            .Where(p => p.IsActive && p.Variants.Any(v => v.IsActive && v.StockQuantity > 0))
+            .Include(p => p.Variants.Where(v => v.IsActive && v.StockQuantity > 0))
             .ToListAsync(cancellationToken);
 
         // Score and filter products
-        var scoredProducts = products
+        var scoredProducts = candidates
             .Select(p => new
             {
                 Product = p,
@@ -59,13 +57,21 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
             .Take(3)
             .ToList();
 
+        var sortedProductIds = sorted.Select(x => x.Product.Id).ToList();
+        var productDetails = await _context.Products
+            .AsNoTracking()
+            .Where(p => sortedProductIds.Contains(p.Id))
+            .Include(p => p.Variants.Where(v => v.IsActive && v.StockQuantity > 0))
+            .Include(p => p.Images)
+            .Include(p => p.Translations)
+            .ToDictionaryAsync(p => p.Id, cancellationToken);
+
         // Map to RecommendedProductDto
         return sorted.Select(x => MapToRecommendedProductDto(
-            x.Product,
+            productDetails[x.Product.Id],
             x.Score!.Value,
             areaM2,
             climateZone,
-            roomType,
             request.LanguageCode))
             .ToList();
     }
@@ -75,7 +81,6 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
         double score,
         int areaM2,
         char climateZone,
-        string roomType,
         string? languageCode)
     {
         // Get translated content
@@ -86,8 +91,8 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
         var isInverter = ExtractBoolSpec(product.Specifications, "isInverter");
         var noiseLevel = ExtractIntSpec(product.Specifications, "noiseLevel");
 
-        // Build match reason (i18n key — can be localized in frontend)
-        var matchReason = BuildMatchReasonKey(btu, areaM2, climateZone, roomType);
+        // Build match reason as a frontend i18n key.
+        var matchReason = BuildMatchReasonKey(btu, areaM2, climateZone);
 
         return new RecommendedProductDto
         {
@@ -121,14 +126,12 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
     }
 
     /// <summary>
-    /// Build a human-readable match reason key (localizable).
-    /// Examples: "recommendations.reason.perfect_fit", "recommendations.reason.excellent_inverter"
+    /// Build a frontend translation key for the recommendation match reason.
     /// </summary>
-    private string BuildMatchReasonKey(int btu, int areaM2, char climateZone, string roomType)
+    private string BuildMatchReasonKey(int btu, int areaM2, char climateZone)
     {
-        // Rough categorization based on BTU fit and room type
         if (btu == 0)
-            return "recommendations.reason.default";
+            return "homeV3.matchReason.fallback";
 
         var multipliers = new Dictionary<char, int> { { 'A', 90 }, { 'B', 110 }, { 'C', 140 } };
         if (!multipliers.TryGetValue(climateZone, out var mult))
@@ -139,12 +142,12 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
 
         // Determine fit level
         if (percentage >= 0.9 && percentage <= 1.1)
-            return $"recommendations.reason.perfect_fit_for_{roomType}";
+            return "homeV3.matchReason.perfectFit";
 
         if (percentage < 0.9)
-            return $"recommendations.reason.efficient_fit_for_{roomType}";
+            return "homeV3.matchReason.efficient";
 
-        return $"recommendations.reason.powerful_fit_for_{roomType}";
+        return "homeV3.matchReason.powerful";
     }
 
     private int GetTiebreakerInverter(Core.Entities.Product product)

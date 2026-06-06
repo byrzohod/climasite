@@ -93,13 +93,13 @@ describe('ProfileComponent', () => {
       expect(component.profileSuccess()).toBeTrue();
     }));
 
-    it('should show error message on failed update', fakeAsync(() => {
+    it('should show localized fallback error on failed update', fakeAsync(() => {
       authServiceMock.updateProfile.and.returnValue(throwError(() => ({ error: { message: 'Update failed' } })));
 
       component.updateProfile();
       tick();
 
-      expect(component.profileError()).toBe('Update failed');
+      expect(component.profileError()).toBe('profile.updateError');
     }));
 
     it('should not call updateProfile if form is invalid', () => {
@@ -146,6 +146,15 @@ describe('ProfileComponent', () => {
         })
       );
     }));
+
+    it('should show localized fallback error on failed preferences update', fakeAsync(() => {
+      authServiceMock.updateProfile.and.returnValue(throwError(() => ({ error: { message: 'Preferences failed' } })));
+
+      component.updatePreferences();
+      tick();
+
+      expect(component.preferencesError()).toBe('profile.preferencesError');
+    }));
   });
 
   describe('Password Change', () => {
@@ -190,7 +199,7 @@ describe('ProfileComponent', () => {
       expect(component.passwordForm.get('confirmPassword')?.value).toBeFalsy();
     }));
 
-    it('should show error message on failed password change', fakeAsync(() => {
+    it('should show localized fallback error on failed password change', fakeAsync(() => {
       authServiceMock.changePassword.and.returnValue(throwError(() => ({ error: { message: 'Incorrect password' } })));
 
       component.passwordForm.patchValue({
@@ -202,7 +211,7 @@ describe('ProfileComponent', () => {
       component.changePassword();
       tick();
 
-      expect(component.passwordError()).toBe('Incorrect password');
+      expect(component.passwordError()).toBe('profile.passwordError');
     }));
 
     it('should not call changePassword if form is invalid', () => {

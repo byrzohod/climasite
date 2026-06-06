@@ -250,6 +250,8 @@ describe('InstallationServiceComponent', () => {
 
     // Should not make HTTP request
     httpMock.expectNone(`${environment.apiUrl}/api/installation/requests`);
+    expect(component.submitting()).toBeFalse();
+    expect(component.requestSubmitted()).toBeFalse();
   }));
 
   it('should not submit if no option selected', fakeAsync(() => {
@@ -273,6 +275,8 @@ describe('InstallationServiceComponent', () => {
 
     // Should not make HTTP request
     httpMock.expectNone(`${environment.apiUrl}/api/installation/requests`);
+    expect(component.submitting()).toBeFalse();
+    expect(component.requestSubmitted()).toBeFalse();
   }));
 
   it('should display message when installation not available', fakeAsync(() => {

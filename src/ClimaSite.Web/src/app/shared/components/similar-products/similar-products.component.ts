@@ -15,7 +15,7 @@ import { ProductBrief } from '../../../core/models/product.model';
     @if (products().length > 0) {
       <section class="similar-products-section" data-testid="similar-products-section">
         <div class="section-header">
-          <h3>{{ 'products.similar.title' | translate }}</h3>
+          <h2>{{ 'products.similar.title' | translate }}</h2>
         </div>
 
         <div class="carousel-container">
@@ -47,7 +47,7 @@ import { ProductBrief } from '../../../core/models/product.model';
                     @if (product.brand) {
                       <span class="product-brand">{{ product.brand }}</span>
                     }
-                    <h4 class="product-name">{{ product.name }}</h4>
+                    <h3 class="product-name">{{ product.name }}</h3>
                     <div class="product-price">
                       @if (product.isOnSale && product.salePrice) {
                         <span class="original-price">{{ product.basePrice | currency:'EUR' }}</span>
@@ -102,7 +102,7 @@ import { ProductBrief } from '../../../core/models/product.model';
     .section-header {
       margin-bottom: 1.5rem;
 
-      h3 {
+      h2 {
         font-size: 1.5rem;
         font-weight: 600;
         color: var(--color-text-primary);

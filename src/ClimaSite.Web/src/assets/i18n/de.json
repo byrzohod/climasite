@@ -165,7 +165,10 @@
     "restore_failed": "Artikel konnte nicht wiederhergestellt werden",
     "added": "Zum Warenkorb hinzugefügt",
     "errors": {
-      "addFailed": "Artikel konnte nicht zum Warenkorb hinzugefügt werden"
+      "addFailed": "Artikel konnte nicht zum Warenkorb hinzugefügt werden",
+      "updateQuantityFailed": "Artikelmenge konnte nicht aktualisiert werden",
+      "removeFailed": "Artikel konnte nicht aus dem Warenkorb entfernt werden",
+      "clearFailed": "Warenkorb konnte nicht geleert werden"
     }
   },
   "checkout": {
@@ -218,7 +221,17 @@
       "loadingStripe": "Zahlungsformular wird geladen...",
       "weAccept": "Wir akzeptieren",
       "acceptedMethods": "Akzeptierte Zahlungsmethoden",
-      "securePayment": "Sichere Zahlung"
+      "securePayment": "Sichere Zahlung",
+      "errors": {
+        "configUnavailable": "Zahlungskonfiguration ist nicht verfügbar",
+        "stripeInitFailed": "Kartenzahlungen konnten nicht initialisiert werden",
+        "serviceInitFailed": "Zahlungsdienst konnte nicht initialisiert werden",
+        "intentInitFailed": "Zahlung konnte nicht initialisiert werden",
+        "stripeNotInitialized": "Kartenzahlungen sind nicht initialisiert",
+        "notInitialized": "Zahlung ist nicht initialisiert",
+        "failed": "Zahlung fehlgeschlagen",
+        "notCompleted": "Zahlung wurde nicht abgeschlossen"
+      }
     },
     "review": {
       "title": "Bestellung überprüfen",
@@ -256,7 +269,22 @@
         "step1": "Sie erhalten in Kürze eine Bestätigungs-E-Mail",
         "step2": "Wir informieren Sie per E-Mail, wenn Ihre Bestellung versandt wird",
         "step3": "Voraussichtliche Lieferung: {{date}}"
+      },
+      "errors": {
+        "orderIdNotFound": "Bestell-ID nicht gefunden",
+        "loadFailed": "Bestelldetails konnten nicht geladen werden"
       }
+    },
+    "errors": {
+      "shippingAddressRequired": "Lieferadresse ist erforderlich",
+      "placeOrderFailed": "Bestellung konnte nicht aufgegeben werden",
+      "firstNameRequired": "Vorname ist erforderlich",
+      "lastNameRequired": "Nachname ist erforderlich",
+      "streetAddressRequired": "Straße und Hausnummer sind erforderlich",
+      "cityRequired": "Stadt ist erforderlich",
+      "postalCodeRequired": "Postleitzahl ist erforderlich",
+      "countryRequired": "Land ist erforderlich",
+      "phoneRequired": "Telefonnummer ist erforderlich"
     }
   },
   "account": {
@@ -340,7 +368,11 @@
         "partial": "{{added}} Artikel hinzugefügt, {{skipped}} Artikel übersprungen (nicht verfügbar)",
         "error": "Artikel konnten nicht zum Warenkorb hinzugefügt werden"
       },
-      "notes": "Notizen"
+      "notes": "Notizen",
+      "errors": {
+        "notFound": "Bestellung nicht gefunden",
+        "loadFailed": "Bestellung konnte nicht geladen werden"
+      }
     },
     "addresses": {
       "title": "Gespeicherte Adressen",
@@ -369,7 +401,14 @@
       "typeBilling": "Rechnungsadresse",
       "typeBoth": "Beides",
       "confirmDelete": "Adresse löschen",
-      "confirmDeleteMessage": "Sind Sie sicher, dass Sie diese Adresse löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
+      "confirmDeleteMessage": "Sind Sie sicher, dass Sie diese Adresse löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+      "errors": {
+        "loadFailed": "Adressen konnten nicht geladen werden",
+        "createFailed": "Adresse konnte nicht erstellt werden",
+        "updateFailed": "Adresse konnte nicht aktualisiert werden",
+        "deleteFailed": "Adresse konnte nicht gelöscht werden",
+        "setDefaultFailed": "Standardadresse konnte nicht festgelegt werden"
+      }
     },
     "profile": {
       "title": "Profileinstellungen",
@@ -525,13 +564,27 @@
         "Bundle": "Bundles",
         "FrequentlyBoughtTogether": "Häufig zusammen gekauft"
       },
+      "relatedProductsManager": {
+        "errors": {
+          "loadFailed": "Beziehungen konnten nicht geladen werden",
+          "addFailed": "Beziehung konnte nicht hinzugefügt werden",
+          "removeFailed": "Beziehung konnte nicht entfernt werden",
+          "reorderFailed": "Beziehungen konnten nicht neu sortiert werden"
+        }
+      },
       "translations": {
         "title": "Produktübersetzungen",
         "subtitle": "Produktinhalte in verschiedenen Sprachen verwalten",
         "addTranslation": "Übersetzung hinzufügen",
         "defaultLanguageNotice": "Englisch ist die Standardsprache. Bearbeiten Sie das Hauptprodukt, um diesen Inhalt zu ändern.",
         "seoSection": "SEO-Einstellungen",
-        "confirmDelete": "Sind Sie sicher, dass Sie die {{language}}-Übersetzung löschen möchten?"
+        "confirmDelete": "Sind Sie sicher, dass Sie die {{language}}-Übersetzung löschen möchten?",
+        "errors": {
+          "loadFailed": "Übersetzungen konnten nicht geladen werden",
+          "addFailed": "Übersetzung konnte nicht hinzugefügt werden",
+          "updateFailed": "Übersetzung konnte nicht aktualisiert werden",
+          "deleteFailed": "Übersetzung konnte nicht gelöscht werden"
+        }
       },
       "name": "Name",
       "shortDescription": "Kurzbeschreibung",
@@ -583,7 +636,10 @@
       "approveAsOfficial": "Als offiziell genehmigen",
       "flag": "Zur Überprüfung markieren",
       "official": "Offiziell",
-      "reviewedBy": "Von"
+      "reviewedBy": "Von",
+      "errors": {
+        "loadFailed": "Moderationsdaten konnten nicht geladen werden"
+      }
     }
   },
   "promotions": {
@@ -598,7 +654,10 @@
     "limitedTime": "Zeitlich begrenzt",
     "discount": "{{value}}% Rabatt",
     "minOrder": "Mindestbestellwert: {{amount}}",
-    "products": "Produkte"
+    "products": "Produkte",
+    "errors": {
+      "notFound": "Aktion nicht gefunden"
+    }
   },
   "brands": {
     "title": "Unsere Marken",
@@ -608,7 +667,11 @@
     "noBrands": "Derzeit keine Marken verfügbar",
     "countryOfOrigin": "Land",
     "foundedYear": "Gegründet",
-    "visitWebsite": "Website besuchen"
+    "visitWebsite": "Website besuchen",
+    "errors": {
+      "loadFailed": "Marken konnten nicht geladen werden",
+      "notFound": "Marke nicht gefunden"
+    }
   },
   "resources": {
     "title": "Ressourcen & Anleitungen",
@@ -773,7 +836,10 @@
     "currentPassword": "Aktuelles Passwort",
     "newPassword": "Neues Passwort",
     "updatePassword": "Passwort ändern",
-    "passwordSuccess": "Passwort erfolgreich geändert"
+    "passwordSuccess": "Passwort erfolgreich geändert",
+    "updateError": "Profil konnte nicht aktualisiert werden",
+    "preferencesError": "Einstellungen konnten nicht aktualisiert werden",
+    "passwordError": "Passwort konnte nicht geändert werden"
   },
   "countries": {
     "austria": "Österreich",
@@ -979,6 +1045,7 @@
     "matchReason": {
       "perfectFit": "Perfekt dimensioniert für Ihren Raum",
       "efficient": "Beste Effizienz in dieser Größenklasse",
+      "powerful": "Zusätzliche Leistung für anspruchsvolle Bedingungen",
       "quietBedroom": "Leiseste Option für Schlafzimmer",
       "coldClimate": "Für Minusgrade ausgelegt",
       "budgetFriendly": "Starke Passung zu einem fairen Preis",
@@ -1000,7 +1067,8 @@
       "forgotPassword": "Passwort vergessen?",
       "submit": "Anmelden",
       "noAccount": "Sie haben noch kein Konto?",
-      "signUp": "Registrieren"
+      "signUp": "Registrieren",
+      "error": "Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut."
     },
     "register": {
       "title": "Konto erstellen",
@@ -1095,7 +1163,9 @@
       "sku": "SKU",
       "model": "Modell",
       "noDescription": "Keine Beschreibung verfügbar.",
-      "noSpecifications": "Keine Spezifikationen verfügbar."
+      "noSpecifications": "Keine Spezifikationen verfügbar.",
+      "notFound": "Produkt nicht gefunden",
+      "loadError": "Produkt konnte nicht geladen werden. Bitte versuchen Sie es erneut."
     },
     "error": {
       "tryAgain": "Bitte versuchen Sie es erneut.",
@@ -1227,7 +1297,10 @@
       "noQuestionsYet": "Noch keine Fragen",
       "beFirstToAsk": "Stellen Sie als Erste/r eine Frage.",
       "errors": {
-        "questionTooShort": "Die Frage muss mindestens 10 Zeichen lang sein."
+        "questionTooShort": "Die Frage muss mindestens 10 Zeichen lang sein.",
+        "sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
+        "submitQuestionFailed": "Frage konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+        "submitAnswerFailed": "Antwort konnte nicht gesendet werden. Bitte versuchen Sie es erneut."
       }
     }
   }

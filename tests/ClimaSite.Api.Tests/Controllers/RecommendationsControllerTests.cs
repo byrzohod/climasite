@@ -15,11 +15,47 @@ public class RecommendationsControllerTests : IntegrationTestBase
     {
     }
 
+    private static readonly HashSet<string> ValidMatchReasonKeys =
+    [
+        "homeV3.matchReason.perfectFit",
+        "homeV3.matchReason.efficient",
+        "homeV3.matchReason.powerful",
+        "homeV3.matchReason.fallback"
+    ];
+
     private static async Task<List<RecommendedProductDto>> ReadRecommendationsAsync(HttpResponseMessage response)
     {
         var content = await response.Content.ReadFromJsonAsync<List<RecommendedProductDto>>();
         content.Should().NotBeNull();
         return content!;
+    }
+
+    private static Product CreateRecommendationProduct(
+        string sku,
+        string name,
+        string slug,
+        int btu,
+        bool isInverter,
+        int minTemp,
+        List<string> recommendedRoomTypes,
+        bool isFeatured = false)
+    {
+        var product = new Product(sku, name, slug, 999m);
+        product.SetFeatured(isFeatured);
+        product.SetSpecifications(new Dictionary<string, object>
+        {
+            { "btu", btu },
+            { "isInverter", isInverter },
+            { "minTemp", minTemp },
+            { "recommendedRoomTypes", recommendedRoomTypes },
+            { "noiseLevel", isInverter ? 22 : 34 }
+        });
+
+        var variant = new ProductVariant(product.Id, $"{sku}-VAR", "Standard");
+        variant.SetStockQuantity(10);
+        product.Variants.Add(variant);
+
+        return product;
     }
 
     [Fact]
@@ -92,6 +128,7 @@ public class RecommendationsControllerTests : IntegrationTestBase
         content.Should().HaveCount(3);
         content.Should().AllSatisfy(p => p.BtuCapacity.Should().BeGreaterThan(0));
         content.Should().AllSatisfy(p => p.Score.Should().BeGreaterThan(0));
+        content.Should().AllSatisfy(p => ValidMatchReasonKeys.Should().Contain(p.MatchReason));
 
         // First result should be the perfect fit
         content[0].Name.Should().Contain("Perfect");
@@ -99,6 +136,48 @@ public class RecommendationsControllerTests : IntegrationTestBase
 
         // Out of stock should not appear
         content.Should().NotContain(p => p.Name.Contains("Out of Stock"));
+    }
+
+    [Fact]
+    public async Task GetRecommendations_WithLargeCatalog_ScoresEveryEligibleProductBeforeTakingTopResults()
+    {
+        // Arrange: the previous implementation took the first 250 featured products before scoring.
+        var distractors = Enumerable.Range(0, 260)
+            .Select(i => CreateRecommendationProduct(
+                sku: $"REC-BAD-{i:D3}",
+                name: $"Featured Distractor AC {i:D3}",
+                slug: $"featured-distractor-ac-{i:D3}",
+                btu: 12000,
+                isInverter: false,
+                minTemp: 10,
+                recommendedRoomTypes: ["office"],
+                isFeatured: true))
+            .ToList();
+
+        var perfectMatch = CreateRecommendationProduct(
+            sku: "REC-PERFECT-OLDER",
+            name: "Older Perfect Fit AC",
+            slug: "older-perfect-fit-ac",
+            btu: 2640,
+            isInverter: true,
+            minTemp: -15,
+            recommendedRoomTypes: ["living"],
+            isFeatured: false);
+
+        DbContext.Products.AddRange(distractors);
+        DbContext.Products.Add(perfectMatch);
+        await DbContext.SaveChangesAsync();
+
+        // Act
+        var response = await Client.GetAsync("/api/products/recommendations?area=24&type=living&zone=B");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await ReadRecommendationsAsync(response);
+
+        content.Should().NotBeEmpty();
+        content[0].Name.Should().Be("Older Perfect Fit AC");
+        content.Should().ContainSingle(p => p.Name == "Older Perfect Fit AC");
     }
 
     [Fact]

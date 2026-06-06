@@ -285,7 +285,7 @@ type TabType = 'questions' | 'answers' | 'reviews';
       <!-- Error Message -->
       @if (error()) {
         <div class="error-message">
-          <span>{{ error() }}</span>
+          <span>{{ error() | translate }}</span>
           <button (click)="loadData()">{{ 'common.retry' | translate }}</button>
         </div>
       }
@@ -678,7 +678,7 @@ export class AdminModerationComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set(err.message || 'Failed to load moderation data');
+        this.error.set('admin.moderation.errors.loadFailed');
         this.loading.set(false);
       }
     });

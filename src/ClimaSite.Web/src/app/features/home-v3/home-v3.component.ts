@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
+import type { Subscription } from 'rxjs';
 import { ThemeService } from '../../core/services/theme.service';
 import { RecommendationsComponent } from './components/recommendations/recommendations.component';
 import { RoomPreviewComponent } from './components/room-preview/room-preview.component';
@@ -52,23 +53,28 @@ export class HomeV3Component {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
 
-  private debounceTimer: ReturnType<typeof setTimeout> | null = null;
-
   constructor() {
     // Watch wizard state and re-fetch recommendations after a short debounce.
-    effect(() => {
+    effect((onCleanup) => {
       const a = this.area();
       const r = this.roomType();
       const z = this.zone();
-      if (this.debounceTimer) clearTimeout(this.debounceTimer);
-      this.debounceTimer = setTimeout(() => this.fetchRecommendations(a, r, z), 350);
+      let subscription: Subscription | null = null;
+      const timer = setTimeout(() => {
+        subscription = this.fetchRecommendations(a, r, z);
+      }, 350);
+
+      onCleanup(() => {
+        clearTimeout(timer);
+        subscription?.unsubscribe();
+      });
     });
   }
 
-  private fetchRecommendations(area: number, type: ReturnType<typeof this.roomType>, zone: ReturnType<typeof this.zone>): void {
+  private fetchRecommendations(area: number, type: ReturnType<typeof this.roomType>, zone: ReturnType<typeof this.zone>): Subscription {
     this.loading.set(true);
     this.error.set(null);
-    this.recommendationsService.getRecommendations(area, type, zone).subscribe({
+    return this.recommendationsService.getRecommendations(area, type, zone).subscribe({
       next: (products) => {
         this.recommendations.set(products);
         this.loading.set(false);

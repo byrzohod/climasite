@@ -38,9 +38,7 @@ describe('ThemeService', () => {
   it('should apply light theme by default when system preference is light', () => {
     // Mock system preference as light
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    if (!mediaQuery.matches) {
-      expect(service.effectiveTheme()).toBe('light');
-    }
+    expect(service.effectiveTheme()).toBe(mediaQuery.matches ? 'dark' : 'light');
   });
 
   it('should toggle between light and dark mode', () => {

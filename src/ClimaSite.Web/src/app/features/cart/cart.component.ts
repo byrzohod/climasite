@@ -23,7 +23,7 @@ import { EmptyStateComponent } from '../../shared/components/empty-state';
         </div>
       } @else if (cartService.error()) {
         <div class="error-message" data-testid="cart-error">
-          {{ cartService.error() }}
+          {{ cartService.error() | translate }}
         </div>
       } @else if (cartService.isEmpty()) {
         <app-empty-state

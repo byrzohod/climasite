@@ -73,7 +73,7 @@ describe('OrderDetailsComponent', () => {
   };
 
   beforeEach(async () => {
-    checkoutServiceMock = jasmine.createSpyObj('CheckoutService', ['getOrder', 'cancelOrder']);
+    checkoutServiceMock = jasmine.createSpyObj('CheckoutService', ['getOrder', 'cancelOrder', 'reorder']);
     checkoutServiceMock.getOrder.and.returnValue(of(mockOrder));
     checkoutServiceMock.cancelOrder.and.returnValue(of({ ...mockOrder, status: 'Cancelled' }));
 
@@ -182,7 +182,7 @@ describe('OrderDetailsComponent', () => {
     noIdFixture.detectChanges();
 
     const noIdComponent = noIdFixture.componentInstance;
-    expect(noIdComponent.error()).toBe('Order not found');
+    expect(noIdComponent.error()).toBe('account.orders.errors.notFound');
   });
 
   it('should determine if order can be cancelled', () => {
@@ -222,5 +222,18 @@ describe('OrderDetailsComponent', () => {
 
     const compiled = fixture.nativeElement;
     expect(compiled.querySelector('[data-testid="cancel-order-btn"]')).toBeFalsy();
+  });
+
+  it('should map raw reorder errors to a localized fallback message', () => {
+    checkoutServiceMock.reorder.and.returnValue(throwError(() => ({
+      error: { message: 'Raw reorder failure' }
+    })));
+    component.order.set(mockOrder);
+
+    component.reorder();
+
+    expect(component.reorderSuccess()).toBeFalse();
+    expect(component.reorderMessage()).toBe('account.orders.reorder.error');
+    expect(component.reorderMessage()).not.toBe('Raw reorder failure');
   });
 });

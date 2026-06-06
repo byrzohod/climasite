@@ -8,6 +8,7 @@ import {
   AddTranslationRequest,
   UpdateTranslationRequest
 } from '../../services/admin-translations.service';
+import { apiErrorToTranslationKey, toTranslationKey } from '../../../../../core/utils/translation-key.util';
 
 interface LanguageOption {
   code: string;
@@ -34,7 +35,7 @@ interface LanguageOption {
       } @else if (error()) {
         <div class="error-state">
           <span class="error-icon">⚠️</span>
-          {{ error() }}
+          {{ error() | translate }}
         </div>
       } @else {
         <div class="language-tabs">
@@ -452,7 +453,7 @@ export class ProductTranslationEditorComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set(err.message || 'Failed to load translations');
+        this.error.set(toTranslationKey(err?.message, 'admin.products.translations.errors.loadFailed'));
         this.loading.set(false);
       }
     });
@@ -497,7 +498,7 @@ export class ProductTranslationEditorComponent implements OnInit {
       },
       error: (err) => {
         this.saving.set(false);
-        this.error.set(err.error?.message || 'Failed to add translation');
+        this.error.set(apiErrorToTranslationKey(err, 'admin.products.translations.errors.addFailed'));
       }
     });
   }
@@ -521,7 +522,7 @@ export class ProductTranslationEditorComponent implements OnInit {
       },
       error: (err) => {
         this.saving.set(false);
-        this.error.set(err.error?.message || 'Failed to update translation');
+        this.error.set(apiErrorToTranslationKey(err, 'admin.products.translations.errors.updateFailed'));
       }
     });
   }
@@ -544,7 +545,7 @@ export class ProductTranslationEditorComponent implements OnInit {
       },
       error: (err) => {
         this.saving.set(false);
-        this.error.set(err.error?.message || 'Failed to delete translation');
+        this.error.set(apiErrorToTranslationKey(err, 'admin.products.translations.errors.deleteFailed'));
       }
     });
   }

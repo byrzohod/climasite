@@ -42,7 +42,6 @@ public class RecommendationScoringService
         var isInverter = ExtractBoolSpecification(product.Specifications, "isInverter");
         var minTemp = ExtractIntSpecification(product.Specifications, "minTemp");
         var recommendedRoomTypes = ExtractRoomTypesSpecification(product.Specifications, "recommendedRoomTypes");
-        var noiseLevel = ExtractIntSpecification(product.Specifications, "noiseLevel");
         var inStock = CalculateInStock(product);
 
         // Early exit: out of stock products are excluded
@@ -65,11 +64,6 @@ public class RecommendationScoringService
             + roomTypeFitScore * 0.15
             + stockAvailableScore * 0.10
             + priceBandAffinity * 0.05;
-
-        // Store tie-breaker metadata on the product for later sorting
-        // We'll use extension methods to avoid mutating the entity
-        product.SetSpecification("_tiebreaker_inverter", isInverter ? 1 : 0);
-        product.SetSpecification("_tiebreaker_quiet_mode", noiseLevel > 0 && noiseLevel < 30 ? 1 : 0);
 
         return totalScore;
     }

@@ -10,6 +10,7 @@ import {
   OrdersFilterParams,
   ReorderResult
 } from '../models/order.model';
+import { apiErrorToTranslationKey } from '../utils/translation-key.util';
 
 export type CheckoutStep = 'shipping' | 'payment' | 'review';
 
@@ -89,9 +90,10 @@ export class CheckoutService {
 
     const shippingAddress = this._shippingAddress();
     if (!shippingAddress) {
-      this._error.set('Shipping address is required');
+      const errorKey = 'checkout.errors.shippingAddressRequired';
+      this._error.set(errorKey);
       this._isProcessing.set(false);
-      throw new Error('Shipping address is required');
+      throw new Error(errorKey);
     }
 
     const request: CreateOrderRequest = {
@@ -113,7 +115,7 @@ export class CheckoutService {
         }),
         catchError(error => {
           console.error('Failed to create order:', error);
-          this._error.set(error.error?.message || 'Failed to place order');
+          this._error.set(apiErrorToTranslationKey(error, 'checkout.errors.placeOrderFailed'));
           this._isProcessing.set(false);
           throw error;
         })
@@ -174,13 +176,13 @@ export class CheckoutService {
   validateShippingAddress(address: Partial<Address>): string[] {
     const errors: string[] = [];
 
-    if (!address.firstName?.trim()) errors.push('First name is required');
-    if (!address.lastName?.trim()) errors.push('Last name is required');
-    if (!address.addressLine1?.trim()) errors.push('Street address is required');
-    if (!address.city?.trim()) errors.push('City is required');
-    if (!address.postalCode?.trim()) errors.push('Postal code is required');
-    if (!address.country?.trim()) errors.push('Country is required');
-    if (!address.phone?.trim()) errors.push('Phone number is required');
+    if (!address.firstName?.trim()) errors.push('checkout.errors.firstNameRequired');
+    if (!address.lastName?.trim()) errors.push('checkout.errors.lastNameRequired');
+    if (!address.addressLine1?.trim()) errors.push('checkout.errors.streetAddressRequired');
+    if (!address.city?.trim()) errors.push('checkout.errors.cityRequired');
+    if (!address.postalCode?.trim()) errors.push('checkout.errors.postalCodeRequired');
+    if (!address.country?.trim()) errors.push('checkout.errors.countryRequired');
+    if (!address.phone?.trim()) errors.push('checkout.errors.phoneRequired');
 
     return errors;
   }

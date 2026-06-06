@@ -13,6 +13,7 @@ import { ConfettiService } from '../../core/services/confetti.service';
 import { Address } from '../../core/models/order.model';
 import { SavedAddress } from '../../core/models/address.model';
 import { IconComponent } from '../../shared/components/icon';
+import { apiErrorToTranslationKey, toTranslationKey } from '../../core/utils/translation-key.util';
 
 @Component({
   selector: 'app-checkout',
@@ -225,7 +226,7 @@ import { IconComponent } from '../../shared/components/icon';
                         <label>{{ 'checkout.payment.cardDetails' | translate }}</label>
                         <div id="stripe-card-element" class="stripe-element" data-testid="stripe-card-element"></div>
                         @if (paymentService.error()) {
-                          <p class="stripe-error">{{ paymentService.error() }}</p>
+                          <p class="stripe-error">{{ paymentService.error() | translate }}</p>
                         }
                       </div>
                     }
@@ -250,7 +251,7 @@ import { IconComponent } from '../../shared/components/icon';
 
                 @if (checkoutService.error()) {
                   <div class="error-message" data-testid="checkout-error">
-                    {{ checkoutService.error() }}
+                    {{ checkoutService.error() | translate }}
                   </div>
                 }
 
@@ -1149,7 +1150,7 @@ ngOnInit(): void {
         ).toPromise();
 
         if (!intentResponse?.clientSecret) {
-          this.checkoutService.setError('Failed to initialize payment');
+          this.checkoutService.setError('checkout.payment.errors.intentInitFailed');
           return;
         }
 
@@ -1176,7 +1177,7 @@ ngOnInit(): void {
         );
 
         if (!paymentResult.success) {
-          this.checkoutService.setError(paymentResult.error || 'Payment failed');
+          this.checkoutService.setError(toTranslationKey(paymentResult.error, 'checkout.payment.errors.failed'));
           return;
         }
 
@@ -1196,12 +1197,14 @@ ngOnInit(): void {
             }
           },
           error: (err) => {
-            this.checkoutService.setError(err.error?.message || 'Failed to place order');
+            this.checkoutService.setError(apiErrorToTranslationKey(err, 'checkout.errors.placeOrderFailed'));
           }
         });
       } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : 'Payment failed';
-        this.checkoutService.setError(message);
+        this.checkoutService.setError(toTranslationKey(
+          error instanceof Error ? error.message : null,
+          'checkout.payment.errors.failed'
+        ));
       }
     } else {
 // Non-card payment (PayPal, bank transfer, etc.)
@@ -1220,7 +1223,7 @@ ngOnInit(): void {
         },
         error: (err) => {
           console.error('Order failed:', err);
-          this.checkoutService.setError(err.error?.message || 'Failed to place order');
+          this.checkoutService.setError(apiErrorToTranslationKey(err, 'checkout.errors.placeOrderFailed'));
         }
       });
     }

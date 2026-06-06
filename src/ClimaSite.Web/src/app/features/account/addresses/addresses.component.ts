@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { AddressService } from '../../../core/services/address.service';
-import { SavedAddress, CreateAddressRequest } from '../../../core/models/address.model';
+import { AddressType, SavedAddress, CreateAddressRequest } from '../../../core/models/address.model';
 
 @Component({
   selector: 'app-addresses',
@@ -43,7 +43,7 @@ import { SavedAddress, CreateAddressRequest } from '../../../core/models/address
               @if (address.isDefault) {
                 <div class="default-badge">{{ 'account.addresses.default' | translate }}</div>
               }
-              <div class="address-type">{{ address.type }}</div>
+              <div class="address-type">{{ getAddressTypeKey(address.type) | translate }}</div>
               <div class="address-content">
                 <p class="name">{{ address.fullName }}</p>
                 <p>{{ address.addressLine1 }}</p>
@@ -662,6 +662,18 @@ export class AddressesComponent implements OnInit {
     };
     this.editingAddress.set(address);
     this.showModal.set(true);
+  }
+
+  getAddressTypeKey(type: AddressType): string {
+    switch (type) {
+      case 'Billing':
+        return 'account.addresses.typeBilling';
+      case 'Both':
+        return 'account.addresses.typeBoth';
+      case 'Shipping':
+      default:
+        return 'account.addresses.typeShipping';
+    }
   }
 
   closeModal(): void {

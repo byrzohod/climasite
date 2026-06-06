@@ -19,7 +19,7 @@ export interface BundleProduct {
   imports: [CommonModule, RouterLink, TranslateModule],
   template: `
     <div class="frequently-bought" data-testid="frequently-bought">
-      <h3 class="section-title">{{ 'products.frequentlyBought.title' | translate }}</h3>
+      <h2 class="section-title">{{ 'products.frequentlyBought.title' | translate }}</h2>
       <p class="section-subtitle">{{ 'products.frequentlyBought.subtitle' | translate }}</p>
 
       <div class="bundle-container">

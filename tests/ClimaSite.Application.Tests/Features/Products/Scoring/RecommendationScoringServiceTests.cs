@@ -492,5 +492,26 @@ public class RecommendationScoringServiceTests
         score.Should().BeGreaterThan(0.0);
     }
 
+    [Fact]
+    public void ScoreProduct_DoesNotMutateProductSpecifications()
+    {
+        // Arrange
+        var product = CreateProduct(
+            btu: 2640,
+            isInverter: true,
+            noiseLevel: 22,
+            recommendedRoomTypes: ["living"]);
+        var originalKeys = product.Specifications.Keys.ToList();
+
+        // Act
+        var score = _service.ScoreProduct(product, areaM2: 24, climateZone: 'B', roomType: "living");
+
+        // Assert
+        score.Should().NotBeNull();
+        product.Specifications.Keys.Should().BeEquivalentTo(originalKeys);
+        product.Specifications.Should().NotContainKey("_tiebreaker_inverter");
+        product.Specifications.Should().NotContainKey("_tiebreaker_quiet_mode");
+    }
+
     #endregion
 }
