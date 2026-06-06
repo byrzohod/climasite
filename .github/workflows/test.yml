@@ -53,7 +53,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U test -d climasite_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -144,7 +144,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U test -d climasite_e2e"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -190,12 +190,12 @@ jobs:
 
       - name: Install Playwright Browsers
         run: |
-          dotnet build tests/ClimaSite.E2E
-          pwsh tests/ClimaSite.E2E/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium
+          dotnet build tests/ClimaSite.E2E --configuration Release --no-restore
+          pwsh tests/ClimaSite.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
 
       - name: Start API Server
         run: |
-          dotnet run --project src/ClimaSite.Api --configuration Release --no-build &
+          dotnet run --project src/ClimaSite.Api --configuration Release --no-build --no-launch-profile &
           echo "Waiting for API to start..."
           timeout 60 bash -c 'until curl -s http://localhost:5000/health > /dev/null 2>&1; do sleep 2; done'
           echo "API is ready!"
