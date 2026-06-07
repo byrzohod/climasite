@@ -32,8 +32,10 @@
           type="button"
           role="radio"
           [attr.aria-checked]="roomType() === type"
+          [attr.tabindex]="roomType() === type ? 0 : -1"
           [class.active]="roomType() === type"
           (click)="setRoomType(type)"
+          (keydown)="onRoomTypeKeydown($event, type)"
           [attr.data-testid]="'home-v3-room-' + type"
         >
           {{ 'homeV3.roomType.' + type | translate }}
@@ -50,8 +52,10 @@
           type="button"
           role="radio"
           [attr.aria-checked]="zone() === z"
+          [attr.tabindex]="zone() === z ? 0 : -1"
           [class.active]="zone() === z"
           (click)="setZone(z)"
+          (keydown)="onZoneKeydown($event, z)"
           [attr.data-testid]="'home-v3-zone-' + z"
         >
           <strong>{{ 'homeV3.zone.' + z + '.name' | translate }}</strong>

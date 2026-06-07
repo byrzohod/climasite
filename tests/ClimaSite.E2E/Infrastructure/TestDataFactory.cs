@@ -91,7 +91,8 @@ public class TestDataFactory
         string? name = null,
         decimal? price = null,
         int? stock = null,
-        Guid? categoryId = null)
+        Guid? categoryId = null,
+        Dictionary<string, object>? specifications = null)
     {
         // Ensure admin auth before creating products
         await EnsureAdminAuthAsync();
@@ -112,6 +113,20 @@ public class TestDataFactory
             product.CategoryId = await GetOrCreateCategoryAsync();
         }
 
+        var btu = _faker.Random.Int(9000, 24000);
+        var noiseLevel = _faker.Random.Int(19, 40);
+        specifications ??= new Dictionary<string, object>
+        {
+            ["BTU Rating"] = btu,
+            ["Energy Rating"] = _faker.PickRandom("A++", "A+", "A", "B"),
+            ["Refrigerant Type"] = "R32",
+            ["btu"] = btu,
+            ["isInverter"] = true,
+            ["minTemp"] = -15,
+            ["noiseLevel"] = noiseLevel,
+            ["recommendedRoomTypes"] = new[] { "living", "bedroom", "office", "commercial" }
+        };
+
         var response = await _apiClient.PostAsJsonAsync("/api/admin/products", new
         {
             name = product.Name,
@@ -123,12 +138,7 @@ public class TestDataFactory
             categoryId = product.CategoryId,
             isActive = true,
             isFeatured = false,
-            specifications = new Dictionary<string, object>
-            {
-                ["BTU Rating"] = _faker.Random.Int(9000, 24000),
-                ["Energy Rating"] = _faker.PickRandom("A++", "A+", "A", "B"),
-                ["Refrigerant Type"] = "R32"
-            }
+            specifications
         });
 
         if (response.IsSuccessStatusCode)

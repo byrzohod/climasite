@@ -14,18 +14,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - ADR index and template at `docs/adr/README.md` and `docs/adr/000-template.md`.
 - Home v3 concept proposals and interactive HTML mock at `docs/concepts/home-v3/`.
 - Gap audit report at `docs/audit/2026-04-08-gap-report.md`.
+- Home v3 unit and E2E coverage for recommendations, translations, reduced motion, responsive viewports, keyboard navigation, and route behavior. (HOME-008, HOME-009, HOME-011)
 
 ### Changed
 
-- (pending) Home page replaced by Home v3 (Configurator-First wizard + recommendation slab + procedural 3D preview).
+- Home page replaced by Home v3 with a configurator-first wizard, live room preview, real product recommendations, translated trust/category sections, and deferred below-fold content. (HOME-004..HOME-012)
+- Production frontend API configuration now uses relative `/api` calls so deployed frontend traffic goes through the backend proxy instead of a cross-origin API URL.
+- Authentication restore now retries `/me` after refresh when a persisted access token is expired, preventing valid refresh sessions from being dropped.
+- Main layout now renders a lightweight global navigation shell immediately, while the heavier header/footer chunks load after the initial paint.
 
 ### Removed
 
-- (pending) Legacy `features/home/` and its scroll-driven v2 implementation; superseded by `features/home-v3/` per ADR 001.
+- Legacy `features/home/` and its scroll-driven v2 implementation; superseded by `features/home-v3/` per ADR 001.
+
+### Fixed
+
+- Admin and root route empty-path redirects now use explicit `pathMatch: 'full'`.
+- Home recommendations and product browsing E2E tests now wait on real API responses instead of brittle DOM timing.
+- Missing Home v3 translation keys added across EN/BG/DE.
 
 ### Security
 
-- (pending) JWT secret, Stripe keys, SMTP password rotated out of `appsettings.json` and into user-secrets / environment variables per Phase 5.
+- Production startup now requires `JWT_SECRET` instead of falling back to the committed development JWT secret.
+- Test-only admin setup secret defaults are restricted to Development; Testing must configure `TestSettings:AdminSecret`.
 
 ---
 

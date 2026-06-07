@@ -3,12 +3,10 @@ import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors, HttpClient } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { TranslateModule, TranslateLoader, TranslationObject } from '@ngx-translate/core';
-import { LucideAngularModule } from 'lucide-angular';
 import { Observable } from 'rxjs';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './auth/interceptors/auth.interceptor';
-import { ICON_REGISTRY } from './shared/components/icon';
 
 class CustomHttpLoader implements TranslateLoader {
   constructor(private http: HttpClient) {}
@@ -30,7 +28,6 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     provideHttpClient(withInterceptors([authInterceptor])),
     importProvidersFrom(
-      LucideAngularModule.pick(ICON_REGISTRY),
       TranslateModule.forRoot({
         defaultLanguage: 'en',
         loader: {

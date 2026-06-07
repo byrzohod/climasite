@@ -37,7 +37,61 @@ export class WizardComponent {
     this.state.setRoomType(type);
   }
 
+  onRoomTypeKeydown(event: KeyboardEvent, type: RoomType): void {
+    this.handleRadioKeydown(event, this.roomTypes, type, (next) => this.setRoomType(next), 'home-v3-room-');
+  }
+
   setZone(zone: ClimateZone): void {
     this.state.setZone(zone);
+  }
+
+  onZoneKeydown(event: KeyboardEvent, zone: ClimateZone): void {
+    this.handleRadioKeydown(event, this.zones, zone, (next) => this.setZone(next), 'home-v3-zone-');
+  }
+
+  private handleRadioKeydown<T extends string>(
+    event: KeyboardEvent,
+    values: readonly T[],
+    current: T,
+    select: (value: T) => void,
+    testIdPrefix: string
+  ): void {
+    const currentIndex = values.indexOf(current);
+    if (currentIndex === -1) {
+      return;
+    }
+
+    let nextIndex: number;
+    if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = values.length - 1;
+    } else {
+      const keyActions: Record<string, number> = {
+        ArrowRight: 1,
+        ArrowDown: 1,
+        ArrowLeft: -1,
+        ArrowUp: -1,
+      };
+      const direction = keyActions[event.key];
+      if (!direction) {
+        return;
+      }
+      nextIndex = (currentIndex + direction + values.length) % values.length;
+    }
+
+    event.preventDefault();
+    if (nextIndex === currentIndex) {
+      return;
+    }
+
+    const currentElement = event.currentTarget as HTMLElement | null;
+    const next = values[nextIndex];
+    select(next);
+
+    queueMicrotask(() => {
+      const group = currentElement?.parentElement;
+      group?.querySelector<HTMLElement>(`[data-testid="${testIdPrefix}${next}"]`)?.focus();
+    });
   }
 }

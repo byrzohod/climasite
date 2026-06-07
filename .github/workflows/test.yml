@@ -32,6 +32,9 @@ jobs:
       - name: Run Core Unit Tests
         run: dotnet test tests/ClimaSite.Core.Tests --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
 
+      - name: Run Application Unit Tests
+        run: dotnet test tests/ClimaSite.Application.Tests --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
+
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:

@@ -45,7 +45,17 @@ public class TestController : ControllerBase
             return NotFound();
         }
 
-        var expectedSecret = _configuration["TestSettings:AdminSecret"] ?? "test-admin-secret";
+        var expectedSecret = _configuration["TestSettings:AdminSecret"];
+        if (string.IsNullOrWhiteSpace(expectedSecret))
+        {
+            if (!_environment.IsDevelopment())
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Test admin secret is not configured" });
+            }
+
+            expectedSecret = "test-admin-secret";
+        }
+
         if (request.TestSecret != expectedSecret)
         {
             return Unauthorized(new { message = "Invalid test secret" });

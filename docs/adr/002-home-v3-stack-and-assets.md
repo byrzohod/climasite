@@ -12,6 +12,15 @@ Concept B (Configurator-First) is accepted. Before writing Angular code or the H
 
 ## Decisions
 
+## Implementation note — 2026-06-07
+
+The production Home v3 release ships the axonometric room preview as Canvas 2D rather than Three.js. This keeps the concept's live preview, avoids external binary assets, and preserves the reduced-motion/no-WebGL fallback as the primary rendering path. Three.js remains the accepted stack for future product-detail 3D or richer category exhibits when the interaction justifies the bundle cost.
+
+Final verification on `/` after the production build:
+- Mobile Lighthouse: Performance 0.97, LCP 2.296s, CLS 0.
+- Desktop Lighthouse: Performance 1.00, LCP 0.576s, CLS 0.000057.
+- Full E2E suite: 213/213 passed with real API/data.
+
 ### 1. WebGL library — **Three.js latest stable**
 
 Use Three.js latest stable (~r160+, pinned to a specific release in `package.json`). The r128 reference in CLAUDE.md is outdated; the upgrade will be documented inline in the scaffolding PR and referenced here.

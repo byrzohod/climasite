@@ -1,0 +1,44 @@
+<section class="categories" aria-labelledby="home-v3-cats-heading">
+  <header>
+    <span class="eyebrow">{{ 'homeV3.categories.eyebrow' | translate }}</span>
+    <h2 id="home-v3-cats-heading">{{ 'homeV3.categories.title' | translate }}</h2>
+  </header>
+  <div class="cat-grid">
+    <a routerLink="/products/category/air-conditioners" class="cat-card" data-testid="home-v3-cat-air-conditioners">
+      <h3>{{ 'homeV3.categories.airConditioners' | translate }}</h3>
+      <p>{{ 'homeV3.categories.airConditionersDesc' | translate }}</p>
+    </a>
+    <a routerLink="/products/category/heat-pumps" class="cat-card" data-testid="home-v3-cat-heat-pumps">
+      <h3>{{ 'homeV3.categories.heatPumps' | translate }}</h3>
+      <p>{{ 'homeV3.categories.heatPumpsDesc' | translate }}</p>
+    </a>
+    <a routerLink="/products/category/dehumidifiers" class="cat-card" data-testid="home-v3-cat-dehumidifiers">
+      <h3>{{ 'homeV3.categories.dehumidifiers' | translate }}</h3>
+      <p>{{ 'homeV3.categories.dehumidifiersDesc' | translate }}</p>
+    </a>
+    <a routerLink="/products/category/accessories" class="cat-card" data-testid="home-v3-cat-accessories">
+      <h3>{{ 'homeV3.categories.accessories' | translate }}</h3>
+      <p>{{ 'homeV3.categories.accessoriesDesc' | translate }}</p>
+    </a>
+  </div>
+</section>
+
+<section class="trust" aria-labelledby="home-v3-trust-heading">
+  <h2 id="home-v3-trust-heading" class="visually-hidden">{{ 'homeV3.trust.heading' | translate }}</h2>
+  <div class="trust-grid">
+    @for (stat of trustStats; track stat.valueKey) {
+      <div class="trust-stat" [attr.data-testid]="stat.testId">
+        <strong>{{ stat.valueKey | translate }}</strong>
+        <span>{{ stat.labelKey | translate }}</span>
+      </div>
+    }
+  </div>
+</section>
+
+<section class="cta-final">
+  <h2>{{ 'homeV3.cta.title' | translate }}</h2>
+  <p>{{ 'homeV3.cta.lede' | translate }}</p>
+  <a routerLink="/products" class="cta-button" data-testid="home-v3-cta">
+    {{ 'homeV3.cta.button' | translate }}
+  </a>
+</section>
