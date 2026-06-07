@@ -1035,7 +1035,13 @@
       "installs": "Инсталации",
       "rating": "Средна оценка",
       "warranty": "Гаранция",
-      "delivery": "Доставка"
+      "delivery": "Доставка",
+      "stats": {
+        "installsValue": "12 400+",
+        "ratingValue": "4,8 / 5",
+        "warrantyValue": "5 г.",
+        "deliveryValue": "72 ч."
+      }
     },
     "cta": {
       "title": "Все още колебаете се? Говорете с човек.",

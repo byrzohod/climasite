@@ -121,6 +121,7 @@ dotnet test && cd src/ClimaSite.Web && ng test --watch=false --browsers=ChromeHe
 - For local development and E2E app runs, use shared infra at `~/Projects/shared-infra`, not project-local compose, unless a service is unique to this repo.
 - Shared Postgres runs on `localhost:5432`; use a project database named `climasite`. Shared Redis runs on `localhost:6379`.
 - For local shared Postgres, prefer `ConnectionStrings__DefaultConnection` with `SSL Mode=Disable`; do not use `DATABASE_URL` for localhost because the app's URL converter treats non-Railway hosts as SSL-required.
+- For local E2E, start the API with `ASPNETCORE_ENVIRONMENT=Testing` and `TestSettings__AdminSecret=test-admin-secret`; run E2E with matching `TEST_ADMIN_SECRET=test-admin-secret`.
 - Integration tests must NOT use shared infra. They use isolated Testcontainers.
 - Before PR merge: run backend tests, Angular unit tests, production build, lint, E2E against real app/services, then code review and security review.
 - UI changes require light/dark and responsive visual QA. User-facing text must be i18n and interactive elements need `data-testid`.

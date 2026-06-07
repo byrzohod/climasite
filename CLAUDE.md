@@ -22,8 +22,8 @@ ClimaSite is a production-grade online shop specializing in air conditioners, he
 | Wishlist | Partial | Basic implementation exists |
 | Motion/Animation System | Complete | AnimationService, flying cart, confetti, parallax |
 | Performance Optimizations | Complete | Core Web Vitals, lazy loading, preconnect hints |
-| Home page (v3 — Configurator-First) | In progress | Plan 18 / HOME-004..007 done; HOME-009/011/012 deferred (need running server) |
-| Project completion plan (Plan 18) | In progress | Phase 0 done; Phase 1 home-v3 frontend + recommendations endpoint done |
+| Home page (v3 — Configurator-First) | Complete | Plan 18 Phase 1 done; real recommendations endpoint, tests, E2E, visual QA, a11y, and Lighthouse verified |
+| Project completion plan (Plan 18) | In progress | Phase 0 and Phase 1 done; next phase is partial feature completion (Notifications, Wishlist, Animation Audit 21F) |
 
 ### Recently Completed
 
@@ -41,6 +41,7 @@ ClimaSite is a production-grade online shop specializing in air conditioners, he
 | Shared Components | Complete | Alert, Modal, Toast, Breadcrumb components created |
 | Accessibility (WCAG) | Complete | Focus traps, ARIA roles, keyboard navigation, screen reader support |
 | Animation Audit (21F) | Partial | Phases 1-2 complete: Removed FloatingDirective, TiltEffectDirective, ParallaxDirective; simplified RevealDirective to fade/fade-up/fade-down only |
+| Home v3 Completion | Complete | Configurator-first homepage, real product recommendations, translation coverage, deferred below-fold content, browser QA, and Lighthouse mobile 0.97 / desktop 1.00 |
 
 ---
 

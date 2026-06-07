@@ -1,6 +1,7 @@
 using ClimaSite.E2E.Infrastructure;
 using Microsoft.Playwright;
 using FluentAssertions;
+using System.Text.RegularExpressions;
 
 namespace ClimaSite.E2E.Tests.Navigation;
 
@@ -41,23 +42,25 @@ public class MegaMenuTests : IAsyncLifetime
         await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Test Home link
-        await _page.ClickAsync("[data-testid='nav-home']");
-        await _page.WaitForURLAsync("/");
+        await ClickNavLinkAndExpectUrlAsync("nav-home", new Regex(@"/$"));
 
         // Test About link
-        await _page.ClickAsync("[data-testid='nav-about']");
-        await _page.WaitForURLAsync(url => url.Contains("/about"));
+        await ClickNavLinkAndExpectUrlAsync("nav-about", new Regex(@"/about(?:[?#].*)?$"));
         _page.Url.Should().Contain("/about");
 
         // Test Contact link
-        await _page.ClickAsync("[data-testid='nav-contact']");
-        await _page.WaitForURLAsync(url => url.Contains("/contact"));
+        await ClickNavLinkAndExpectUrlAsync("nav-contact", new Regex(@"/contact(?:[?#].*)?$"));
         _page.Url.Should().Contain("/contact");
 
         // Test Brands link
-        await _page.ClickAsync("[data-testid='nav-brands']");
-        await _page.WaitForURLAsync(url => url.Contains("/brands"));
+        await ClickNavLinkAndExpectUrlAsync("nav-brands", new Regex(@"/brands(?:[?#].*)?$"));
         _page.Url.Should().Contain("/brands");
+    }
+
+    private async Task ClickNavLinkAndExpectUrlAsync(string testId, Regex expectedUrl)
+    {
+        var navLink = _page.Locator($"[data-testid='{testId}']");
+        await ClickVisibleLinkAndExpectUrlAsync(navLink, expectedUrl);
     }
 
     // E2E-011: Mega menu opens on hover/click
@@ -140,12 +143,16 @@ public class MegaMenuTests : IAsyncLifetime
         await _page.HoverAsync("[data-testid='category-item'] >> nth=0");
         await _page.WaitForSelectorAsync("[data-testid='subcategories-panel']");
 
-        // Act - Click View All link
-        await _page.ClickAsync(".view-all-link");
-
-        // Assert - Navigated to products
-        await _page.WaitForURLAsync(url => url.Contains("/products"));
+        // Act - Click View All link and assert SPA navigation
+        await ClickVisibleLinkAndExpectUrlAsync(_page.Locator(".view-all-link"), new Regex(@"/products"));
         _page.Url.Should().Contain("/products");
+    }
+
+    private async Task ClickVisibleLinkAndExpectUrlAsync(ILocator link, Regex expectedUrl)
+    {
+        await Assertions.Expect(link).ToBeVisibleAsync();
+        await link.ClickAsync();
+        await Assertions.Expect(_page).ToHaveURLAsync(expectedUrl);
     }
 
     // E2E: Mega menu closes when clicking outside

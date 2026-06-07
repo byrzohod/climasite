@@ -677,7 +677,7 @@ export class AdminModerationComponent implements OnInit {
         this.reviewData.set(reviews);
         this.loading.set(false);
       },
-      error: (err) => {
+      error: () => {
         this.error.set('admin.moderation.errors.loadFailed');
         this.loading.set(false);
       }

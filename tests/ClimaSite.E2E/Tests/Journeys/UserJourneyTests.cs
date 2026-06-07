@@ -138,9 +138,9 @@ public class UserJourneyTests : IAsyncLifetime
         var homePage = new HomePage(_page);
         await homePage.NavigateAsync();
 
-        // Verify default language
-        var pageContent = await _page.ContentAsync();
-        pageContent.Should().Contain("Products"); // English text
+        // Verify default language on the current Home V3 experience
+        await Assertions.Expect(_page.Locator("[data-testid='home-v3-wizard']"))
+            .ToContainTextAsync("Sized for your space");
 
         // Step 2: Switch to Bulgarian
         await homePage.SelectLanguageAsync("bg");

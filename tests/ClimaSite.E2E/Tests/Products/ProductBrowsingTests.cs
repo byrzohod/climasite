@@ -93,11 +93,18 @@ public class ProductBrowsingTests : IAsyncLifetime
         // Act - Enter search query
         await _page.FillAsync("[data-testid='search-input']", uniqueName);
 
+        var searchResponse = _page.WaitForResponseAsync(response =>
+            response.Url.Contains("/api/products", StringComparison.OrdinalIgnoreCase) &&
+            response.Url.Contains("searchTerm=", StringComparison.OrdinalIgnoreCase) &&
+            response.Url.Contains(Uri.EscapeDataString(uniqueName), StringComparison.OrdinalIgnoreCase) &&
+            response.Status == 200);
+
         // Submit by pressing Enter (more reliable than clicking button)
         await _page.PressAsync("[data-testid='search-input']", "Enter");
 
         // Wait for navigation to products page with search param
         await _page.WaitForURLAsync(url => url.Contains("/products") && url.Contains("search="), new PageWaitForURLOptions { Timeout = 10000 });
+        await searchResponse;
 
         // Assert - Verify we're on the search results page
         _page.Url.Should().Contain("/products");
@@ -110,10 +117,9 @@ public class ProductBrowsingTests : IAsyncLifetime
         var searchTitle = _page.Locator("[data-testid='search-results-title']");
         await Assertions.Expect(searchTitle).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
 
-        // Verify a product card is displayed (our created product should match)
-        var productCards = _page.Locator("[data-testid='product-card']");
-        var count = await productCards.CountAsync();
-        count.Should().BeGreaterThanOrEqualTo(1, "Search should find the created product");
+        // Verify the created product is displayed.
+        await Assertions.Expect(_page.GetByText(uniqueName).First)
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
     }
 
     [Fact]

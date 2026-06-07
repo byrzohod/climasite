@@ -1,6 +1,6 @@
 import { Injectable, Injector, inject, signal, computed, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { catchError, tap, throwError, switchMap, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -221,7 +221,11 @@ export class AuthService {
   }
 
   getCurrentUser() {
-    return this.http.get<User>(`${this.apiUrl}/api/auth/me`).pipe(
+    const options = this._accessToken
+      ? { headers: new HttpHeaders({ Authorization: `Bearer ${this._accessToken}` }) }
+      : undefined;
+
+    return this.http.get<User>(`${this.apiUrl}/api/auth/me`, options).pipe(
       tap(user => {
         this._user.set(user);
       })
@@ -273,9 +277,9 @@ export class AuthService {
     if (token) {
       this._accessToken = token;
       this._hasToken.set(true);
-      // Attempt to fetch user profile, but don't clear auth on failure
-      // The token might still be valid even if this request fails (e.g., network issue)
-      this.getCurrentUser().subscribe({
+      // Attempt to fetch user profile. If the persisted access token has expired,
+      // refresh with the httpOnly cookie and retry before clearing auth.
+      this.restoreCurrentUser().subscribe({
         next: () => {
           // AUTH-001 FIX: Mark auth as ready after user is loaded
           this._authReady.set(true);
@@ -293,6 +297,20 @@ export class AuthService {
       // AUTH-001 FIX: No token, mark auth as ready immediately
       this._authReady.set(true);
     }
+  }
+
+  private restoreCurrentUser() {
+    return this.getCurrentUser().pipe(
+      catchError((error: HttpErrorResponse) => {
+        if (error.status === 401) {
+          return this.refreshToken().pipe(
+            switchMap(() => this.getCurrentUser())
+          );
+        }
+
+        return throwError(() => error);
+      })
+    );
   }
 
   private storeToken(token: string): void {

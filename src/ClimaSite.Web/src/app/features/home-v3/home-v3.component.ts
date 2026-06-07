@@ -1,11 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
 import type { Subscription } from 'rxjs';
 import { ThemeService } from '../../core/services/theme.service';
 import { RecommendationsComponent } from './components/recommendations/recommendations.component';
 import { RoomPreviewComponent } from './components/room-preview/room-preview.component';
+import { SecondaryContentComponent } from './components/secondary-content/secondary-content.component';
 import { WizardComponent } from './components/wizard/wizard.component';
 import type { RecommendedProduct } from './models/home-v3.models';
 import { HomeWizardStateService } from './services/home-wizard-state.service';
@@ -27,11 +26,10 @@ import { ProductRecommendationsService } from './services/product-recommendation
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
-    RouterLink,
-    TranslateModule,
     WizardComponent,
     RoomPreviewComponent,
     RecommendationsComponent,
+    SecondaryContentComponent,
   ],
   templateUrl: './home-v3.component.html',
   styleUrl: './home-v3.component.scss',
@@ -50,8 +48,9 @@ export class HomeV3Component {
   readonly theme = computed<'dark' | 'light'>(() => (this.themeService.isDarkMode() ? 'dark' : 'light'));
 
   readonly recommendations = signal<RecommendedProduct[] | null>(null);
-  readonly loading = signal(false);
+  readonly loading = signal(true);
   readonly error = signal<string | null>(null);
+  private hasObservedInitialState = false;
 
   constructor() {
     // Watch wizard state and re-fetch recommendations after a short debounce.
@@ -60,9 +59,11 @@ export class HomeV3Component {
       const r = this.roomType();
       const z = this.zone();
       let subscription: Subscription | null = null;
+      const delayMs = this.hasObservedInitialState ? 350 : 1200;
+      this.hasObservedInitialState = true;
       const timer = setTimeout(() => {
         subscription = this.fetchRecommendations(a, r, z);
-      }, 350);
+      }, delayMs);
 
       onCleanup(() => {
         clearTimeout(timer);

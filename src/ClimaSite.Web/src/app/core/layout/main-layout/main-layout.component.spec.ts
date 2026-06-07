@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, DeferBlockState, TestBed } from '@angular/core/testing';
 import { Component, input } from '@angular/core';
 import { MainLayoutComponent } from './main-layout.component';
 import { FooterComponent } from '../footer/footer.component';
@@ -94,9 +94,11 @@ describe('MainLayoutComponent', () => {
     expect(layout).toBeTruthy();
   });
 
-  it('should have header', () => {
+  it('should render header immediately', () => {
     const header = fixture.nativeElement.querySelector('[data-testid="header"]');
     expect(header).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-testid="header-shell-phone"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-testid="header-shell-email"]')).toBeTruthy();
   });
 
   it('should have main content', () => {
@@ -104,8 +106,26 @@ describe('MainLayoutComponent', () => {
     expect(main).toBeTruthy();
   });
 
-  it('should have footer', () => {
-    const footer = fixture.nativeElement.querySelector('[data-testid="footer"]');
-    expect(footer).toBeTruthy();
+  it('should reserve footer space before the deferred footer loads', () => {
+    const footerPlaceholder = fixture.nativeElement.querySelector('[data-testid="footer-placeholder"]');
+    expect(footerPlaceholder).toBeTruthy();
+  });
+
+  it('should render bottom navigation immediately', () => {
+    expect(fixture.nativeElement.querySelector('[data-testid="mock-bottom-nav"]')).toBeTruthy();
+  });
+
+  it('should render full header and footer when defer blocks complete', async () => {
+    const deferBlocks = await fixture.getDeferBlocks();
+
+    expect(deferBlocks.length).toBe(2);
+
+    for (const block of deferBlocks) {
+      await block.render(DeferBlockState.Complete);
+    }
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="header"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-testid="footer"]')).toBeTruthy();
   });
 });

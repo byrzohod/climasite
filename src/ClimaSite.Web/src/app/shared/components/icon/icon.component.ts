@@ -1,6 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule } from 'lucide-angular';
+import { LucideAngularModule, LUCIDE_ICONS, LucideIconProvider } from 'lucide-angular';
+import { ICON_REGISTRY } from './icon-registry';
 
 /**
  * Icon size options following Nordic Tech Design System
@@ -44,6 +45,9 @@ export const ICON_SIZE_MAP: Record<IconSize, number> = {
   selector: 'app-icon',
   standalone: true,
   imports: [CommonModule, LucideAngularModule],
+  providers: [
+    { provide: LUCIDE_ICONS, multi: true, useValue: new LucideIconProvider(ICON_REGISTRY) }
+  ],
   template: `
     <lucide-icon
       [name]="name()"

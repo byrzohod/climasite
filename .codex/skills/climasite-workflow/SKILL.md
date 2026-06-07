@@ -22,6 +22,7 @@ Follow `AGENTS.md` first. This skill captures the Claude workflow rules in Codex
 - Start shared local infra: `cd ~/Projects/shared-infra && docker compose up -d postgres redis`.
 - Local app/E2E use shared Postgres on `localhost:5432` with database `climasite`, and shared Redis on `localhost:6379`.
 - Use `ConnectionStrings__DefaultConnection` with `SSL Mode=Disable` for local shared Postgres. Avoid `DATABASE_URL` for localhost because ClimaSite's URL converter makes non-Railway hosts SSL-required.
+- For local E2E, run the API in `Testing` with `TestSettings__AdminSecret=test-admin-secret` and run the E2E client with `TEST_ADMIN_SECRET=test-admin-secret`.
 - Do not use project-local compose for shared services unless this repo needs a unique service.
 - CI, integration tests, and perf tests must use isolated services, not shared infra.
 

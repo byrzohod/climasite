@@ -41,19 +41,17 @@ public class AdminPanelTests : IAsyncLifetime
         // Arrange - Create admin user
         var admin = await _dataFactory.CreateAdminUserAsync();
 
-        // Act - Login as admin and navigate to dashboard
+        // Act - Login through the browser so the admin path covers the real login flow.
         var loginPage = new LoginPage(_page);
         await loginPage.NavigateAsync();
         await loginPage.LoginAsync(admin.Email, admin.Password);
 
-        // Navigate to admin dashboard
         await _page.GotoAsync("/admin");
         await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Assert - Dashboard should be accessible
-        await _page.WaitForSelectorAsync("h1", new PageWaitForSelectorOptions { Timeout = 10000 });
-        var pageContent = await _page.ContentAsync();
-        pageContent.ToLower().Should().Contain("admin");
+        await Assertions.Expect(_page.Locator("app-admin-dashboard h1"))
+            .ToContainTextAsync("Admin", new LocatorAssertionsToContainTextOptions { Timeout = 10000 });
 
         // Should see admin navigation links
         var hasProductsLink = await _page.IsVisibleAsync("a[href*='products'], [routerlink*='products']");
@@ -101,8 +99,8 @@ public class AdminPanelTests : IAsyncLifetime
         await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Assert - Products page should load
-        var pageContent = await _page.ContentAsync();
-        (pageContent.Contains("Product") || pageContent.Contains("product")).Should().BeTrue("Products page should show product management content");
+        await Assertions.Expect(_page.Locator("app-admin-products h1"))
+            .ToContainTextAsync("Product", new LocatorAssertionsToContainTextOptions { Timeout = 10000 });
     }
 
     [Fact]
@@ -226,9 +224,8 @@ public class AdminPanelTests : IAsyncLifetime
         await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Assert - Users page should load (even if placeholder)
-        var pageContent = await _page.ContentAsync();
-        (pageContent.Contains("User") || pageContent.Contains("user")).Should().BeTrue(
-            "Users page should show user management content");
+        await Assertions.Expect(_page.Locator("app-admin-users h1"))
+            .ToContainTextAsync("User", new LocatorAssertionsToContainTextOptions { Timeout = 10000 });
     }
 
     #endregion
@@ -302,9 +299,12 @@ public class AdminPanelTests : IAsyncLifetime
 
     private async Task LoginAsAdminAsync(TestUser admin)
     {
-        var loginPage = new LoginPage(_page);
-        await loginPage.NavigateAsync();
-        await loginPage.LoginAsync(admin.Email, admin.Password);
+        admin.Token.Should().NotBeNullOrWhiteSpace("admin test users must include a real access token");
+
+        await _page.GotoAsync("/");
+        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.EvaluateAsync("token => window.localStorage.setItem('climasite_token', token)", admin.Token);
+        await _page.ReloadAsync();
         await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }
 

@@ -140,6 +140,7 @@ import {
   FileText,
   File,
   Folder,
+  Inbox,
   MessageSquare,
   MessageCircle,
   Send,
@@ -289,6 +290,7 @@ export const ICON_REGISTRY = {
   FileText,
   File,
   Folder,
+  Inbox,
   MessageSquare,
   MessageCircle,
   Send,
@@ -340,7 +342,7 @@ export const ICON_CATEGORIES = {
   ],
   misc: [
     'star', 'star-half', 'bookmark', 'flag', 'award', 'gift', 'file-text', 'file',
-    'folder', 'message-square', 'message-circle', 'send', 'loader-2',
+    'folder', 'inbox', 'message-square', 'message-circle', 'send', 'loader-2',
     'more-horizontal', 'more-vertical', 'grip', 'grip-vertical'
   ]
 } as const;

@@ -6,7 +6,7 @@ public class HomePage : BasePage
 {
     private const string SearchInput = "[data-testid='search-input']";
     private const string SearchButton = "[data-testid='search-button']";
-    private const string FeaturedProducts = "[data-testid='home-v3-recommendations']";
+    private const string FeaturedProducts = "[data-testid^='home-v3-rec-card-']";
     private const string CategoryCard = "[data-testid^='home-v3-cat-']";
     private const string LoginButton = "[data-testid='login-button']";
     private const string CartIcon = "[data-testid='cart-icon']";
@@ -76,7 +76,21 @@ public class HomePage : BasePage
 
     public async Task<bool> HasFeaturedProductsAsync()
     {
-        return await IsVisibleAsync(FeaturedProducts);
+        try
+        {
+            await WaitForSelectorAsync(FeaturedProducts, 15000);
+            return await IsVisibleAsync(FeaturedProducts);
+        }
+        catch (TimeoutException)
+        {
+            return false;
+        }
+    }
+
+    public async Task<int> WaitForRecommendationCountAsync()
+    {
+        await WaitForSelectorAsync(FeaturedProducts, 15000);
+        return await Page.Locator(FeaturedProducts).CountAsync();
     }
 
     public async Task<int> GetCategoryCountAsync()

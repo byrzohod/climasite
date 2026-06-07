@@ -16,7 +16,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const noAuthEndpoints = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password', '/auth/confirm-email', '/auth/refresh', '/auth/logout'];
   const isNoAuthEndpoint = noAuthEndpoints.some(endpoint => req.url.includes(endpoint));
 
-  if (isNoAuthEndpoint) {
+  if (isNoAuthEndpoint || req.headers.has('Authorization')) {
     return next(req);
   }
 

@@ -2,6 +2,7 @@ using System.Text;
 using System.Threading.RateLimiting;
 using ClimaSite.Application;
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Api.Configuration;
 using ClimaSite.Infrastructure;
 using ClimaSite.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -23,7 +24,7 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // Add services to the container
-ConfigureServices(builder.Services, builder.Configuration);
+ConfigureServices(builder.Services, builder.Configuration, builder.Environment);
 
 var app = builder.Build();
 
@@ -42,7 +43,7 @@ async Task SeedDatabaseAsync(WebApplication app)
     await seeder.SeedAsync();
 }
 
-void ConfigureServices(IServiceCollection services, IConfiguration configuration)
+void ConfigureServices(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment)
 {
     // Application layer services (MediatR, FluentValidation, Mapster)
     services.AddApplicationServices();
@@ -50,11 +51,9 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     // Infrastructure layer services (EF Core, Identity, Redis, etc.)
     services.AddInfrastructureServices(configuration);
 
-    // JWT Authentication - prefer env vars (Railway), fallback to config
+    // JWT Authentication - prefer env vars (Railway), fallback to config outside Production.
     var jwtSettings = configuration.GetSection("JwtSettings");
-    var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET")
-        ?? jwtSettings["Secret"]
-        ?? throw new InvalidOperationException("JWT Secret not configured. Set JWT_SECRET or JwtSettings:Secret.");
+    var secretKey = JwtConfiguration.ResolveSecret(configuration, environment);
     var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER")
         ?? jwtSettings["Issuer"]
         ?? "https://localhost:5001";

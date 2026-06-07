@@ -1,6 +1,6 @@
 # Plan 18 — Project Completion & Production Readiness
 
-**Status:** Draft — pending user approval
+**Status:** In progress — Phase 1 Home v3 complete
 **Owner:** sarkisharalampiev
 **Created:** 2026-04-08
 **Gap report:** [`docs/audit/2026-04-08-gap-report.md`](../audit/2026-04-08-gap-report.md)
@@ -128,7 +128,7 @@ features/home-v3/
 All components are standalone, OnPush, under 300 lines each. Every interactive element has a `data-testid`. All color via `var(--color-*)`. No `document`/`window` outside `effect` callbacks (which only run in browser).
 
 ### HOME-005 — Section implementation (per concept) — **DONE 2026-04-08**
-Sections delivered: hero (wizard + live preview), recommendation slab (3 cards from real `/api/products/recommendations`), category grid (4 categories), trust strip (4 stats), final CTA. **Backend endpoint** built per ADR 002 (subagent) — `RecommendationScoringService` with 6-factor weighted scoring, `GetRecommendationsQueryHandler`, `RecommendedProductDto`, `ProductsController.GetRecommendations`. 15 unit tests + 9 integration tests via WebApplicationFactory + testcontainers Postgres (subagent reported all green; sandbox has no .NET SDK so re-verification deferred to local run).
+Sections delivered: hero (wizard + live preview), recommendation slab (3 cards from real `/api/products/recommendations`), category grid (4 categories), trust strip (4 stats), final CTA. **Backend endpoint** built per ADR 002 — `RecommendationScoringService` with 6-factor weighted scoring, `GetRecommendationsQueryHandler`, `RecommendedProductDto`, `ProductsController.GetRecommendations`. Re-verified on 2026-06-07 with the full backend, frontend, and E2E suites.
 
 ### HOME-006 — i18n keys for home v3 — **DONE 2026-04-08**
 `homeV3.*` key tree added to en/bg/de in full (wizard, roomType, zone, recommendations, categories, trust, cta, matchReason — ~50 keys per locale). Old `home.*` tree removed.
@@ -136,29 +136,31 @@ Sections delivered: hero (wizard + live preview), recommendation slab (3 cards f
 ### HOME-007 — Reduced-motion + low-end fallback — **DONE 2026-04-08**
 The `RoomPreviewComponent` reads `prefers-reduced-motion: reduce` once at construction; when set, the airflow animation does not request additional frames after the first paint. The renderer is Canvas 2D with no WebGL feature requirement, so the no-WebGL fallback is the renderer itself. Playwright verification of both modes is folded into HOME-010.
 
-### HOME-008 — Unit tests
-- Unit tests for any logic-bearing service (e.g. `HomeHeroSceneService` or whatever the WebGL controller becomes).
-- Jasmine specs for each child component.
+### HOME-008 — Unit tests — **DONE 2026-06-07**
+Added and verified focused Jasmine coverage for:
+- `HomeV3Component` recommendation scheduling and translation behavior.
+- `ProductRecommendationsService` request mapping.
+- `WizardComponent` keyboard navigation and roving tabindex behavior.
+- `RoomPreviewComponent` reduced-motion behavior.
+- `RecommendationsComponent` with real translation loader to catch leaked keys.
+- Root/admin route configuration, main layout deferral behavior, and auth refresh-on-restore.
 
-### HOME-009 — E2E tests (real data, no mocks)
-Rewrite `HomePage.cs` Playwright page object and tests:
-- Landing renders in EN, BG, DE
-- Landing renders in light + dark
-- Landing renders at 375 / 768 / 1440 viewports
-- Click CTAs route to `/products` and `/configurator` (or wherever the concept places them)
-- Reduced-motion flag serves fallback content
+### HOME-009 — E2E tests (real data, no mocks) — **DONE 2026-06-07**
+Rebuilt the Home page object and tests under `tests/ClimaSite.E2E/Tests/Home/` using real API calls and `TestDataFactory`. Coverage includes EN/BG/DE landing render, light/dark theme render, 375/768/1440 viewports, real product recommendation loading, CTA routing, reduced-motion behavior, and keyboard navigation.
 
-### HOME-010 — Visual verification pass
-Mandatory per CLAUDE.md: Playwright screenshots desktop+mobile, light+dark, EN+BG+DE. Inspect, fix, re-screenshot. Attach screenshots to PR.
+### HOME-010 — Visual verification pass — **DONE 2026-06-07**
+Captured and inspected Playwright screenshots for desktop/mobile and light/dark after the final production build. Browser QA confirmed no visible translation keys, `undefined`, `null`, TODO/debug output, console errors, or product recommendation network failures.
 
-### HOME-011 — Accessibility pass
-axe-core E2E test on the new home route — zero serious violations. Keyboard navigation of every interactive element. Screen reader labels present.
+### HOME-011 — Accessibility pass — **DONE 2026-06-07**
+E2E accessibility coverage verifies the new home route, reduced motion, semantic labels, and keyboard navigation for the wizard/radio groups. Manual browser QA also checked immediate global navigation availability after the performance deferral changes.
 
-### HOME-012 — Performance budget verification
-Lighthouse on the new home: Performance ≥ 90, LCP < 2.5s, CLS < 0.1, INP < 200ms. If budget fails, iterate before closing phase.
+### HOME-012 — Performance budget verification — **DONE 2026-06-07**
+Final Lighthouse results on `/` after the production build:
+- Mobile: Performance 0.97, FCP 1.824s, LCP 2.296s, CLS 0, TBT 0.
+- Desktop: Performance 1.00, FCP 0.449s, LCP 0.576s, CLS 0.000057, TBT 0.
 
-### HOME-013 — Documentation
-Update `CLAUDE.md` home section, Plan 18, ADR 001/002, `.auto-memory/project_home_v3.md`.
+### HOME-013 — Documentation — **DONE 2026-06-07**
+Updated `CLAUDE.md`, this plan, ADR 002 implementation notes, `CHANGELOG.md`, and `.codex/PROJECT_MEMORY.md`. No `.auto-memory/` directory exists in this checkout; `.codex/PROJECT_MEMORY.md` is the GPT-compatible shared memory file.
 
 ---
 
