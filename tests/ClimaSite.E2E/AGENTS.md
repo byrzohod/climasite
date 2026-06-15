@@ -73,8 +73,12 @@ public class CheckoutTests : IAsyncLifetime
 
 ## COMMANDS
 
+These are **Playwright-for-.NET** (xUnit) tests, not the TypeScript Playwright runner.
+They need a running API on **:5029** plus `ng serve` on **:4200** (CI starts both; for local
+runs see `docs/project-plan/DEV_WORKFLOW.md` for the env vars).
+
 ```bash
-npx playwright test                    # Run all
-npx playwright test --ui               # Interactive mode
-npx playwright test -g "checkout"      # Pattern match
+dotnet test tests/ClimaSite.E2E                                        # Run all
+dotnet test tests/ClimaSite.E2E --filter "FullyQualifiedName~Checkout"  # Pattern match
+dotnet test tests/ClimaSite.E2E --logger "console;verbosity=detailed"   # Verbose output
 ```

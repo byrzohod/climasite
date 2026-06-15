@@ -97,22 +97,25 @@ climasite/
 # Shared local infra (default for local app/E2E)
 cd ~/Projects/shared-infra && docker compose up -d postgres redis
 
-# Backend
-dotnet build
-dotnet test
+# Backend — per-project (a bare root `dotnet test` pulls in the server-dependent E2E project)
+dotnet build ClimaSite.sln
+dotnet test tests/ClimaSite.Core.Tests --no-build
+dotnet test tests/ClimaSite.Application.Tests --no-build
+dotnet test tests/ClimaSite.Api.Tests --no-build       # Testcontainers; needs Docker
+dotnet test ClimaSite.NoE2E.slnf                       # all non-E2E tests
 dotnet run --project src/ClimaSite.Api --launch-profile http  # localhost:5029
 
 # Frontend
 cd src/ClimaSite.Web
 ng serve                                  # localhost:4200
-ng test --watch=false --browsers=ChromeHeadless
+npm test -- --watch=false --browsers=ChromeHeadless
 
-# E2E
-cd tests/ClimaSite.E2E
-npx playwright test
+# E2E (Playwright-for-.NET / xUnit) — needs the API on :5029 + ng serve on :4200
+dotnet test tests/ClimaSite.E2E
 
-# Full test suite
-dotnet test && cd src/ClimaSite.Web && ng test --watch=false --browsers=ChromeHeadless
+# Full local check (CI is the evidence of record)
+dotnet build ClimaSite.sln && dotnet test ClimaSite.NoE2E.slnf && \
+  cd src/ClimaSite.Web && npm test -- --watch=false --browsers=ChromeHeadless
 ```
 
 ## CODEX WORKFLOW MEMORY
