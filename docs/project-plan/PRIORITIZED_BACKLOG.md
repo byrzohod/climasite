@@ -1,0 +1,714 @@
+# ClimaSite — Prioritized Backlog
+
+**Date:** 2026-06-11
+**Sources:** All ten verified review files in `docs/project-plan/_review/` plus the wave-1 documents (`SECURITY_REVIEW.md`, `TESTING_STRATEGY.md`, `UI_UX_REVIEW.md`, `BUGS_AND_TECH_DEBT.md`, `ARCHITECTURE_REVIEW.md`, `DECISIONS.md`, `DEV_WORKFLOW.md`).
+
+**How to use this document:** This is THE actionable, deduplicated task list for ClimaSite — one task may close findings from several review dimensions, and every task lists the findings it closes so nothing is double-worked. Categories are ordered by the urgency of their highest-priority items, and tasks within each category are ordered P0→P3, but the **"Next 10 tasks"** section at the end is the strict execution order — start there. Each task carries ID, priority (P0 critical blocker / P1 important / P2 useful / P3 polish), complexity (Small/Medium/Large), affected files, acceptance criteria, and dependencies; full evidence and `file:line` proof live in the cited `_review/*.md` finding and wave-1 docs — do not re-derive analysis, just execute. `BUG-nn` and `TS-nn` IDs deliberately match `BUGS_AND_TECH_DEBT.md` and `TESTING_STRATEGY.md`; `SR-nn` refers to findings in `SECURITY_REVIEW.md`; `D-nnn`/`O-n` refer to `DECISIONS.md`. Anything marked **Needs confirmation** requires owner input before (or while) starting.
+
+**Relationship to `docs/plans/18-project-completion.md`:** Plan 18 remains the active master plan and its Phase 5 (SEC-100..107) and Phase 7 (PROD-100..107) tasks are still valid — they are cited inline below. However, Plan 18 **does not track** several launch blockers found by this review (admin UI build-out, payment reconciliation, DataSeeder credential gating, forwarded headers, order-by-number IDOR); those are new tasks here and should be added to Plan 18's phases. Where this backlog and older trackers conflict (`docs/plans/00-master-overview.md` "100% Complete" claims, `docs/plans/20-issue-registry.md` "129 open / 0 fixed"), **this backlog wins** — those docs are stale (see DOC-02/DOC-04).
+
+---
+
+## Blocking decisions (resolve early — they gate the tasks that cite them)
+
+Per the owner's standing convention, these are **owner decisions**, recorded as ADRs (`docs/adr/`). Full context in `DECISIONS.md` §3.
+
+| Ref | Decision | Gates |
+|---|---|---|
+| DEC-CURRENCY | **Store currency: EUR or BGN?** Code currently mixes EUR (orders/display), BGN (Stripe charge), USD (cart/checkout pipes). Single most blocking decision in the repo (`_review/bugs.md` open question 1). | BUG-01, BUG-02, BUG-11, BUG-13 |
+| DEC-GUEST | Guest checkout in scope for v1? Backend half-supports it; route guard blocks it; docs claim it works. | GAP-07, TS-13 |
+| O-1 | Background-job mechanism (BackgroundService + DB outbox vs Hangfire vs RabbitMQ from shared-infra) | ARCH-05, GAP-09, GAP-03 (reliability) |
+| O-2 | API error contract: RFC 7807 ProblemDetails vs ratify current `{status,message,detail}` | ARCH-04 |
+| O-3 | Query-caching owner: register `CachingBehavior` + invalidation vs delete it; vs OutputCache named policies | PERF-01 |
+| O-4 | Observability vendor (Sentry suggested) + OpenTelemetry scope | OPS-05 |
+| O-5 | ADR 003 (Canvas 2D) + ADR for wishlist share-token design | DOC-05, OPS-01 (ideally before merge) |
+| O-6 | Shared-infra vs project-local docker-compose for local dev | OPS-10 |
+| O-7 | **Railway topology: is anything deployed today?** Which services/config files, auto-deploy status, backups. Determines whether SEC-01 is an *active* P0 and the KnownProxies config for SEC-03. | SEC-01, SEC-03, OPS-03, OPS-08, BUG-09 |
+| DEC-SEARCH | Real search backend: Postgres FTS vs pg_trgm vs shared-infra Meilisearch (docs claim "full-text search"; reality is multi-ILIKE) | PERF-05 |
+| DEC-SSR | SSR/prerender for the public storefront vs client-only meta | PERF-07 |
+
+---
+
+## 1. Security (SEC)
+
+Detail and evidence: `docs/project-plan/SECURITY_REVIEW.md` (SR-01..SR-20) and `_review/security.md`, `_review/devops.md`, `_review/performance.md`.
+
+### SEC-01 — Gate DataSeeder: no hardcoded admin credentials or demo data in production (P0, Small)
+- **Description:** `Program.cs:31-44` runs `DataSeeder` unconditionally at startup; `DataSeeder.cs:64-65` hardcodes `admin@climasite.local` / `Admin123!` (EmailConfirmed=true) and seeds a demo catalog. The repo is **public** (byrzohod/climasite), so the credential is published. Gate role seeding as always-on; run admin/product/promotion seeding only in Development/Testing; bootstrap the production admin from required env vars (`ADMIN_EMAIL`/`ADMIN_INITIAL_PASSWORD`) and fail startup if absent.
+- **Closes:** SR-01; `_review/devops.md` #1 (P0 confirmed); `_review/status.md` #5. **Not tracked by Plan 18** — add to Phase 5.
+- **Affected:** `src/ClimaSite.Api/Program.cs`, `src/ClimaSite.Infrastructure/Data/DataSeeder.cs`, `Dockerfile.api`.
+- **Acceptance:** Production startup against an empty DB creates no `admin@climasite.local` and no demo products; login with `Admin123!` fails in prod; integration test asserts env-gated seeding. If OPS-08 confirms anything is already deployed, rotate/delete the seeded admin **immediately**.
+- **Depends on:** Coordinate with OPS-04 (same startup code path); OPS-08 (Needs confirmation: is it live?).
+
+### SEC-03 — `UseForwardedHeaders` before the rate limiter (P0, Small)
+- **Description:** No forwarded-headers handling anywhere; nginx (`nginx.conf.template`) proxies all `/api` traffic, so every shopper shares one `RemoteIpAddress` → one global 100 req/min bucket (site-wide 429s at ~5-15 concurrent users) and one shared 10/min auth bucket (one user can lock out all logins). Add `ForwardedHeadersOptions` (XForwardedFor | XForwardedProto, KnownNetworks/KnownProxies for the Railway/nginx hop) early in the pipeline, before `UseRateLimiter` and `UseHttpsRedirection`.
+- **Closes:** SR-06; `_review/performance.md` #1 (P0 confirmed); `_review/devops.md` #4; `_review/security.md` #5. Complements Plan 18 SEC-104 (pointless until this lands). **Not tracked by Plan 18.**
+- **Affected:** `src/ClimaSite.Api/Program.cs:208-241`, `src/ClimaSite.Web/nginx.conf.template`.
+- **Acceptance:** Through the nginx container, two clients with distinct `X-Forwarded-For` get independent rate-limit buckets; logged request IPs match the real client; KnownProxies restricted (no IP spoofing of the limiter).
+- **Depends on:** O-7 for the exact trusted-proxy config (start with the nginx hop regardless).
+
+### SEC-02 — Fix order-by-number IDOR / PII leak (P1, Small)
+- **Description:** Anonymous `GET /api/orders/by-number/{orderNumber}` skips the ownership check when userId is null (`GetOrderByNumberQuery.cs:43`), returning full customer email/phone/address/items; order numbers have only 4 hex chars of randomness. Reject anonymous callers (mirror `GetOrderByIdQuery`) or require a per-order opaque confirmation token for guest lookups.
+- **Closes:** SR-04; `_review/security.md` #1 (P1 confirmed). **Not tracked by Plan 18.**
+- **Affected:** `src/ClimaSite.Api/Controllers/OrdersController.cs:98-108`, `src/ClimaSite.Application/Features/Orders/Queries/GetOrderByNumberQuery.cs`.
+- **Acceptance:** Anonymous request returns 401/404 with no PII; cross-user access denied; admin still allowed; integration test for all three cases.
+- **Depends on:** None. Coordinate with GAP-07 if guest order confirmation is enabled.
+
+### SEC-11 — Pre-launch penetration checklist run (P1, Medium)
+- **Description:** Execute the manual pen-test list in `SECURITY_REVIEW.md` ("Areas requiring manual penetration testing"): guest-cart session enumeration, payment amount reconciliation, JWT forgery on non-Production env names, rate-limit behavior behind real proxy, TestController reachability, login brute-force/lockout, order-number enumeration, cross-user authorization sweep over every `{id:guid}` endpoint.
+- **Closes:** SECURITY_REVIEW.md pen-test section; gates the production checklist there.
+- **Affected:** Deployed staging environment.
+- **Acceptance:** Each checklist item has a recorded pass/fail + remediation ticket.
+- **Depends on:** SEC-01..SEC-08, BUG-01/02 fixed first; a deployed environment (OPS-03).
+
+### SEC-04 — Exclude TestController from Release builds; strong secrets on all test endpoints (P2, Small)
+- **Description:** TestController (DB wipe, admin elevation) ships in the prod image gated only by environment-name string; cleanup has no secret; Development falls back to hardcoded `"test-admin-secret"`. Exclude via `#if DEBUG` or conditional registration; require non-default secrets for all `/api/test/*` endpoints.
+- **Closes:** SR-08; `_review/security.md` #3 (P2 adjusted — Dockerfile pins env to Production, so defense-in-depth).
+- **Affected:** `src/ClimaSite.Api/Controllers/TestController.cs`, `.github/workflows/test.yml`.
+- **Acceptance:** Release/Production build returns 404 for all `/api/test/*`; no hardcoded default secret in source; CI E2E still passes with configured secret.
+- **Depends on:** None.
+
+### SEC-05 — Remove committed JWT secret; require `JWT_SECRET` in all non-Development environments (P2, Small)
+- **Description:** `appsettings.json:22` ships a usable placeholder signing key; `JwtConfiguration.ResolveSecret` only enforces env-var for the literal "Production" name — Staging/QA silently sign with the public key (full token forgery). Fail fast on missing or placeholder secret in every non-Development environment.
+- **Closes:** SR-09; `_review/security.md` #6. Extends Plan 18 **SEC-100** (its "prod is safe" note is superseded — see SECURITY_REVIEW.md stale-doc note).
+- **Affected:** `src/ClimaSite.Api/appsettings.json`, `src/ClimaSite.Api/Configuration/JwtConfiguration.cs`, `src/ClimaSite.Infrastructure/Services/TokenService.cs`.
+- **Acceptance:** App refuses to start in any non-Development env without an external `JWT_SECRET`; committed config contains no usable key.
+- **Depends on:** None.
+
+### SEC-06 — Gate Swagger out of production (P2, Small)
+- **Description:** `UseSwagger`/`UseSwaggerUI` run unconditionally (`Program.cs:271-277`). Wrap in `IsDevelopment()` or protect behind auth/flag per Plan 18 **SEC-102**.
+- **Closes:** SR-10; `_review/security.md` #4.
+- **Affected:** `src/ClimaSite.Api/Program.cs`.
+- **Acceptance:** `/swagger` and `/swagger/v1/swagger.json` 404 (or require auth) in Production; available in Development.
+- **Depends on:** None.
+
+### SEC-07 — Standardize secret env-var names; remove dummy Stripe keys; production fail-fast (P2, Small)
+- **Description:** JWT/DB/Redis read flat env vars but Stripe/SMTP/MinIO read only config-section keys (`Stripe:SecretKey` etc.), while CLAUDE.md documents flat names (`STRIPE_SECRET_KEY`) that never reach the code; non-empty dummy Stripe keys in `appsettings.json` defeat the fail-fast — a docs-per-the-book deploy silently runs with dummy payment keys. Pick one convention, document it, remove dummy keys, and add Production startup checks failing on placeholder/missing Stripe/SMTP/MinIO config.
+- **Closes:** SR-11; `_review/devops.md` #10. Overlaps Plan 18 SEC-100.
+- **Affected:** `src/ClimaSite.Infrastructure/Services/StripePaymentService.cs`, `EmailService.cs`, `Infrastructure/DependencyInjection.cs` (MinIO), `src/ClimaSite.Api/appsettings.json`, `CLAUDE.md` env table.
+- **Acceptance:** Booting Production without real Stripe config throws at startup; documented variable names proven by a startup-validation test.
+- **Depends on:** None.
+
+### SEC-08 — Security headers middleware + CORS/HSTS/AllowedHosts tightening (P2, Medium)
+- **Description:** No security-headers middleware exists; CORS uses `.AllowAnyHeader()`; `AllowedHosts="*"`. Implement Plan 18 **SEC-101** (CSP compatible with Stripe, X-Frame-Options DENY, nosniff, Referrer-Policy, Permissions-Policy + integration test) and **SEC-103** (explicit CORS allowlist); set explicit AllowedHosts and tune HSTS.
+- **Closes:** SR-12; Plan 18 SEC-101/SEC-103.
+- **Affected:** `src/ClimaSite.Api/Program.cs`, new middleware.
+- **Acceptance:** Integration test asserts all headers on API responses; checkout (Stripe iframe) still works under the CSP.
+- **Depends on:** None.
+
+### SEC-09 — Hash refresh tokens at rest (P3, Small)
+- **Description:** Plaintext refresh tokens stored on `ApplicationUser` and matched by equality; store SHA-256 hashes, compare hashed; optionally move to a per-device RefreshTokens table.
+- **Closes:** SR-17; `_review/security.md` #8.
+- **Affected:** `src/ClimaSite.Core/Entities/ApplicationUser.cs`, `src/ClimaSite.Application/Auth/Handlers/RefreshTokenCommandHandler.cs`, migration.
+- **Acceptance:** DB stores only hashes; refresh flow still works; existing sessions invalidated knowingly (release note).
+- **Depends on:** ARCH-01 first (don't touch the auth chain while its unit tests target the dead tree).
+
+### SEC-10 — Remove owner `UserId` from the anonymous shared-wishlist response (P3, Small)
+- **Description:** `GET /api/wishlist/shared/{shareToken}` returns the owner's internal UserId GUID (`WishlistDto.cs:6`); omit it (and any non-essential owner identifiers) from the anonymous path; consider a named rate-limit policy on the endpoint. Note: the anonymous GET also inherits the 5-minute blanket output cache, so revoked share links keep serving — fixed by PERF-01.
+- **Closes:** SR-19; `_review/security.md` #10.
+- **Affected:** `src/ClimaSite.Application/Features/Wishlist/Services/WishlistApplicationService.cs`, `WishlistDto.cs`, `src/ClimaSite.Api/Controllers/WishlistController.cs`.
+- **Acceptance:** Shared-wishlist response contains no `userId`; test asserts absence.
+- **Depends on:** Best done as a rider on OPS-01 (the wishlist branch is uncommitted — cheapest moment is now).
+
+---
+
+## 2. Bugs (BUG)
+
+IDs match `docs/project-plan/BUGS_AND_TECH_DEBT.md` exactly; full evidence there and in `_review/bugs.md`. The money-path bugs compound: BUG-02 charges the wrong amount, BUG-04 charges at the wrong time, BUG-01 loses the link between charge and order, BUG-18 throws away the webhook evidence. Fix BUG-02 + BUG-01 together, then BUG-04, then BUG-18 — all gated on **DEC-CURRENCY**.
+
+> **Folded elsewhere (do not double-track):** BUG-14 (admin related-products search stub) → GAP-02; BUG-15 (guest checkout unreachable) → GAP-07; BUG-16 (admin "notify customer" no-op) → GAP-03.
+
+### BUG-01 — Persist `paymentIntentId`; make Stripe webhooks reconcile orders (P0, Small)
+- **Description:** Frontend sends `paymentIntentId`/`paymentMethod` on order creation but `CreateOrderCommand` has no such fields — silently dropped; `Order.SetPaymentInfo` has zero callers; the webhook matches on always-null `PaymentIntentId`, so **every card order stays Pending forever** and refunds/failures are no-ops. Add both fields to the command, call `order.SetPaymentInfo(...)`, verify the intent's amount/currency/status server-side via `IPaymentService` before accepting, add a unique index on `orders.payment_intent_id` (idempotency).
+- **Closes:** `_review/bugs.md` #1 (P0 confirmed); `_review/product.md` #1; SR-03.
+- **Affected:** `src/ClimaSite.Application/Features/Orders/Commands/CreateOrderCommand.cs`, `src/ClimaSite.Api/Controllers/OrdersController.cs`, `src/ClimaSite.Application/Features/Payments/Commands/HandleStripeWebhookCommand.cs`, `src/ClimaSite.Web/src/app/core/services/checkout.service.ts`.
+- **Acceptance:** TS-03 regression tests — order create persists the intent ID; simulated `payment_intent.succeeded` flips the order to Paid; `charge.refunded` flips to Refunded; E2E order history leaves Pending.
+- **Depends on:** DEC-CURRENCY; pair with BUG-02; BUG-18 follows.
+
+### BUG-02 — Compute the charge server-side: correct amount, one currency, shipping included (P0, Medium)
+- **Description:** Stripe is charged a **client-supplied** amount (any authenticated user can pay €0.01), hardcoded to BGN while orders are EUR (~49% underpayment), and the cart total omits the 5.99–15.99 shipping the order records. Create the payment intent from the server-calculated order total (subtotal + tax + shipping) in the store currency; never trust the client amount; reject mismatched intents in the webhook.
+- **Closes:** `_review/bugs.md` #2 (P0 confirmed); `_review/product.md` #3; SR-02; SECURITY_REVIEW payments note.
+- **Affected:** `src/ClimaSite.Api/Controllers/PaymentsController.cs:42-58`, `src/ClimaSite.Web/src/app/features/checkout/checkout.component.ts`, `src/ClimaSite.Application/Features/Orders/Commands/CreateOrderCommand.cs`, `src/ClimaSite.Infrastructure/Services/StripePaymentService.cs`.
+- **Acceptance:** Arbitrary client amount rejected/ignored; for any cart: displayed total == Stripe charge == `Order.Total`, one currency, shipping included; automated test compares all three.
+- **Depends on:** **DEC-CURRENCY (blocking)**; pair with BUG-01.
+
+### BUG-03 — Fix guest-cart merge contract: merge no longer 400s, guest items survive login (P1, Small)
+- **Description:** Frontend POSTs `/api/cart/merge` with a body + `X-Session-Id` header; backend requires `[FromQuery] string guestSessionId` → deterministic 400, swallowed by `console.warn` — **every first-time customer loses their visible cart at login** (and checkout is auth-gated, so this hits everyone). Change `CartService.mergeCart` to pass `?guestSessionId=` (or make the endpoint read the header); surface failures.
+- **Closes:** `_review/bugs.md` #3 (verifier adjusted P0→P1: 100% reproducible but the guest cart row is never deleted server-side, so items are recoverable; treat as a first-wave launch blocker regardless — the fix is one line).
+- **Affected:** `src/ClimaSite.Web/src/app/core/services/cart.service.ts:190-205`, `src/ClimaSite.Api/Controllers/CartController.cs:110-116`, `src/ClimaSite.Web/src/app/auth/services/auth.service.ts:133-142`.
+- **Acceptance:** E2E (TS-03): guest adds 2 items, logs in, both items present, quantities combine when overlapping, guest cart row removed server-side.
+- **Depends on:** None.
+
+### BUG-04 — Order-before-charge (or compensation) + double-submit guard (P1, Medium)
+- **Description:** `placeOrder()` confirms the Stripe payment before creating the order; order-creation failure (stock-out, validation) leaves a captured charge with no order and no refund; the processing flag is set too late, allowing double-charges from double-clicks. Create the order (Pending) first and derive the intent from it, or auto-cancel/refund on `createOrder` failure (`CancelPaymentIntentAsync` exists server-side, never called); set the processing flag at the top of `placeOrder()`.
+- **Closes:** `_review/bugs.md` #4; `_review/product.md` #11; SR-07.
+- **Affected:** `src/ClimaSite.Web/src/app/features/checkout/checkout.component.ts`, `checkout.service.ts`, `CreateOrderCommand.cs`, `PaymentsController.cs`.
+- **Acceptance:** Rapid double-click yields exactly one intent and one order; forced order failure after charge leaves no uncompensated captured intent (integration test).
+- **Depends on:** BUG-01, BUG-02.
+
+### BUG-05 — Stock decrement concurrency control (oversell) (P1, Medium)
+- **Description:** Order creation validates and decrements stock with read-then-write under ReadCommitted — concurrent checkouts oversell the last unit; the documented "stock reservations" do not exist anywhere. Add a Postgres `xmin` concurrency token on `product_variants` with retry, or decrement atomically (`ExecuteUpdateAsync` with `stock >= qty` guard). Same pattern exists in the admin path (`AdjustStockCommand.cs:47-62`) — fix both.
+- **Closes:** `_review/bugs.md` #5; CLAUDE.md "reservations" doc-drift (with DOC-02).
+- **Affected:** `src/ClimaSite.Application/Features/Orders/Commands/CreateOrderCommand.cs:128-146`, `src/ClimaSite.Core/Entities/ProductVariant.cs`, `src/ClimaSite.Api/Controllers/InventoryController.cs`.
+- **Acceptance:** Concurrency test (TS-08): two parallel orders for the last unit — exactly one succeeds; stock never negative or double-decremented.
+- **Depends on:** None (independent of payment fixes).
+
+### BUG-06 — Un-invert sale-price mapping sitewide (P1, Medium)
+- **Description:** ~14 DTO projections map `SalePrice = CompareAtPrice` (the **higher** original price) while the UI renders `salePrice` as the deal price — every on-sale product shows the wrong price as the purchase price across catalog/search/detail/cart/wishlist/recommendations and schema.org markup; `GetBrandBySlugQuery` alone uses the opposite mapping. Pick one contract, centralize in a single shared mapper, fix all projections and/or templates.
+- **Closes:** `_review/bugs.md` #6 (P1 confirmed, 14 inverted projections).
+- **Affected:** `GetProductsQueryHandler.cs`, `GetFeaturedProductsQuery.cs`, `SearchProductsQuery.cs`, `GetRelatedProductsQuery.cs`, `GetRecommendationsQueryHandler.cs`, `GetProductBySlugQuery.cs`, cart/wishlist mappers, `GetBrandBySlugQuery.cs`, `product-card.component.ts`, `structured-data.service.ts`.
+- **Acceptance:** Seeded on-sale product (DualZone Pro) shows 899.99 active / 1099.99 struck-through everywhere; charged amount equals displayed active price; unit test on the shared mapper.
+- **Depends on:** None; coordinate with PERF-03 (same projections get rewritten).
+
+### BUG-07 — Forgot-password: send the email, stop logging the token (P1, Small)
+- **Description:** `ForgotPasswordCommandHandler.cs:34-42` logs the raw reset token at Information level (account takeover via log access) and the email send is commented out — users are silently dead-ended while the UI claims success. Inject `IEmailService`, call `SendPasswordResetEmailAsync` with a `/reset-password` link, remove the token from the log line, and fix the forgot-password page showing success on error. Note `EmailService` defaults to placeholder mode (`Email:UsePlaceholder=true`) — flip for real environments (GAP-03/SEC-07).
+- **Closes:** `_review/bugs.md` #7; `_review/security.md` #2 (SR-05); `_review/product.md` #4; `_review/architecture.md` #1 (reset slice); `_review/status.md` #2.
+- **Affected:** `src/ClimaSite.Application/Auth/Handlers/ForgotPasswordCommandHandler.cs`, `src/ClimaSite.Infrastructure/Services/EmailService.cs`, `forgot-password.component.ts`.
+- **Acceptance:** Handler unit test asserts `IEmailService` invoked and token never logged; manual flow via MailHog delivers a working reset link; E2E covers the full reset.
+- **Depends on:** None (SMTP/MailHog config exists in shared-infra).
+
+### BUG-08 — Share a single in-flight token refresh; stop logging users out on concurrent 401s (P1, Small)
+- **Description:** When refresh is in flight, `AuthService.refreshToken()` throws a synthetic error that the interceptor treats as fatal (`clearAuthState`) — page loads with several parallel calls at token expiry randomly log the user out (every ~15 min). Cache one shared refresh observable (`shareReplay`); only clear auth when the shared refresh itself fails. (`WishlistService.fetchInFlight$` shows the correct pattern in-repo.)
+- **Closes:** `_review/bugs.md` #8.
+- **Affected:** `src/ClimaSite.Web/src/app/auth/services/auth.service.ts:202-208`, `src/ClimaSite.Web/src/app/auth/interceptors/auth.interceptor.ts:49-55`.
+- **Acceptance:** Unit test (TS-09): two simultaneous 401s → exactly one POST `/auth/refresh`, both requests retried, no clearAuth on the second caller.
+- **Depends on:** Write the interceptor spec first (TS-09) — the auth chain is a "do not touch without tests" area per ARCHITECTURE_REVIEW.md.
+
+### BUG-09 — Replace wishlist in-process semaphore with DB-constraint-based idempotency (P2, Small)
+- **Description:** The new `WishlistApplicationService` serializes mutations with a static, never-evicted per-user `SemaphoreSlim` dictionary — single-instance only; under multi-instance Railway, races fall through to the existing unique index and surface as unhandled 500s. Catch the unique-violation `DbUpdateException` (23505) and return the existing DTO (idempotent), delete the lock dictionary and the test-fake-driven `strategy is null` branch, add `AsNoTracking` to read paths.
+- **Closes:** `_review/bugs.md` #9; `_review/architecture.md` #8; `_review/performance.md` #15; ARCHITECTURE_REVIEW improvement 6.
+- **Affected:** `src/ClimaSite.Application/Features/Wishlist/Services/WishlistApplicationService.cs`, `AddToWishlistCommand.cs`, `tests/ClimaSite.Application.Tests/TestHelpers/MockDbContext.cs`.
+- **Acceptance:** Test simulating unique-violation on SaveChanges returns success with the existing item; no static lock dictionary remains.
+- **Depends on:** Cheapest as a rider on OPS-01 (branch still uncommitted); real-provider test fixture (ARCH-07) ideal but not blocking.
+
+### BUG-10 — Translate product names in cart and wishlist DTOs (P2, Medium)
+- **Description:** Catalog queries translate via `GetTranslatedContent(lang)`, but cart and wishlist mappers use raw `product.Name` and accept no language — BG/DE users see English names for translated products, violating the project's own DoD. Thread `?lang=` through cart/wishlist endpoints and mappers.
+- **Closes:** `_review/bugs.md` #10.
+- **Affected:** `AddToCartCommand.cs`, `MergeGuestCartCommand.cs`, `GetCartQuery.cs`, `WishlistApplicationService.cs`, `cart.service.ts`, `wishlist.service.ts`.
+- **Acceptance:** With `lang=bg`, GET `/api/cart` and `/api/wishlist` return Bulgarian names for translated products (integration test).
+- **Depends on:** Wishlist part cheapest before OPS-01 merge.
+
+### BUG-11 — One display currency: `DEFAULT_CURRENCY_CODE` + no bare `| currency` pipes (P2, Small)
+- **Description:** Product pages show EUR, cart/checkout show USD (bare pipe defaults), Stripe charges BGN, and checkout hardcodes `$9.99`/`$19.99` shipping labels that don't match the backend's tiers. Provide `{ provide: DEFAULT_CURRENCY_CODE, useValue: <store currency> }`, fix all bare pipes (incl. `mini-cart-item.component.ts`, `mini-cart-drawer.component.html`), source shipping labels from the model via the pipe, and align tier names with backend cases.
+- **Closes:** `_review/bugs.md` #11; `_review/uiux.md` #1 (P1 confirmed); UI_UX_REVIEW work item #1; display slice of `_review/product.md` #3.
+- **Affected:** `app.config.ts`, `checkout.component.ts`, `cart.component.ts`, mini-cart components.
+- **Acceptance:** grep shows no bare `| currency` and no `$9.99|$19.99` literals; product/cart/checkout/confirmation all render one currency.
+- **Depends on:** DEC-CURRENCY; ride with BUG-02.
+
+### BUG-12 — Real `AverageRating`/`ReviewCount` in product DTOs (stars are always empty) (P2, Medium)
+- **Description:** Every list/search/featured/wishlist projection hardcodes rating 0 — all star ratings render empty sitewide despite real reviews. Project approved-review aggregates (subquery or denormalized columns updated on review approval).
+- **Closes:** `_review/bugs.md` #12; `_review/architecture.md` #9 (wishlist DTO fields); part of `_review/performance.md` #11.
+- **Affected:** `GetProductsQueryHandler.cs`, `GetProductBySlugQuery.cs`, `SearchProductsQuery.cs`, `GetFeaturedProductsQuery.cs`, `WishlistApplicationService.cs`.
+- **Acceptance:** A product with approved 5-star reviews shows non-zero stars on cards, search, featured, wishlist; consider denormalizing to avoid N+1.
+- **Depends on:** Coordinate with PERF-03 (same projections).
+
+### BUG-13 — Country-based VAT (DE = 19%) on goods + shipping (P2, Medium)
+- **Description:** Flat 20% VAT on subtotal everywhere; Germany's legal rate is 19% and EU rules generally require VAT on shipping. Country-based VAT table applied to (subtotal + shipping) at order time, driven by shipping address; cart keeps a labeled estimate.
+- **Closes:** `_review/bugs.md` #13.
+- **Affected:** `CreateOrderCommand.cs:200-202`, `AddToCartCommand.cs:185-186`, `MergeGuestCartCommand.cs`.
+- **Acceptance:** DE address → 19% on goods+shipping; BG → 20%; unit tests per country.
+- **Depends on:** DEC-CURRENCY/store-config decisions (shares the hardcoded shipping/currency TODO cluster, API-014).
+
+### BUG-17 — Defuse hard-delete traps (cart `First()` crash, `SetNull` on non-nullable FKs) (P3, Small)
+- **Description:** If a product row is ever hard-deleted: cart mapping throws (`products.First(...)`), and `order_items` FKs configured `DeleteBehavior.SetNull` on non-nullable Guid columns violate NOT NULL. Make `OrderItem.ProductId`/`VariantId` nullable (rows already snapshot name/sku/price); use `FirstOrDefault` + "unavailable" item in cart mapping.
+- **Closes:** `_review/bugs.md` #17.
+- **Affected:** `OrderConfiguration.cs:214-222`, `OrderItem.cs`, `AddToCartCommand.cs:160`, `MergeGuestCartCommand.cs:143`, migration.
+- **Acceptance:** Hard-deleting a test product leaves order history readable and cart endpoints returning 200 with the item flagged unavailable.
+- **Depends on:** Migration via the db-migrate skill (see ARCH-03 — don't entangle with the folder consolidation).
+
+### BUG-18 — Stop returning 200 for unmatched Stripe webhook events (P2, Small)
+- **Description:** `WebhooksController.cs:91-93` ACKs events with "no matching order", so Stripe never retries — an early-arriving webhook (before the order row commits) is permanently lost. Return non-2xx for "order not yet created" or persist unmatched events for replay.
+- **Closes:** `_review/bugs.md` #18 / additional observation; rider on SR-03 fix.
+- **Affected:** `src/ClimaSite.Api/Controllers/WebhooksController.cs`, `HandleStripeWebhookCommand.cs`.
+- **Acceptance:** Integration test: webhook for an unknown intent returns retryable status (or is stored and reconciled); duplicate events are idempotent.
+- **Depends on:** BUG-01.
+
+---
+
+## 3. Product gaps (GAP)
+
+Detail: `_review/product.md` (flow inventory + "highest-leverage path"), `_review/status.md`, `UI_UX_REVIEW.md`.
+
+### GAP-01 — Admin orders page: list, status update, tracking number (P0, Large)
+- **Description:** `/admin/orders` is a 12-line "Coming Soon" stub while `AdminOrdersController` (status, shipping/tracking, notes) is fully built — **orders can be placed but never fulfilled through the product**. Build the orders list + detail with status transitions and tracking-number entry against the existing API; this is the minimum-operability slice of the admin build-out and the precondition for shipped-email notifications.
+- **Closes:** Fulfillment slice of `_review/product.md` #2 (P0 confirmed) and `_review/status.md` #1; UI_UX_REVIEW P0 item #2; re-confirms `docs/validation/areas/08-admin-panel.md`. **No Plan 18 task tracks admin UI — add one.**
+- **Affected:** `src/ClimaSite.Web/src/app/features/admin/orders/admin-orders.component.ts` (replace stub), new admin order service, `src/ClimaSite.Api/Controllers/AdminOrdersController.cs` (exists).
+- **Acceptance:** Admin marks an order Shipped with a tracking number and the customer sees it in `/account/orders/:id`; real E2E replaces the "via API since UI may be placeholder" workarounds in `AdminPanelTests.cs`; works in both themes / all three languages.
+- **Depends on:** None (backend exists). Pairs with GAP-03 (shipped email) and BUG-01 (status changes only meaningful once orders leave Pending).
+
+### GAP-02 — Admin products CRUD + customers page + dashboard KPIs (P1, Large)
+- **Description:** Replace the `/admin/products` and `/admin/users` stubs with CRUD UIs against `AdminProductsController`/`AdminCustomersController`; wire the orphaned `product-translation-editor` and `related-products-manager` components (implementing the no-op `searchProducts()` against the existing products search — closes BUG-14); surface `AdminDashboardController` KPIs on the dashboard instead of bare nav tiles.
+- **Closes:** Remainder of `_review/product.md` #2 / `_review/status.md` #1; `_review/status.md` #8 (orphaned components); `_review/uiux.md` #3; `_review/bugs.md` #14 (BUG-14); UI_UX_REVIEW item #7.
+- **Affected:** `features/admin/products/`, `features/admin/users/`, `features/admin/admin-dashboard/`, `features/admin/products/components/*` (orphans), backend already exists.
+- **Acceptance:** Create/edit/deactivate a product end-to-end incl. translations and related products; customer list/detail works; dashboard shows real KPIs; E2E coverage; CLAUDE.md admin row corrected (DOC-02).
+- **Depends on:** GAP-01 first (fulfillment beats catalog editing); inventory surfacing decision in GAP-11.
+
+### GAP-03 — Wire transactional emails: order confirmation, shipped, welcome, admin notify-customer (P1, Medium)
+- **Description:** The entire email layer is implemented but orphaned — the only `IEmailService` caller is GDPR delete; no order confirmation, no shipped notice, no welcome email; the admin "notify customer" checkbox is a silent no-op (BUG-16). Wire `SendOrderConfirmationEmailAsync` into order creation (or the Paid webhook), `SendOrderShippedEmailAsync` into the shipping-update flow, welcome into registration, and honor `NotifyCustomer`; flip the `Email:UsePlaceholder=true` default for real environments; make sends fire-and-forget/outboxed so email failure never fails the order.
+- **Closes:** `_review/product.md` #5; `_review/architecture.md` #1 (order/welcome slices); `_review/bugs.md` #16 (BUG-16); `_review/status.md` #3 (email slice). Plan 18 NOT-10x territory.
+- **Affected:** `CreateOrderCommand.cs`, `Auth/Handlers/RegisterCommandHandler.cs`, `Features/Admin/Orders/Commands/UpdateOrderStatusCommand.cs:73`, `EmailService.cs`.
+- **Acceptance:** Placing an order produces a confirmation email (MailHog assert in E2E); admin ship action sends tracking email + creates a notification row; failures logged without breaking the flow; handler unit tests assert the calls.
+- **Depends on:** BUG-07 (same wiring pattern, do first); O-1/ARCH-05 for outbox reliability (synchronous fire-and-forget acceptable as v1); SEC-07 for SMTP config names.
+
+### GAP-04 — Legal pages (terms/privacy/cookies/returns/shipping/FAQ/Impressum) + cookie consent (P1, Medium)
+- **Description:** All six footer legal/support links 404 (routes don't exist) while the footer shows a "GDPR Compliant" badge; no cookie-consent component exists; social links are `href="#"`. EU (BG/DE) distance-selling legal floor: add a lazy `legal` feature with translated static pages incl. German Impressum, a consent banner (no analytics scripts found, so banner is less acute than the mandatory pages), and fix/remove socials.
+- **Closes:** `_review/product.md` #6 (P1 confirmed); UI_UX_REVIEW item #4.
+- **Affected:** `core/layout/footer/footer.component.ts:43-56,93-103`, `app.routes.ts`, new `features/legal/`.
+- **Acceptance:** All footer links render translated content in EN/BG/DE in both themes; consent banner blocks non-essential storage until accepted; placeholder copy acceptable pre-launch but flagged.
+- **Depends on:** Real legal text from the owner (placeholder first); GAP-10 (privacy page should link the GDPR endpoints).
+
+### GAP-05 — Real contact endpoint (form currently fakes success via setTimeout) (P1, Small)
+- **Description:** `contact.component.ts:384-399` simulates success with `setTimeout` — every submission (sales leads, complaints, GDPR inquiries) is silently discarded. Add `POST /api/contact` that emails the business via `IEmailService` and/or persists a ContactMessage; wire the form with real success/error states.
+- **Closes:** `_review/product.md` #7 (P1 confirmed); UI_UX_REVIEW item #5.
+- **Affected:** `features/contact/contact.component.ts`, new controller/command in `ClimaSite.Api`/`ClimaSite.Application`.
+- **Acceptance:** Submission produces a stored/emailed message verifiable in MailHog; network failure shows the error state; integration + E2E test.
+- **Depends on:** Email wiring base (BUG-07/GAP-03).
+
+### GAP-06 — Remove or finish fake payment methods (PayPal, bank transfer) (P1, Small)
+- **Description:** Non-card options create orders nobody can pay: no PayPal integration, no bank-transfer instructions, payment method not even persisted, stock decremented unconditionally. Remove PayPal until integrated; for bank transfer persist the method, show IBAN/reference instructions on confirmation + email, keep status Pending-payment.
+- **Closes:** `_review/product.md` #8 (P1 confirmed); UI_UX_REVIEW item #6.
+- **Affected:** `checkout.component.ts:199-214,1210-1232`, `CreateOrderCommand.cs` (PaymentMethod field — shared with BUG-01).
+- **Acceptance:** Only payable methods offered; bank-transfer orders display instructions and are distinguishable in data; E2E covers the bank path.
+- **Depends on:** BUG-01 (PaymentMethod persistence lands there).
+
+### GAP-07 — Guest checkout: decide, then implement or descope (P1, decision + Medium/Large)
+- **Description:** `/checkout` is auth-guarded while the backend explicitly supports anonymous guest orders and CLAUDE.md documents guest checkout; `PaymentsController` is `[Authorize]` so guests couldn't pay anyway; the existing guest E2E is tautological (passes either way). Either enable end-to-end (drop guard, anonymous create-intent tied to server-computed totals, guest confirmation via order number + email — interacts with SEC-02) or remove the backend guest path and fix docs.
+- **Closes:** `_review/product.md` #9; `_review/bugs.md` #15 (BUG-15); `_review/uiux.md` #16; TS-13.
+- **Affected:** `app.routes.ts:82-89`, `OrdersController.cs`, `PaymentsController.cs`, `CheckoutTests.cs`, CLAUDE.md business rules.
+- **Acceptance:** Docs and behavior agree; if enabled, a guest completes purchase E2E and views confirmation; the tautological E2E is fixed (TS-13).
+- **Depends on:** **DEC-GUEST (blocking)**; BUG-01/BUG-02 must land first if enabling.
+
+### GAP-08 — Installation requests: notify the business and make them viewable (P1, Medium)
+- **Description:** The PDP solicits installation bookings; requests are stored but there is no list endpoint, no admin view, no email — i18n copy promises "We will contact you" and nothing can fulfill it. Minimum: business email per request via `IEmailService`. Proper: `GET /api/admin/installation-requests` + status field + admin list view.
+- **Closes:** `_review/product.md` #10 (P1 confirmed).
+- **Affected:** `InstallationController.cs`, `CreateInstallationRequestCommand.cs`, admin UI (rides on GAP-02 shell).
+- **Acceptance:** Submitting a request triggers a business notification and appears in an admin-visible list with a status lifecycle.
+- **Depends on:** Email wiring (GAP-03); admin shell (GAP-01/02) for the list view — email-only can ship first.
+
+### GAP-09 — Notifications system: complete Plan 18 NOT-100..111 or formally descope (P2, Large)
+- **Description:** In-app notifications have a full backend API with **zero producers and zero UI** (no bell, no `NotificationService`, nothing creates notifications); master overview falsely says "Complete". Either complete the loop (emit from order-status changes, header bell + dropdown + preferences per Plan 18 NOT-106) or remove the controller and mark Plan 12 in-app scope deferred.
+- **Closes:** `_review/product.md` #12 (P2 adjusted); `_review/status.md` #3 (in-app slice); Plan 18 Phase 2 NOT-* (or its descope).
+- **Affected:** `NotificationsController.cs`, `Features/Notifications/`, `header.component.ts`, new frontend feature.
+- **Acceptance:** Order status change creates a notification visible in a header dropdown (with E2E), or endpoints removed and Plan 12/18 + CLAUDE.md updated.
+- **Depends on:** **O-1** (background jobs) per Plan 18 NOT-100 batched decisions; GAP-01 (status changes must exist to notify about).
+
+### GAP-10 — GDPR self-service UI in the account area (P2, Medium)
+- **Description:** Backend export/delete/rights endpoints are real but have no frontend consumer — GDPR rights are not user-exercisable, and the old validation summary mis-reports the backend as missing. Add a privacy section under `/account` (export my data, delete my account with confirmation UX), i18n'd.
+- **Closes:** SR-14; `_review/status.md` #6; GDPR slice of `_review/product.md` #14; corrects `docs/validation/00-validation-summary.md` SEC-003 (with DOC-04).
+- **Affected:** `features/account/account.routes.ts`, new privacy component, `GdprController.cs` (exists).
+- **Acceptance:** Authenticated user exports data and requests deletion from `/account`; E2E covers deletion; GDPR integration tests (TS-05) land alongside.
+- **Depends on:** TS-05 strongly recommended first (deletion is destructive and currently untested at every layer).
+
+### GAP-11 — Triage implemented-but-unreachable features: compare, recently-viewed, price history, inventory admin (P2, Large)
+- **Description:** Built-but-invisible value: `ComparisonService` + CompareButton (no route/usage), `RecentlyViewedComponent` (imported nowhere), `PriceHistoryController` (zero frontend callers), `InventoryController` admin endpoints (no UI anywhere, yet CLAUDE.md claims Inventory "Complete"). Per feature: wire it (compare button + `/compare` page is genuinely high-value for HVAC spec shopping; price-history sparkline on PDP; recently-viewed on PDP/home; inventory views inside GAP-02) or formally descope and document "backend-only by design".
+- **Closes:** `_review/product.md` #14; `_review/status.md` #7; UI_UX_REVIEW item #18.
+- **Affected:** `comparison.service.ts`, `compare-button.component.ts`, `recently-viewed.component.ts`, `PriceHistoryController.cs`, `InventoryController.cs`.
+- **Acceptance:** Each feature reachable from the UI with an E2E test, or deleted/documented as headless; CLAUDE.md status reflects each decision.
+- **Depends on:** Owner triage; GAP-02 for the admin-side pieces.
+
+### GAP-12 — Email verification: complete or remove; decide the policy (P2, Medium)
+- **Description:** Three-quarters-built stub: confirm-email endpoint + client method exist, but registration never sends a token, no `/confirm-email` route exists, and login ignores `EmailConfirmed` (`RequireConfirmedEmail=false`). Decide policy (SR-20): enforce verification (send on register, landing route, optionally gate sensitive actions) or delete the dead pieces and document it as out of scope.
+- **Closes:** `_review/product.md` #13; SR-20 / `_review/security.md` #11.
+- **Affected:** `AuthController.cs`, `Auth/Handlers/RegisterCommandHandler.cs`, `auth.service.ts:266-268`, `app.routes.ts`.
+- **Acceptance:** Registration sends a working confirmation link that flips `EmailConfirmed`, or the endpoint/client method are removed; policy recorded.
+- **Depends on:** Email wiring (GAP-03).
+
+### GAP-13 — Coupons/discount codes + admin promotions management (P3, Large)
+- **Description:** "Promotions" are seeded, read-only content pages; no coupon entity, no code field in cart/checkout, `Order.DiscountAmount` is never set, and promotions can't be updated without a deploy. Phase 1: admin CRUD for promotion content; Phase 2: coupon entity + validation endpoint + cart code field.
+- **Closes:** `_review/product.md` #18.
+- **Affected:** `PromotionsController.cs`, new admin controller/UI, cart/checkout components.
+- **Acceptance:** Admin creates a promotion without a deploy; a coupon code changes the order total end-to-end.
+- **Depends on:** GAP-02 (admin shell); pricing fixes (BUG-02/06) first.
+
+---
+
+## 4. Deployment / Ops (OPS)
+
+Detail: `_review/devops.md`, `DEV_WORKFLOW.md`. The devops launch-blocker list (devops Dimension data §2) maps to SEC-01, SEC-03, OPS-03/04/05, SEC-07, OPS-07, OPS-02.
+
+### OPS-01 — Commit, push, and PR the wishlist slice (P1, Small) — **do first**
+- **Description:** The entire "DONE 2026-06-07" wishlist completion slice (23 modified + ~10 untracked files, incl. all its tests and doc updates) exists **only as uncommitted working-tree changes** on `feature/plan18-wishlist-completion` (branch HEAD == main, nothing recoverable from git). One `git checkout .` from total loss. Commit (conventional commits), push, open the PR, let CI validate. Recommended riders while the branch is open: SEC-10 (drop UserId from shared DTO), BUG-09 (semaphore → constraint), BUG-10 (wishlist lang), UX-02 (error toasts), CHANGELOG bullets, ADR for the share-token design (O-5).
+- **Closes:** `_review/status.md` #4 (P1 confirmed); TS-01 (CI run = the missing test evidence); `_review/docs.md` #14 (CHANGELOG).
+- **Affected:** whole working tree; `CHANGELOG.md`.
+- **Acceptance:** Branch contains the commits; CI green on the PR; merged to main; Plan 18 Phase 2 wishlist DoD ("merged via PR") actually satisfied.
+- **Depends on:** Nothing. Riders are optional but this is their cheapest moment.
+
+### OPS-02 — Protect `main`; fix CLAUDE.md's direct-push mandate (P1, Small)
+- **Description:** `main` has no protection rules (verified via GitHub API) while CLAUDE.md's "NON-NEGOTIABLE" workflow step 4 mandates `git push origin main` — red commits have already landed on main (run 27071713464). Require the five Test Suite checks + PRs, forbid force-push; rewrite CLAUDE.md step 4 to "push feature branch → PR → merge on green" (matches `DEV_WORKFLOW.md` §2-3).
+- **Closes:** SR-15; `_review/devops.md` #6 (P1 confirmed).
+- **Affected:** GitHub repo settings, `CLAUDE.md`, `AGENTS.md`.
+- **Acceptance:** Direct push to main rejected; CLAUDE.md and AGENTS.md describe the same PR flow.
+- **Depends on:** Repo admin (owner has it). Land before any CD wiring (OPS-03).
+
+### OPS-03 — Deploy workflow + one canonical Dockerfile/Railway config per service (P1, Medium)
+- **Description:** No CD workflow exists; three disagreeing `railway.toml` files, drifting duplicate Dockerfiles, and a stale `nginx.conf` copy make deploys guesswork. Pick root `Dockerfile.api`/`Dockerfile.web` as canonical, delete `src/ClimaSite.Api/railway.toml`+Dockerfile, `src/ClimaSite.Web/Dockerfile`, stale `nginx.conf`; add `.github/workflows/deploy.yml` (build images → migrate → Railway deploy on main/tag, gated on the test suite); document the service-to-config mapping.
+- **Closes:** `_review/devops.md` #2 (P1 confirmed); Plan 18 PROD-104.
+- **Affected:** root deploy artifacts, `.github/workflows/`, `docs/operations/` (DOC-03).
+- **Acceptance:** Exactly one Dockerfile + one Railway config per service; deploy workflow runs only after tests pass; mapping documented.
+- **Depends on:** **O-7 / OPS-08** (which Railway services exist); OPS-02 first; OPS-04 supplies the migration step.
+
+### OPS-04 — Stop `MigrateAsync` at startup in prod; dedicated pre-deploy migration step (P1, Medium)
+- **Description:** Migrations run on every boot (crash-loop ×3 against prod data on a bad migration; replica race risk; no rollback target — zero git tags). Gate `MigrateAsync` to Development/Testing; add `scripts/migrate.sh` (or EF migration bundle) as the CD pre-deploy step; adopt expand-contract per the repo's own `deploy-checklist` skill.
+- **Closes:** `_review/devops.md` #3 (P1 confirmed); Plan 18 PROD-102. Pairs with TS-17 (CI migration apply/rollback job).
+- **Affected:** `src/ClimaSite.Infrastructure/Data/DataSeeder.cs:31`, `Program.cs`, new `scripts/migrate.sh`, deploy workflow.
+- **Acceptance:** Production startup performs zero schema changes; CD logs an explicit migration step; CI job applies all migrations to a clean Postgres and rolls back the latest.
+- **Depends on:** Same code path as SEC-01 — do together; OPS-03 hosts the step.
+
+### OPS-05 — Observability floor: correlation IDs, structured logs, error tracker, alerts (P1, Medium)
+- **Description:** Console-only Serilog; the `X-Correlation-Id` convention documented in CLAUDE.md is implemented nowhere; no Sentry/OTel/metrics/alerts/runbooks; no `Log.CloseAndFlush`. Add correlation middleware (read/generate header → Serilog LogContext → echo on response), JSON console output in Production, an error tracker (O-4 — Sentry suggested), OTel per Plan 18 PROD-103, healthcheck-based uptime alerting, `CloseAndFlush` in try/finally.
+- **Closes:** `_review/devops.md` #5 (P1 confirmed); Plan 18 PROD-103; CLAUDE.md correlation-ID doc-drift.
+- **Affected:** `Program.cs`, `src/ClimaSite.Api/Middleware/`, `appsettings.json`, new packages.
+- **Acceptance:** Every API response carries `X-Correlation-Id`; one request's logs share the ID; a thrown test exception appears in the tracker; ExceptionHandlingMiddleware includes a traceId.
+- **Depends on:** **O-4** (vendor choice — owner).
+
+### OPS-08 — Confirm Railway topology, live-deploy status, and backups (P1, Small, **Needs confirmation**)
+- **Description:** Owner questions that gate several tasks: Is auto-deploy connected, and which services/config files? Has a production DB ever been seeded (if yes — rotate `admin@climasite.local` **now**)? What is production object storage? Are Postgres backups enabled / restore tested? Replica count (gates BUG-09 urgency, OutputCache coherence, KnownProxies for SEC-03)?
+- **Closes:** O-7; `_review/devops.md` open questions 1–5; `_review/architecture.md` + `_review/performance.md` topology open items.
+- **Affected:** Railway dashboard (owner); outcomes recorded in DOC-03 runbook + DECISIONS.md.
+- **Acceptance:** All five questions answered and recorded; any live exposure remediated same-day.
+- **Depends on:** Owner access.
+
+### OPS-06 — CI hardening: lint, analyzers, docker-build, dependency scanning, concurrency, real-bundle E2E (P2, Medium)
+- **Description:** CI runs tests only — no `ng lint`, no `dotnet format`/`-warnaserror`, Dockerfiles never built, no `npm audit`/`dotnet list package --vulnerable`/dependabot/CodeQL, codecov upload is `continue-on-error`, no `concurrency:` group or NuGet cache, E2E tests the dev server not the built bundle, triggers reference a nonexistent `develop` branch.
+- **Closes:** `_review/devops.md` #9; TS-12; `_review/testing.md` #7; SECURITY_REVIEW dependency-scanning row.
+- **Affected:** `.github/workflows/test.yml`, new `dependabot.yml`, `angular.json`.
+- **Acceptance:** A PR with a lint error, vulnerable package, or broken Dockerfile fails CI; E2E exercises the compiled e2e bundle; triggers match the real branching model (+`workflow_dispatch`); new checks added to OPS-02's required set.
+- **Depends on:** OPS-02 (to make the new checks required).
+
+### OPS-07 — Non-root containers; web entrypoint fails hard on unset `API_URL` (P2, Small)
+- **Description:** No `USER` directive in any Dockerfile (API and nginx run as root); `docker-entrypoint.sh` defaults `API_URL` to `http://localhost:8080`, so a misconfigured web service passes health checks while every `/api` call fails.
+- **Closes:** SR-13; `_review/devops.md` #11; Plan 18 PROD-100.
+- **Affected:** `Dockerfile.api`, `Dockerfile.web`, `src/ClimaSite.Web/docker-entrypoint.sh`, `nginx.conf.template`.
+- **Acceptance:** `whoami` != root as PID 1 in both images; web image without `API_URL` exits with a clear error.
+- **Depends on:** OPS-03 (canonical Dockerfiles first).
+
+### OPS-09 — Cut the first version tag; exercise the release skill (P2, Small)
+- **Description:** Zero git tags ever; CHANGELOG perpetually "[Unreleased]"; no rollback target exists. Cut a v0.x pre-release from main via the `/release` skill, roll the changelog section, and wire image tagging to git tags in OPS-03's workflow.
+- **Closes:** `_review/devops.md` #12.
+- **Affected:** `CHANGELOG.md`, git tags, deploy workflow.
+- **Acceptance:** Annotated tag + matching CHANGELOG section exist; deploy workflow publishes an image labeled with the tag.
+- **Depends on:** OPS-01 merged; OPS-03 for image tagging.
+
+### OPS-10 — Resolve local-dev bootstrap contradiction (shared-infra vs project compose) (P2, Small)
+- **Description:** `appsettings.json` defaults to project-local compose Postgres on 5433 while AGENTS.md and the owner's global convention mandate shared-infra on 5432; the compose file is referenced by no doc. Decide (O-6 — convention says shared-infra), point the Development connection at `localhost:5432/climasite`, and delete or clearly document `docker-compose.yml`.
+- **Closes:** `_review/devops.md` #8; `_review/docs.md` #12; O-6.
+- **Affected:** `src/ClimaSite.Api/appsettings.json`, `docker-compose.yml`, README (DOC-03).
+- **Acceptance:** Fresh clone + documented steps yields a running app without editing config; compose file removed or its purpose documented.
+- **Depends on:** **O-6** (owner); DOC-03 captures the result.
+
+---
+
+## 5. Testing (TS)
+
+IDs match `docs/project-plan/TESTING_STRATEGY.md` §7; use its §1.3 corrected commands. **Folded elsewhere:** TS-01 → OPS-01 (PR/CI run), TS-02 → DOC-01 (command fixes + slnf), TS-12 → OPS-06 (CI gates), TS-13 → GAP-07 (guest E2E).
+
+### TS-03 — Regression tests bundled with the P0 bug fixes (P0, Medium)
+- **Description:** Land with BUG-01/02/03, not after: integration tests for order-create persisting `paymentIntentId` and webhook → Paid transition; cart-merge test using the **real frontend request shape** plus a guest→login merge E2E (mirror `WishlistTests.cs:137` pattern); an automated displayed==charged==recorded total assertion.
+- **Closes:** TS-03; `_review/testing.md` #9 (merge E2E); the "why green tests missed the P0s" gap (TESTING_STRATEGY §2).
+- **Affected:** `tests/ClimaSite.Api.Tests/Controllers/` (new Orders/Webhooks tests), `tests/ClimaSite.E2E/Tests/Cart/CartTests.cs`.
+- **Acceptance:** Each P0 fix PR includes its regression test; reverting the fix fails CI.
+- **Depends on:** BUG-01/02/03 (same PRs).
+
+### TS-04 — Stripe card-path coverage: E2E with test card + Payments/Webhooks integration tests (P1, Medium)
+- **Description:** The primary revenue path has zero coverage above mocked unit tests — the only completed-order E2E deliberately avoids the Stripe iframe. Add one E2E using test card 4242… via FrameLocator (`CheckoutPage.FillPaymentDetailsAsync` exists as dead code), plus integration tests for create-intent/cancel-intent and webhook signature rejection + event dispatch.
+- **Closes:** TS-04; `_review/testing.md` #2 (P1 confirmed).
+- **Affected:** `tests/ClimaSite.E2E/Tests/Checkout/CheckoutTests.cs`, `PageObjects/CheckoutPage.cs`, new `tests/ClimaSite.Api.Tests/Controllers/{Payments,Webhooks}ControllerTests.cs`; CI Stripe test-mode keys.
+- **Acceptance:** CI completes a card payment to order confirmation in Stripe test mode; webhook tests assert signature rejection and intent→Paid transition.
+- **Depends on:** BUG-01/02 (the path must work first); Stripe test keys in CI secrets (owner).
+
+### TS-05 — GDPR integration tests: export completeness, delete anonymization, idempotency, authz (P1, Medium)
+- **Description:** Irreversible account deletion and legally-required export have **zero tests at every layer**. Integration tests asserting post-delete DB state (no PII rows; order accounting preserved), export payload completeness against seeded fixtures, 401 unauthenticated, idempotency.
+- **Closes:** TS-05; `_review/testing.md` #5 (P1 confirmed).
+- **Affected:** new `tests/ClimaSite.Api.Tests/Controllers/GdprControllerTests.cs`, `Features/Gdpr` handler tests.
+- **Acceptance:** As described; reuses `TestWebApplicationFactory`.
+- **Depends on:** None; do before GAP-10 exposes the delete button to users.
+
+### TS-06 — Integration tests wave 1: Orders, Payments, Webhooks, Gdpr controllers (P1, Medium)
+- **Description:** 20 of 26 controllers have no integration tests; wave 1 covers the money/compliance set (happy path + 401/403 per endpoint) reusing the existing Testcontainers infrastructure.
+- **Closes:** TS-06; money/compliance slice of `_review/testing.md` #3.
+- **Affected:** `tests/ClimaSite.Api.Tests/Controllers/`.
+- **Acceptance:** Each of the four controllers has a test class covering every endpoint's happy path + auth failure; CI integration job stays <10 min.
+- **Depends on:** Subsumes TS-04 (integration half) and TS-05 — coordinate to avoid duplication.
+
+### TS-08 — Application unit tests: Cart, Inventory, Reviews + sale-price mapper (P1, Large)
+- **Description:** 13 of 18 Application feature areas have zero unit tests. Priority order using the proven `MockDbContext` pattern: Cart (merge/quantity-combine/stock-cap), Inventory (oversell — pairs with BUG-05's concurrency fix), Reviews (verified-purchase gate, moderation), plus a unit test on the shared sale-price mapper from BUG-06; then Gdpr, Promotions, Notifications, remainder.
+- **Closes:** TS-08; `_review/testing.md` #4 (P1 confirmed).
+- **Affected:** `tests/ClimaSite.Application.Tests/Features/`.
+- **Acceptance:** Each prioritized Features/* dir has handler tests; coverage measured by TS-07.
+- **Depends on:** BUG-05/BUG-06 land their specific tests first; ARCH-07 for transaction-dependent handlers.
+
+### TS-07 — Coverage measurement + thresholds (backend 80 / frontend 70) (P2, Medium)
+- **Description:** The repo's headline coverage mandates are measured and enforced nowhere (no karma.conf, no runsettings, codecov `continue-on-error`). Coverlet runsettings + threshold gate for backend; new `karma.conf.js` with 70% check + `ng test --code-coverage` in CI. Baseline report-only for one sprint, then enforce. (TESTING_STRATEGY lists this P1; the verifier calibrated the finding P2 — treat as the first P2.)
+- **Closes:** TS-07; `_review/testing.md` #6 (P2 adjusted).
+- **Affected:** `.github/workflows/test.yml`, `tests/*/­*.csproj`, `src/ClimaSite.Web/angular.json` + new karma.conf.js.
+- **Acceptance:** CI fails under 80%/70% after the baseline sprint; coverage summary visible per PR.
+- **Depends on:** OPS-06 (same workflow edits).
+
+### TS-09 — Frontend specs for the riskiest units (P2, Medium)
+- **Description:** auth.interceptor (401→refresh→retry, concurrent-401 queueing — pairs with BUG-08), auth.guard, payment.service, checkout.component (step transitions, double-submit), cart.component, register.
+- **Closes:** TS-09; `_review/testing.md` #8.
+- **Affected:** colocated `*.spec.ts` under `src/ClimaSite.Web/src/app/`.
+- **Acceptance:** Specs exist and pass for all six units; interceptor spec asserts single shared refresh.
+- **Depends on:** Write interceptor spec before/with BUG-08.
+
+### TS-10 — Integration tests wave 2: Reviews, Questions, Notifications, Inventory, Addresses (P2, Medium)
+- **Closes:** TS-10; remainder of `_review/testing.md` #3.
+- **Affected:** `tests/ClimaSite.Api.Tests/Controllers/`. **Acceptance:** happy + 401/403 per endpoint. **Depends on:** TS-06 pattern established.
+
+### TS-11 — E2E reliability: observable cleanup, parallel collections, NotExecuted mystery (P2, Medium)
+- **Description:** All 23 E2E classes share one serial collection (30-min job); `TestDataFactory.CleanupAsync` swallows failures silently; one same-day 74-failure run shows env sensitivity; `Checkout_SavedAddress_CanBeUsed` is NotExecuted in every recorded run with no Skip attribute. Log cleanup failures + CI bulk-cleanup post-step; split into 2-3 collections; rerun-failed in CI only; explain/annotate the NotExecuted test.
+- **Closes:** TS-11; `_review/testing.md` #10.
+- **Affected:** `tests/ClimaSite.E2E/Infrastructure/TestDataFactory.cs`, `PlaywrightFixture.cs`, CI e2e job.
+- **Acceptance:** E2E wall time ~-40%; cleanup failures visible in CI logs; no NotExecuted tests without explicit Skip reason.
+- **Depends on:** None.
+
+### TS-14 — Integration wave 3: Admin*, Brands, Categories, Promotions, PriceHistory, Installation (P3, Large)
+- **Closes:** TS-14. **Depends on:** GAP-01/02 (admin endpoints get UI consumers worth testing).
+
+### TS-15 — Remaining frontend specs (admin components, product-card/list, animation services) (P3, Medium)
+- **Closes:** TS-15. **Depends on:** GAP-01/02 (admin components must exist first).
+
+### TS-16 — Test hygiene: delete `UnitTest1.cs`, unused CI postgres service, dead-or-used `FillPaymentDetailsAsync` (P3, Small)
+- **Closes:** TS-16; `_review/testing.md` #12. Note: the dead `Features/Auth` test retargeting is in ARCH-01, not here.
+- **Acceptance:** No always-pass placeholder tests; integration CI green without the unused service container.
+
+### TS-17 — CI migration job: apply all migrations to clean Postgres + roll back latest (P3, Small)
+- **Closes:** TS-17. **Depends on:** OPS-04 (migration script), ARCH-03 (folder consolidation first is cleaner).
+
+---
+
+## 6. UI/UX (UX)
+
+Detail: `docs/project-plan/UI_UX_REVIEW.md` (work-list #1-23) and `_review/uiux.md`. Items #1 (currency) → BUG-11; #2 (admin orders) → GAP-01; #4-#8 → GAP-04..07/GAP-02; #18 → GAP-11. All UI work must pass the DoD: both themes, EN/BG/DE, keyboard/SR.
+
+### UX-01 — Checkout shipping form: field-level validation errors (P1, Small)
+- **Description:** 8 required validators but **zero rendered error messages** (`.field-error` CSS is dead code) and a disabled-while-invalid submit — users get no clue which field is wrong on the highest-value form in the app. Follow the existing touched-based pattern from `profile.component.ts`.
+- **Closes:** `_review/uiux.md` #2 (P1 confirmed); UI_UX_REVIEW item #3.
+- **Affected:** `src/ClimaSite.Web/src/app/features/checkout/checkout.component.ts:104-167,1051-1105`.
+- **Acceptance:** Blur/submit with empty required fields shows translated errors under each field in all 3 languages; E2E covers incomplete-form attempt.
+- **Depends on:** None.
+
+### UX-02 — Wishlist: surface API errors; confirm/undo for Clear All (P2, Small)
+- **Description:** All wishlist API failures (clear, sync, share toggle, regenerate) are silently swallowed; Clear All wipes UI state with no confirmation/undo and resurrects on refresh if the DELETE failed. Toast failures (ToastService exists), add confirm modal or undo (cart's undo toast is the in-repo gold standard), restore snapshot on failed clear.
+- **Closes:** `_review/uiux.md` #4; UI_UX_REVIEW item #9.
+- **Affected:** `features/wishlist/wishlist.component.ts:402-420`, `core/services/wishlist.service.ts`.
+- **Acceptance:** Simulated 500 on share/clear shows a translated toast and leaves state consistent; component spec covers it.
+- **Depends on:** Ideal rider on OPS-01 (uncommitted branch).
+
+### UX-03 — Router scroll restoration (P2, Small)
+- **Closes:** `_review/uiux.md` #5; item #10. **Affected:** `app.config.ts` (`withInMemoryScrolling`). **Acceptance:** Detail pages open at top; Back restores offset; verify interaction with route transition animations. 
+
+### UX-04 — Header/footer: replace `timer(3200ms)` defer with `on idle` (P2, Small)
+- **Description:** For the first 3.2s of **every cold load** there is no search, cart badge, language/theme switch, or user menu. Use `@defer (on idle)` (same for home-v3's `timer(2200ms)` sections); make the placeholder search focus the real search when loaded.
+- **Closes:** `_review/uiux.md` #6; item #11.
+- **Affected:** `core/layout/main-layout/main-layout.component.ts`, `features/home-v3/home-v3.component.html`.
+- **Acceptance:** Header interactive when browser is idle (<1s desktop); Lighthouse stays within budget (re-run the PERF/A11Y-104 checks).
+- **Depends on:** None.
+
+### UX-05 — Account orders: real error state instead of fake "no orders" (P2, Small)
+- **Closes:** `_review/uiux.md` #7; item #12. **Affected:** `features/account/orders/orders.component.ts:835-838`. **Acceptance:** Stubbed 500 shows translated error + working Retry (mirror product-list's pattern), not the empty state.
+
+### UX-06 — Product detail: skeleton, error + retry, real 404 for bad slugs (P2, Medium)
+- **Closes:** `_review/uiux.md` #8; item #13. **Affected:** `features/products/product-detail/product-detail.component.ts:29-36,897`; reuse `shared/skeleton`. **Acceptance:** Skeleton matches final layout in both themes; API 500 shows retry; unknown slug shows 404 UX.
+
+### UX-07 — Light-theme `--color-error` → error-700 (WCAG AA) (P2, Small)
+- **Description:** `#ef4444` on white is ~3.76:1 — fails AA for the small error text it styles; every other semantic token already uses the 700 shade. One-line token change.
+- **Closes:** `_review/uiux.md` #9; item #14.
+- **Affected:** `src/ClimaSite.Web/src/styles/_colors.scss:295`.
+- **Acceptance:** Error text ≥4.5:1 in light theme (axe pass); visual spot-check of error-background components.
+
+### UX-08 — One breadcrumb implementation (P2, Medium)
+- **Closes:** `_review/uiux.md` #10; item #15. **Description:** Shared BreadcrumbComponent has zero usages; six pages hand-roll divergent breadcrumbs (some not `<nav>` landmarks). Migrate all six or delete the shared component and standardize the inline `<nav aria-label>` pattern. **Acceptance:** One implementation; all instances are landmarks, both themes.
+
+### UX-09 — Breakpoint tokens; fix the 767/768 clash (P2, Medium)
+- **Closes:** `_review/uiux.md` #11; item #16. **Affected:** `styles/_tokens.scss` (new `$bp-*` mixins), `bottom-nav.component.ts`, `wishlist.component.ts:307-309`. **Acceptance:** Bottom-nav visibility and content padding share one constant; no dead reserved space at 768px; migrate others incrementally.
+
+### UX-10 — Real stock badge + out-of-stock CTA on PDP (P2, Small)
+- **Closes:** `_review/product.md` #16; item #17. **Affected:** `product-detail.component.ts:119,1020`. **Acceptance:** Zero-stock variant shows OOS UI with disabled add-to-cart; E2E covers it.
+
+### UX-11 — A11y polish: `role="alert"` on checkout/cart error banners; header search labels (P3, Small)
+- **Closes:** `_review/uiux.md` #12, #13; items #19, #20. **Affected:** `checkout.component.ts:228-256`, `cart.component.ts:109-111`, `header.component.ts:70-83,222-232`. **Acceptance:** SR announces order failure; axe reports no unlabeled-form-element violation on the header.
+
+### UX-12 — `/categories`: redirect to `/products` or build the category grid (P3, Small)
+- **Closes:** `_review/uiux.md` #14; `_review/product.md` #15; item #21. **Affected:** `features/categories/category-list/`, `app.routes.ts:59-62`. **Acceptance:** `/categories` is functional or redirects; no "Coming Soon" reachable.
+
+### UX-13 — Single EU energy-label palette (P3, Small)
+- **Closes:** `_review/uiux.md` #15; item #22. **Affected:** `energy-rating.component.ts:131-140`, `product-card.component.ts:338-358`, `_colors.scss` (documented fixed-palette section). **Acceptance:** Identical class colors on card and detail.
+
+### UX-14 — Offline/empty-state wiring (P3, Small)
+- **Closes:** item #23. **Affected:** `shared/components/empty-state` (unused `offline` variant). **Acceptance:** Global offline detection shows the variant with retry.
+
+---
+
+## 7. Architecture (ARCH)
+
+Detail: `docs/project-plan/ARCHITECTURE_REVIEW.md` (improvements 1-13) and `_review/architecture.md`. Respect its **"Areas to AVOID changing"** list (Stripe path, auth token chain, migration chain, error contract, guest-merge/DataSeeder) — touch those only via the tasks that own them.
+
+### ARCH-01 — Delete dead `Features/Auth` tree; retarget its tests; add validators to the live auth commands (P1, Medium)
+- **Description:** The auth unit tests test a dead duplicate command tree — the live handlers (token rotation, lockout) have **zero unit coverage**, and `Features/AGENTS.md:70` wrongly declares the dead tree canonical. Delete `src/ClimaSite.Application/Features/Auth/`, retarget the three test files at `ClimaSite.Application.Auth.Handlers`, add FluentValidation validators (email format/length, name length) to the commands `AuthController` actually dispatches, fix the AGENTS.md line.
+- **Closes:** `_review/architecture.md` #2 (P1 confirmed); SR-16 / `_review/security.md` #7; auth slice of TS-16.
+- **Affected:** `src/ClimaSite.Application/Features/Auth/` (delete), `src/ClimaSite.Application/Auth/`, `tests/ClimaSite.Application.Tests/Features/Auth/`, `src/ClimaSite.Application/Features/AGENTS.md`.
+- **Acceptance:** grep `Application.Features.Auth` returns zero hits; Application tests pass against the live handlers; every dispatched auth command has a registered validator.
+- **Depends on:** Do **before** any further auth work (incl. SEC-09, BUG-08 backend side).
+
+### ARCH-02 — Dead-scaffolding sweep: repositories, Mapster, six unused directives (P2, Small)
+- **Description:** Pure deletions, zero consumers proven: repository/UnitOfWork layer (~700 lines, incl. DI registrations), Mapster (package + `MappingConfig.cs` + DI lines), six unused directives (magnetic-hover, split-text, scroll-progress, animate-on-scroll, count-up, optimized-image) + index entries.
+- **Closes:** `_review/architecture.md` #4, #13, #10; ARCHITECTURE_REVIEW improvement 5.
+- **Affected:** `Core/Interfaces/I*Repository.cs`, `IUnitOfWork.cs`, `Infrastructure/Repositories/`, `Common/Mappings/MappingConfig.cs`, `shared/directives/`.
+- **Acceptance:** Solution + ng build green; greps for the deleted symbols return nothing; CLAUDE.md/AGENTS.md updated via DOC-01/02 (repository pattern, CountUpDirective rows).
+- **Depends on:** None.
+
+### ARCH-03 — Consolidate the EF migrations into one folder (P2, Small)
+- **Description:** One logical chain split across `Infrastructure/Migrations/` (2 migrations + the only snapshot) and `Infrastructure/Data/Migrations/` (6 migrations) — a standing "cleanup" trap. Move the two files + snapshot into `Data/Migrations/`, update namespaces only (never the `[Migration("...")]` IDs); verify with `dotnet ef migrations list` on a clean DB. Use the `db-migrate` skill; do it in isolation.
+- **Closes:** `_review/architecture.md` #5.
+- **Affected:** `src/ClimaSite.Infrastructure/Migrations/`, `src/ClimaSite.Infrastructure/Data/Migrations/`.
+- **Acceptance:** One folder; clean DB applies all 8 migrations; a probe `migrations add` generates into the consolidated folder.
+- **Depends on:** Do before TS-17 and before any new migration-bearing task (BUG-17, SEC-09).
+
+### ARCH-04 — One API error contract (O-2): ProblemDetails or ratified custom shape (P2, Large)
+- **Description:** Three incompatible error shapes (custom middleware JSON, ad-hoc `BadRequest(new { message })`, default ValidationProblemDetails) while CLAUDE.md claims ProblemDetails. One coordinated change: middleware (or `IExceptionHandler` + `AddProblemDetails`), a base-controller helper for `Result<T>` failures, and the frontend error interceptor — together. Stop echoing raw `ArgumentException` messages (SR-18) as part of the same pass.
+- **Closes:** `_review/architecture.md` #6; SR-18 / `_review/security.md` #9; Program.cs TODO API-012.
+- **Affected:** `src/ClimaSite.Api/Middleware/ExceptionHandlingMiddleware.cs`, all controllers' failure paths, frontend error handling.
+- **Acceptance:** Contract-test sweep shows one schema for all 4xx/5xx; frontend parses a single shape; CLAUDE.md matches (DOC-01).
+- **Depends on:** **O-2** (owner). Do NOT change the middleware shape piecemeal.
+
+### ARCH-05 — Background-job mechanism (O-1) + email outbox processor (P2, Large)
+- **Description:** Zero job infrastructure exists (no IHostedService/Hangfire/Quartz) — a hard blocker for Plan 12 notifications, wishlist `NotifyOnSale` (data is stored, nothing scans it), and guest-cart cleanup. ADR first (simplest viable: `BackgroundService` + DB email-outbox table; RabbitMQ exists in shared-infra if queuing preferred — **owner decides**), then implement the outbox dispatch as the first job since GAP-03 needs it for reliability.
+- **Closes:** `_review/architecture.md` #12; O-1.
+- **Affected:** `src/ClimaSite.Api/Program.cs`, new Infrastructure worker + outbox table/migration.
+- **Acceptance:** ADR merged; one recurring job runs in Development with a retry-on-failure test.
+- **Depends on:** **O-1**; precedes GAP-09; upgrades GAP-03 from fire-and-forget.
+
+### ARCH-06 — Split the five 1,000–1,600-line god components (P3, Large)
+- **Description:** header (1,566), product-list (1,435), checkout (1,231 — money path), order-details (1,082), product-detail (1,030): split to templateUrl/styleUrls (mechanical) and extract obvious children (mega-menu, search overlay, payment step, address step); add ESLint `max-lines` warning ~600 for new files; unify the `Auth/` vs `Features/*` folder taxonomy after ARCH-01.
+- **Closes:** `_review/architecture.md` #7, #15.
+- **Affected:** the five components; `eslint` config.
+- **Acceptance:** Each file <~600 lines or split; ng test + E2E green; no visual regressions in either theme.
+- **Depends on:** After OPS-01 merges (avoid conflicts); coordinate with any Stitch redesign work.
+
+### ARCH-07 — Real-provider test fixture for transaction/constraint-dependent handlers (P3, Medium)
+- **Description:** `MockDbContext` has no transaction/constraint fidelity and already warped production code (the `strategy is null` branch). Add an EF Core SQLite-in-memory (or Testcontainers) fixture for handlers using transactions/constraints (wishlist mutations, CreateOrderCommand); delete the null-strategy branch once covered; document when each fixture applies.
+- **Closes:** `_review/architecture.md` #16; pairs with BUG-09.
+- **Affected:** `tests/ClimaSite.Application.Tests/TestHelpers/`, `WishlistApplicationService.cs`.
+- **Acceptance:** Transaction-using handlers have at least one real-provider test; the null branch is gone.
+- **Depends on:** BUG-09 (same code).
+
+---
+
+## 8. Performance (PERF)
+
+Detail: `_review/performance.md`. Its P0 (forwarded headers) lives here as **SEC-03**. The frontend bundle/lazy-loading story is verified good — don't re-fix it.
+
+### PERF-01 — One caching owner (O-3): activate or delete the dead layers; kill the blanket 5-min output cache (P1, Medium)
+- **Description:** `CachingBehavior` + 14 `ICacheableQuery` opt-ins are dead (never registered) — Redis is provisioned, health-checked (an availability failure mode), and unused; meanwhile a blanket OutputCache base policy silently caches **all anonymous GETs for 5 min with zero invalidation** (named policies/tags never referenced, `EvictByTagAsync` never called; revoked wishlist share links keep serving — SEC-10 note), and the ResponseCaching middleware is inert. Decide O-3, then: register `AddOpenBehavior(typeof(CachingBehavior<,>))` + mutation invalidation **or** delete the MediatR/Redis plumbing; remove the blanket base policy; apply named policies explicitly with `EvictByTagAsync` on product/category mutations; drop the inert middleware.
+- **Closes:** `_review/performance.md` #2 (P1 confirmed), #4; `_review/architecture.md` #3; O-3.
+- **Affected:** `Application/DependencyInjection.cs`, `Common/Behaviors/CachingBehavior.cs`, `Program.cs:245-250,302`, mutation handlers.
+- **Acceptance:** Admin price update is visible to anonymous users immediately after tag eviction (integration test); either Redis keys appear and a second identical query skips the DB, or all dead caching code is gone; Redis removed from /health if unused.
+- **Depends on:** **O-3** (owner). Do not enable caching without the invalidation story.
+
+### PERF-02 — Facet query projection + pagination clamp (P1, Small)
+- **Description:** `GetFilterOptionsQuery` hydrates the **entire active product table** (incl. Description + jsonb Specifications) per facet request; public list endpoints accept `?pageSize=100000` and negative paging (DoS amplification, 500s). Project only the 4 needed columns (then push aggregation into SQL); clamp in `PaginatedList.CreateAsync` (page ≥1, size 1..100) + FluentValidation validators on public paginated queries.
+- **Closes:** `_review/performance.md` #3 (P1 confirmed), #6.
+- **Affected:** `GetFilterOptionsQuery.cs:57`, `Common/Models/PaginatedList.cs:23-36`, `ProductsController.cs`, `SearchProductsQuery.cs`.
+- **Acceptance:** EF-logged SQL transfers only needed columns; `pageSize=100000` returns ≤ max; `pageNumber=0/-1` → 400; unit tests cover the clamp.
+- **Depends on:** None.
+
+### PERF-03 — Query-shape fixes: brief-DTO projections, recommendations pre-filter, category-descendant batching, dashboard KPIs (P2, Medium)
+- **Description:** List/search handlers materialize full entities with 3 Includes for 10-field DTOs; the homepage recommendations handler scores the whole in-stock catalog in C# per call (low-cardinality inputs begging for cache/SQL pre-filter on the existing jsonb GIN index); `GetDescendantIdsAsync` is an N+1-by-depth duplicated in two hot handlers; the admin dashboard fires 13 sequential aggregates. Rewrite as `.Select()` projections (do together with BUG-06/BUG-12 — same code), pre-filter/cache recommendations, batch descendants in one query, collapse KPIs to 2-3 grouped queries.
+- **Closes:** `_review/performance.md` #7, #11, #12, #13; ARCHITECTURE_REVIEW improvement 9.
+- **Affected:** `GetProductsQueryHandler.cs`, `SearchProductsQuery.cs`, `GetRecommendationsQueryHandler.cs`, `GetFilterOptionsQuery.cs`, `GetDashboardKpisQuery.cs`.
+- **Acceptance:** EF logs show projected columns only; recommendation DB rows bounded; one query per descendant resolution; KPI handler ≤4 queries with identical output.
+- **Depends on:** Bundle with BUG-06 + BUG-12.
+
+### PERF-04 — Frontend change-detection hygiene + route preloading (P2, Medium)
+- **Description:** Zone-based CD with 10/85 OnPush and zero `runOutsideAngular` — every scroll/rAF/confetti frame runs app-wide change detection. Wrap the four rAF/scroll loops (`animation.service.ts`, `confetti.service.ts`, `flying-cart.service.ts`, header scroll listener) in `NgZone.runOutsideAngular`; continue Plan 18 **PERF-100** (OnPush ≥70%, currently ~12%); add `withPreloading(PreloadAllModules)` and a preload hint for the persisted language's i18n JSON.
+- **Closes:** `_review/performance.md` #8, #16; Plan 18 PERF-100.
+- **Affected:** the four services/components, `app.config.ts`, `index.html`.
+- **Acceptance:** DevTools trace while scrolling /products shows no per-frame app-wide CD; OnPush ≥70%; product/cart chunks fetched during idle; Lighthouse unchanged or better.
+- **Depends on:** None.
+
+### PERF-05 — Real search backend or corrected claim (P2, Large, decision)
+- **Description:** "Full-text search" is actually ~10 ILIKE predicates per term (sequential scan; existing GIN indexes unusable). Pick per **DEC-SEARCH**: Postgres tsvector + GIN, pg_trgm, or shared-infra Meilisearch; until then correct the CLAUDE.md claim (DOC-02).
+- **Closes:** `_review/performance.md` #5 (P2 adjusted).
+- **Affected:** `SearchProductsQuery.cs`, `ProductConfiguration.cs`, migration.
+- **Acceptance:** EXPLAIN ANALYZE shows index usage; p95 flat to 10k products; docs match implementation.
+- **Depends on:** **DEC-SEARCH** (owner).
+
+### PERF-06 — Image pipeline: sized variants + WebP + NgOptimizedImage/srcset (P2, Large)
+- **Description:** Zero srcset/NgOptimizedImage; admin-uploaded originals served at full resolution from MinIO for ~300px cards. Generate thumb/card/detail WebP variants at upload in `MinioStorageService`, expose in `ProductImageDto`, adopt `ngSrcset` in card/gallery (or front MinIO with imgproxy).
+- **Closes:** `_review/performance.md` #9.
+- **Affected:** `Infrastructure/Services/MinioStorageService.cs`, `ProductImageDto`, `product-card`/`product-gallery` components.
+- **Acceptance:** Card images ≤2× display width in WebP/AVIF (network panel); PDP LCP image appropriately sized with `fetchpriority=high`.
+- **Depends on:** Production storage decision (OPS-08 Q3).
+
+### PERF-07 — SSR/prerender decision; per-route meta now (P2, Large, decision)
+- **Description:** Pure client SPA — crawlers/unfurlers see one generic title for every product URL. **DEC-SSR** options: Angular SSR + hydration for product/category/home; prerender + edge meta; or accept and document. Regardless, implement per-route Title/Meta service usage now (cheap, partial win).
+- **Closes:** `_review/performance.md` #10.
+- **Affected:** `package.json`/`angular.json` (if SSR), route components, `index.html`.
+- **Acceptance:** Decision in `docs/adr/`; curl of `/products/{slug}` returns product-specific meta (if SSR/prerender chosen); meta service usage shipped either way.
+- **Depends on:** **DEC-SSR** (owner — affects deploy topology, OPS-03).
+
+---
+
+## 9. Documentation (DOC)
+
+Detail: `_review/docs.md` (incl. the full per-file Disposition Table) and `_review/status.md`. DOC-01/DOC-02 are P1 and sit in the Next 10 — this category is last only because the rest of it is P2/P3.
+
+### DOC-01 — Fix the executable facts: E2E commands, ports, paths, stack versions (P1, Small)
+- **Description:** CLAUDE.md + root AGENTS.md + `tests/ClimaSite.E2E/AGENTS.md` document a **TypeScript Playwright suite that has never existed** (`npx playwright test`, `fixtures/test-data-factory.ts`, port 5000, `tests/ClimaSite.Web.Tests`, Playwright report :9323) — the mandatory post-implementation workflow is unexecutable as written, and bare root `dotnet test` silently runs E2E without servers. Replace with the corrected commands from `TESTING_STRATEGY.md` §1.3 / `DEV_WORKFLOW.md` §2.3 (`dotnet test tests/ClimaSite.E2E`, port 5029, `Infrastructure/TestDataFactory.cs`, env vars); add `ClimaSite.NoE2E.slnf`; fix EF "9.x" → 10.x, add Tailwind to the stack table, fix `docs/skills.md` → `docs/skills/`, drop the dead CountUpDirective Quick-Reference row, fix the Accept-Language claim (reality: `?lang=`).
+- **Closes:** `_review/docs.md` #1, #2, #9, #13; `_review/testing.md` #1 (TS-02); `_review/devops.md` #7; `_review/architecture.md` #11; `_review/status.md` #11; `_review/bugs.md` #18 (doc part).
+- **Affected:** `CLAUDE.md`, `AGENTS.md`, `tests/ClimaSite.E2E/AGENTS.md`, new `.slnf`.
+- **Acceptance:** Every command block in all three docs executes successfully on a fresh checkout (with documented prerequisites); grep for `npx playwright`, `localhost:5000`, `test-data-factory.ts` returns nothing outside archives.
+- **Depends on:** None — do before the bug-fix wave so agents can run tests.
+
+### DOC-02 — Status truth pass: CLAUDE.md table + master overview (P1, Small)
+- **Description:** Correct the claims that drove this review's biggest gaps: Admin Panel → "Backend complete; frontend: moderation only"; Notifications → accurate Partial scope ("no email dispatch from flows, no frontend"); Checkout → "payment linkage broken (BUG-01/02)"; Inventory → "backend-only, no reservations"; Performance → "Partial — PERF-100/104 open"; Search → "ILIKE, not FTS"; guest-checkout business rule → match GAP-07's outcome; drop the parallax row. In `docs/plans/00-master-overview.md`: delete/date-stamp the "100% Complete" section, fix the plan index (dead links to 15/16 + archived 01-11, Notifications "Complete", missing 18-22) or demote the file to archive with a pointer to this folder.
+- **Closes:** `_review/status.md` #9 + doc slices of #1/#3; `_review/docs.md` #3; `_review/product.md` #17; `_review/performance.md` #14.
+- **Affected:** `CLAUDE.md`, `docs/plans/00-master-overview.md`.
+- **Acceptance:** No status claim in either file contradicts code or Plan 18; all index links resolve.
+- **Depends on:** None; refresh again as GAP/BUG tasks land.
+
+### DOC-03 — README + deployment runbook (P2, Medium)
+- **Description:** No repo README, no human onboarding path, no deployment doc for the Railway/Docker artifacts. README: what/stack/prerequisites/shared-infra setup/verified commands/doc map (source: `DEV_WORKFLOW.md`). `docs/operations/deployment.md`: Railway service-to-config mapping (from OPS-08), Dockerfiles, env-var matrix (devops Dimension data §4), migration + rollback story.
+- **Closes:** `_review/docs.md` #5 (P2 adjusted); devops onboarding slice of #8.
+- **Affected:** new `README.md`, new `docs/operations/deployment.md`.
+- **Acceptance:** Fresh-clone smoke test: clone → running app + one passing E2E using only README; every root-level deploy artifact explained.
+- **Depends on:** DOC-01 first (README copies correct commands); OPS-08 answers.
+
+### DOC-04 — Tracker consolidation: issue registry, validation suite, plan numbering, Plan 12 reconciliation (P2, Medium)
+- **Description:** Four mutually inconsistent trackers exist. (a) Triage-or-archive `docs/plans/20-issue-registry.md` (claims 129 open/0 fixed; verified fixes + deleted-code targets exist) — recommended cheap path: banner "superseded by Plan 18 + docs/project-plan/PRIORITIZED_BACKLOG.md". (b) Banner the 2026-01-24 validation suite as superseded by the 2026-04-08 gap report + this review (fix the inverted-stale SEC-003 GDPR row). (c) Archive superseded plans (19-ui-ux-redesign-masterplan, 20-quality-audit, 21-ui-improvement, 22) with successor banners; resolve the two-Plan-19/four-Plan-21 numbering collisions; extract surviving 21B-21J tasks into Plan 18 or drop (owner call, ~700 boxes). (d) Reconcile Plan 12's 0/163 checkboxes into an accurate implemented-vs-remaining header (input for GAP-09). (e) Fix Plan 18's `.auto-memory/` guardrail → `.codex/PROJECT_MEMORY.md`; archive `docs/skills/` motion research that contradicts the adopted 21F direction.
+- **Closes:** `_review/docs.md` #4, #6, #7, #8, #15, #16; `_review/status.md` #10.
+- **Affected:** `docs/plans/`, `docs/validation/`, `docs/skills/`.
+- **Acceptance:** One authoritative tracker chain remains (Plan 18 + this backlog); every archived doc carries a successor banner; registry counts true or file archived.
+- **Depends on:** Owner answers on 21-series task survival and registry triage depth (docs.md open questions).
+
+### DOC-05 — ADR backfill + repair ADR process integrity (P2, Medium)
+- **Description:** Only 2 ADRs exist and ADR 002 was amended in-place against its own immutability rule (Canvas 2D vs the decided Three.js). Write ADR 003 superseding the renderer decision; ADR for the wishlist share-token design (O-5 — ideally before OPS-01 merges); backfill short ADRs from `DECISIONS.md` §2 (Argon2, rate limiting, Tailwind-only, shared-infra, EF 10, Core→Identity exception) toward Plan 18 Phase 8's ≥8 target; record each blocking decision from this backlog as it's made.
+- **Closes:** `_review/docs.md` #10; `_review/architecture.md` #14; O-5.
+- **Affected:** `docs/adr/`.
+- **Acceptance:** ADR index covers the Canvas amendment + wishlist sharing; no accepted ADR body contains decision-reversing edits; ≥8 ADRs exist.
+- **Depends on:** O-5; DECISIONS.md is the source list.
+
+### DOC-06 — Agent-context sync: AGENTS.md regeneration, skills trees, memory-file roles (P3, Medium)
+- **Description:** Root AGENTS.md is a stale 2026-01-25 snapshot (wrong counts: "9 directives" vs 7, "20 feature folders" vs 18, "28 services" vs 19); skills exist in three diverging trees (`.claude/`, `.codex/`, `.opencode/`). Declare the hierarchy in each file's header (CLAUDE.md canonical; AGENTS.md generated snapshot + regeneration rule; PROJECT_MEMORY.md session state that links rather than restates); regenerate nested AGENTS.md; keep `.claude/skills` as source, sync/derive `.codex`, delete or sync the `.opencode` orphan.
+- **Closes:** `_review/docs.md` #11; `_review/architecture.md` agent-config drift note.
+- **Affected:** `AGENTS.md` (root + nested), `.codex/PROJECT_MEMORY.md`, `.opencode/skills/`.
+- **Acceptance:** Each context file states its role and update trigger; counts match code; one skills source of truth.
+- **Depends on:** DOC-01 (same edit pass for command blocks).
+
+---
+
+## Next 10 tasks — the strict execution order
+
+1. **OPS-01 — Commit, push, and PR the wishlist slice.** Four days of finished multi-layer work is one `git checkout .` from non-recoverable loss, and every status doc already claims it as done; the PR's CI run also closes the missing test evidence (TS-01). Take SEC-10/BUG-09/BUG-10/UX-02 as riders if cheap.
+2. **SEC-01 — Gate DataSeeder admin credentials and demo data** (with OPS-08's "is anything live?" check). The repo is public, so `admin@climasite.local` / `Admin123!` is a published backdoor the moment any deploy happens; not tracked by Plan 18 at all.
+3. **OPS-02 — Protect `main` and fix CLAUDE.md's direct-push step.** Five-minute change that turns the entire CI investment from advisory into a gate before the wave of fixes below starts landing.
+4. **DOC-01 — Fix the test commands/ports/paths docs.** Every subsequent task (human or agent) needs runnable commands; today the mandatory workflow fails as written and bare `dotnet test` produces 200+ false failures.
+5. **BUG-02 — Server-side payment amount/currency (ask DEC-CURRENCY first).** Every honest card order currently underpays ~49% and omits shipping, and €0.01 manipulation is trivially exploitable — nothing about the shop is sellable until the charge is right.
+6. **BUG-01 — Persist `paymentIntentId` and make webhooks reconcile orders** (BUG-18 rider). Without it 100% of card orders are charged-but-stuck-Pending with no recovery path; pairs with BUG-02 in the same PR plus TS-03 regression tests.
+7. **BUG-03 — Fix the guest-cart merge 400.** Deterministic, silent cart loss for every first-time customer who logs in — the single worst conversion bug in the product, and a Small fix.
+8. **SEC-03 — `UseForwardedHeaders` before the rate limiter.** In the deployed topology the whole store shares one 100 req/min bucket — a guaranteed self-inflicted outage at the first modest traffic, invisible in local testing.
+9. **BUG-07 — Send the password-reset email and stop logging the token.** Users are silently locked out forever while live reset tokens sit in the logs; Small fix that also closes security finding SR-05.
+10. **GAP-01 — Admin orders page (status + tracking).** After the money path works, the shop still cannot be operated: no UI exists to fulfill an order. This is the minimum-operability slice and unblocks shipped-email notifications (GAP-03).
+
+**Immediately after the ten:** SEC-02 (order-by-number IDOR), TS-04 (Stripe card-path coverage), GAP-03 (transactional emails), GAP-04/GAP-05 (EU legal pages + real contact endpoint), ARCH-01 (dead auth tree), UX-01 (checkout form errors), then OPS-03/04/05 to make the first deploy safe.
