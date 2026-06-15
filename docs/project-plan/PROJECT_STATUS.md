@@ -177,3 +177,24 @@ From `_review/status.md` — these are the claims a newcomer must NOT trust:
 - **Pre-merge fix-it-cheap-now items flagged by review:** surface wishlist API errors + Clear All confirmation in `wishlist.component.ts`/`wishlist.service.ts` (`_review/uiux.md` #4), drop owner `UserId` from the anonymous shared DTO (`_review/security.md` #10), populate or remove the hardcoded `AverageRating`/`ReviewCount` (`_review/architecture.md` #9), add a CHANGELOG entry (`_review/docs.md` #14), and ideally replace the static semaphore with the existing DB unique-index guard (`_review/bugs.md` #9).
 
 **Action:** commit on the branch, push, open the PR, let CI validate (that also closes the test-evidence gap), then merge. Effort: small; risk of inaction: total loss of ~4 days of multi-layer work that every status doc already asserts as done.
+
+> **✅ RESOLVED (OPS-01):** the wishlist slice was committed and merged to `main` (`024fb72`) with green CI in the prior session. This §9 is retained for history — the work is no longer uncommitted. The "fix-it-cheap-now" riders (SEC-10/BUG-09/BUG-10/UX-02) were deferred and remain open (see §10).
+
+---
+
+## 10. M1 execution progress (live — updated 2026-06-16)
+
+Milestone **M1 (Stabilize & Secure)** is essentially complete. Every task shipped on its own feature branch → PR → all six CI checks green → squash-merged to `main` (now branch-protected per OPS-02). Owner decisions: **DEC-CURRENCY = EUR** (with a transitional dual EUR/BGN display requirement); **OPS-08 = nothing deployed yet** (so the seeded admin credential is latent — no rotation needed).
+
+| Task | PR | Summary |
+|---|---|---|
+| OPS-01 — wishlist slice | (prior) | Merged `024fb72` last session (see §9 banner) |
+| SEC-01 — gate DataSeeder | #5 | Env-gated seeding; prod admin from `ADMIN_EMAIL`/`ADMIN_INITIAL_PASSWORD`; 4 Testcontainers tests |
+| OPS-02 — protect main | #6 | Branch protection (6 required checks, `enforce_admins`, no force-push/deletion) + CLAUDE.md PR-flow mandate |
+| DOC-01 — fix test docs | #10 | Real per-project/E2E commands, port 5029, `ClimaSite.NoE2E.slnf`, EF 10.x, Tailwind, `?lang=` |
+| SEC-03 — forwarded headers | #8 | `UseForwardedHeaders` before the rate limiter + config test |
+| BUG-03 — guest-cart merge | #7 | `?guestSessionId=` contract fix + guest→login merge E2E |
+| BUG-07 — password reset | #9 | Reset email sent (best-effort), token never logged, `&email=` in the link; +unit coverage of the live auth handler |
+| BUG-02 + BUG-01 + BUG-18 + TS-03 — payment cluster | #11 | EUR server-computed charge; `paymentIntentId` persisted + server-verified (status/currency/amount, closing the €0.01 exploit); filtered unique-index idempotency; webhook returns retryable 404 for early `succeeded` events only. Implemented by subagent, then adversarially reviewed (SHIP-WITH-FIXES → all P1/P2/P3 findings fixed) |
+
+**Remaining M1 work (per `CONSOLIDATED_ROADMAP.md`):** BUG-04 (order-before-charge/compensation), BUG-05 (stock-decrement concurrency), BUG-06 (sale-price inversion), SEC-02 (order-by-number IDOR), ARCH-01 (delete dead `Features/Auth` tree). Wishlist riders SEC-10/BUG-09/BUG-10/UX-02 still deferred. **Next milestone M2** opens with **GAP-01 (admin orders page)** — the minimum-operability slice.
