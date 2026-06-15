@@ -31,7 +31,9 @@ Keep unrelated existing debt separate from issues introduced by the current bran
 ## Home v3 / Plan 18 Status
 
 - Plan 18 Phase 0 and Phase 1 are complete as of 2026-06-07.
+- Plan 18 Phase 2 Wishlist WISH-* slice is complete as of 2026-06-07.
 - The active homepage is `features/home-v3/`: configurator-first wizard, Canvas 2D room preview, real `/api/products/recommendations` integration, category/trust/CTA sections, EN/BG/DE translations.
+- Wishlist is complete for the current Plan 18 scope: hydrated backend DTO sync, public sharing route/API, guest-to-login merge, per-user concurrent add protection, EN/BG/DE keys, unit/API/frontend/E2E coverage.
 - Production frontend API calls should remain relative (`apiUrl: ''`) so browser requests go through the deployed `/api` proxy and avoid CORS-origin drift.
 - The root route must lazy-load Home v3 with `pathMatch: 'full'`; do not reintroduce an eager `component` import for the home route.
 - Final local verification for the Home v3 completion PR:
@@ -39,4 +41,4 @@ Keep unrelated existing debt separate from issues introduced by the current bran
   - Frontend: `npm run lint`, `npm run build`, and Karma 970 passed.
   - E2E: 213/213 passed against real API/data.
   - Lighthouse `/`: mobile 0.97 with LCP 2.296s; desktop 1.00 with LCP 0.576s.
-- Next Plan 18 phase: complete partial Notifications, Wishlist, and Animation Audit 21F work before broader i18n/theme hardening.
+- Next Plan 18 phase: complete the remaining Notifications decision-dependent work and Animation Audit 21F tasks before broader i18n/theme hardening.

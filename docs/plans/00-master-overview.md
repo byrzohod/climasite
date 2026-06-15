@@ -181,7 +181,7 @@ climasite/
 | 10 | Search & Navigation | [10-search-navigation.md](./10-search-navigation.md) | SRCH- | Medium | Complete |
 | 11 | Reviews & Ratings | [11-reviews-ratings.md](./11-reviews-ratings.md) | REV- | Medium | Complete |
 | 12 | Notifications System | [12-notifications-system.md](./12-notifications-system.md) | NOT- | Medium | Complete |
-| 13 | Wishlist | [13-wishlist.md](./13-wishlist.md) | WISH- | Low | Complete |
+| 13 | Wishlist | [archive/13-wishlist.md](./archive/13-wishlist.md) | WISH- | Low | Complete |
 | 15 | UI/UX Enhancements Phase 2 | [15-ui-ux-enhancements-phase2.md](./15-ui-ux-enhancements-phase2.md) | UX2- | High | Complete |
 | 16 | E2E Testing Reference | [16-e2e-testing-comprehensive.md](./16-e2e-testing-comprehensive.md) | E2E- | High | Reference |
 | 17 | Future Enhancements | [17-future-enhancements.md](./17-future-enhancements.md) | FUT- | Low | Backlog |

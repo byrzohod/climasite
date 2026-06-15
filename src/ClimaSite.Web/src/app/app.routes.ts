@@ -73,6 +73,12 @@ export const routes: Routes = [
     data: { animation: 'wishlist' }
   },
   {
+    path: 'wishlist/shared/:shareToken',
+    loadComponent: () => import('./features/wishlist/wishlist.component').then(m => m.WishlistComponent),
+    title: 'Shared Wishlist - ClimaSite',
+    data: { animation: 'wishlist-shared' }
+  },
+  {
     path: 'checkout',
     children: [
       {

@@ -19,11 +19,11 @@ ClimaSite is a production-grade online shop specializing in air conditioners, he
 | Search & Navigation | Complete | Full-text search, facets, filters |
 | Inventory Management | Complete | Stock tracking, reservations |
 | Notifications System | Partial | Email notifications implemented |
-| Wishlist | Partial | Basic implementation exists |
+| Wishlist | Complete | Backend DTO sync, public sharing, guest login merge, EN/BG/DE i18n, unit/API/E2E coverage |
 | Motion/Animation System | Complete | AnimationService, flying cart, confetti, parallax |
 | Performance Optimizations | Complete | Core Web Vitals, lazy loading, preconnect hints |
 | Home page (v3 — Configurator-First) | Complete | Plan 18 Phase 1 done; real recommendations endpoint, tests, E2E, visual QA, a11y, and Lighthouse verified |
-| Project completion plan (Plan 18) | In progress | Phase 0 and Phase 1 done; next phase is partial feature completion (Notifications, Wishlist, Animation Audit 21F) |
+| Project completion plan (Plan 18) | In progress | Phase 0 and Phase 1 done; Phase 2 Wishlist slice complete; Notifications and Animation Audit 21F remain |
 
 ### Recently Completed
 
@@ -42,6 +42,7 @@ ClimaSite is a production-grade online shop specializing in air conditioners, he
 | Accessibility (WCAG) | Complete | Focus traps, ARIA roles, keyboard navigation, screen reader support |
 | Animation Audit (21F) | Partial | Phases 1-2 complete: Removed FloatingDirective, TiltEffectDirective, ParallaxDirective; simplified RevealDirective to fade/fade-up/fade-down only |
 | Home v3 Completion | Complete | Configurator-first homepage, real product recommendations, translation coverage, deferred below-fold content, browser QA, and Lighthouse mobile 0.97 / desktop 1.00 |
+| Wishlist Completion | Complete | Hydrated wishlist API, public share links, guest-to-login merge, concurrent add protection, translations, and full local test coverage |
 
 ---
 
@@ -646,7 +647,7 @@ Plans 01-11 have been completed and archived. They covered:
 | Plan | Task IDs | Description | Status |
 |------|----------|-------------|--------|
 | 12-notifications-system.md | NOT-001 to NOT-020 | Email, in-app notifications | Partial |
-| 13-wishlist.md | WISH-001 to WISH-019 | Wishlist, sharing | Partial |
+| archive/13-wishlist.md | WISH-001 to WISH-019, WISH-100 to WISH-108 | Wishlist, sharing | Complete |
 | 17-future-enhancements.md | Various | Related products, translations | Complete |
 
 ---

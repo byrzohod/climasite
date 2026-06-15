@@ -825,7 +825,18 @@
     "clearAll": "Изчисти всички",
     "remove": "Премахни от любими",
     "addedToWishlist": "Добавено в любими",
-    "removedFromWishlist": "Премахнато от любими"
+    "removedFromWishlist": "Премахнато от любими",
+    "itemCount": "Запазени артикули: {{count}}",
+    "share": {
+      "enable": "Сподели списъка",
+      "disable": "Спри споделянето",
+      "copy": "Копирай линк",
+      "regenerate": "Нов линк",
+      "copied": "Линкът е копиран",
+      "sharedTitle": "Споделен списък",
+      "notFoundTitle": "Споделеният списък не е наличен",
+      "notFoundDescription": "Този линк към списък вече не е активен или не съществува."
+    }
   },
   "profile": {
     "phone": "Телефонен номер",

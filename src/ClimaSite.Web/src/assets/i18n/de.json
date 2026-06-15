@@ -825,7 +825,18 @@
     "clearAll": "Alle löschen",
     "remove": "Von Wunschliste entfernen",
     "addedToWishlist": "Zur Wunschliste hinzugefügt",
-    "removedFromWishlist": "Von Wunschliste entfernt"
+    "removedFromWishlist": "Von Wunschliste entfernt",
+    "itemCount": "Gespeicherte Artikel: {{count}}",
+    "share": {
+      "enable": "Wunschliste teilen",
+      "disable": "Teilen beenden",
+      "copy": "Link kopieren",
+      "regenerate": "Neuer Link",
+      "copied": "Link kopiert",
+      "sharedTitle": "Geteilte Wunschliste",
+      "notFoundTitle": "Geteilte Wunschliste nicht verfuegbar",
+      "notFoundDescription": "Dieser Wunschlisten-Link ist nicht mehr aktiv oder existiert nicht."
+    }
   },
   "profile": {
     "phone": "Telefonnummer",
