@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
+using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Infrastructure.Data;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
@@ -12,6 +13,12 @@ namespace ClimaSite.Api.Tests.Infrastructure;
 
 public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    /// <summary>
+    /// Controllable fake payment service so integration tests exercise the money
+    /// path without calling Stripe. Registered as a singleton below.
+    /// </summary>
+    public FakePaymentService PaymentService { get; } = new();
+
     private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
         .WithImage("postgres:16-alpine")
         .WithDatabase("climasite_test")
@@ -49,6 +56,15 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
             // Add test database
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseNpgsql(ConnectionString));
+
+            // Replace the real Stripe payment service with a controllable fake so
+            // integration tests never call out to Stripe.
+            var paymentDescriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(IPaymentService));
+            if (paymentDescriptor != null)
+                services.Remove(paymentDescriptor);
+
+            services.AddSingleton<IPaymentService>(PaymentService);
 
             // Replace production health checks so integration tests don't depend on local services.
             services.Configure<HealthCheckServiceOptions>(options => options.Registrations.Clear());

@@ -2,7 +2,7 @@ namespace ClimaSite.Application.Common.Interfaces;
 
 public interface IPaymentService
 {
-    Task<PaymentIntentResult> CreatePaymentIntentAsync(decimal amount, string currency = "bgn", Dictionary<string, string>? metadata = null);
+    Task<PaymentIntentResult> CreatePaymentIntentAsync(decimal amount, string currency = "eur", Dictionary<string, string>? metadata = null);
     Task<PaymentIntentResult> ConfirmPaymentIntentAsync(string paymentIntentId);
     Task<PaymentIntentResult> CancelPaymentIntentAsync(string paymentIntentId);
     Task<PaymentIntentResult> GetPaymentIntentAsync(string paymentIntentId);
@@ -15,6 +15,12 @@ public record PaymentIntentResult
     public string? ClientSecret { get; init; }
     public string? Status { get; init; }
     public string? ErrorMessage { get; init; }
+
+    /// <summary>The PaymentIntent amount in minor units (e.g. cents), populated on retrieval.</summary>
+    public long Amount { get; init; }
+
+    /// <summary>The PaymentIntent currency (e.g. "eur"), populated on retrieval.</summary>
+    public string? Currency { get; init; }
 
     public static PaymentIntentResult Success(string paymentIntentId, string clientSecret, string status)
         => new() { Succeeded = true, PaymentIntentId = paymentIntentId, ClientSecret = clientSecret, Status = status };

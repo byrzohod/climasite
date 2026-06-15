@@ -26,7 +26,7 @@ public class StripePaymentService : IPaymentService
 
     public async Task<PaymentIntentResult> CreatePaymentIntentAsync(
         decimal amount,
-        string currency = "bgn",
+        string currency = "eur",
         Dictionary<string, string>? metadata = null)
     {
         try
@@ -111,10 +111,16 @@ public class StripePaymentService : IPaymentService
         {
             var paymentIntent = await _paymentIntentService.GetAsync(paymentIntentId);
 
+            // Populate Amount (minor units) and Currency so the order handler can
+            // verify the intent was charged for the expected amount/currency (BUG-01).
             return PaymentIntentResult.Success(
                 paymentIntent.Id,
                 paymentIntent.ClientSecret,
-                paymentIntent.Status);
+                paymentIntent.Status) with
+            {
+                Amount = paymentIntent.Amount,
+                Currency = paymentIntent.Currency
+            };
         }
         catch (StripeException ex)
         {

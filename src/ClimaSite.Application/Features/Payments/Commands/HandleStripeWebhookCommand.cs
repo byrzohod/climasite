@@ -44,8 +44,10 @@ public class HandleStripeWebhookCommandHandler : IRequestHandler<HandleStripeWeb
             _logger.LogWarning(
                 "No order found for PaymentIntent {PaymentIntentId}",
                 request.PaymentIntentId);
-            // Return success anyway - the webhook was processed, just no matching order
-            return Result<bool>.Success(true);
+            // BUG-18: the webhook may arrive before the order row is committed.
+            // Returning a failure lets the controller respond with a retryable
+            // non-2xx so Stripe redelivers the event once the order exists.
+            return Result<bool>.Failure("ORDER_NOT_FOUND");
         }
 
         try

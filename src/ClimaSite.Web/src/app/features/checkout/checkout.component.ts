@@ -1143,10 +1143,11 @@ ngOnInit(): void {
     // Handle card payment with Stripe
     if (this.checkoutService.paymentMethod() === 'card') {
       try {
-        // Create payment intent
+        // Create payment intent. The amount and currency are computed
+        // server-side from the cart and chosen shipping method.
         const intentResponse = await this.paymentService.createPaymentIntent(
-          this.cartService.total(),
-          'bgn'
+          this.checkoutService.shippingMethod(),
+          this.checkoutService.getSessionId() || undefined
         ).toPromise();
 
         if (!intentResponse?.clientSecret) {
