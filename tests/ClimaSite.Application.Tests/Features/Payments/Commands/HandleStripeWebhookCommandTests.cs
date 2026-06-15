@@ -278,9 +278,10 @@ public class HandleStripeWebhookCommandTests
     #region Edge cases
 
     [Fact]
-    public async Task Handle_WhenOrderNotFound_ReturnsSuccessWithoutAction()
+    public async Task Handle_WhenOrderNotFound_ReturnsFailureWithOrderNotFound()
     {
-        // Arrange - no order in context
+        // Arrange - no order in context (e.g. the webhook arrived before the
+        // order row was committed). The handler must signal a retry (BUG-18).
         var command = new HandleStripeWebhookCommand
         {
             EventType = "payment_intent.succeeded",
@@ -291,7 +292,28 @@ public class HandleStripeWebhookCommandTests
         var result = await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.IsSuccess.Should().BeTrue(); // Webhook acknowledged
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Be("ORDER_NOT_FOUND");
+    }
+
+    [Fact]
+    public async Task Handle_PaymentFailed_WhenOrderNotFound_AcknowledgesWithoutRetry()
+    {
+        // Arrange - a failed/refunded event for an intent that never produced an order
+        // means there is nothing to reconcile; only succeeded events warrant a retry,
+        // so this must be acknowledged (no ORDER_NOT_FOUND retry-storm). (BUG-18)
+        var command = new HandleStripeWebhookCommand
+        {
+            EventType = "payment_intent.payment_failed",
+            PaymentIntentId = "pi_nonexistent"
+        };
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Error.Should().BeNullOrEmpty();
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Pricing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Stripe;
@@ -26,13 +27,15 @@ public class StripePaymentService : IPaymentService
 
     public async Task<PaymentIntentResult> CreatePaymentIntentAsync(
         decimal amount,
-        string currency = "bgn",
+        string currency = "eur",
         Dictionary<string, string>? metadata = null)
     {
         try
         {
             // Stripe requires amount in smallest currency unit (e.g., cents)
-            var amountInSmallestUnit = (long)(amount * 100);
+            // Use the same rounding rule as the order-side verification (CheckoutPricing) so
+            // the created intent and the verified amount can never disagree by a minor unit.
+            var amountInSmallestUnit = CheckoutPricing.ToMinorUnits(amount);
 
             var options = new PaymentIntentCreateOptions
             {
@@ -111,10 +114,16 @@ public class StripePaymentService : IPaymentService
         {
             var paymentIntent = await _paymentIntentService.GetAsync(paymentIntentId);
 
+            // Populate Amount (minor units) and Currency so the order handler can
+            // verify the intent was charged for the expected amount/currency (BUG-01).
             return PaymentIntentResult.Success(
                 paymentIntent.Id,
                 paymentIntent.ClientSecret,
-                paymentIntent.Status);
+                paymentIntent.Status) with
+            {
+                Amount = paymentIntent.Amount,
+                Currency = paymentIntent.Currency
+            };
         }
         catch (StripeException ex)
         {

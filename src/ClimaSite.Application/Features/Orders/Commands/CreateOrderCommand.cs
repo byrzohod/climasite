@@ -1,11 +1,12 @@
-using System.Data;
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Models;
+using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Orders.DTOs;
 using ClimaSite.Core.Entities;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace ClimaSite.Application.Features.Orders.Commands;
 
@@ -18,6 +19,8 @@ public record CreateOrderCommand : IRequest<Result<OrderDto>>
     public string ShippingMethod { get; init; } = string.Empty;
     public string? Notes { get; init; }
     public string? GuestSessionId { get; init; }
+    public string? PaymentIntentId { get; init; }
+    public string? PaymentMethod { get; init; }
 }
 
 public class CreateOrderCommandValidator : AbstractValidator<CreateOrderCommand>
@@ -60,19 +63,23 @@ public class CreateOrderCommandValidator : AbstractValidator<CreateOrderCommand>
     }
 }
 
-// TODO: Add ILogger<CreateOrderCommandHandler> for structured logging of order creation events
-// This would help with debugging, auditing, and monitoring order flow in production
 public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Result<OrderDto>>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IPaymentService _paymentService;
+    private readonly ILogger<CreateOrderCommandHandler> _logger;
 
     public CreateOrderCommandHandler(
         IApplicationDbContext context,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IPaymentService paymentService,
+        ILogger<CreateOrderCommandHandler> logger)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _paymentService = paymentService;
+        _logger = logger;
     }
 
     public async Task<Result<OrderDto>> Handle(
@@ -159,8 +166,7 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
             }
             order.SetShippingMethod(request.ShippingMethod);
             order.SetNotes(request.Notes);
-            // TODO: Currency should come from store configuration or be determined by shipping country
-            order.SetCurrency("EUR");
+            order.SetCurrency(CheckoutPricing.Currency);
 
             // Add order items
             foreach (var cartItem in cart.Items)
@@ -182,31 +188,78 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
                 variant.AdjustStock(-cartItem.Quantity);
             }
 
-            // TODO: API-014 - Shipping costs are hardcoded here. These should be:
-            // 1. Configurable via admin panel or appsettings.json
-            // 2. Based on shipping zone/country (e.g., EU vs non-EU rates)
-            // 3. Calculated based on order weight/volume for accurate pricing
-            // 4. Retrieved from a ShippingService that integrates with carrier APIs
-            var shippingCost = request.ShippingMethod switch
-            {
-                "express" => 15.99m,
-                "standard" => 5.99m,
-                "free" => 0m,
-                _ => 9.99m
-            };
-            order.SetShippingCost(shippingCost);
+            // Pricing comes from the shared CheckoutPricing helper so the amount
+            // displayed at checkout, charged via Stripe, and the persisted order
+            // total are always computed identically (BUG-02).
+            order.SetShippingCost(CheckoutPricing.GetShippingCost(request.ShippingMethod));
+            order.SetTaxAmount(CheckoutPricing.GetTax(order.Subtotal));
 
-            // Calculate tax (20% VAT - EU average rate)
-            // TODO: Make tax rate configurable per shipping country (VAT rates vary: DE=19%, BG=20%, etc.)
-            var taxAmount = Math.Round(order.Subtotal * 0.20m, 2);
-            order.SetTaxAmount(taxAmount);
+            // BUG-01: a card order MUST be backed by a verified PaymentIntent. Reject a card
+            // order that arrives without one — otherwise it would create an unpaid,
+            // stock-depleting Pending order. Offline methods (e.g. bank transfer) are handled
+            // separately and may legitimately remain pending-payment (see GAP-06).
+            if (string.Equals(request.PaymentMethod, "card", StringComparison.OrdinalIgnoreCase)
+                && string.IsNullOrWhiteSpace(request.PaymentIntentId))
+            {
+                return Result<OrderDto>.Failure("A verified card payment is required to place this order.");
+            }
+
+            // BUG-01: verify the Stripe PaymentIntent server-side before persisting
+            // the order. We never trust the client that the payment actually
+            // succeeded for the correct amount and currency.
+            if (!string.IsNullOrWhiteSpace(request.PaymentIntentId))
+            {
+                var pi = await _paymentService.GetPaymentIntentAsync(request.PaymentIntentId);
+
+                if (!pi.Succeeded || pi.Status != "succeeded")
+                {
+                    return Result<OrderDto>.Failure("Payment could not be verified");
+                }
+
+                if (!string.Equals(pi.Currency, CheckoutPricing.Currency, StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogWarning(
+                        "PaymentIntent {PaymentIntentId} currency mismatch: expected {Expected} but was {Actual}",
+                        request.PaymentIntentId, CheckoutPricing.Currency, pi.Currency);
+                    return Result<OrderDto>.Failure("Payment could not be verified");
+                }
+
+                var expectedMinorUnits = CheckoutPricing.ToMinorUnits(order.Total);
+                if (pi.Amount != expectedMinorUnits)
+                {
+                    _logger.LogWarning(
+                        "PaymentIntent {PaymentIntentId} amount mismatch: charged {Charged} but expected {Expected}",
+                        request.PaymentIntentId, pi.Amount, expectedMinorUnits);
+                    return Result<OrderDto>.Failure("Payment could not be verified");
+                }
+
+                // Persist the verified payment reference so the webhook can match
+                // the order and flip it to Paid. Status stays Pending here.
+                order.SetPaymentInfo(request.PaymentIntentId, request.PaymentMethod ?? "card");
+            }
 
             _context.Orders.Add(order);
 
             // Clear cart
             cart.Clear();
 
-            await _context.SaveChangesAsync(cancellationToken);
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex) when (
+                ex.InnerException?.Message?.Contains("payment_intent_id", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                // Unique-index violation on payment_intent_id: this intent already backs an
+                // order (idempotency guard). Any OTHER DbUpdateException propagates so real
+                // failures aren't masked and transient errors can still be retried.
+                _logger.LogWarning(
+                    ex,
+                    "Duplicate order creation rejected for PaymentIntent {PaymentIntentId}",
+                    request.PaymentIntentId);
+                return Result<OrderDto>.Failure("This payment has already been used for an order.");
+            }
+
             await transaction.CommitAsync(cancellationToken);
 
             return Result<OrderDto>.Success(MapToDto(order, products));

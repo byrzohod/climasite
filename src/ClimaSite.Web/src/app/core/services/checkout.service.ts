@@ -42,7 +42,7 @@ export class CheckoutService {
   readonly error = this._error.asReadonly();
   readonly lastOrderId = this._lastOrderId.asReadonly();
 
-  private getSessionId(): string {
+  getSessionId(): string {
     return localStorage.getItem(this.SESSION_KEY) || '';
   }
 

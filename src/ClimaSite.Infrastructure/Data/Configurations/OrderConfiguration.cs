@@ -146,7 +146,11 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.HasIndex(o => o.CustomerEmail);
         builder.HasIndex(o => o.Status);
         builder.HasIndex(o => o.CreatedAt).IsDescending();
-        builder.HasIndex(o => o.PaymentIntentId);
+        // Unique (filtered) so a Stripe PaymentIntent can back at most one order
+        // — the idempotency guard for order creation (BUG-01).
+        builder.HasIndex(o => o.PaymentIntentId)
+            .IsUnique()
+            .HasFilter("payment_intent_id IS NOT NULL");
     }
 }
 

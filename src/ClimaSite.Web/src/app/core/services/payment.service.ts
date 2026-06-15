@@ -12,6 +12,8 @@ export interface PaymentConfig {
 export interface PaymentIntentResponse {
   paymentIntentId: string;
   clientSecret: string;
+  amount: number;
+  currency: string;
 }
 
 export interface PaymentIntentStatus {
@@ -109,11 +111,12 @@ export class PaymentService {
     this.elements = null;
   }
 
-  createPaymentIntent(amount: number, currency: string = 'bgn', orderReference?: string): Observable<PaymentIntentResponse> {
+  createPaymentIntent(shippingMethod: string, guestSessionId?: string): Observable<PaymentIntentResponse> {
+    // Amount and currency are computed server-side from the cart; the client
+    // only supplies the shipping method and (for guests) the session id.
     return this.http.post<PaymentIntentResponse>(`${this.apiUrl}/create-intent`, {
-      amount,
-      currency,
-      orderReference
+      shippingMethod,
+      guestSessionId
     });
   }
 

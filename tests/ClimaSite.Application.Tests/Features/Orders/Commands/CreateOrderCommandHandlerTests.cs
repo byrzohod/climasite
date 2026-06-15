@@ -1,9 +1,12 @@
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Orders.Commands;
 using ClimaSite.Application.Features.Orders.DTOs;
 using ClimaSite.Application.Tests.TestHelpers;
 using ClimaSite.Core.Entities;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace ClimaSite.Application.Tests.Features.Orders.Commands;
@@ -11,13 +14,23 @@ namespace ClimaSite.Application.Tests.Features.Orders.Commands;
 public class CreateOrderCommandHandlerTests
 {
     private readonly Mock<ICurrentUserService> _currentUserServiceMock;
+    private readonly Mock<IPaymentService> _paymentServiceMock;
+    private readonly Mock<ILogger<CreateOrderCommandHandler>> _loggerMock;
     private readonly MockDbContext _context;
 
     public CreateOrderCommandHandlerTests()
     {
         _currentUserServiceMock = new Mock<ICurrentUserService>();
+        _paymentServiceMock = new Mock<IPaymentService>();
+        _loggerMock = new Mock<ILogger<CreateOrderCommandHandler>>();
         _context = new MockDbContext();
     }
+
+    private CreateOrderCommandHandler CreateHandler() => new(
+        _context,
+        _currentUserServiceMock.Object,
+        _paymentServiceMock.Object,
+        _loggerMock.Object);
 
     [Fact]
     public async Task Handle_WithValidCart_CreatesOrderSuccessfully()
@@ -35,7 +48,7 @@ public class CreateOrderCommandHandlerTests
         _context.AddCart(cart);
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
-        var handler = new CreateOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = CreateHandler();
         var command = CreateValidCommand();
 
         // Act
@@ -46,6 +59,36 @@ public class CreateOrderCommandHandlerTests
         result.Value.Should().NotBeNull();
         result.Value!.Items.Should().HaveCount(1);
         result.Value.CustomerEmail.Should().Be("customer@test.com");
+    }
+
+    [Fact]
+    public async Task Handle_CardOrderWithoutPaymentIntent_IsRejected()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var product = CreateProduct();
+        var variant = product.Variants.First();
+        variant.SetStockQuantity(10);
+
+        var cart = new Cart(userId, null);
+        cart.AddItem(product.Id, variant.Id, 1, 299.99m);
+
+        _context.AddProduct(product);
+        _context.AddCart(cart);
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        var handler = CreateHandler();
+
+        // A card order with no PaymentIntent must never create an unpaid, stock-depleting order.
+        var command = CreateValidCommand() with { PaymentMethod = "card" };
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Contain("verified card payment");
+        _paymentServiceMock.Verify(x => x.GetPaymentIntentAsync(It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
@@ -64,7 +107,7 @@ public class CreateOrderCommandHandlerTests
         _context.AddCart(cart);
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
-        var handler = new CreateOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = CreateHandler();
         var command = CreateValidCommand();
 
         // Act
@@ -91,7 +134,7 @@ public class CreateOrderCommandHandlerTests
         _context.AddCart(cart);
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
-        var handler = new CreateOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = CreateHandler();
         var command = CreateValidCommand();
 
         // Act
@@ -118,7 +161,7 @@ public class CreateOrderCommandHandlerTests
         _context.AddCart(cart);
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
-        var handler = new CreateOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = CreateHandler();
         var command = CreateValidCommand();
 
         // Act
@@ -145,7 +188,7 @@ public class CreateOrderCommandHandlerTests
         _context.AddCart(cart);
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
-        var handler = new CreateOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = CreateHandler();
         var command = CreateValidCommand();
 
         // Act
@@ -173,7 +216,7 @@ public class CreateOrderCommandHandlerTests
         _context.AddCart(cart);
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
-        var handler = new CreateOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = CreateHandler();
         var command = CreateValidCommand();
 
         // Act
@@ -194,7 +237,7 @@ public class CreateOrderCommandHandlerTests
         _context.AddCart(cart);
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
-        var handler = new CreateOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = CreateHandler();
         var command = CreateValidCommand();
 
         // Act
@@ -212,7 +255,7 @@ public class CreateOrderCommandHandlerTests
         var userId = Guid.NewGuid();
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
-        var handler = new CreateOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = CreateHandler();
         var command = CreateValidCommand();
 
         // Act
@@ -240,7 +283,7 @@ public class CreateOrderCommandHandlerTests
         _context.AddCart(cart);
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
-        var handler = new CreateOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = CreateHandler();
         var command = CreateValidCommand();
 
         // Act
@@ -268,7 +311,7 @@ public class CreateOrderCommandHandlerTests
         _context.AddCart(cart);
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
-        var handler = new CreateOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = CreateHandler();
         var command = CreateValidCommand();
 
         // Act
@@ -295,7 +338,7 @@ public class CreateOrderCommandHandlerTests
         _context.AddCart(cart);
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns((Guid?)null);
-        var handler = new CreateOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = CreateHandler();
         var command = CreateValidCommand() with { GuestSessionId = sessionId };
 
         // Act
@@ -311,7 +354,7 @@ public class CreateOrderCommandHandlerTests
     {
         // Arrange
         _currentUserServiceMock.Setup(x => x.UserId).Returns((Guid?)null);
-        var handler = new CreateOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = CreateHandler();
         var command = CreateValidCommand(); // No GuestSessionId
 
         // Act
@@ -338,7 +381,7 @@ public class CreateOrderCommandHandlerTests
         _context.AddCart(cart);
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
-        var handler = new CreateOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = CreateHandler();
         var command = CreateValidCommand() with { ShippingMethod = "express" };
 
         // Act
@@ -370,7 +413,7 @@ public class CreateOrderCommandHandlerTests
         _context.AddCart(cart);
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
-        var handler = new CreateOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = CreateHandler();
         var command = CreateValidCommand();
 
         // Act
@@ -476,6 +519,204 @@ public class CreateOrderCommandHandlerTests
         // Assert
         result.IsValid.Should().BeTrue();
     }
+
+    #region Payment intent verification (BUG-01)
+
+    [Fact]
+    public async Task Handle_WithVerifiedPaymentIntent_SetsPaymentInfoOnOrder()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var product = CreateProduct();
+        var variant = product.Variants.First();
+        variant.SetStockQuantity(10);
+
+        var cart = new Cart(userId, null);
+        cart.AddItem(product.Id, variant.Id, 1, 100m);
+
+        _context.AddProduct(product);
+        _context.AddCart(cart);
+
+        // Expected order total: subtotal 100 + standard shipping 5.99 + tax 20.00 = 125.99
+        var expectedTotal = CheckoutPricing.CalculateTotal(100m, "standard");
+        _paymentServiceMock
+            .Setup(x => x.GetPaymentIntentAsync("pi_test_123"))
+            .ReturnsAsync(new PaymentIntentResult
+            {
+                Succeeded = true,
+                PaymentIntentId = "pi_test_123",
+                Status = "succeeded",
+                Currency = "eur",
+                Amount = CheckoutPricing.ToMinorUnits(expectedTotal)
+            });
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        var handler = CreateHandler();
+        var command = CreateValidCommand() with
+        {
+            PaymentIntentId = "pi_test_123",
+            PaymentMethod = "card"
+        };
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.PaymentMethod.Should().Be("card");
+        result.Value.Total.Should().Be(expectedTotal);
+
+        var persisted = await _context.Orders.SingleAsync();
+        persisted.PaymentIntentId.Should().Be("pi_test_123");
+        persisted.PaymentMethod.Should().Be("card");
+        // Status stays Pending; the webhook flips it to Paid.
+        persisted.Status.Should().Be(OrderStatus.Pending);
+    }
+
+    [Fact]
+    public async Task Handle_WhenPaymentIntentAmountMismatch_ReturnsFailure()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var product = CreateProduct();
+        var variant = product.Variants.First();
+        variant.SetStockQuantity(10);
+
+        var cart = new Cart(userId, null);
+        cart.AddItem(product.Id, variant.Id, 1, 100m);
+
+        _context.AddProduct(product);
+        _context.AddCart(cart);
+
+        _paymentServiceMock
+            .Setup(x => x.GetPaymentIntentAsync("pi_test_123"))
+            .ReturnsAsync(new PaymentIntentResult
+            {
+                Succeeded = true,
+                PaymentIntentId = "pi_test_123",
+                Status = "succeeded",
+                Currency = "eur",
+                Amount = 100 // way short of the real total
+            });
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        var handler = CreateHandler();
+        var command = CreateValidCommand() with { PaymentIntentId = "pi_test_123" };
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Be("Payment could not be verified");
+    }
+
+    [Fact]
+    public async Task Handle_WhenPaymentIntentWrongCurrency_ReturnsFailure()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var product = CreateProduct();
+        var variant = product.Variants.First();
+        variant.SetStockQuantity(10);
+
+        var cart = new Cart(userId, null);
+        cart.AddItem(product.Id, variant.Id, 1, 100m);
+
+        _context.AddProduct(product);
+        _context.AddCart(cart);
+
+        var expectedTotal = CheckoutPricing.CalculateTotal(100m, "standard");
+        _paymentServiceMock
+            .Setup(x => x.GetPaymentIntentAsync("pi_test_123"))
+            .ReturnsAsync(new PaymentIntentResult
+            {
+                Succeeded = true,
+                PaymentIntentId = "pi_test_123",
+                Status = "succeeded",
+                Currency = "usd", // wrong currency
+                Amount = CheckoutPricing.ToMinorUnits(expectedTotal)
+            });
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        var handler = CreateHandler();
+        var command = CreateValidCommand() with { PaymentIntentId = "pi_test_123" };
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Be("Payment could not be verified");
+    }
+
+    [Fact]
+    public async Task Handle_WhenPaymentIntentNotSucceeded_ReturnsFailure()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var product = CreateProduct();
+        var variant = product.Variants.First();
+        variant.SetStockQuantity(10);
+
+        var cart = new Cart(userId, null);
+        cart.AddItem(product.Id, variant.Id, 1, 100m);
+
+        _context.AddProduct(product);
+        _context.AddCart(cart);
+
+        var expectedTotal = CheckoutPricing.CalculateTotal(100m, "standard");
+        _paymentServiceMock
+            .Setup(x => x.GetPaymentIntentAsync("pi_test_123"))
+            .ReturnsAsync(new PaymentIntentResult
+            {
+                Succeeded = true,
+                PaymentIntentId = "pi_test_123",
+                Status = "requires_payment_method", // not succeeded
+                Currency = "eur",
+                Amount = CheckoutPricing.ToMinorUnits(expectedTotal)
+            });
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        var handler = CreateHandler();
+        var command = CreateValidCommand() with { PaymentIntentId = "pi_test_123" };
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Be("Payment could not be verified");
+    }
+
+    [Fact]
+    public async Task Handle_WithoutPaymentIntentId_DoesNotCallPaymentService()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var product = CreateProduct();
+        var variant = product.Variants.First();
+        variant.SetStockQuantity(10);
+
+        var cart = new Cart(userId, null);
+        cart.AddItem(product.Id, variant.Id, 1, 100m);
+
+        _context.AddProduct(product);
+        _context.AddCart(cart);
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        var handler = CreateHandler();
+        var command = CreateValidCommand(); // no PaymentIntentId
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        _paymentServiceMock.Verify(x => x.GetPaymentIntentAsync(It.IsAny<string>()), Times.Never);
+    }
+
+    #endregion
 
     private static Product CreateProduct(string sku = "TEST-SKU", string name = "Test Product")
     {

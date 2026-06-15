@@ -1,4 +1,6 @@
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Features.Payments.Commands;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -10,15 +12,18 @@ namespace ClimaSite.Api.Controllers;
 [Authorize]
 public class PaymentsController : ControllerBase
 {
+    private readonly IMediator _mediator;
     private readonly IPaymentService _paymentService;
     private readonly IConfiguration _configuration;
     private readonly ILogger<PaymentsController> _logger;
 
     public PaymentsController(
+        IMediator mediator,
         IPaymentService paymentService,
         IConfiguration configuration,
         ILogger<PaymentsController> logger)
     {
+        _mediator = mediator;
         _paymentService = paymentService;
         _configuration = configuration;
         _logger = logger;
@@ -36,37 +41,27 @@ public class PaymentsController : ControllerBase
     }
 
     /// <summary>
-    /// Create a payment intent for the specified amount
+    /// Create a payment intent for the current cart. The amount and currency are
+    /// computed server-side from the cart and chosen shipping method (BUG-02);
+    /// the client only supplies the shipping method and optional guest session id.
     /// </summary>
     [HttpPost("create-intent")]
-    public async Task<IActionResult> CreatePaymentIntent([FromBody] CreatePaymentIntentRequest request)
+    public async Task<IActionResult> CreatePaymentIntent([FromBody] CreatePaymentIntentCommand command)
     {
-        if (request.Amount <= 0)
-        {
-            return BadRequest(new { message = "Amount must be greater than 0" });
-        }
+        var result = await _mediator.Send(command);
 
-        var metadata = new Dictionary<string, string>();
-        if (!string.IsNullOrEmpty(request.OrderReference))
+        if (!result.IsSuccess)
         {
-            metadata["orderReference"] = request.OrderReference;
-        }
-
-        var result = await _paymentService.CreatePaymentIntentAsync(
-            request.Amount,
-            request.Currency ?? "bgn",
-            metadata);
-
-        if (!result.Succeeded)
-        {
-            _logger.LogWarning("Failed to create payment intent: {Error}", result.ErrorMessage);
-            return BadRequest(new { message = result.ErrorMessage });
+            _logger.LogWarning("Failed to create payment intent: {Error}", result.Error);
+            return BadRequest(new { message = result.Error });
         }
 
         return Ok(new
         {
-            paymentIntentId = result.PaymentIntentId,
-            clientSecret = result.ClientSecret
+            paymentIntentId = result.Value!.PaymentIntentId,
+            clientSecret = result.Value.ClientSecret,
+            amount = result.Value.Amount,
+            currency = result.Value.Currency
         });
     }
 
@@ -115,11 +110,4 @@ public class PaymentsController : ControllerBase
 
         return Ok(new { message = "Payment intent cancelled" });
     }
-}
-
-public record CreatePaymentIntentRequest
-{
-    public decimal Amount { get; init; }
-    public string? Currency { get; init; }
-    public string? OrderReference { get; init; }
 }

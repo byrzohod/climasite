@@ -85,11 +85,19 @@ public class WebhooksController : ControllerBase
                     "Failed to process Stripe webhook {EventType}: {Error}",
                     stripeEvent.Type,
                     result.Error);
+
+                // BUG-18: the order row may not be committed yet when an early
+                // webhook arrives. Return a retryable non-2xx so Stripe redelivers.
+                if (result.Error == "ORDER_NOT_FOUND")
+                {
+                    return StatusCode(StatusCodes.Status404NotFound,
+                        new { received = false, reason = "order_not_found" });
+                }
             }
         }
 
-        // Always return 200 to acknowledge receipt
-        // Stripe will retry if we return an error, which could cause duplicate processing
+        // Acknowledge receipt. Stripe will retry on a non-2xx, so we only return
+        // success once the event has been handled (or safely ignored).
         return Ok(new { received = true });
     }
 
