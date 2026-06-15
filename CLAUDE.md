@@ -247,31 +247,27 @@ test('user can complete checkout', async ({ page, request }) => {
 
 ### MANDATORY: Post-Implementation Workflow
 
-**After EVERY implementation session, you MUST:**
+**`main` is branch-protected. NEVER push to `main` directly — direct pushes and force-pushes are rejected. Every change ships on a feature branch via a pull request, and merges only when all six CI checks are green.**
 
-1. **Run ALL tests** (backend, frontend, AND E2E):
+After EVERY change, you MUST:
+
+1. **Branch:** create a `feature/<description>` or `fix/<description>` branch off `main`.
+
+2. **Run the tests locally — per-project, NEVER a bare `dotnet test` at the repo root** (the root solution includes the server-dependent `ClimaSite.E2E` project, which throws hundreds of false failures when run without a live API + frontend):
    ```bash
-   # Run from project root
-   dotnet test && \
-   cd src/ClimaSite.Web && ng test --watch=false --browsers=ChromeHeadless && \
-   cd ../../tests/ClimaSite.E2E && dotnet test
+   dotnet build ClimaSite.sln
+   dotnet test tests/ClimaSite.Core.Tests --no-build
+   dotnet test tests/ClimaSite.Application.Tests --no-build
+   dotnet test tests/ClimaSite.Api.Tests --no-build     # integration; Testcontainers (needs Docker)
+   cd src/ClimaSite.Web && ng test --watch=false --browsers=ChromeHeadless
    ```
+   The full E2E suite (`dotnet test tests/ClimaSite.E2E`) needs a running API on **:5029** plus `ng serve` on **:4200**; CI runs it for you. See `docs/project-plan/DEV_WORKFLOW.md` for the exact local E2E commands and env vars.
 
-2. **Ensure ALL tests pass** - Do not proceed if any tests fail. Fix failures first.
+3. **Open a PR to `main`.** CI runs six required checks — **Unit Tests, Integration Tests, Frontend Unit Tests, Build Verification, E2E Tests, Test Summary**. **CI (not a local test run) is the evidence of record.**
 
-3. **Update CLAUDE.md** if:
-   - New features were added (update status table)
-   - New patterns or conventions were established
-   - New commands or workflows were introduced
+4. **Merge only when all six checks are green.** Use conventional-commit messages. When a feature lands or a convention changes, update the status table in this file (and `docs/project-plan/PROJECT_STATUS.md` / `PRIORITIZED_BACKLOG.md`).
 
-4. **Commit and push to main**:
-   ```bash
-   git add -A
-   git commit -m "feat: <description of changes>"
-   git push origin main
-   ```
-
-**This workflow is NON-NEGOTIABLE. Never skip these steps.**
+**This workflow is NON-NEGOTIABLE. Never push to `main`; never merge on red CI.**
 
 ---
 
