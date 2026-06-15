@@ -335,6 +335,7 @@ Detail: `_review/devops.md`, `DEV_WORKFLOW.md`. The devops launch-blocker list (
 - **Depends on:** Nothing. Riders are optional but this is their cheapest moment.
 
 ### OPS-02 — Protect `main`; fix CLAUDE.md's direct-push mandate (P1, Small)
+- **Status:** ✅ DONE (2026-06-15, branch `chore/ops-02-protect-main`). `main` protected via GitHub API: 6 required status checks, `enforce_admins=true`, PR required (0 approvals), no force-push/deletion, conversation-resolution required. CLAUDE.md post-implementation workflow rewritten to the PR flow with correct per-project test commands.
 - **Description:** `main` has no protection rules (verified via GitHub API) while CLAUDE.md's "NON-NEGOTIABLE" workflow step 4 mandates `git push origin main` — red commits have already landed on main (run 27071713464). Require the five Test Suite checks + PRs, forbid force-push; rewrite CLAUDE.md step 4 to "push feature branch → PR → merge on green" (matches `DEV_WORKFLOW.md` §2-3).
 - **Closes:** SR-15; `_review/devops.md` #6 (P1 confirmed).
 - **Affected:** GitHub repo settings, `CLAUDE.md`, `AGENTS.md`.

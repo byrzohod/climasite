@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Production frontend API configuration now uses relative `/api` calls so deployed frontend traffic goes through the backend proxy instead of a cross-origin API URL.
 - Authentication restore now retries `/me` after refresh when a persisted access token is expired, preventing valid refresh sessions from being dropped.
 - Main layout now renders a lightweight global navigation shell immediately, while the heavier header/footer chunks load after the initial paint.
+- `main` is now branch-protected (OPS-02): pull requests are required, all six CI checks (Unit, Integration, Frontend, Build, E2E, Test Summary) must pass, force-pushes and deletions are blocked, and conversation resolution is required. CLAUDE.md's post-implementation workflow now mandates the feature-branch → PR → green-CI → merge flow instead of pushing directly to `main`.
 
 ### Removed
 
