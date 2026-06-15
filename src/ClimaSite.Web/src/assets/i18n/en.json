@@ -1109,7 +1109,8 @@
       "email": "Email",
       "submit": "Send reset link",
       "backToLogin": "Back to login",
-      "success": "If an account exists for this email, reset instructions have been sent."
+      "success": "If an account exists for this email, reset instructions have been sent.",
+      "error": "Something went wrong. Please try again later."
     },
     "resetPassword": {
       "title": "Reset Password",

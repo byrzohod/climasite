@@ -1109,7 +1109,8 @@
       "email": "E-Mail",
       "submit": "Reset-Link senden",
       "backToLogin": "Zurück zur Anmeldung",
-      "success": "Wenn ein Konto für diese E-Mail existiert, wurden die Anweisungen gesendet."
+      "success": "Wenn ein Konto für diese E-Mail existiert, wurden die Anweisungen gesendet.",
+      "error": "Etwas ist schiefgelaufen. Bitte versuchen Sie es später erneut."
     },
     "resetPassword": {
       "title": "Passwort zurücksetzen",

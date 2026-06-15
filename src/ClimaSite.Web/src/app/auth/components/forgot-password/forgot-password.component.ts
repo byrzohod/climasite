@@ -84,9 +84,12 @@ export class ForgotPasswordComponent {
         });
       },
       error: () => {
+        // The backend always returns 200 for valid requests (to prevent account
+        // enumeration), so this branch is a genuine network/server failure — surface it
+        // instead of falsely claiming the email was sent.
         this.isLoading.set(false);
-        this.translate.get('auth.forgotPassword.success').subscribe(msg => {
-          this.successMessage.set(msg);
+        this.translate.get('auth.forgotPassword.error').subscribe(msg => {
+          this.errorMessage.set(msg);
         });
       }
     });

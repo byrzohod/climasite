@@ -51,7 +51,9 @@ public class EmailService : IEmailService
     public async Task SendPasswordResetEmailAsync(string to, string resetToken, CancellationToken cancellationToken = default)
     {
         var baseUrl = _configuration["AppSettings:BaseUrl"] ?? "https://climasite.local";
-        var resetUrl = $"{baseUrl}/reset-password?token={resetToken}";
+        // The reset page requires BOTH token and email (ResetPasswordCommand has an Email field),
+        // so the link must carry both, URL-encoded.
+        var resetUrl = $"{baseUrl}/reset-password?token={Uri.EscapeDataString(resetToken)}&email={Uri.EscapeDataString(to)}";
 
         var subject = "Reset Your Password - ClimaSite";
         var body = GeneratePasswordResetEmailHtml(resetUrl);
