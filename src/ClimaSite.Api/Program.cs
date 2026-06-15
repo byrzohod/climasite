@@ -6,6 +6,7 @@ using ClimaSite.Api.Configuration;
 using ClimaSite.Infrastructure;
 using ClimaSite.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -192,6 +193,21 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     // Response caching
     services.AddResponseCaching();
 
+    // Forwarded headers — populate the real client IP/scheme from the nginx reverse proxy.
+    // This MUST be applied (in the pipeline) before rate limiting and HTTPS redirection so the
+    // rate limiter partitions per real client rather than per proxy. (SEC-03 / SR-06)
+    services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        // The reverse proxy runs at a dynamic address on the PaaS, so the immediate proxy
+        // cannot be pinned by IP. Clearing both lists lets the middleware honor the
+        // proxy-supplied headers (nginx appends the real client to X-Forwarded-For and the
+        // default ForwardLimit of 1 reads that last hop). When the deploy topology is known,
+        // restrict these to the proxy network to remove the spoofing surface (OPS-08 follow-up).
+        options.KnownIPNetworks.Clear();
+        options.KnownProxies.Clear();
+    });
+
     // Rate limiting
     services.AddRateLimiter(options =>
     {
@@ -255,6 +271,11 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
 void ConfigurePipeline(WebApplication app)
 {
+    // Forwarded headers FIRST so the real client IP/scheme (from the nginx reverse proxy) is
+    // used by request logging, HTTPS redirection, and especially the rate limiter below.
+    // Without this, every request behind the proxy shares one IP and one rate-limit bucket. (SEC-03)
+    app.UseForwardedHeaders();
+
     // Custom exception handling middleware (handles NotFoundException, ValidationException, etc.)
     app.UseExceptionHandling();
 
