@@ -34,6 +34,7 @@ Per the owner's standing convention, these are **owner decisions**, recorded as 
 Detail and evidence: `docs/project-plan/SECURITY_REVIEW.md` (SR-01..SR-20) and `_review/security.md`, `_review/devops.md`, `_review/performance.md`.
 
 ### SEC-01 — Gate DataSeeder: no hardcoded admin credentials or demo data in production (P0, Small)
+- **Status:** ✅ DONE (2026-06-15, branch `fix/sec-01-gate-data-seeder`). DataSeeder env-gated; prod admin bootstrapped from `ADMIN_EMAIL`/`ADMIN_INITIAL_PASSWORD`; 4 Testcontainers regression tests in `DataSeederTests.cs`. OPS-08 confirmed nothing is deployed → latent, no credential rotation needed.
 - **Description:** `Program.cs:31-44` runs `DataSeeder` unconditionally at startup; `DataSeeder.cs:64-65` hardcodes `admin@climasite.local` / `Admin123!` (EmailConfirmed=true) and seeds a demo catalog. The repo is **public** (byrzohod/climasite), so the credential is published. Gate role seeding as always-on; run admin/product/promotion seeding only in Development/Testing; bootstrap the production admin from required env vars (`ADMIN_EMAIL`/`ADMIN_INITIAL_PASSWORD`) and fail startup if absent.
 - **Closes:** SR-01; `_review/devops.md` #1 (P0 confirmed); `_review/status.md` #5. **Not tracked by Plan 18** — add to Phase 5.
 - **Affected:** `src/ClimaSite.Api/Program.cs`, `src/ClimaSite.Infrastructure/Data/DataSeeder.cs`, `Dockerfile.api`.

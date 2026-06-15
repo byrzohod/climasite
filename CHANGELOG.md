@@ -35,6 +35,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Security
 
+- DataSeeder is now environment-gated (SEC-01): the well-known default admin (`admin@climasite.local` / `Admin123!`) and the demo catalog are seeded **only** in Development/Testing. In Production/Staging the first admin is bootstrapped from the `ADMIN_EMAIL` / `ADMIN_INITIAL_PASSWORD` environment variables, and startup fails fast if no admin exists and no bootstrap credentials are provided.
 - Production startup now requires `JWT_SECRET` instead of falling back to the committed development JWT secret.
 - Test-only admin setup secret defaults are restricted to Development; Testing must configure `TestSettings:AdminSecret`.
 

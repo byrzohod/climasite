@@ -1,6 +1,8 @@
 using ClimaSite.Core.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace ClimaSite.Infrastructure.Data;
@@ -10,19 +12,38 @@ public class DataSeeder
     private readonly ApplicationDbContext _context;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole<Guid>> _roleManager;
+    private readonly IHostEnvironment _environment;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<DataSeeder> _logger;
+
+    // Convenience credentials seeded ONLY in Development/Testing. They are never used in
+    // any other environment — see SeedAdminUserAsync. Treat them as public/non-secret.
+    private const string DevAdminEmail = "admin@climasite.local";
+    private const string DevAdminPassword = "Admin123!";
 
     public DataSeeder(
         ApplicationDbContext context,
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole<Guid>> roleManager,
+        IHostEnvironment environment,
+        IConfiguration configuration,
         ILogger<DataSeeder> logger)
     {
         _context = context;
         _userManager = userManager;
         _roleManager = roleManager;
+        _environment = environment;
+        _configuration = configuration;
         _logger = logger;
     }
+
+    /// <summary>
+    /// True only in Development/Testing, where seeding a known admin and a demo catalog is
+    /// safe and convenient. In every other environment (Production, Staging, …) the demo
+    /// catalog is never seeded and the admin is bootstrapped from environment variables.
+    /// </summary>
+    private bool IsNonProductionLike =>
+        _environment.IsDevelopment() || _environment.IsEnvironment("Testing");
 
     public async Task SeedAsync()
     {
@@ -31,11 +52,21 @@ public class DataSeeder
             await _context.Database.MigrateAsync();
             await SeedRolesAsync();
             await SeedAdminUserAsync();
-            await SeedBrandsAsync();
-            await SeedCategoriesAsync();
-            await SeedProductsAsync();
-            await SeedPromotionsAsync();
-            await SeedProductRelationsAsync();
+
+            if (IsNonProductionLike)
+            {
+                await SeedBrandsAsync();
+                await SeedCategoriesAsync();
+                await SeedProductsAsync();
+                await SeedPromotionsAsync();
+                await SeedProductRelationsAsync();
+            }
+            else
+            {
+                _logger.LogInformation(
+                    "Skipping demo catalog seeding in {Environment} environment", _environment.EnvironmentName);
+            }
+
             _logger.LogInformation("Database seeding completed successfully");
         }
         catch (Exception ex)
@@ -61,8 +92,43 @@ public class DataSeeder
 
     private async Task SeedAdminUserAsync()
     {
-        const string adminEmail = "admin@climasite.local";
-        const string adminPassword = "Admin123!";
+        string adminEmail;
+        string adminPassword;
+
+        if (IsNonProductionLike)
+        {
+            // Development/Testing convenience admin. These credentials are intentionally
+            // well-known and MUST NEVER be seeded outside Development/Testing.
+            adminEmail = DevAdminEmail;
+            adminPassword = DevAdminPassword;
+        }
+        else
+        {
+            // Production/Staging: never seed the well-known default. Bootstrap from the
+            // environment instead.
+            adminEmail = _configuration["ADMIN_EMAIL"] ?? string.Empty;
+            adminPassword = _configuration["ADMIN_INITIAL_PASSWORD"] ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
+            {
+                // If an admin already exists (e.g. bootstrapped on a previous deploy), there is
+                // nothing to do and no need to require the credentials again.
+                var existingAdmins = await _userManager.GetUsersInRoleAsync("Admin");
+                if (existingAdmins.Count > 0)
+                {
+                    _logger.LogInformation(
+                        "Admin bootstrap skipped in {Environment}: {Count} admin user(s) already exist.",
+                        _environment.EnvironmentName, existingAdmins.Count);
+                    return;
+                }
+
+                throw new InvalidOperationException(
+                    $"No admin user exists and no bootstrap credentials were provided in the " +
+                    $"'{_environment.EnvironmentName}' environment. Set the ADMIN_EMAIL and " +
+                    "ADMIN_INITIAL_PASSWORD environment variables to bootstrap the first admin. " +
+                    "The built-in default admin is never seeded outside Development/Testing.");
+            }
+        }
 
         var adminUser = await _userManager.FindByEmailAsync(adminEmail);
         if (adminUser == null)
