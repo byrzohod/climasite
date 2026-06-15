@@ -4,12 +4,51 @@ import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../auth/services/auth.service';
 import { ProductBrief } from '../models/product.model';
 import { environment } from '../../../environments/environment';
-import { tap, catchError, of } from 'rxjs';
+import { Observable, from, of } from 'rxjs';
+import { tap, catchError, switchMap, concatMap, reduce, finalize, shareReplay } from 'rxjs';
+
+export interface WishlistDto {
+  id: string;
+  userId: string;
+  isPublic: boolean;
+  shareToken?: string | null;
+  items: WishlistApiItem[];
+  itemCount: number;
+  updatedAt: string;
+}
+
+export interface WishlistApiItem {
+  id: string;
+  productId: string;
+  productName: string;
+  productSlug: string;
+  shortDescription?: string | null;
+  brand?: string | null;
+  imageUrl?: string | null;
+  primaryImageUrl?: string | null;
+  price: number;
+  salePrice?: number | null;
+  isOnSale: boolean;
+  discountPercentage: number;
+  averageRating: number;
+  reviewCount: number;
+  inStock: boolean;
+  note?: string | null;
+  priority: number;
+  priceWhenAdded?: number | null;
+  notifyOnSale: boolean;
+  addedAt: string;
+}
 
 export interface WishlistItem {
+  id?: string;
   productId: string;
   addedAt: string;
   product?: ProductBrief;
+  note?: string | null;
+  priority?: number;
+  priceWhenAdded?: number | null;
+  notifyOnSale?: boolean;
 }
 
 /**
@@ -26,15 +65,20 @@ export class WishlistService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
 
-  private readonly apiUrl = environment.apiUrl;
+  private readonly apiUrl = `${environment.apiUrl}/api/wishlist`;
   private readonly STORAGE_KEY = 'climasite_wishlist';
 
   private readonly _items = signal<WishlistItem[]>([]);
+  private readonly _wishlist = signal<WishlistDto | null>(null);
   private readonly _isLoading = signal(false);
+  private fetchInFlight$: Observable<WishlistDto | null> | null = null;
 
   readonly items = this._items.asReadonly();
+  readonly wishlist = this._wishlist.asReadonly();
   readonly isLoading = this._isLoading.asReadonly();
   readonly itemCount = computed(() => this._items().length);
+  readonly isPublic = computed(() => this._wishlist()?.isPublic ?? false);
+  readonly shareToken = computed(() => this._wishlist()?.shareToken ?? null);
 
   constructor() {
     this.loadWishlist();
@@ -101,7 +145,64 @@ export class WishlistService {
    */
   clearWishlist(): void {
     this._items.set([]);
+    this._wishlist.update(wishlist => wishlist
+      ? {
+          ...wishlist,
+          items: [],
+          itemCount: 0,
+          updatedAt: new Date().toISOString()
+        }
+      : wishlist);
     this.saveToStorage();
+
+    if (this.authService.isAuthenticated()) {
+      this.http.delete<WishlistDto>(this.apiUrl).pipe(
+        tap(wishlist => this.applyWishlistDto(wishlist)),
+        catchError(() => of(null))
+      ).subscribe();
+    }
+  }
+
+  refreshWishlist(): Observable<WishlistDto | null> {
+    if (!this.authService.isAuthenticated()) {
+      return of(null);
+    }
+
+    return this.fetchFromApi();
+  }
+
+  setSharing(isPublic: boolean): Observable<WishlistDto> {
+    return this.http.put<WishlistDto>(`${this.apiUrl}/share`, { isPublic }).pipe(
+      tap(wishlist => this.applyWishlistDto(wishlist))
+    );
+  }
+
+  regenerateShareToken(): Observable<WishlistDto> {
+    return this.http.post<WishlistDto>(`${this.apiUrl}/share-token`, {}).pipe(
+      tap(wishlist => this.applyWishlistDto(wishlist))
+    );
+  }
+
+  getSharedWishlist(shareToken: string): Observable<WishlistDto> {
+    return this.http.get<WishlistDto>(`${this.apiUrl}/shared/${encodeURIComponent(shareToken)}`);
+  }
+
+  toProductBrief(item: WishlistApiItem): ProductBrief {
+    return {
+      id: item.productId,
+      name: item.productName,
+      slug: item.productSlug,
+      shortDescription: item.shortDescription ?? undefined,
+      basePrice: item.price,
+      salePrice: item.salePrice ?? undefined,
+      isOnSale: item.isOnSale,
+      discountPercentage: item.discountPercentage,
+      brand: item.brand ?? undefined,
+      averageRating: item.averageRating,
+      reviewCount: item.reviewCount,
+      primaryImageUrl: item.primaryImageUrl ?? item.imageUrl ?? undefined,
+      inStock: item.inStock
+    };
   }
 
   /**
@@ -122,8 +223,8 @@ export class WishlistService {
     }
 
     // If authenticated, fetch from API and merge
-    if (this.authService.isAuthenticated()) {
-      this.fetchFromApi();
+    if (this.authService.isAuthenticated() && !this.authService.isLoading()) {
+      this.fetchFromApi().subscribe();
     }
   }
 
@@ -138,43 +239,50 @@ export class WishlistService {
   /**
    * Fetch wishlist from API
    */
-  private fetchFromApi(): void {
+  private fetchFromApi(): Observable<WishlistDto | null> {
+    if (this.fetchInFlight$) {
+      return this.fetchInFlight$;
+    }
+
     this._isLoading.set(true);
 
-    this.http.get<WishlistItem[]>(`${this.apiUrl}/api/wishlist`).pipe(
-      tap(apiItems => {
-        // Merge API items with local items
+    this.fetchInFlight$ = this.http.get<WishlistDto>(this.apiUrl).pipe(
+      switchMap(apiWishlist => {
         const localItems = this._items();
-        const mergedMap = new Map<string, WishlistItem>();
+        const apiProductIds = new Set(apiWishlist.items.map(item => item.productId));
+        const localOnlyItems = localItems.filter(item => !apiProductIds.has(item.productId));
 
-        // Add API items
-        apiItems.forEach(item => mergedMap.set(item.productId, item));
+        if (localOnlyItems.length === 0) {
+          return of(apiWishlist);
+        }
 
-        // Add local items that aren't in API
-        localItems.forEach(item => {
-          if (!mergedMap.has(item.productId)) {
-            mergedMap.set(item.productId, item);
-            // Sync new local items to API
-            this.syncAddToApi(item.productId);
-          }
-        });
-
-        this._items.set(Array.from(mergedMap.values()));
-        this.saveToStorage();
-        this._isLoading.set(false);
+        return from(localOnlyItems).pipe(
+          concatMap(item => this.http.post<WishlistDto>(`${this.apiUrl}/items/${item.productId}`, {})),
+          reduce((_, wishlist) => wishlist, apiWishlist)
+        );
+      }),
+      tap(wishlist => {
+        this.applyWishlistDto(wishlist);
       }),
       catchError(() => {
+        return of(null);
+      }),
+      finalize(() => {
         this._isLoading.set(false);
-        return of([]);
-      })
-    ).subscribe();
+        this.fetchInFlight$ = null;
+      }),
+      shareReplay({ bufferSize: 1, refCount: false })
+    );
+
+    return this.fetchInFlight$;
   }
 
   /**
    * Sync add operation to API
    */
   private syncAddToApi(productId: string): void {
-    this.http.post(`${this.apiUrl}/api/wishlist/items/${productId}`, {}).pipe(
+    this.http.post<WishlistDto>(`${this.apiUrl}/items/${productId}`, {}).pipe(
+      tap(wishlist => this.applyWishlistDto(wishlist)),
       catchError(() => of(null))
     ).subscribe();
   }
@@ -183,7 +291,8 @@ export class WishlistService {
    * Sync remove operation to API
    */
   private syncRemoveFromApi(productId: string): void {
-    this.http.delete(`${this.apiUrl}/api/wishlist/items/${productId}`).pipe(
+    this.http.delete<WishlistDto>(`${this.apiUrl}/items/${productId}`).pipe(
+      tap(wishlist => this.applyWishlistDto(wishlist)),
       catchError(() => of(null))
     ).subscribe();
   }
@@ -191,13 +300,27 @@ export class WishlistService {
   /**
    * Merge guest wishlist with user wishlist after login
    */
-  mergeWithUserWishlist(): void {
-    if (!this.authService.isAuthenticated()) return;
-
-    const guestItems = this._items();
-    if (guestItems.length > 0) {
-      // Fetch user wishlist and merge
-      this.fetchFromApi();
+  mergeWithUserWishlist(): Observable<WishlistDto | null> {
+    if (!this.authService.isAuthenticated()) {
+      return of(null);
     }
+
+    return this.fetchFromApi();
+  }
+
+  private applyWishlistDto(wishlist: WishlistDto): void {
+    this._wishlist.set(wishlist);
+    this._items.set(wishlist.items.map(item => ({
+      id: item.id,
+      productId: item.productId,
+      addedAt: item.addedAt,
+      product: this.toProductBrief(item),
+      note: item.note,
+      priority: item.priority,
+      priceWhenAdded: item.priceWhenAdded,
+      notifyOnSale: item.notifyOnSale
+    })));
+    this.saveToStorage();
+    this._isLoading.set(false);
   }
 }

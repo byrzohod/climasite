@@ -25,6 +25,14 @@ public class WishlistController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("shared/{shareToken}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetSharedWishlist(string shareToken)
+    {
+        var result = await _mediator.Send(new GetSharedWishlistQuery { ShareToken = shareToken });
+        return result == null ? NotFound() : Ok(result);
+    }
+
     [HttpPost("items/{productId:guid}")]
     public async Task<IActionResult> AddToWishlist(Guid productId)
     {
@@ -34,7 +42,7 @@ public class WishlistController : ControllerBase
         if (!result.IsSuccess)
             return BadRequest(new { message = result.Error });
 
-        return Ok(new { message = "Added to wishlist" });
+        return Ok(result.Value);
     }
 
     [HttpDelete("items/{productId:guid}")]
@@ -46,6 +54,44 @@ public class WishlistController : ControllerBase
         if (!result.IsSuccess)
             return BadRequest(new { message = result.Error });
 
-        return Ok(new { message = "Removed from wishlist" });
+        return Ok(result.Value);
+    }
+
+    [HttpDelete]
+    public async Task<IActionResult> ClearWishlist()
+    {
+        var result = await _mediator.Send(new ClearWishlistCommand());
+
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.Error });
+
+        return Ok(result.Value);
+    }
+
+    [HttpPut("share")]
+    public async Task<IActionResult> SetSharing([FromBody] SetWishlistSharingRequest request)
+    {
+        var result = await _mediator.Send(new SetWishlistSharingCommand
+        {
+            IsPublic = request.IsPublic
+        });
+
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.Error });
+
+        return Ok(result.Value);
+    }
+
+    [HttpPost("share-token")]
+    public async Task<IActionResult> RegenerateShareToken()
+    {
+        var result = await _mediator.Send(new RegenerateWishlistShareTokenCommand());
+
+        if (!result.IsSuccess)
+            return BadRequest(new { message = result.Error });
+
+        return Ok(result.Value);
     }
 }
+
+public record SetWishlistSharingRequest(bool IsPublic);

@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { catchError, tap, throwError, switchMap, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { CartService } from '../../core/services/cart.service';
+import { WishlistService } from '../../core/services/wishlist.service';
 
 export interface User {
   id: string;
@@ -128,25 +129,28 @@ export class AuthService {
         this._user.set(response.user);
         this.storeToken(response.accessToken);
       }),
-      // Merge guest cart with user cart after successful login
+      // Merge guest cart and wishlist with user data after successful login
       switchMap(response => {
         const guestSessionId = this.isBrowser ? localStorage.getItem(this.GUEST_SESSION_KEY) : null;
-        if (guestSessionId) {
-          const cartService = this.injector.get(CartService);
-          return cartService.mergeCart(response.user.id).pipe(
-            // Return the original login response regardless of merge result
-            tap(() => this._isLoading.set(false)),
+        const cartMerge$ = guestSessionId
+          ? this.injector.get(CartService).mergeCart(response.user.id).pipe(
+              catchError(() => {
+                console.warn('Failed to merge guest cart, continuing with login');
+                return of(null);
+              })
+            )
+          : of(null);
+
+        return cartMerge$.pipe(
+          switchMap(() => this.injector.get(WishlistService).mergeWithUserWishlist().pipe(
             catchError(() => {
-              // Don't fail login if cart merge fails, just log and continue
-              console.warn('Failed to merge guest cart, continuing with login');
-              this._isLoading.set(false);
+              console.warn('Failed to merge guest wishlist, continuing with login');
               return of(null);
-            }),
-            switchMap(() => of(response))
-          );
-        }
-        this._isLoading.set(false);
-        return of(response);
+            })
+          )),
+          tap(() => this._isLoading.set(false)),
+          switchMap(() => of(response))
+        );
       }),
       catchError((error: HttpErrorResponse) => {
         this._isLoading.set(false);

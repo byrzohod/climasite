@@ -1,12 +1,14 @@
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Models;
+using ClimaSite.Application.Features.Wishlist.DTOs;
+using ClimaSite.Application.Features.Wishlist.Services;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClimaSite.Application.Features.Wishlist.Commands;
 
-public record AddToWishlistCommand : IRequest<Result>
+public record AddToWishlistCommand : IRequest<Result<WishlistDto>>
 {
     public Guid ProductId { get; init; }
 }
@@ -20,56 +22,58 @@ public class AddToWishlistCommandValidator : AbstractValidator<AddToWishlistComm
     }
 }
 
-public class AddToWishlistCommandHandler : IRequestHandler<AddToWishlistCommand, Result>
+public class AddToWishlistCommandHandler : IRequestHandler<AddToWishlistCommand, Result<WishlistDto>>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly WishlistApplicationService _wishlistService;
 
     public AddToWishlistCommandHandler(
         IApplicationDbContext context,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        WishlistApplicationService wishlistService)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _wishlistService = wishlistService;
     }
 
-    public async Task<Result> Handle(AddToWishlistCommand request, CancellationToken cancellationToken)
+    public async Task<Result<WishlistDto>> Handle(AddToWishlistCommand request, CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId;
         if (!userId.HasValue)
         {
-            return Result.Failure("User must be authenticated");
+            return Result<WishlistDto>.Failure("User must be authenticated");
         }
 
-        // Check if product exists
-        var productExists = await _context.Products
-            .AnyAsync(p => p.Id == request.ProductId && p.IsActive, cancellationToken);
+        return await _wishlistService.ExecuteUserMutationAsync(
+            userId.Value,
+            AddToWishlistAsync,
+            cancellationToken);
 
-        if (!productExists)
+        async Task<Result<WishlistDto>> AddToWishlistAsync()
         {
-            return Result.Failure("Product not found");
+            var productExists = await _context.Products
+                .AnyAsync(p => p.Id == request.ProductId && p.IsActive, cancellationToken);
+
+            if (!productExists)
+            {
+                return Result<WishlistDto>.Failure("Product not found");
+            }
+
+            var wishlist = await _wishlistService.GetOrCreateWishlistAsync(userId.Value, cancellationToken);
+
+            if (wishlist.Items.Any(i => i.ProductId == request.ProductId))
+            {
+                var existingDto = await _wishlistService.MapToDtoAsync(wishlist, cancellationToken);
+                return Result<WishlistDto>.Success(existingDto);
+            }
+
+            wishlist.AddItem(request.ProductId);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            var dto = await _wishlistService.MapToDtoAsync(wishlist, cancellationToken);
+            return Result<WishlistDto>.Success(dto);
         }
-
-        // Get or create wishlist
-        var wishlist = await _context.Wishlists
-            .Include(w => w.Items)
-            .FirstOrDefaultAsync(w => w.UserId == userId, cancellationToken);
-
-        if (wishlist == null)
-        {
-            wishlist = new Core.Entities.Wishlist(userId.Value);
-            _context.Wishlists.Add(wishlist);
-        }
-
-        // Check if item already in wishlist
-        if (wishlist.Items.Any(i => i.ProductId == request.ProductId))
-        {
-            return Result.Success(); // Already in wishlist, not an error
-        }
-
-        wishlist.AddItem(request.ProductId);
-        await _context.SaveChangesAsync(cancellationToken);
-
-        return Result.Success();
     }
 }

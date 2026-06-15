@@ -9,4 +9,11 @@ describe('app routes', () => {
     expect(homeRoute?.loadComponent).toEqual(jasmine.any(Function));
     expect(homeRoute?.component).toBeUndefined();
   });
+
+  it('registers the public shared wishlist route', () => {
+    const route = routes.find(item => item.path === 'wishlist/shared/:shareToken');
+
+    expect(route).toBeTruthy();
+    expect(route?.loadComponent).toEqual(jasmine.any(Function));
+  });
 });

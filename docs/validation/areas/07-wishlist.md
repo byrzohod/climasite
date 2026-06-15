@@ -1,33 +1,40 @@
 # Wishlist - Validation Report
 
-> Generated: 2026-01-24
+> Updated: 2026-06-07
 
 ## 1. Scope Summary
 
 ### Features Covered
-- **Add to Wishlist**: Add products to user's wishlist via heart icon toggle
-- **Remove from Wishlist**: Remove individual items from wishlist
-- **Clear Wishlist**: Remove all items from wishlist at once
-- **View Wishlist**: Dedicated page showing all saved products with product cards
-- **Guest/Local Storage**: LocalStorage persistence for guests
-- **API Sync**: Automatic sync with backend for authenticated users
-- **Wishlist Merge**: Merge guest wishlist with user wishlist on login
-- **Public Sharing**: Share token generation (entity supports, not fully exposed in API)
-- **Notification on Sale**: Entity supports sale notifications (not implemented in UI)
+- **Add to Wishlist**: authenticated users can add active products from product detail/card flows and receive the hydrated server DTO.
+- **Remove from Wishlist**: individual removal syncs to the API and updates frontend signal state.
+- **Clear Wishlist**: authenticated users can clear all server wishlist items.
+- **View Wishlist**: `/wishlist` renders backend-hydrated product cards, empty state, share controls, and owner-only actions.
+- **Guest/Local Storage**: guests keep local wishlist items in `localStorage`.
+- **Guest-to-Login Merge**: local guest items are merged into the authenticated server wishlist after login.
+- **API Sync**: authenticated wishlist state is loaded from and written to the backend, with in-flight fetch reuse during login merge.
+- **Public Sharing**: owners can enable/disable sharing, copy the public link, regenerate the token, and anonymous users can view `/wishlist/shared/:shareToken` read-only.
+- **Unavailable Products**: inactive/deleted products are omitted from returned wishlist DTO item lists instead of rendering incomplete cards.
 
 ### API Endpoints
+
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| GET | `/api/wishlist` | Get user's wishlist with items | Required |
-| POST | `/api/wishlist/items/{productId}` | Add item to wishlist | Required |
-| DELETE | `/api/wishlist/items/{productId}` | Remove item from wishlist | Required |
+| GET | `/api/wishlist` | Get the current user's hydrated wishlist | Required |
+| POST | `/api/wishlist/items/{productId}` | Add an active product and return the hydrated wishlist | Required |
+| DELETE | `/api/wishlist/items/{productId}` | Remove one product and return the hydrated wishlist | Required |
+| DELETE | `/api/wishlist` | Clear all items and return the hydrated wishlist | Required |
+| PUT | `/api/wishlist/share` | Enable or disable public sharing | Required |
+| POST | `/api/wishlist/share-token` | Regenerate the public share token | Required |
+| GET | `/api/wishlist/shared/{shareToken}` | Load a public shared wishlist | Anonymous |
 
 ### Frontend Routes & Components
+
 | Route | Component | Description |
 |-------|-----------|-------------|
-| `/wishlist` | `WishlistComponent` | Wishlist page with product grid |
-| N/A | `WishlistService` | Signal-based wishlist state management |
-| N/A | Header integration | Heart icon with badge count |
+| `/wishlist` | `WishlistComponent` | Owner wishlist page with product grid and share controls |
+| `/wishlist/shared/:shareToken` | `WishlistComponent` | Anonymous read-only shared wishlist view |
+| N/A | `WishlistService` | Signal-based wishlist state and backend sync |
+| N/A | Header integration | Wishlist link and badge count |
 | N/A | Product Card integration | Quick wishlist toggle button |
 | N/A | Product Detail integration | Wishlist toggle button |
 
@@ -39,298 +46,112 @@
 
 | Layer | Files |
 |-------|-------|
-| Controllers | `src/ClimaSite.Api/Controllers/WishlistController.cs` |
+| Controller | `src/ClimaSite.Api/Controllers/WishlistController.cs` |
 | Commands | `src/ClimaSite.Application/Features/Wishlist/Commands/AddToWishlistCommand.cs` |
 | | `src/ClimaSite.Application/Features/Wishlist/Commands/RemoveFromWishlistCommand.cs` |
+| | `src/ClimaSite.Application/Features/Wishlist/Commands/ClearWishlistCommand.cs` |
+| | `src/ClimaSite.Application/Features/Wishlist/Commands/SetWishlistSharingCommand.cs` |
+| | `src/ClimaSite.Application/Features/Wishlist/Commands/RegenerateWishlistShareTokenCommand.cs` |
 | Queries | `src/ClimaSite.Application/Features/Wishlist/Queries/GetWishlistQuery.cs` |
+| | `src/ClimaSite.Application/Features/Wishlist/Queries/GetSharedWishlistQuery.cs` |
+| Services | `src/ClimaSite.Application/Features/Wishlist/Services/WishlistApplicationService.cs` |
 | DTOs | `src/ClimaSite.Application/Features/Wishlist/DTOs/WishlistDto.cs` |
 | Entities | `src/ClimaSite.Core/Entities/Wishlist.cs` |
 | | `src/ClimaSite.Core/Entities/WishlistItem.cs` |
-| Interfaces | `src/ClimaSite.Core/Interfaces/IWishlistRepository.cs` |
+| Repository | `src/ClimaSite.Infrastructure/Repositories/WishlistRepository.cs` |
 | Configuration | `src/ClimaSite.Infrastructure/Data/Configurations/WishlistConfiguration.cs` |
 
 ### Frontend
 
 | Layer | Files |
 |-------|-------|
-| Components | `src/ClimaSite.Web/src/app/features/wishlist/wishlist.component.ts` |
-| Services | `src/ClimaSite.Web/src/app/core/services/wishlist.service.ts` |
+| Component | `src/ClimaSite.Web/src/app/features/wishlist/wishlist.component.ts` |
+| Service | `src/ClimaSite.Web/src/app/core/services/wishlist.service.ts` |
+| Login merge | `src/ClimaSite.Web/src/app/auth/services/auth.service.ts` |
 | Integrations | `src/ClimaSite.Web/src/app/core/layout/header/header.component.ts` |
 | | `src/ClimaSite.Web/src/app/features/products/product-card/product-card.component.ts` |
 | | `src/ClimaSite.Web/src/app/features/products/product-detail/product-detail.component.ts` |
-| Routes | `src/ClimaSite.Web/src/app/app.routes.ts` (line 56-59) |
+| Routes | `src/ClimaSite.Web/src/app/app.routes.ts` |
+| Translations | `src/ClimaSite.Web/src/assets/i18n/{en,bg,de}.json` |
 
 ---
 
 ## 3. Test Coverage Audit
 
-### Unit Tests
+### Backend Unit Tests
 
-| Test File | Test Names | Coverage |
-|-----------|------------|----------|
-| **NONE** | - | No unit tests for Wishlist entity |
-| **NONE** | - | No unit tests for WishlistItem entity |
-| **NONE** | - | No unit tests for AddToWishlistCommand handler |
-| **NONE** | - | No unit tests for RemoveFromWishlistCommand handler |
-| **NONE** | - | No unit tests for GetWishlistQuery handler |
-| **NONE** | - | No unit tests for WishlistService (frontend) |
+| Test File | Coverage |
+|-----------|----------|
+| `tests/ClimaSite.Core.Tests/Entities/WishlistTests.cs` | Wishlist and WishlistItem domain behavior: add/remove/clear, duplicate prevention, share tokens, notes, priority, notify-on-sale |
+| `tests/ClimaSite.Application.Tests/Features/Wishlist/WishlistHandlersTests.cs` | Add/remove/clear, sharing enable, token regeneration, authenticated get, shared get, inactive product failure, unauthenticated mutations |
 
-### Integration Tests
+### API Integration Tests
 
-| Test File | Test Names | Coverage |
-|-----------|------------|----------|
-| **NONE** | - | No API integration tests for WishlistController |
+| Test File | Coverage |
+|-----------|----------|
+| `tests/ClimaSite.Api.Tests/Controllers/WishlistControllerTests.cs` | Auth guard, add/get/remove persistence, concurrent add idempotence, clear, anonymous shared view, disabled sharing 404, token regeneration |
+
+### Frontend Unit Tests
+
+| Test File | Coverage |
+|-----------|----------|
+| `src/ClimaSite.Web/src/app/core/services/wishlist.service.spec.ts` | Backend DTO hydration, auth-loading guard, guest storage, server clear, sharing token state, guest merge, concurrent login merge fetch reuse, shared read-only load |
+| `src/ClimaSite.Web/src/app/features/wishlist/wishlist.component.spec.ts` | Owner/shared rendering, translated controls, share actions, read-only shared state |
+| `src/ClimaSite.Web/src/app/app.routes.spec.ts` | Shared wishlist route registration |
 
 ### E2E Tests
 
-| Test File | Test Names | Coverage |
-|-----------|------------|----------|
-| **NONE** | - | No E2E tests for wishlist functionality |
+| Test File | Coverage |
+|-----------|----------|
+| `tests/ClimaSite.E2E/Tests/Wishlist/WishlistTests.cs` | Add from product detail with backend hydration, remove server item, clear server items, anonymous shared link, guest-to-login merge |
 
 ---
 
-## 4. Manual Verification Steps
+## 4. Manual / Browser Verification
 
-### Add to Wishlist Flow
-1. Login as existing user
-2. Navigate to Products page
-3. Click heart icon on a product card
-4. Verify heart icon fills with color (active state)
-5. Check header wishlist badge increments
-6. Navigate to `/wishlist` page
-7. Verify product appears in wishlist grid
-
-### Remove from Wishlist Flow
-1. Go to `/wishlist` page
-2. Click the remove (trash) button on a wishlist item
-3. Verify item is removed from the list
-4. Verify header badge decrements
-5. Navigate to product detail page
-6. Verify heart icon is now empty (inactive state)
-
-### Clear Wishlist Flow
-1. Add multiple products to wishlist
-2. Go to `/wishlist` page
-3. Click "Clear All" button
-4. Verify all items are removed
-5. Verify empty state is displayed
-6. Verify header badge shows 0 or is hidden
-
-### Guest Wishlist Flow
-1. Open site without logging in
-2. Add product to wishlist via heart icon
-3. Verify item is stored in localStorage
-4. Refresh page
-5. Verify wishlist persists from localStorage
-6. Login with existing user
-7. Verify guest items are merged with user wishlist
-
-### Wishlist Persistence
-1. Login and add items to wishlist
-2. Logout
-3. Login again
-4. Verify wishlist items are still present (loaded from API)
-
-### Product Detail Wishlist Toggle
-1. Navigate to a product detail page
-2. Click the wishlist heart button
-3. Verify button shows loading spinner briefly
-4. Verify button toggles to active state
-5. Verify header badge updates
-6. Click again to remove
-7. Verify button returns to inactive state
+Completed on 2026-06-07 against the real local API and Angular app:
+- Owner wishlist desktop view.
+- Anonymous shared wishlist desktop view.
+- Mobile dark-theme owner view.
+- No visible `wishlist.*`, `undefined`, `null`, TODO/debug text, or missing shared-view translations.
+- Shared view is read-only.
+- Mobile fixed bottom navigation no longer overlaps the wishlist product card CTA.
 
 ---
 
-## 5. Gaps & Risks
+## 5. Fixed Gaps
 
-### Missing Test Coverage (Critical)
-- [ ] **No unit tests for Wishlist entity** - Business logic untested (AddItem, RemoveItem, Clear, etc.)
-- [ ] **No unit tests for WishlistItem entity** - Validation logic untested (SetNote, SetPriority, etc.)
-- [ ] **No unit tests for AddToWishlistCommand handler** - Command handler untested
-- [ ] **No unit tests for RemoveFromWishlistCommand handler** - Command handler untested
-- [ ] **No unit tests for GetWishlistQuery handler** - Query handler untested
-- [ ] **No frontend unit tests for WishlistService** - Signal state management untested
-- [ ] **No API integration tests** for WishlistController endpoints
-- [ ] **No E2E tests** for any wishlist user flows
-
-### Missing Features (Planned but Not Implemented)
-- [ ] **No ClearWishlist API endpoint** - Frontend `clearWishlist()` only clears localStorage
-- [ ] **No WishlistRepository implementation** - Only interface exists (`IWishlistRepository`)
-- [ ] **No shared wishlist page** - `/wishlist/shared/:token` route not implemented
-- [ ] **No move-to-cart functionality** - Planned in design but not implemented
-- [ ] **No item notes/priority UI** - Entities support but no UI to edit
-- [ ] **No notify-on-sale functionality** - Entity has `NotifyOnSale` flag but unused
-
-### Code Quality Issues
-- [ ] **Frontend clearWishlist doesn't sync to API** - Only clears localStorage, authenticated users have orphaned backend data
-- [ ] **No error handling for failed API sync** - `catchError(() => of(null))` silently swallows errors
-- [ ] **Wishlist merge on login may cause duplicates** - Race condition between localStorage and API fetch
-- [ ] **Missing i18n for some UI text** - Some hardcoded strings in component templates
-- [ ] **WishlistComponent relies on cached product data** - If product cache is empty, items show without product info
-
-### Security Concerns
-- [ ] **No rate limiting** on wishlist API endpoints
-- [ ] **No validation of product existence before add** (frontend) - Backend validates but frontend doesn't
-
-### Edge Cases Not Tested
-- [ ] Product deleted while in wishlist
-- [ ] Product deactivated while in wishlist
-- [ ] Concurrent wishlist modifications from multiple devices
-- [ ] Large wishlist (100+ items) performance
-- [ ] Guest wishlist with expired/invalid product IDs
+- Backend wishlist handlers now return hydrated `WishlistDto` objects instead of write-only success responses.
+- Frontend service now consumes the backend DTO shape instead of treating the API response as a raw item array.
+- Clear wishlist syncs through `DELETE /api/wishlist`.
+- Public sharing is exposed through API endpoints and `/wishlist/shared/:shareToken`.
+- Guest-to-login merge syncs local-only items into the server wishlist and applies the final backend DTO.
+- Login-time wishlist sync reuses in-flight API fetches to avoid duplicate creation races.
+- Backend user mutations are serialized per user and wrapped in EF transactions; API integration coverage verifies concurrent add idempotence.
+- Owner and shared wishlist UI strings use EN/BG/DE translation keys.
 
 ---
 
-## 6. Recommended Fixes & Tests
+## 6. Remaining Product Scope
 
-| Priority | Issue | Recommendation |
-|----------|-------|----------------|
-| **P0** | No E2E tests | Add `WishlistTests.cs` with full user flow coverage |
-| **P0** | No unit tests for entities | Add `WishlistTests.cs` and `WishlistItemTests.cs` in Core.Tests |
-| **P0** | No command handler tests | Add tests for AddToWishlist, RemoveFromWishlist, GetWishlist handlers |
-| **P1** | clearWishlist not synced | Add `DELETE /api/wishlist` endpoint and call from frontend |
-| **P1** | No WishlistRepository | Implement `WishlistRepository.cs` in Infrastructure layer |
-| **P1** | No frontend service tests | Add `wishlist.service.spec.ts` |
-| **P2** | No move-to-cart | Implement `POST /api/wishlist/items/{id}/move-to-cart` endpoint |
-| **P2** | No shared wishlist page | Implement SharedWishlistPageComponent |
-| **P2** | Error handling | Add proper error handling with user notifications |
-| **P3** | Rate limiting | Add rate limiting middleware for wishlist endpoints |
-| **P3** | Notes/priority UI | Add UI to edit item notes and priority |
-
-### Recommended E2E Tests
-
-```typescript
-// tests/ClimaSite.E2E/Tests/Wishlist/WishlistTests.cs
-
-[Test] Wishlist_AddProductFromCard_ShowsInWishlist
-[Test] Wishlist_AddProductFromDetailPage_ShowsInWishlist
-[Test] Wishlist_RemoveProduct_RemovesFromWishlist
-[Test] Wishlist_ClearAll_RemovesAllItems
-[Test] Wishlist_EmptyState_ShowsBrowseProductsCTA
-[Test] Wishlist_GuestUser_PersistsInLocalStorage
-[Test] Wishlist_LoginMerge_CombinesGuestAndUserWishlists
-[Test] Wishlist_HeaderBadge_UpdatesOnAddRemove
-[Test] Wishlist_ProductDeletedWhileInWishlist_HandlesGracefully
-[Test] Wishlist_Toggle_AddsAndRemovesCorrectly
-```
-
-### Recommended Unit Tests
-
-```csharp
-// tests/ClimaSite.Core.Tests/Entities/WishlistTests.cs
-
-[Fact] Constructor_WithUserId_CreatesWishlist
-[Fact] AddItem_NewProduct_AddsItem
-[Fact] AddItem_ExistingProduct_ReturnsExistingItem
-[Fact] RemoveItem_ExistingProduct_RemovesItem
-[Fact] RemoveItem_NonExistingProduct_DoesNothing
-[Fact] Clear_RemovesAllItems
-[Fact] SetPublic_True_GeneratesShareToken
-[Fact] SetPublic_False_KeepsExistingToken
-[Fact] TotalItems_ReturnsCorrectCount
-[Fact] GetItem_ExistingProduct_ReturnsItem
-[Fact] GetItem_NonExistingProduct_ReturnsNull
-
-// tests/ClimaSite.Core.Tests/Entities/WishlistItemTests.cs
-
-[Fact] Constructor_SetsPropertiesCorrectly
-[Fact] SetNote_ValidNote_SetsNote
-[Fact] SetNote_TooLongNote_ThrowsArgumentException
-[Fact] SetNote_Null_ClearsNote
-[Fact] SetPriority_ValidPriority_SetsPriority
-[Fact] SetPriority_NegativePriority_ThrowsArgumentException
-[Fact] SetNotifyOnSale_True_EnablesNotification
-```
+The wishlist feature is complete for the Plan 18 WISH-* scope. The following wishlist-adjacent capabilities remain future enhancements, not merge blockers for this slice:
+- Move-to-cart endpoint and UI action.
+- Item note/priority editing UI.
+- Notify-on-sale behavior and notification delivery.
+- Per-endpoint rate limits, which are part of the broader Plan 18 security hardening phase.
+- Large wishlist performance profiling.
 
 ---
 
-## 7. Evidence & Notes
+## 7. Latest Validation
 
-### Entity Business Rules (Wishlist.cs)
-
-```csharp
-// One wishlist per user
-public Wishlist(Guid userId)
-{
-    UserId = userId;
-}
-
-// AddItem returns existing if duplicate
-public WishlistItem AddItem(Guid productId, string? note = null, int priority = 0)
-{
-    var existingItem = GetItem(productId);
-    if (existingItem != null)
-    {
-        return existingItem; // Prevents duplicates
-    }
-    // ... create new item
-}
-
-// Share token generation
-public void SetPublic(bool isPublic)
-{
-    IsPublic = isPublic;
-    if (isPublic && string.IsNullOrEmpty(ShareToken))
-    {
-        ShareToken = GenerateShareToken();
-    }
-}
-```
-
-### Frontend State Management (wishlist.service.ts)
-
-```typescript
-// Signal-based state
-private readonly _items = signal<WishlistItem[]>([]);
-readonly items = this._items.asReadonly();
-readonly itemCount = computed(() => this._items().length);
-
-// Dual storage: localStorage + API
-private loadWishlist(): void {
-    // Load from localStorage first (immediate display)
-    const stored = localStorage.getItem(this.STORAGE_KEY);
-    // ...
-    // If authenticated, fetch from API and merge
-    if (this.authService.isAuthenticated()) {
-        this.fetchFromApi();
-    }
-}
-```
-
-### API Response Format (GetWishlistQuery)
-
-```csharp
-return new WishlistDto
-{
-    Id = wishlist.Id,
-    UserId = wishlist.UserId,
-    Items = items, // List<WishlistItemDto>
-    ItemCount = items.Count,
-    UpdatedAt = wishlist.UpdatedAt
-};
-
-// WishlistItemDto includes:
-// ProductName, ProductSlug, ImageUrl, Price, SalePrice, IsOnSale, InStock, AddedAt
-```
-
-### Database Schema
-
-| Table | Key Columns |
-|-------|-------------|
-| `wishlists` | id, user_id, is_public, share_token, created_at, updated_at |
-| `wishlist_items` | id, wishlist_id, product_id, note, priority, price_when_added, notify_on_sale, created_at |
-
-### Known TODOs in Code
-
-1. `WishlistService.ts:177-179` - API sync errors silently swallowed
-2. `WishlistComponent.ts:287-293` - Relies on cached product data from items
-3. No `ClearWishlistCommand` exists - only frontend localStorage clear
-
-### Plan Reference
-
-Full implementation plan in `docs/plans/13-wishlist.md` includes:
-- Tasks WISH-001 to WISH-019
-- E2E test specifications (not implemented)
-- Shared wishlist feature (not implemented)
-- Move-to-cart feature (not implemented)
+Final local validation completed on 2026-06-07:
+- `dotnet build --no-restore -m:1` passed.
+- Core tests: 199/199 passed.
+- Application tests: 172/172 passed.
+- API tests: 77/77 passed.
+- Frontend lint passed.
+- Frontend production build passed.
+- Frontend i18n extraction check passed: 712/712.
+- Frontend Karma suite passed: 983/983.
+- E2E suite passed: 210/210 against real local API/data.

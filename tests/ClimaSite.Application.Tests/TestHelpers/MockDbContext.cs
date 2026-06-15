@@ -123,6 +123,15 @@ public class MockDbContext : IApplicationDbContext
         }
     }
 
+    public void AddWishlist(Wishlist wishlist)
+    {
+        _wishlists.Add(wishlist);
+        foreach (var item in wishlist.Items)
+        {
+            _wishlistItems.Add(item);
+        }
+    }
+
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken)
     {
         // Sync any new items that might have been added to navigation properties
@@ -140,6 +149,17 @@ public class MockDbContext : IApplicationDbContext
                 if (!_orderEvents.Contains(evt))
                 {
                     _orderEvents.Add(evt);
+                }
+            }
+        }
+
+        foreach (var wishlist in _wishlists)
+        {
+            foreach (var item in wishlist.Items)
+            {
+                if (!_wishlistItems.Contains(item))
+                {
+                    _wishlistItems.Add(item);
                 }
             }
         }
@@ -190,6 +210,15 @@ public class MockDbContext : IApplicationDbContext
 
         mockSet.Setup(m => m.Remove(It.IsAny<T>()))
             .Callback<T>(entity => data.Remove(entity));
+
+        mockSet.Setup(m => m.RemoveRange(It.IsAny<IEnumerable<T>>()))
+            .Callback<IEnumerable<T>>(entities =>
+            {
+                foreach (var entity in entities.ToList())
+                {
+                    data.Remove(entity);
+                }
+            });
 
         return mockSet.Object;
     }

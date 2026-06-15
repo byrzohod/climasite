@@ -1,6 +1,6 @@
 # Plan 18 — Project Completion & Production Readiness
 
-**Status:** In progress — Phase 1 Home v3 complete
+**Status:** In progress — Phase 2 Wishlist slice complete
 **Owner:** sarkisharalampiev
 **Created:** 2026-04-08
 **Gap report:** [`docs/audit/2026-04-08-gap-report.md`](../audit/2026-04-08-gap-report.md)
@@ -31,7 +31,7 @@ These derive from `CLAUDE.md` and `.auto-memory/` and are non-negotiable for eve
 |---|-------|------|---------------|
 | 0 | Foundation & Cleanup | Branch, ADR scaffold, CHANGELOG, wipe old home cleanly | New branch exists; `docs/adr/` + `CHANGELOG.md` exist; `features/home/` and its exclusive services/translations/routes deleted; tests still build |
 | 1 | Home v3 — Interactive Product Showcase | Ship a brand-new homepage built from scratch | Picked concept implemented; desktop+mobile+dark screenshots reviewed; E2E tests green; i18n + theme tokens 100% |
-| 2 | Complete partial features | Finish Notifications, Wishlist, Animation Audit 21F | All remaining NOT-*, WISH-*, 21F-* tasks done; tests for each; CLAUDE.md status table flips to Complete |
+| 2 | Complete partial features | Finish Notifications, Wishlist, Animation Audit 21F | Wishlist WISH-* done; remaining NOT-* and ANIM-* tasks still open |
 | 3 | i18n / theming / dark-mode hardening | Close the 104 color + 33 i18n violations | Zero hardcoded colors outside `_colors.scss`; zero hardcoded user-facing strings; all 3 languages and both themes verified on every route |
 | 4 | Test coverage gap closure | Hit 80% BE / 70% FE / 100% endpoints / all flows E2E | Coverage gates in CI updated and passing; missing E2E flows (Notifications, Q&A, Inventory, Search, Brands/Categories) added |
 | 5 | Security hardening | Remove secrets, lock down headers, CORS, rate limits, Swagger | JWT + Stripe secrets env-only; security-headers middleware added; Swagger gated; CORS tight; rate limits on all sensitive endpoints; `/security-review` skill pass clean |
@@ -181,17 +181,17 @@ Updated `CLAUDE.md`, this plan, ADR 002 implementation notes, `CHANGELOG.md`, an
 - **NOT-110** — E2E: notification preference change, trigger order → observe email + in-app bell updates.
 - **NOT-111** — Update CLAUDE.md, plan 12 → archived.
 
-### Wishlist (WISH-*)
+### Wishlist (WISH-*) — **DONE 2026-06-07**
 
-- **WISH-100** — Backend service layer + validators.
-- **WISH-101** — Backend unit tests for all handlers.
-- **WISH-102** — Integration tests for `WishlistController`.
-- **WISH-103** — Frontend: `WishlistService` (already partially present — finish it), `WishlistButtonComponent`, `WishlistPageComponent`, share flow.
-- **WISH-104** — Header integration (icon + count badge).
-- **WISH-105** — i18n keys in all 3 languages.
-- **WISH-106** — Frontend unit tests.
-- **WISH-107** — E2E: add to wishlist, remove, share link, guest→login merge.
-- **WISH-108** — Update CLAUDE.md, plan 13 → archived.
+- **WISH-100** — Backend service layer + validators — **DONE 2026-06-07**. `WishlistApplicationService` now owns DTO mapping, get/create behavior, shared wishlist lookup, per-user mutation serialization, and transactional mutation execution.
+- **WISH-101** — Backend unit tests for all handlers — **DONE 2026-06-07**. Application handler tests cover add/remove/clear, sharing, token regeneration, shared lookup, inactive product rejection, and unauthenticated failures.
+- **WISH-102** — Integration tests for `WishlistController` — **DONE 2026-06-07**. API tests cover auth, add/get/remove persistence, clear, sharing, token regeneration, and concurrent add idempotence.
+- **WISH-103** — Frontend: `WishlistService` (already partially present — finish it), `WishlistButtonComponent`, `WishlistPageComponent`, share flow — **DONE 2026-06-07**. Frontend state now consumes hydrated backend DTOs, syncs authenticated changes, supports public sharing, and merges guest items after login.
+- **WISH-104** — Header integration (icon + count badge) — **DONE 2026-06-07**. Header account/mobile wishlist links route to `/wishlist` and preserve badge behavior.
+- **WISH-105** — i18n keys in all 3 languages — **DONE 2026-06-07**. Owner/shared wishlist copy added to EN/BG/DE and covered by frontend/i18n checks.
+- **WISH-106** — Frontend unit tests — **DONE 2026-06-07**. `WishlistService`, `WishlistComponent`, and route specs cover DTO mapping, guest merge, sharing, shared read-only rendering, and route registration.
+- **WISH-107** — E2E: add to wishlist, remove, share link, guest→login merge — **DONE 2026-06-07**. Real-data E2E tests cover add from product detail, remove, clear, anonymous shared link, and guest-to-login merge.
+- **WISH-108** — Update CLAUDE.md, plan 13 → archived — **DONE 2026-06-07**. Plan 13 moved to `docs/plans/archive/13-wishlist.md`; status docs and wishlist validation report updated.
 
 ### Animation Audit 21F — Phase 3–6
 

@@ -1,8 +1,9 @@
-import { Component, inject, signal, OnInit, effect } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { WishlistService } from '../../core/services/wishlist.service';
+import { AuthService } from '../../auth/services/auth.service';
 import { ProductBrief } from '../../core/models/product.model';
 import { ProductCardComponent } from '../products/product-card/product-card.component';
 import { LoadingComponent } from '../../shared/components/loading/loading.component';
@@ -27,18 +28,29 @@ import { EmptyStateComponent } from '../../shared/components/empty-state';
     <div class="wishlist-page">
       <div class="wishlist-container">
         <div class="breadcrumb">
-          <a routerLink="/">{{ 'nav.home' | translate }}</a>
+          <a routerLink="/" data-testid="wishlist-breadcrumb-home">{{ 'nav.home' | translate }}</a>
           <span class="separator">/</span>
-          <span class="current">{{ 'nav.wishlist' | translate }}</span>
+          <span class="current">
+            {{ (isSharedView() ? 'wishlist.share.sharedTitle' : 'nav.wishlist') | translate }}
+          </span>
         </div>
 
         <div class="page-header">
-          <h1>{{ 'nav.wishlist' | translate }}</h1>
-          <p class="item-count">{{ products().length }} {{ 'products.title' | translate | lowercase }}</p>
+          <h1>{{ (isSharedView() ? 'wishlist.share.sharedTitle' : 'nav.wishlist') | translate }}</h1>
+          <p class="item-count">{{ 'wishlist.itemCount' | translate:{ count: products().length } }}</p>
         </div>
 
         @if (loading()) {
           <app-loading />
+        } @else if (notFound()) {
+          <app-empty-state
+            variant="wishlist"
+            [title]="'wishlist.share.notFoundTitle' | translate"
+            [description]="'wishlist.share.notFoundDescription' | translate"
+            [actionLabel]="'emptyState.wishlist.action' | translate"
+            actionRoute="/products"
+            data-testid="wishlist-shared-not-found"
+          />
         } @else if (products().length === 0) {
           <app-empty-state
             variant="wishlist"
@@ -49,7 +61,49 @@ import { EmptyStateComponent } from '../../shared/components/empty-state';
             data-testid="wishlist-empty"
           />
         } @else {
-          <div class="wishlist-actions">
+          @if (!isSharedView()) {
+            <div class="wishlist-actions">
+              @if (authService.isAuthenticated()) {
+                <div class="share-panel" data-testid="wishlist-share-panel">
+                  <button
+                    type="button"
+                    class="btn-share"
+                    (click)="toggleSharing()"
+                    [disabled]="shareLoading()"
+                    data-testid="wishlist-share-toggle"
+                  >
+                    {{ (wishlistService.isPublic() ? 'wishlist.share.disable' : 'wishlist.share.enable') | translate }}
+                  </button>
+
+                  @if (shareUrl()) {
+                    <div class="share-link" data-testid="wishlist-share-url">{{ shareUrl() }}</div>
+                    <button
+                      type="button"
+                      class="btn-share-secondary"
+                      (click)="copyShareUrl()"
+                      data-testid="wishlist-copy-share"
+                    >
+                      {{ 'wishlist.share.copy' | translate }}
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-share-secondary"
+                      (click)="regenerateShareToken()"
+                      [disabled]="shareLoading()"
+                      data-testid="wishlist-regenerate-share"
+                    >
+                      {{ 'wishlist.share.regenerate' | translate }}
+                    </button>
+                  }
+
+                  @if (shareCopied()) {
+                    <span class="share-status" aria-live="polite" data-testid="wishlist-share-copied">
+                      {{ 'wishlist.share.copied' | translate }}
+                    </span>
+                  }
+                </div>
+              }
+
             <button
               type="button"
               class="btn-clear"
@@ -58,22 +112,25 @@ import { EmptyStateComponent } from '../../shared/components/empty-state';
             >
               {{ 'wishlist.clearAll' | translate }}
             </button>
-          </div>
+            </div>
+          }
 
           <div class="product-grid" data-testid="wishlist-items">
             @for (product of products(); track product.id) {
               <div class="wishlist-item" data-testid="wishlist-item">
-                <button
-                  type="button"
-                  class="remove-btn"
-                  (click)="removeItem(product.id)"
-                  [attr.aria-label]="'wishlist.remove' | translate"
-                  data-testid="remove-from-wishlist"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.519.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd"/>
-                  </svg>
-                </button>
+                @if (!isSharedView()) {
+                  <button
+                    type="button"
+                    class="remove-btn"
+                    (click)="removeItem(product.id)"
+                    [attr.aria-label]="'wishlist.remove' | translate"
+                    data-testid="remove-from-wishlist"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.519.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd"/>
+                    </svg>
+                  </button>
+                }
                 <app-product-card [product]="product" />
               </div>
             }
@@ -131,8 +188,61 @@ import { EmptyStateComponent } from '../../shared/components/empty-state';
 
     .wishlist-actions {
       display: flex;
-      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      justify-content: space-between;
       margin-bottom: 1rem;
+    }
+
+    .share-panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .share-link {
+      max-width: min(42rem, 100%);
+      padding: 0.5rem 0.75rem;
+      overflow: hidden;
+      color: var(--color-text-secondary);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      background: var(--color-bg-primary);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      font-size: 0.8125rem;
+    }
+
+    .share-status {
+      color: var(--color-success);
+      font-size: 0.8125rem;
+      font-weight: 600;
+    }
+
+    .btn-share,
+    .btn-share-secondary {
+      padding: 0.5rem 1rem;
+      background: var(--color-primary);
+      border: 1px solid var(--color-primary);
+      border-radius: 6px;
+      color: var(--color-text-inverse);
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.65;
+      }
+    }
+
+    .btn-share-secondary {
+      background: var(--color-bg-primary);
+      border-color: var(--color-border);
+      color: var(--color-text-secondary);
     }
 
     .btn-clear {
@@ -195,34 +305,72 @@ import { EmptyStateComponent } from '../../shared/components/empty-state';
     }
 
     @media (max-width: 768px) {
+      .wishlist-page {
+        padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0));
+      }
+
       .page-header h1 {
         font-size: 1.5rem;
       }
-
       .product-grid {
         grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      }
+
+      :host ::ng-deep app-product-card .product-image {
+        height: 170px;
+        min-height: 170px;
       }
     }
   `]
 })
 export class WishlistComponent implements OnInit {
-  private readonly wishlistService = inject(WishlistService);
+  readonly wishlistService = inject(WishlistService);
+  private readonly route = inject(ActivatedRoute);
+  readonly authService = inject(AuthService);
 
   readonly products = signal<ProductBrief[]>([]);
   readonly loading = signal(true);
+  readonly notFound = signal(false);
+  readonly isSharedView = signal(false);
+  readonly shareLoading = signal(false);
+  readonly shareCopied = signal(false);
+  readonly shareUrl = computed(() => {
+    const token = this.wishlistService.shareToken();
+    if (!token || typeof window === 'undefined') {
+      return null;
+    }
+
+    return `${window.location.origin}/wishlist/shared/${token}`;
+  });
 
   constructor() {
     // Update products when wishlist changes
     effect(() => {
+      if (this.isSharedView()) {
+        return;
+      }
+
       const items = this.wishlistService.items();
       const cachedProducts = items
         .filter(item => item.product)
         .map(item => item.product as ProductBrief);
       this.products.set(cachedProducts);
+      this.loading.set(this.wishlistService.isLoading());
     });
   }
 
   ngOnInit(): void {
+    const shareToken = this.route.snapshot.paramMap.get('shareToken');
+    if (shareToken) {
+      this.isSharedView.set(true);
+      this.loadSharedWishlist(shareToken);
+      return;
+    }
+
+    this.wishlistService.refreshWishlist().subscribe({
+      next: () => this.loadWishlistProducts(),
+      error: () => this.loading.set(false)
+    });
     this.loadWishlistProducts();
   }
 
@@ -254,5 +402,50 @@ export class WishlistComponent implements OnInit {
   clearWishlist(): void {
     this.wishlistService.clearWishlist();
     this.products.set([]);
+  }
+
+  toggleSharing(): void {
+    this.shareLoading.set(true);
+    this.wishlistService.setSharing(!this.wishlistService.isPublic()).subscribe({
+      next: () => this.shareLoading.set(false),
+      error: () => this.shareLoading.set(false)
+    });
+  }
+
+  regenerateShareToken(): void {
+    this.shareLoading.set(true);
+    this.wishlistService.regenerateShareToken().subscribe({
+      next: () => this.shareLoading.set(false),
+      error: () => this.shareLoading.set(false)
+    });
+  }
+
+  copyShareUrl(): void {
+    const url = this.shareUrl();
+    if (!url || typeof navigator === 'undefined' || !navigator.clipboard) {
+      return;
+    }
+
+    navigator.clipboard.writeText(url).then(() => {
+      this.shareCopied.set(true);
+      window.setTimeout(() => this.shareCopied.set(false), 2500);
+    });
+  }
+
+  private loadSharedWishlist(shareToken: string): void {
+    this.loading.set(true);
+    this.notFound.set(false);
+
+    this.wishlistService.getSharedWishlist(shareToken).subscribe({
+      next: wishlist => {
+        this.products.set(wishlist.items.map(item => this.wishlistService.toProductBrief(item)));
+        this.loading.set(false);
+      },
+      error: () => {
+        this.products.set([]);
+        this.notFound.set(true);
+        this.loading.set(false);
+      }
+    });
   }
 }

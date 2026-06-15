@@ -825,7 +825,18 @@
     "clearAll": "Clear Wishlist",
     "remove": "Remove from Wishlist",
     "addedToWishlist": "Added to wishlist",
-    "removedFromWishlist": "Removed from wishlist"
+    "removedFromWishlist": "Removed from wishlist",
+    "itemCount": "Saved items: {{count}}",
+    "share": {
+      "enable": "Share wishlist",
+      "disable": "Stop sharing",
+      "copy": "Copy link",
+      "regenerate": "New link",
+      "copied": "Link copied",
+      "sharedTitle": "Shared wishlist",
+      "notFoundTitle": "Shared wishlist unavailable",
+      "notFoundDescription": "This wishlist link is no longer active or does not exist."
+    }
   },
   "profile": {
     "phone": "Phone Number",

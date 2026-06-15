@@ -2,6 +2,7 @@ using System.Reflection;
 using ClimaSite.Application.Common.Behaviors;
 using ClimaSite.Application.Common.Mappings;
 using ClimaSite.Application.Features.Products.Scoring;
+using ClimaSite.Application.Features.Wishlist.Services;
 using FluentValidation;
 using Mapster;
 using MediatR;
@@ -30,6 +31,7 @@ public static class DependencyInjection
 
         // Scoring services
         services.AddScoped<RecommendationScoringService>();
+        services.AddScoped<WishlistApplicationService>();
 
         return services;
     }

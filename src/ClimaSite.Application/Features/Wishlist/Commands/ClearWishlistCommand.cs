@@ -2,32 +2,19 @@ using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Models;
 using ClimaSite.Application.Features.Wishlist.DTOs;
 using ClimaSite.Application.Features.Wishlist.Services;
-using FluentValidation;
 using MediatR;
 
 namespace ClimaSite.Application.Features.Wishlist.Commands;
 
-public record RemoveFromWishlistCommand : IRequest<Result<WishlistDto>>
-{
-    public Guid ProductId { get; init; }
-}
+public record ClearWishlistCommand : IRequest<Result<WishlistDto>>;
 
-public class RemoveFromWishlistCommandValidator : AbstractValidator<RemoveFromWishlistCommand>
+public class ClearWishlistCommandHandler : IRequestHandler<ClearWishlistCommand, Result<WishlistDto>>
 {
-    public RemoveFromWishlistCommandValidator()
-    {
-        RuleFor(x => x.ProductId)
-            .NotEmpty().WithMessage("Product ID is required");
-    }
-}
-
-public class RemoveFromWishlistCommandHandler : IRequestHandler<RemoveFromWishlistCommand, Result<WishlistDto>>
-{
-    private readonly ICurrentUserService _currentUserService;
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUserService;
     private readonly WishlistApplicationService _wishlistService;
 
-    public RemoveFromWishlistCommandHandler(
+    public ClearWishlistCommandHandler(
         IApplicationDbContext context,
         ICurrentUserService currentUserService,
         WishlistApplicationService wishlistService)
@@ -37,7 +24,9 @@ public class RemoveFromWishlistCommandHandler : IRequestHandler<RemoveFromWishli
         _wishlistService = wishlistService;
     }
 
-    public async Task<Result<WishlistDto>> Handle(RemoveFromWishlistCommand request, CancellationToken cancellationToken)
+    public async Task<Result<WishlistDto>> Handle(
+        ClearWishlistCommand request,
+        CancellationToken cancellationToken)
     {
         var userId = _currentUserService.UserId;
         if (!userId.HasValue)
@@ -47,19 +36,19 @@ public class RemoveFromWishlistCommandHandler : IRequestHandler<RemoveFromWishli
 
         return await _wishlistService.ExecuteUserMutationAsync(
             userId.Value,
-            RemoveFromWishlistAsync,
+            ClearWishlistAsync,
             cancellationToken);
 
-        async Task<Result<WishlistDto>> RemoveFromWishlistAsync()
+        async Task<Result<WishlistDto>> ClearWishlistAsync()
         {
             var wishlist = await _wishlistService.GetWishlistWithItemsByUserIdAsync(userId.Value, cancellationToken);
-
             if (wishlist == null)
             {
                 return Result<WishlistDto>.Success(_wishlistService.CreateEmptyDto(userId.Value));
             }
 
-            wishlist.RemoveItem(request.ProductId);
+            _context.WishlistItems.RemoveRange(wishlist.Items);
+            wishlist.Clear();
             await _context.SaveChangesAsync(cancellationToken);
 
             var dto = await _wishlistService.MapToDtoAsync(wishlist, cancellationToken);
