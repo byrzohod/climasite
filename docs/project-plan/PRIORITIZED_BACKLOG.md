@@ -42,6 +42,7 @@ Detail and evidence: `docs/project-plan/SECURITY_REVIEW.md` (SR-01..SR-20) and `
 - **Depends on:** Coordinate with OPS-04 (same startup code path); OPS-08 (Needs confirmation: is it live?).
 
 ### SEC-03 — `UseForwardedHeaders` before the rate limiter (P0, Small)
+- **Status:** ✅ DONE (2026-06-16, merged to main; see §10 of PROJECT_STATUS.md and CHANGELOG).
 - **Description:** No forwarded-headers handling anywhere; nginx (`nginx.conf.template`) proxies all `/api` traffic, so every shopper shares one `RemoteIpAddress` → one global 100 req/min bucket (site-wide 429s at ~5-15 concurrent users) and one shared 10/min auth bucket (one user can lock out all logins). Add `ForwardedHeadersOptions` (XForwardedFor | XForwardedProto, KnownNetworks/KnownProxies for the Railway/nginx hop) early in the pipeline, before `UseRateLimiter` and `UseHttpsRedirection`.
 - **Closes:** SR-06; `_review/performance.md` #1 (P0 confirmed); `_review/devops.md` #4; `_review/security.md` #5. Complements Plan 18 SEC-104 (pointless until this lands). **Not tracked by Plan 18.**
 - **Affected:** `src/ClimaSite.Api/Program.cs:208-241`, `src/ClimaSite.Web/nginx.conf.template`.
@@ -120,6 +121,7 @@ IDs match `docs/project-plan/BUGS_AND_TECH_DEBT.md` exactly; full evidence there
 > **Folded elsewhere (do not double-track):** BUG-14 (admin related-products search stub) → GAP-02; BUG-15 (guest checkout unreachable) → GAP-07; BUG-16 (admin "notify customer" no-op) → GAP-03.
 
 ### BUG-01 — Persist `paymentIntentId`; make Stripe webhooks reconcile orders (P0, Small)
+- **Status:** ✅ DONE (2026-06-16, merged to main; see §10 of PROJECT_STATUS.md and CHANGELOG).
 - **Description:** Frontend sends `paymentIntentId`/`paymentMethod` on order creation but `CreateOrderCommand` has no such fields — silently dropped; `Order.SetPaymentInfo` has zero callers; the webhook matches on always-null `PaymentIntentId`, so **every card order stays Pending forever** and refunds/failures are no-ops. Add both fields to the command, call `order.SetPaymentInfo(...)`, verify the intent's amount/currency/status server-side via `IPaymentService` before accepting, add a unique index on `orders.payment_intent_id` (idempotency).
 - **Closes:** `_review/bugs.md` #1 (P0 confirmed); `_review/product.md` #1; SR-03.
 - **Affected:** `src/ClimaSite.Application/Features/Orders/Commands/CreateOrderCommand.cs`, `src/ClimaSite.Api/Controllers/OrdersController.cs`, `src/ClimaSite.Application/Features/Payments/Commands/HandleStripeWebhookCommand.cs`, `src/ClimaSite.Web/src/app/core/services/checkout.service.ts`.
@@ -127,6 +129,7 @@ IDs match `docs/project-plan/BUGS_AND_TECH_DEBT.md` exactly; full evidence there
 - **Depends on:** DEC-CURRENCY; pair with BUG-02; BUG-18 follows.
 
 ### BUG-02 — Compute the charge server-side: correct amount, one currency, shipping included (P0, Medium)
+- **Status:** ✅ DONE (2026-06-16, merged to main; see §10 of PROJECT_STATUS.md and CHANGELOG).
 - **Description:** Stripe is charged a **client-supplied** amount (any authenticated user can pay €0.01), hardcoded to BGN while orders are EUR (~49% underpayment), and the cart total omits the 5.99–15.99 shipping the order records. Create the payment intent from the server-calculated order total (subtotal + tax + shipping) in the store currency; never trust the client amount; reject mismatched intents in the webhook.
 - **Closes:** `_review/bugs.md` #2 (P0 confirmed); `_review/product.md` #3; SR-02; SECURITY_REVIEW payments note.
 - **Affected:** `src/ClimaSite.Api/Controllers/PaymentsController.cs:42-58`, `src/ClimaSite.Web/src/app/features/checkout/checkout.component.ts`, `src/ClimaSite.Application/Features/Orders/Commands/CreateOrderCommand.cs`, `src/ClimaSite.Infrastructure/Services/StripePaymentService.cs`.
@@ -134,6 +137,7 @@ IDs match `docs/project-plan/BUGS_AND_TECH_DEBT.md` exactly; full evidence there
 - **Depends on:** **DEC-CURRENCY (blocking)**; pair with BUG-01.
 
 ### BUG-03 — Fix guest-cart merge contract: merge no longer 400s, guest items survive login (P1, Small)
+- **Status:** ✅ DONE (2026-06-16, merged to main; see §10 of PROJECT_STATUS.md and CHANGELOG).
 - **Description:** Frontend POSTs `/api/cart/merge` with a body + `X-Session-Id` header; backend requires `[FromQuery] string guestSessionId` → deterministic 400, swallowed by `console.warn` — **every first-time customer loses their visible cart at login** (and checkout is auth-gated, so this hits everyone). Change `CartService.mergeCart` to pass `?guestSessionId=` (or make the endpoint read the header); surface failures.
 - **Closes:** `_review/bugs.md` #3 (verifier adjusted P0→P1: 100% reproducible but the guest cart row is never deleted server-side, so items are recoverable; treat as a first-wave launch blocker regardless — the fix is one line).
 - **Affected:** `src/ClimaSite.Web/src/app/core/services/cart.service.ts:190-205`, `src/ClimaSite.Api/Controllers/CartController.cs:110-116`, `src/ClimaSite.Web/src/app/auth/services/auth.service.ts:133-142`.
@@ -162,6 +166,7 @@ IDs match `docs/project-plan/BUGS_AND_TECH_DEBT.md` exactly; full evidence there
 - **Depends on:** None; coordinate with PERF-03 (same projections get rewritten).
 
 ### BUG-07 — Forgot-password: send the email, stop logging the token (P1, Small)
+- **Status:** ✅ DONE (2026-06-16, merged to main; see §10 of PROJECT_STATUS.md and CHANGELOG).
 - **Description:** `ForgotPasswordCommandHandler.cs:34-42` logs the raw reset token at Information level (account takeover via log access) and the email send is commented out — users are silently dead-ended while the UI claims success. Inject `IEmailService`, call `SendPasswordResetEmailAsync` with a `/reset-password` link, remove the token from the log line, and fix the forgot-password page showing success on error. Note `EmailService` defaults to placeholder mode (`Email:UsePlaceholder=true`) — flip for real environments (GAP-03/SEC-07).
 - **Closes:** `_review/bugs.md` #7; `_review/security.md` #2 (SR-05); `_review/product.md` #4; `_review/architecture.md` #1 (reset slice); `_review/status.md` #2.
 - **Affected:** `src/ClimaSite.Application/Auth/Handlers/ForgotPasswordCommandHandler.cs`, `src/ClimaSite.Infrastructure/Services/EmailService.cs`, `forgot-password.component.ts`.
@@ -218,6 +223,7 @@ IDs match `docs/project-plan/BUGS_AND_TECH_DEBT.md` exactly; full evidence there
 - **Depends on:** Migration via the db-migrate skill (see ARCH-03 — don't entangle with the folder consolidation).
 
 ### BUG-18 — Stop returning 200 for unmatched Stripe webhook events (P2, Small)
+- **Status:** ✅ DONE (2026-06-16, merged to main; see §10 of PROJECT_STATUS.md and CHANGELOG).
 - **Description:** `WebhooksController.cs:91-93` ACKs events with "no matching order", so Stripe never retries — an early-arriving webhook (before the order row commits) is permanently lost. Return non-2xx for "order not yet created" or persist unmatched events for replay.
 - **Closes:** `_review/bugs.md` #18 / additional observation; rider on SR-03 fix.
 - **Affected:** `src/ClimaSite.Api/Controllers/WebhooksController.cs`, `HandleStripeWebhookCommand.cs`.
@@ -405,6 +411,7 @@ Detail: `_review/devops.md`, `DEV_WORKFLOW.md`. The devops launch-blocker list (
 IDs match `docs/project-plan/TESTING_STRATEGY.md` §7; use its §1.3 corrected commands. **Folded elsewhere:** TS-01 → OPS-01 (PR/CI run), TS-02 → DOC-01 (command fixes + slnf), TS-12 → OPS-06 (CI gates), TS-13 → GAP-07 (guest E2E).
 
 ### TS-03 — Regression tests bundled with the P0 bug fixes (P0, Medium)
+- **Status:** ✅ DONE (2026-06-16, merged to main; see §10 of PROJECT_STATUS.md and CHANGELOG).
 - **Description:** Land with BUG-01/02/03, not after: integration tests for order-create persisting `paymentIntentId` and webhook → Paid transition; cart-merge test using the **real frontend request shape** plus a guest→login merge E2E (mirror `WishlistTests.cs:137` pattern); an automated displayed==charged==recorded total assertion.
 - **Closes:** TS-03; `_review/testing.md` #9 (merge E2E); the "why green tests missed the P0s" gap (TESTING_STRATEGY §2).
 - **Affected:** `tests/ClimaSite.Api.Tests/Controllers/` (new Orders/Webhooks tests), `tests/ClimaSite.E2E/Tests/Cart/CartTests.cs`.
