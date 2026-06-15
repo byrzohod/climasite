@@ -317,7 +317,7 @@ describe('CartService', () => {
       service.mergeCart('user-1').subscribe();
       tick();
 
-      const req = httpMock.expectOne(`${apiUrl}/merge`);
+      const req = httpMock.expectOne(`${apiUrl}/merge?guestSessionId=sess_test123`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({ userId: 'user-1' });
       expect(req.request.headers.get('X-Session-Id')).toBe('sess_test123');
@@ -334,7 +334,7 @@ describe('CartService', () => {
       });
       tick();
 
-      const req = httpMock.expectOne(`${apiUrl}/merge`);
+      const req = httpMock.expectOne(`${apiUrl}/merge?guestSessionId=sess_test123`);
       req.error(new ErrorEvent('Network error'));
       tick();
 
