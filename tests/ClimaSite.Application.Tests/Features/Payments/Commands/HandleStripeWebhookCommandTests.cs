@@ -297,6 +297,26 @@ public class HandleStripeWebhookCommandTests
     }
 
     [Fact]
+    public async Task Handle_PaymentFailed_WhenOrderNotFound_AcknowledgesWithoutRetry()
+    {
+        // Arrange - a failed/refunded event for an intent that never produced an order
+        // means there is nothing to reconcile; only succeeded events warrant a retry,
+        // so this must be acknowledged (no ORDER_NOT_FOUND retry-storm). (BUG-18)
+        var command = new HandleStripeWebhookCommand
+        {
+            EventType = "payment_intent.payment_failed",
+            PaymentIntentId = "pi_nonexistent"
+        };
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Error.Should().BeNullOrEmpty();
+    }
+
+    [Fact]
     public async Task Handle_UnknownEventType_ReturnsSuccess()
     {
         // Arrange

@@ -194,6 +194,16 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
             order.SetShippingCost(CheckoutPricing.GetShippingCost(request.ShippingMethod));
             order.SetTaxAmount(CheckoutPricing.GetTax(order.Subtotal));
 
+            // BUG-01: a card order MUST be backed by a verified PaymentIntent. Reject a card
+            // order that arrives without one — otherwise it would create an unpaid,
+            // stock-depleting Pending order. Offline methods (e.g. bank transfer) are handled
+            // separately and may legitimately remain pending-payment (see GAP-06).
+            if (string.Equals(request.PaymentMethod, "card", StringComparison.OrdinalIgnoreCase)
+                && string.IsNullOrWhiteSpace(request.PaymentIntentId))
+            {
+                return Result<OrderDto>.Failure("A verified card payment is required to place this order.");
+            }
+
             // BUG-01: verify the Stripe PaymentIntent server-side before persisting
             // the order. We never trust the client that the payment actually
             // succeeded for the correct amount and currency.
@@ -237,13 +247,15 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
             {
                 await _context.SaveChangesAsync(cancellationToken);
             }
-            catch (DbUpdateException ex)
+            catch (DbUpdateException ex) when (
+                ex.InnerException?.Message?.Contains("payment_intent_id", StringComparison.OrdinalIgnoreCase) == true)
             {
-                // A unique constraint violation on payment_intent_id means this
-                // intent was already used to create an order (idempotency guard).
+                // Unique-index violation on payment_intent_id: this intent already backs an
+                // order (idempotency guard). Any OTHER DbUpdateException propagates so real
+                // failures aren't masked and transient errors can still be retried.
                 _logger.LogWarning(
                     ex,
-                    "Failed to persist order for PaymentIntent {PaymentIntentId}; likely duplicate",
+                    "Duplicate order creation rejected for PaymentIntent {PaymentIntentId}",
                     request.PaymentIntentId);
                 return Result<OrderDto>.Failure("This payment has already been used for an order.");
             }

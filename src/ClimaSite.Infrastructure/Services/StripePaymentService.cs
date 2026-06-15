@@ -1,4 +1,5 @@
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Pricing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Stripe;
@@ -32,7 +33,9 @@ public class StripePaymentService : IPaymentService
         try
         {
             // Stripe requires amount in smallest currency unit (e.g., cents)
-            var amountInSmallestUnit = (long)(amount * 100);
+            // Use the same rounding rule as the order-side verification (CheckoutPricing) so
+            // the created intent and the verified amount can never disagree by a minor unit.
+            var amountInSmallestUnit = CheckoutPricing.ToMinorUnits(amount);
 
             var options = new PaymentIntentCreateOptions
             {

@@ -42,12 +42,15 @@ public class HandleStripeWebhookCommandHandler : IRequestHandler<HandleStripeWeb
         if (order == null)
         {
             _logger.LogWarning(
-                "No order found for PaymentIntent {PaymentIntentId}",
-                request.PaymentIntentId);
-            // BUG-18: the webhook may arrive before the order row is committed.
-            // Returning a failure lets the controller respond with a retryable
-            // non-2xx so Stripe redelivers the event once the order exists.
-            return Result<bool>.Failure("ORDER_NOT_FOUND");
+                "No order found for PaymentIntent {PaymentIntentId} (event {EventType})",
+                request.PaymentIntentId, request.EventType);
+            // BUG-18: only payment_intent.succeeded can race ahead of order creation, so only
+            // that event warrants a retry (the controller maps the failure to a 404 so Stripe
+            // redelivers once the order commits). For failed/refunded events a missing order
+            // means there is nothing to reconcile — acknowledge so Stripe does not retry forever.
+            return request.EventType == "payment_intent.succeeded"
+                ? Result<bool>.Failure("ORDER_NOT_FOUND")
+                : Result<bool>.Success(true);
         }
 
         try

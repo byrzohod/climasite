@@ -62,6 +62,36 @@ public class CreateOrderCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_CardOrderWithoutPaymentIntent_IsRejected()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var product = CreateProduct();
+        var variant = product.Variants.First();
+        variant.SetStockQuantity(10);
+
+        var cart = new Cart(userId, null);
+        cart.AddItem(product.Id, variant.Id, 1, 299.99m);
+
+        _context.AddProduct(product);
+        _context.AddCart(cart);
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        var handler = CreateHandler();
+
+        // A card order with no PaymentIntent must never create an unpaid, stock-depleting order.
+        var command = CreateValidCommand() with { PaymentMethod = "card" };
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Contain("verified card payment");
+        _paymentServiceMock.Verify(x => x.GetPaymentIntentAsync(It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
     public async Task Handle_ReducesStockForEachItem()
     {
         // Arrange
