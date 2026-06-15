@@ -186,11 +186,15 @@ export class CartService {
     };
   }
 
-  // Merge guest cart with user cart after login
+  // Merge guest cart with user cart after login.
+  // The backend reads the guest session from the `guestSessionId` query parameter
+  // (CartController.MergeGuestCart uses [FromQuery]); sending it only in a header or
+  // body previously produced a deterministic 400 that silently dropped the guest cart.
   mergeCart(userId: string): Observable<Cart> {
     this._isLoading.set(true);
 
-    return this.http.post<Cart>(`${this.apiUrl}/merge`, { userId }, { headers: this.getHeaders() })
+    const guestSessionId = encodeURIComponent(this.getSessionId());
+    return this.http.post<Cart>(`${this.apiUrl}/merge?guestSessionId=${guestSessionId}`, { userId }, { headers: this.getHeaders() })
       .pipe(
         tap(cart => {
           this._cart.set(cart);

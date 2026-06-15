@@ -234,4 +234,48 @@ public class CartTests : IAsyncLifetime
         // Accept test if cart had items initially (showing add to cart worked)
         (itemCount >= 1 || initialCount >= 1).Should().BeTrue("Cart should have had items");
     }
+
+    [Fact]
+    public async Task Cart_GuestItems_MergeIntoUserCartAfterLogin()
+    {
+        // Arrange - a product the guest adds before authenticating
+        var product = await _dataFactory.CreateProductAsync(name: "Guest Merge AC", price: 499.99m);
+
+        // Act 1 - As a guest (no login), add the product to the cart
+        var productPage = new ProductPage(_page);
+        await productPage.NavigateAsync(product.Slug);
+        await productPage.AddToCartAsync();
+
+        var cartPage = new CartPage(_page);
+        await cartPage.NavigateAsync();
+        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        // The guest cart must contain the item before we log in
+        (await cartPage.IsEmptyAsync())
+            .Should().BeFalse("guest should have an item in the cart before login");
+
+        // Act 2 - Log in. AuthService.login triggers the guest-cart merge
+        // (POST /api/cart/merge?guestSessionId=...). Before BUG-03 this 400'd, the
+        // failure was swallowed, and the guest cart silently vanished from the UI.
+        var user = await _dataFactory.CreateUserAsync();
+        var loginPage = new LoginPage(_page);
+        await loginPage.NavigateAsync();
+        await loginPage.LoginAsync(user.Email, user.Password);
+        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        // Assert - the merged item survives into the authenticated cart
+        await cartPage.NavigateAsync();
+        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        try
+        {
+            await _page.WaitForSelectorAsync(
+                "[data-testid='cart-item'], [data-testid='empty-cart']",
+                new PageWaitForSelectorOptions { Timeout = 5000 });
+        }
+        catch { /* fall through to the assertions below */ }
+
+        (await cartPage.IsEmptyAsync())
+            .Should().BeFalse("guest cart items should merge into the user cart after login");
+        (await cartPage.GetItemCountAsync()).Should().BeGreaterThanOrEqualTo(1);
+    }
 }
