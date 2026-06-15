@@ -52,8 +52,9 @@ ClimaSite is a production-grade online shop specializing in air conditioners, he
 |-------|------------|---------|
 | **Backend** | ASP.NET Core | .NET 10 |
 | **Frontend** | Angular | 19+ (standalone components) |
+| **Styling** | Tailwind CSS | 3.4 (custom components; no Material/PrimeNG) |
 | **Database** | PostgreSQL | 16+ |
-| **ORM** | Entity Framework Core | 9.x |
+| **ORM** | Entity Framework Core | 10.x |
 | **Cache** | Redis | 7.x |
 | **API** | RESTful | OpenAPI/Swagger |
 | **E2E Testing** | Playwright | Latest |
@@ -121,15 +122,16 @@ climasite/
 ├── tests/
 │   ├── ClimaSite.Api.Tests/        # API integration tests
 │   ├── ClimaSite.Core.Tests/       # Domain unit tests
-│   ├── ClimaSite.E2E/              # Playwright E2E tests
-│   │   ├── fixtures/               # Test data factory
-│   │   ├── helpers/                # Utility functions
+│   ├── ClimaSite.E2E/              # Playwright-for-.NET E2E tests (xUnit)
+│   │   ├── Infrastructure/         # TestDataFactory, Playwright fixtures
+│   │   ├── PageObjects/            # Page object models
 │   │   └── Tests/                  # Test files by feature
-│   └── ClimaSite.Web.Tests/        # Angular unit tests (karma.conf.js)
+│   └── (frontend unit tests are colocated under src/ClimaSite.Web as *.spec.ts)
 │
 ├── docs/
-│   ├── plans/                      # Implementation plans (12, 13, 17 active)
-│   └── skills.md                   # Required skills documentation
+│   ├── plans/                      # Implementation plans
+│   ├── project-plan/               # Consolidated review, roadmap, backlog (planning hub)
+│   └── skills/                     # Skill reference docs
 │
 └── scripts/                        # Build and deployment scripts
 ```
@@ -178,7 +180,7 @@ return NotFound();
 ### Headers
 
 ```
-Accept-Language: en|bg|de          # For translated content
+?lang=en|bg|de                      # (query param) selects translated content — the API reads ?lang=, NOT Accept-Language
 Authorization: Bearer <token>       # JWT access token
 X-Correlation-Id: <guid>           # Request tracking
 ```
@@ -499,27 +501,27 @@ builder.Property(p => p.Specifications)
 ## Commands
 
 ```bash
-# Backend
-dotnet build                                   # Build all projects
-dotnet test                                    # Run all backend tests
-dotnet run --project src/ClimaSite.Api         # Start API server (http://localhost:5000)
+# Backend — run tests PER-PROJECT. NEVER a bare root `dotnet test`: the solution includes the
+# server-dependent E2E project, which throws hundreds of false failures without a live stack.
+dotnet build ClimaSite.sln                                # Build all projects
+dotnet test tests/ClimaSite.Core.Tests --no-build         # Domain unit tests
+dotnet test tests/ClimaSite.Application.Tests --no-build   # Application unit tests
+dotnet test tests/ClimaSite.Api.Tests --no-build          # Integration tests (Testcontainers; needs Docker)
+dotnet test ClimaSite.NoE2E.slnf                          # All non-E2E tests via the solution filter
+dotnet run --project src/ClimaSite.Api                     # Start API server (http://localhost:5029)
 
 # Frontend
 cd src/ClimaSite.Web
 npm install                                    # Install dependencies
 ng serve                                       # Start dev server (http://localhost:4200)
-ng test                                        # Run unit tests (watch mode)
+npm test                                       # i18n key check + ng test (watch mode)
 ng test --watch=false --browsers=ChromeHeadless  # CI mode
 ng build --configuration=production            # Production build
 
-# E2E Tests (Playwright)
-cd tests/ClimaSite.E2E
-npx playwright install                         # Install browsers (first time)
-npx playwright test                            # Run all E2E tests
-npx playwright test --ui                       # Interactive UI mode
-npx playwright test tests/auth/                # Run specific folder
-npx playwright test -g "checkout"              # Run tests matching pattern
-npx playwright test --debug                    # Debug mode
+# E2E Tests (Playwright-for-.NET / xUnit) — needs a running API on :5029 + `ng serve` on :4200.
+# CI starts both for you; for local runs see docs/project-plan/DEV_WORKFLOW.md (env vars, ports).
+dotnet test tests/ClimaSite.E2E                                        # Run all E2E tests
+dotnet test tests/ClimaSite.E2E --filter "FullyQualifiedName~Checkout"  # Run a subset
 
 # Database
 cd src/ClimaSite.Infrastructure
@@ -527,10 +529,10 @@ dotnet ef migrations add <Name>                # Create migration
 dotnet ef database update                      # Apply migrations
 dotnet ef migrations remove                    # Remove last migration
 
-# Full Test Suite (run before any PR)
-dotnet test && \
-cd src/ClimaSite.Web && ng test --watch=false --browsers=ChromeHeadless && \
-cd ../../tests/ClimaSite.E2E && npx playwright test
+# Full local check (CI is the evidence of record — see the post-implementation workflow above)
+dotnet build ClimaSite.sln && \
+dotnet test ClimaSite.NoE2E.slnf && \
+cd src/ClimaSite.Web && npm test -- --watch=false --browsers=ChromeHeadless
 
 # Linting
 cd src/ClimaSite.Web
@@ -595,7 +597,7 @@ console.log('User:', this.authService.user());
 
 ```csharp
 // Check request headers
-var lang = Request.Headers["Accept-Language"].FirstOrDefault();
+var lang = Request.Query["lang"].FirstOrDefault(); // the API selects language via ?lang=, not Accept-Language
 
 // Debug EF queries
 optionsBuilder.LogTo(Console.WriteLine, LogLevel.Information);
@@ -682,7 +684,7 @@ A feature is ONLY complete when:
 | Domain Entities | `src/ClimaSite.Core/Entities/` |
 | EF Configs | `src/ClimaSite.Infrastructure/Data/Configurations/` |
 | E2E Tests | `tests/ClimaSite.E2E/Tests/` |
-| Test Factory | `tests/ClimaSite.E2E/fixtures/test-data-factory.ts` |
+| Test Factory | `tests/ClimaSite.E2E/Infrastructure/TestDataFactory.cs` |
 | Plans | `docs/plans/` |
 | Animation Services | `src/ClimaSite.Web/src/app/core/services/animation.service.ts` |
 | Flying Cart | `src/ClimaSite.Web/src/app/core/services/flying-cart.service.ts` |
@@ -690,13 +692,11 @@ A feature is ONLY complete when:
 | Performance Audit | `docs/performance/performance-audit.md` |
 | Animation Directives | `src/ClimaSite.Web/src/app/shared/directives/` |
 | RevealDirective | `src/ClimaSite.Web/src/app/shared/directives/reveal.directive.ts` |
-| CountUpDirective | `src/ClimaSite.Web/src/app/shared/directives/count-up.directive.ts` |
 
 ### Important URLs (Development)
 
 | Service | URL |
 |---------|-----|
 | Angular Frontend | http://localhost:4200 |
-| API Backend | http://localhost:5000 |
-| Swagger UI | http://localhost:5000/swagger |
-| Playwright Report | http://localhost:9323 |
+| API Backend | http://localhost:5029 |
+| Swagger UI | http://localhost:5029/swagger |

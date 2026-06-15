@@ -1,0 +1,14 @@
+{
+  "solution": {
+    "path": "ClimaSite.sln",
+    "projects": [
+      "src/ClimaSite.Api/ClimaSite.Api.csproj",
+      "src/ClimaSite.Application/ClimaSite.Application.csproj",
+      "src/ClimaSite.Core/ClimaSite.Core.csproj",
+      "src/ClimaSite.Infrastructure/ClimaSite.Infrastructure.csproj",
+      "tests/ClimaSite.Api.Tests/ClimaSite.Api.Tests.csproj",
+      "tests/ClimaSite.Application.Tests/ClimaSite.Application.Tests.csproj",
+      "tests/ClimaSite.Core.Tests/ClimaSite.Core.Tests.csproj"
+    ]
+  }
+}

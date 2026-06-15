@@ -30,6 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- Corrected the agent-facing docs (CLAUDE.md, root + E2E `AGENTS.md`) so every command block runs as written (DOC-01): real per-project test commands, the C# Playwright-for-.NET E2E flow (`dotnet test tests/ClimaSite.E2E`), API port **5029**, a new `ClimaSite.NoE2E.slnf` solution filter, EF Core **10.x**, Tailwind in the stack table, `TestDataFactory.cs`, and `?lang=` instead of `Accept-Language`.
 - Admin and root route empty-path redirects now use explicit `pathMatch: 'full'`.
 - Home recommendations and product browsing E2E tests now wait on real API responses instead of brittle DOM timing.
 - Missing Home v3 translation keys added across EN/BG/DE.
