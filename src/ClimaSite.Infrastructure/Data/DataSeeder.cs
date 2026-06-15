@@ -122,11 +122,23 @@ public class DataSeeder
                     return;
                 }
 
-                throw new InvalidOperationException(
-                    $"No admin user exists and no bootstrap credentials were provided in the " +
-                    $"'{_environment.EnvironmentName}' environment. Set the ADMIN_EMAIL and " +
-                    "ADMIN_INITIAL_PASSWORD environment variables to bootstrap the first admin. " +
-                    "The built-in default admin is never seeded outside Development/Testing.");
+                // Production must never start without an admin: fail fast so the deploy is fixed
+                // (the well-known default is never an option here).
+                if (_environment.IsProduction())
+                {
+                    throw new InvalidOperationException(
+                        "No admin user exists and no bootstrap credentials were provided in Production. " +
+                        "Set the ADMIN_EMAIL and ADMIN_INITIAL_PASSWORD environment variables to bootstrap " +
+                        "the first admin. The built-in default admin is never seeded outside Development/Testing.");
+                }
+
+                // Other non-Development/Testing environments (e.g. Staging) simply skip admin
+                // bootstrapping when no credentials are supplied — still never the default admin.
+                _logger.LogWarning(
+                    "No admin bootstrap credentials provided in {Environment} and no admin exists; " +
+                    "skipping admin seeding. Set ADMIN_EMAIL/ADMIN_INITIAL_PASSWORD to bootstrap an admin.",
+                    _environment.EnvironmentName);
+                return;
             }
         }
 
