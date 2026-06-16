@@ -36,5 +36,12 @@ public interface IApplicationDbContext
     DbSet<InstallationRequest> InstallationRequests { get; }
     DbSet<ProductPriceHistory> ProductPriceHistory { get; }
 
+    /// <summary>
+    /// Atomically decrements a variant's stock by <paramref name="quantity"/> only when current
+    /// stock is at least that much. Returns rows affected (1 = decremented, 0 = insufficient stock
+    /// or missing variant) — the oversell guard for concurrent checkout. (BUG-05)
+    /// </summary>
+    Task<int> TryDecrementVariantStockAsync(Guid variantId, int quantity, CancellationToken cancellationToken = default);
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

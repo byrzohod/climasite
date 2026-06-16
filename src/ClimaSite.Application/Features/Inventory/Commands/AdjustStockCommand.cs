@@ -44,23 +44,24 @@ public class AdjustStockCommandHandler : IRequestHandler<AdjustStockCommand, Res
 
     public async Task<Result> Handle(AdjustStockCommand request, CancellationToken cancellationToken)
     {
-        var variant = await _context.ProductVariants
-            .FirstOrDefaultAsync(v => v.Id == request.VariantId, cancellationToken);
+        // BUG-05: adjust stock atomically with a non-negative guard so concurrent
+        // adjustments can't race the old read-then-write into a wrong/negative quantity.
+        var affected = await _context.ProductVariants
+            .Where(v => v.Id == request.VariantId && v.StockQuantity + request.QuantityChange >= 0)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(v => v.StockQuantity, v => v.StockQuantity + request.QuantityChange),
+                cancellationToken);
 
-        if (variant == null)
+        if (affected > 0)
         {
-            return Result.Failure("Product variant not found");
+            return Result.Success();
         }
 
-        var newQuantity = variant.StockQuantity + request.QuantityChange;
-        if (newQuantity < 0)
-        {
-            return Result.Failure($"Cannot reduce stock below zero. Current stock: {variant.StockQuantity}");
-        }
-
-        variant.SetStockQuantity(newQuantity);
-        await _context.SaveChangesAsync(cancellationToken);
-
-        return Result.Success();
+        // No row updated: either the variant doesn't exist or the change would go below zero.
+        var exists = await _context.ProductVariants
+            .AnyAsync(v => v.Id == request.VariantId, cancellationToken);
+        return exists
+            ? Result.Failure("Cannot reduce stock below zero.")
+            : Result.Failure("Product variant not found");
     }
 }
