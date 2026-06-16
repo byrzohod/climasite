@@ -2,6 +2,7 @@ using System.Text;
 using System.Threading.RateLimiting;
 using ClimaSite.Application;
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Api.BackgroundServices;
 using ClimaSite.Api.Configuration;
 using ClimaSite.Infrastructure;
 using ClimaSite.Infrastructure.Data;
@@ -51,6 +52,10 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
     // Infrastructure layer services (EF Core, Identity, Redis, etc.)
     services.AddInfrastructureServices(configuration);
+
+    // Email outbox background worker (ARCH-05). Self-guards on Outbox:Enabled, so it is safe to
+    // register unconditionally; integration tests set Enabled=false and drive the processor directly.
+    services.AddHostedService<EmailOutboxBackgroundService>();
 
     // JWT Authentication - prefer env vars (Railway), fallback to config outside Production.
     var jwtSettings = configuration.GetSection("JwtSettings");

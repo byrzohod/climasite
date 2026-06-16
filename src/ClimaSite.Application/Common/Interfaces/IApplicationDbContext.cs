@@ -35,6 +35,7 @@ public interface IApplicationDbContext
     DbSet<ProductAnswer> ProductAnswers { get; }
     DbSet<InstallationRequest> InstallationRequests { get; }
     DbSet<ProductPriceHistory> ProductPriceHistory { get; }
+    DbSet<OutboxMessage> OutboxMessages { get; }
 
     /// <summary>
     /// Atomically decrements a variant's stock by <paramref name="quantity"/> only when current

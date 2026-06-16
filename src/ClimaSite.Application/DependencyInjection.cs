@@ -1,6 +1,7 @@
 using System.Reflection;
 using ClimaSite.Application.Common.Behaviors;
 using ClimaSite.Application.Common.Mappings;
+using ClimaSite.Application.Features.Outbox;
 using ClimaSite.Application.Features.Products.Scoring;
 using ClimaSite.Application.Features.Wishlist.Services;
 using FluentValidation;
@@ -32,6 +33,10 @@ public static class DependencyInjection
         // Scoring services
         services.AddScoped<RecommendationScoringService>();
         services.AddScoped<WishlistApplicationService>();
+
+        // Email outbox (ARCH-05): enqueue + drain. The hosted polling shell lives in the API layer.
+        services.AddScoped<IEmailOutbox, EmailOutbox>();
+        services.AddScoped<IOutboxProcessor, OutboxProcessor>();
 
         return services;
     }
