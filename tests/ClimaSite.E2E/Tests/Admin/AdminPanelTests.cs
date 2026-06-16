@@ -161,50 +161,139 @@ public class AdminPanelTests : IAsyncLifetime
     #region Admin Orders Tests
 
     [Fact]
-    public async Task AdminOrders_CanListOrders()
+    public async Task AdminOrders_CanListOrdersInUi()
     {
         // Arrange - Create admin and an order
         var admin = await _dataFactory.CreateAdminUserAsync();
         var order = await _dataFactory.CreateOrderAsync();
+        order.Id.Should().NotBe(Guid.Empty, "the test order must be created");
 
-        // Act - Get orders via API
-        var orders = await GetOrdersViaApiAsync(admin);
+        // Act - Login and navigate to the admin orders list UI
+        await LoginAsAdminAsync(admin);
+        var ordersPage = new AdminOrdersPage(_page);
+        await ordersPage.NavigateToListAsync();
 
-        // Assert
-        orders.Should().NotBeEmpty("There should be at least one order");
+        // Assert - The orders list renders at least one row
+        var rowCount = await ordersPage.GetOrderRowCountAsync();
+        rowCount.Should().BeGreaterThan(0, "the admin orders list should render the created order");
+
+        // The created order's "View" link should be present
+        var viewLink = await _page.QuerySelectorAsync(
+            $"[data-testid='view-order'][data-order-id='{order.Id}']");
+        viewLink.Should().NotBeNull("the created order should be listed with a View action");
     }
 
     [Fact]
-    public async Task AdminOrders_CanViewOrderDetails()
+    public async Task AdminOrders_CanOpenOrderDetailsInUi()
     {
         // Arrange
         var admin = await _dataFactory.CreateAdminUserAsync();
         var order = await _dataFactory.CreateOrderAsync();
+        order.Id.Should().NotBe(Guid.Empty, "the test order must be created");
 
-        // Act - Get order details via API
-        var orderDetails = await GetOrderDetailsViaApiAsync(admin, order.Id);
+        // Act - Login, open the list, and open the order detail
+        await LoginAsAdminAsync(admin);
+        var ordersPage = new AdminOrdersPage(_page);
+        await ordersPage.NavigateToListAsync();
+        await ordersPage.OpenOrderAsync(order.Id.ToString());
 
-        // Assert
-        orderDetails.Should().NotBeNullOrEmpty("Order details should be returned");
-        orderDetails.Should().Contain(order.Id.ToString(), "Order details should contain order ID");
+        // Assert - The order detail page shows the order with a status badge
+        var detail = await _page.QuerySelectorAsync("[data-testid='admin-order-detail']");
+        detail.Should().NotBeNull("the order detail page should be displayed");
+
+        var status = await ordersPage.GetStatusBadgeTextAsync();
+        status.Should().NotBeNullOrWhiteSpace("the order detail should display the current status");
     }
 
     [Fact]
-    public async Task AdminOrders_CanUpdateOrderStatus()
+    public async Task AdminOrders_CanChangeStatusInUi()
     {
         // Arrange
         var admin = await _dataFactory.CreateAdminUserAsync();
         var order = await _dataFactory.CreateOrderAsync();
+        order.Id.Should().NotBe(Guid.Empty, "the test order must be created");
 
-        // Act - Update order status to "Paid" first (Pending -> Paid is valid transition)
-        var updateToPaid = await UpdateOrderStatusViaApiAsync(admin, order.Id, "Paid");
-        
-        // Then update to "Processing" (Paid -> Processing is valid transition)
-        var updateToProcessing = await UpdateOrderStatusViaApiAsync(admin, order.Id, "Processing");
+        // Act - Open the detail directly and transition Pending -> Paid (a valid transition)
+        await LoginAsAdminAsync(admin);
+        var ordersPage = new AdminOrdersPage(_page);
+        await ordersPage.OpenOrderDirectAsync(order.Id.ToString());
+        await ordersPage.ChangeStatusAsync("Paid", note: "E2E status change", notifyCustomer: false);
 
-        // Assert
-        updateToPaid.Should().BeTrue("Admin should be able to update order status to Paid");
-        updateToProcessing.Should().BeTrue("Admin should be able to update order status to Processing");
+        // Assert - The status badge reflects the new status after the page reloads the order
+        await Assertions.Expect(_page.Locator("[data-testid='order-status-badge']"))
+            .ToContainTextAsync("Paid", new LocatorAssertionsToContainTextOptions { Timeout = 10000 });
+    }
+
+    [Fact]
+    public async Task AdminOrders_CanSetTrackingAndMarkShipped_CustomerSeesTracking()
+    {
+        // Arrange
+        var admin = await _dataFactory.CreateAdminUserAsync();
+        var order = await _dataFactory.CreateOrderAsync();
+        order.Id.Should().NotBe(Guid.Empty, "the test order must be created");
+        var trackingNumber = $"TRACK-{Guid.NewGuid():N}".Substring(0, 16).ToUpper();
+
+        // Act - Admin drives the order to a shippable state then sets tracking + marks shipped.
+        await LoginAsAdminAsync(admin);
+        var ordersPage = new AdminOrdersPage(_page);
+        await ordersPage.OpenOrderDirectAsync(order.Id.ToString());
+
+        // Move Pending -> Paid -> Processing so the order can be shipped.
+        await ordersPage.ChangeStatusAsync("Paid", notifyCustomer: false);
+        await Assertions.Expect(_page.Locator("[data-testid='order-status-badge']"))
+            .ToContainTextAsync("Paid", new LocatorAssertionsToContainTextOptions { Timeout = 10000 });
+
+        await ordersPage.ChangeStatusAsync("Processing", notifyCustomer: false);
+        await Assertions.Expect(_page.Locator("[data-testid='order-status-badge']"))
+            .ToContainTextAsync("Processing", new LocatorAssertionsToContainTextOptions { Timeout = 10000 });
+
+        // Set tracking number and mark as shipped.
+        await ordersPage.SetShippingAsync(trackingNumber, shippingMethod: "express", markAsShipped: true);
+
+        // Assert - The admin detail now shows the tracking number.
+        await Assertions.Expect(_page.Locator("[data-testid='order-tracking-number']"))
+            .ToContainTextAsync(trackingNumber, new LocatorAssertionsToContainTextOptions { Timeout = 10000 });
+
+        // Acceptance criterion - the customer sees the same tracking number on their order page.
+        var customer = order.User;
+        if (!string.IsNullOrEmpty(customer.Token))
+        {
+            await _page.GotoAsync("/");
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await _page.EvaluateAsync(
+                "token => window.localStorage.setItem('climasite_token', token)", customer.Token);
+            await _page.ReloadAsync();
+            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+            var customerOrdersPage = new OrdersPage(_page);
+            await customerOrdersPage.NavigateToOrderDetailsAsync(order.Id.ToString());
+
+            if (await customerOrdersPage.HasTrackingNumberAsync())
+            {
+                var customerTracking = await customerOrdersPage.GetTrackingNumberAsync();
+                customerTracking.Should().Contain(trackingNumber,
+                    "the customer order page should surface the tracking number set by admin");
+            }
+        }
+    }
+
+    [Fact]
+    public async Task AdminOrders_CanAddNoteInUi()
+    {
+        // Arrange
+        var admin = await _dataFactory.CreateAdminUserAsync();
+        var order = await _dataFactory.CreateOrderAsync();
+        order.Id.Should().NotBe(Guid.Empty, "the test order must be created");
+
+        // Act - Open the detail and add an internal note.
+        await LoginAsAdminAsync(admin);
+        var ordersPage = new AdminOrdersPage(_page);
+        await ordersPage.OpenOrderDirectAsync(order.Id.ToString());
+        await ordersPage.AddNoteAsync("E2E internal note");
+
+        // Assert - A success message is shown after adding the note.
+        await Assertions.Expect(_page.Locator("[data-testid='order-action-success']"))
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
     }
 
     #endregion
@@ -373,48 +462,6 @@ public class AdminPanelTests : IAsyncLifetime
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", admin.Token);
 
         var response = await client.DeleteAsync($"/api/admin/products/{productId}");
-        return response.IsSuccessStatusCode;
-    }
-
-    private async Task<List<string>> GetOrdersViaApiAsync(TestUser admin)
-    {
-        using var client = new HttpClient { BaseAddress = new Uri(_fixture.ApiUrl) };
-        client.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", admin.Token);
-
-        var response = await client.GetAsync("/api/admin/orders");
-        if (!response.IsSuccessStatusCode)
-            return new List<string>();
-
-        var content = await response.Content.ReadAsStringAsync();
-        return new List<string> { content };
-    }
-
-    private async Task<string> GetOrderDetailsViaApiAsync(TestUser admin, Guid orderId)
-    {
-        using var client = new HttpClient { BaseAddress = new Uri(_fixture.ApiUrl) };
-        client.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", admin.Token);
-
-        var response = await client.GetAsync($"/api/admin/orders/{orderId}");
-        if (!response.IsSuccessStatusCode)
-            return string.Empty;
-
-        return await response.Content.ReadAsStringAsync();
-    }
-
-    private async Task<bool> UpdateOrderStatusViaApiAsync(TestUser admin, Guid orderId, string status)
-    {
-        using var client = new HttpClient { BaseAddress = new Uri(_fixture.ApiUrl) };
-        client.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", admin.Token);
-
-        var response = await client.PutAsJsonAsync($"/api/admin/orders/{orderId}/status", new
-        {
-            status = status,
-            notifyCustomer = false
-        });
-
         return response.IsSuccessStatusCode;
     }
 

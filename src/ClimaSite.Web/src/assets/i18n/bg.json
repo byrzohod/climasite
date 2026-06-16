@@ -594,9 +594,93 @@
     },
     "orders": {
       "title": "Управление на поръчки",
+      "subtitle": "Търсене, филтриране и управление на клиентски поръчки",
       "list": "Списък с поръчки",
       "details": "Детайли на поръчка",
-      "updateStatus": "Обнови статус"
+      "updateStatus": "Обнови статус",
+      "searchPlaceholder": "Търсене по номер на поръчка или имейл",
+      "statusFilterLabel": "Филтриране по статус",
+      "allStatuses": "Всички статуси",
+      "empty": "Няма намерени поръчки",
+      "view": "Преглед",
+      "pageOf": "Страница {{ page }} от {{ total }}",
+      "backToList": "Назад към поръчките",
+      "orderTitle": "Поръчка {{ number }}",
+      "customer": "Клиент",
+      "shippingAddress": "Адрес за доставка",
+      "billingAddress": "Адрес за фактуриране",
+      "noAddress": "Няма посочен адрес",
+      "items": "Артикули",
+      "timeline": "Хронология",
+      "trackingNumber": "Номер за проследяване",
+      "changeStatus": "Промяна на статус",
+      "newStatus": "Нов статус",
+      "selectStatus": "Изберете статус",
+      "note": "Бележка",
+      "notePlaceholder": "Незадължителна вътрешна бележка",
+      "notifyCustomer": "Уведоми клиента",
+      "applyStatus": "Приложи статус",
+      "noTransitions": "Няма възможни допълнителни промени на статуса за тази поръчка",
+      "shippingTracking": "Доставка и проследяване",
+      "shippingMethod": "Метод на доставка",
+      "trackingPlaceholder": "Въведете номер за проследяване",
+      "shippingMethodPlaceholder": "напр. стандартна, експресна",
+      "markAsShipped": "Маркирай като изпратена",
+      "saveShipping": "Запази доставката",
+      "addNote": "Добави бележка",
+      "existingNotes": "Съществуващи бележки",
+      "columns": {
+        "orderNumber": "Поръчка №",
+        "customer": "Клиент",
+        "total": "Общо",
+        "status": "Статус",
+        "items": "Артикули",
+        "created": "Създадена",
+        "actions": "Действия"
+      },
+      "itemColumns": {
+        "product": "Продукт",
+        "sku": "Код",
+        "quantity": "Бр.",
+        "unitPrice": "Единична цена",
+        "lineTotal": "Сума на реда"
+      },
+      "totals": {
+        "subtotal": "Междинна сума",
+        "shipping": "Доставка",
+        "tax": "Данък",
+        "discount": "Отстъпка",
+        "total": "Общо"
+      },
+      "events": {
+        "created": "Създадена",
+        "paid": "Платена",
+        "shipped": "Изпратена",
+        "delivered": "Доставена",
+        "cancelled": "Отказана"
+      },
+      "status": {
+        "Pending": "Чакаща",
+        "Paid": "Платена",
+        "Processing": "Обработва се",
+        "Shipped": "Изпратена",
+        "Delivered": "Доставена",
+        "Cancelled": "Отказана",
+        "Refunded": "Възстановена",
+        "Returned": "Върната",
+        "PaymentFailed": "Неуспешно плащане"
+      },
+      "toasts": {
+        "statusUpdated": "Статусът на поръчката е обновен",
+        "shippingUpdated": "Информацията за доставка е обновена",
+        "noteAdded": "Бележката е добавена"
+      },
+      "errors": {
+        "loadFailed": "Неуспешно зареждане на поръчките. Моля, опитайте отново.",
+        "statusFailed": "Неуспешно обновяване на статуса на поръчката.",
+        "shippingFailed": "Неуспешно обновяване на информацията за доставка.",
+        "noteFailed": "Неуспешно добавяне на бележка."
+      }
     },
     "users": {
       "title": "Управление на потребители",

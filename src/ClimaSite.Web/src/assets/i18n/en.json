@@ -594,9 +594,93 @@
     },
     "orders": {
       "title": "Order Management",
+      "subtitle": "Search, filter, and manage customer orders",
       "list": "Order List",
       "details": "Order Details",
-      "updateStatus": "Update Status"
+      "updateStatus": "Update Status",
+      "searchPlaceholder": "Search by order number or email",
+      "statusFilterLabel": "Filter by status",
+      "allStatuses": "All statuses",
+      "empty": "No orders found",
+      "view": "View",
+      "pageOf": "Page {{ page }} of {{ total }}",
+      "backToList": "Back to orders",
+      "orderTitle": "Order {{ number }}",
+      "customer": "Customer",
+      "shippingAddress": "Shipping Address",
+      "billingAddress": "Billing Address",
+      "noAddress": "No address provided",
+      "items": "Items",
+      "timeline": "Timeline",
+      "trackingNumber": "Tracking Number",
+      "changeStatus": "Change Status",
+      "newStatus": "New status",
+      "selectStatus": "Select a status",
+      "note": "Note",
+      "notePlaceholder": "Optional internal note",
+      "notifyCustomer": "Notify customer",
+      "applyStatus": "Apply Status",
+      "noTransitions": "No further status changes are available for this order",
+      "shippingTracking": "Shipping & Tracking",
+      "shippingMethod": "Shipping method",
+      "trackingPlaceholder": "Enter tracking number",
+      "shippingMethodPlaceholder": "e.g. standard, express",
+      "markAsShipped": "Mark as shipped",
+      "saveShipping": "Save Shipping",
+      "addNote": "Add Note",
+      "existingNotes": "Existing notes",
+      "columns": {
+        "orderNumber": "Order #",
+        "customer": "Customer",
+        "total": "Total",
+        "status": "Status",
+        "items": "Items",
+        "created": "Created",
+        "actions": "Actions"
+      },
+      "itemColumns": {
+        "product": "Product",
+        "sku": "SKU",
+        "quantity": "Qty",
+        "unitPrice": "Unit Price",
+        "lineTotal": "Line Total"
+      },
+      "totals": {
+        "subtotal": "Subtotal",
+        "shipping": "Shipping",
+        "tax": "Tax",
+        "discount": "Discount",
+        "total": "Total"
+      },
+      "events": {
+        "created": "Created",
+        "paid": "Paid",
+        "shipped": "Shipped",
+        "delivered": "Delivered",
+        "cancelled": "Cancelled"
+      },
+      "status": {
+        "Pending": "Pending",
+        "Paid": "Paid",
+        "Processing": "Processing",
+        "Shipped": "Shipped",
+        "Delivered": "Delivered",
+        "Cancelled": "Cancelled",
+        "Refunded": "Refunded",
+        "Returned": "Returned",
+        "PaymentFailed": "Payment Failed"
+      },
+      "toasts": {
+        "statusUpdated": "Order status updated",
+        "shippingUpdated": "Shipping information updated",
+        "noteAdded": "Note added"
+      },
+      "errors": {
+        "loadFailed": "Failed to load orders. Please try again.",
+        "statusFailed": "Failed to update order status.",
+        "shippingFailed": "Failed to update shipping information.",
+        "noteFailed": "Failed to add note."
+      }
     },
     "users": {
       "title": "User Management",
