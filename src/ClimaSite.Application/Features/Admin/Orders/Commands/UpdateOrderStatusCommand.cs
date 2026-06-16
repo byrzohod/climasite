@@ -1,5 +1,6 @@
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Models;
+using ClimaSite.Application.Features.Outbox;
 using ClimaSite.Core.Entities;
 using FluentValidation;
 using MediatR;
@@ -36,10 +37,12 @@ public class UpdateOrderStatusCommandValidator : AbstractValidator<UpdateOrderSt
 public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatusCommand, Result>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IEmailOutbox _emailOutbox;
 
-    public UpdateOrderStatusCommandHandler(IApplicationDbContext context)
+    public UpdateOrderStatusCommandHandler(IApplicationDbContext context, IEmailOutbox emailOutbox)
     {
         _context = context;
+        _emailOutbox = emailOutbox;
     }
 
     public async Task<Result> Handle(UpdateOrderStatusCommand request, CancellationToken cancellationToken)
@@ -68,9 +71,17 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
                 order.SetNotes(string.IsNullOrEmpty(existingNotes) ? noteEntry : $"{existingNotes}\n{noteEntry}");
             }
 
-            await _context.SaveChangesAsync(cancellationToken);
+            // BUG-16/GAP-03: honor NotifyCustomer by queuing a status-update email in the same
+            // transaction as the change. (Shipped notifications with tracking go through the
+            // dedicated shipping flow; this is the generic status notice.)
+            if (request.NotifyCustomer)
+            {
+                var subject = $"ClimaSite Order {order.OrderNumber} — {newStatus}";
+                var body = $"Your order {order.OrderNumber} status has been updated to {newStatus}.";
+                _emailOutbox.Add(OutboxMessage.ForGeneric(order.CustomerEmail, subject, body));
+            }
 
-            // TODO: If NotifyCustomer is true, send email notification
+            await _context.SaveChangesAsync(cancellationToken);
 
             return Result.Success();
         }
