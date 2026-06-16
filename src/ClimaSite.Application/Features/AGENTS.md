@@ -65,6 +65,6 @@ Nested under `Features/Admin/`: Products, Orders, Customers, Dashboard, Translat
 - Return DTOs, not entities
 - Use Mapster for entity→DTO mapping
 
-## KNOWN ISSUE
+## AUTH LOCATION
 
-Auth exists in TWO locations: `Application/Auth/` AND `Application/Features/Auth/`. Use `Features/Auth/` (canonical).
+The canonical, live auth tree is `Application/Auth/` (namespace `ClimaSite.Application.Auth.*`) — this is what `AuthController` dispatches to. The former duplicate `Application/Features/Auth/` was a dead, unreferenced copy and was removed in ARCH-01.
