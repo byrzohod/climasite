@@ -28,6 +28,12 @@ public class FakePaymentService : IPaymentService
     /// <summary>Records each created intent id -> amount in minor units.</summary>
     public Dictionary<string, long> CreatedIntents { get; } = new();
 
+    /// <summary>
+    /// Records every PaymentIntent id that was refunded, in call order. Used by the money-path
+    /// tests to assert an already-charged intent was compensated on post-charge failure (BUG-04).
+    /// </summary>
+    public List<string> Refunds { get; } = new();
+
     public void Reset()
     {
         _counter = 0;
@@ -35,6 +41,7 @@ public class FakePaymentService : IPaymentService
         StatusToReport = "succeeded";
         AmountOverride = null;
         CreatedIntents.Clear();
+        Refunds.Clear();
     }
 
     public Task<PaymentIntentResult> CreatePaymentIntentAsync(
@@ -67,5 +74,12 @@ public class FakePaymentService : IPaymentService
             Amount = amount,
             Currency = CurrencyToReport
         });
+    }
+
+    public Task<PaymentIntentResult> RefundAsync(
+        string paymentIntentId, CancellationToken cancellationToken = default)
+    {
+        Refunds.Add(paymentIntentId);
+        return Task.FromResult(PaymentIntentResult.Success(paymentIntentId, string.Empty, "succeeded"));
     }
 }

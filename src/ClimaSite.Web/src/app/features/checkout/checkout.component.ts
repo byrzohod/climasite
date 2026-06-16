@@ -301,8 +301,8 @@ import { apiErrorToTranslationKey, toTranslationKey } from '../../core/utils/tra
                   <button type="button" class="btn-secondary" (click)="goToStep('payment')" data-testid="previous-step">
                     {{ 'common.back' | translate }}
                   </button>
-                  <button type="button" class="btn-primary btn-place-order" [disabled]="checkoutService.isProcessing()" (click)="placeOrder()" data-testid="place-order">
-                    @if (checkoutService.isProcessing()) {
+                  <button type="button" class="btn-primary btn-place-order" [disabled]="checkoutService.isProcessing() || placingOrder()" (click)="placeOrder()" data-testid="place-order">
+                    @if (checkoutService.isProcessing() || placingOrder()) {
                       {{ 'common.loading' | translate }}
                     } @else {
                       {{ 'checkout.placeOrder' | translate }}
@@ -1024,6 +1024,10 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   orderPlaced = signal(false);
   selectedAddressId = signal<string | null>(null);
   private clientSecret = signal<string | null>(null);
+  // BUG-04: double-submit guard. Set at the very top of placeOrder() — before the
+  // create-intent call — so a rapid double-click can't fire two intent/charge sequences.
+  // checkoutService.isProcessing() only flips inside createOrder(), which runs too late.
+  readonly placingOrder = signal(false);
 
 ngOnInit(): void {
     // Load saved addresses if user is authenticated
@@ -1137,6 +1141,14 @@ ngOnInit(): void {
   }
 
   async placeOrder(): Promise<void> {
+    // BUG-04: double-submit guard. Bail out if a placement is already in flight, otherwise
+    // claim the lock immediately — before any create-intent/charge call — so a double-click
+    // can never fire two intent/charge/createOrder sequences. Reset on every exit path.
+    if (this.placingOrder()) {
+      return;
+    }
+    this.placingOrder.set(true);
+
     const email = this.shippingForm.get('email')?.value;
     const phone = this.shippingForm.get('phone')?.value;
 
@@ -1152,6 +1164,7 @@ ngOnInit(): void {
 
         if (!intentResponse?.clientSecret) {
           this.checkoutService.setError('checkout.payment.errors.intentInitFailed');
+          this.placingOrder.set(false);
           return;
         }
 
@@ -1179,6 +1192,7 @@ ngOnInit(): void {
 
         if (!paymentResult.success) {
           this.checkoutService.setError(toTranslationKey(paymentResult.error, 'checkout.payment.errors.failed'));
+          this.placingOrder.set(false);
           return;
         }
 
@@ -1187,6 +1201,7 @@ ngOnInit(): void {
           next: () => {
             this.cartService.clearCart().subscribe();
             this.paymentService.destroyElements();
+            this.placingOrder.set(false);
             // Navigate to dedicated confirmation page
             const orderId = this.checkoutService.lastOrderId();
             if (orderId) {
@@ -1198,10 +1213,12 @@ ngOnInit(): void {
             }
           },
           error: (err) => {
+            this.placingOrder.set(false);
             this.checkoutService.setError(apiErrorToTranslationKey(err, 'checkout.errors.placeOrderFailed'));
           }
         });
       } catch (error: unknown) {
+        this.placingOrder.set(false);
         this.checkoutService.setError(toTranslationKey(
           error instanceof Error ? error.message : null,
           'checkout.payment.errors.failed'
@@ -1212,6 +1229,7 @@ ngOnInit(): void {
       this.checkoutService.createOrder(email, phone).subscribe({
         next: () => {
           this.cartService.clearCart().subscribe();
+          this.placingOrder.set(false);
           // Navigate to dedicated confirmation page
           const orderId = this.checkoutService.lastOrderId();
           if (orderId) {
@@ -1223,6 +1241,7 @@ ngOnInit(): void {
           }
         },
         error: (err) => {
+          this.placingOrder.set(false);
           console.error('Order failed:', err);
           this.checkoutService.setError(apiErrorToTranslationKey(err, 'checkout.errors.placeOrderFailed'));
         }

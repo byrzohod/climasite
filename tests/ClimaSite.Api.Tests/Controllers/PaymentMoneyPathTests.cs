@@ -114,6 +114,53 @@ public class PaymentMoneyPathTests : IntegrationTestBase
         orderResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var body = await orderResponse.Content.ReadAsStringAsync();
         body.Should().Contain("Payment could not be verified");
+
+        // BUG-04: the card was already charged client-side, so a failed verification must
+        // refund the intent — otherwise the charge would be orphaned (captured, no order).
+        Factory.PaymentService.Refunds.Should().ContainSingle()
+            .Which.Should().Be(intent.PaymentIntentId);
+    }
+
+    [Fact]
+    public async Task CreateOrder_WhenVariantOutOfStock_RefundsChargeAndReturnsBadRequest()
+    {
+        // Arrange: a verified, correctly-charged intent, but the variant has no stock left by
+        // the time the order is created (BUG-05's atomic decrement returns insufficient stock).
+        var guestSessionId = Guid.NewGuid().ToString();
+        var (product, variant) = await CreateTestProductWithVariantAsync(basePrice: 100m, stockQuantity: 1);
+        await AuthenticateAsync();
+        await AddToCartAsync(product.Id, variant.Id, 1, guestSessionId);
+
+        var intentResponse = await Client.PostAsJsonAsync("/api/payments/create-intent", new
+        {
+            shippingMethod = "standard",
+            guestSessionId
+        });
+        var intent = await intentResponse.Content.ReadFromJsonAsync<CreateIntentResponse>();
+        intent.Should().NotBeNull();
+
+        // Drain all stock for the variant AFTER the intent was created so the order-time
+        // atomic decrement fails. The intent still reports succeeded/eur/correct-amount.
+        await SetVariantStockAsync(variant.Id, 0);
+
+        // Act
+        var orderResponse = await Client.PostAsJsonAsync("/api/orders", new
+        {
+            customerEmail = "out-of-stock@test.com",
+            shippingAddress = ValidAddress(),
+            shippingMethod = "standard",
+            paymentIntentId = intent!.PaymentIntentId,
+            paymentMethod = "card",
+            guestSessionId
+        });
+
+        // Assert: order fails for insufficient stock AND the charge is refunded.
+        orderResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await orderResponse.Content.ReadAsStringAsync();
+        body.Should().Contain("Insufficient stock");
+
+        Factory.PaymentService.Refunds.Should().ContainSingle()
+            .Which.Should().Be(intent.PaymentIntentId);
     }
 
     [Fact]
@@ -186,6 +233,15 @@ public class PaymentMoneyPathTests : IntegrationTestBase
         using var scope = Factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         return await db.Orders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == orderId);
+    }
+
+    private async Task SetVariantStockAsync(Guid variantId, int stockQuantity)
+    {
+        using var scope = Factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var variant = await db.ProductVariants.FirstAsync(v => v.Id == variantId);
+        variant.SetStockQuantity(stockQuantity);
+        await db.SaveChangesAsync();
     }
 
     private async Task AddToCartAsync(Guid productId, Guid variantId, int quantity, string guestSessionId)
