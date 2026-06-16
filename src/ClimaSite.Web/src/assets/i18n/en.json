@@ -547,6 +547,41 @@
   },
   "admin": {
     "title": "Admin Dashboard",
+    "dashboard": {
+      "title": "Dashboard",
+      "error": "Failed to load dashboard",
+      "empty": "No data available",
+      "kpis": {
+        "totalOrders": "Total Orders",
+        "revenue": "Revenue",
+        "newCustomers": "New Customers",
+        "avgOrderValue": "Avg. Order Value",
+        "pendingOrders": "Pending Orders",
+        "lowStock": "Low Stock"
+      },
+      "period": {
+        "month": "This month"
+      },
+      "orderStatus": {
+        "title": "Orders by Status",
+        "pending": "Pending",
+        "processing": "Processing",
+        "shipped": "Shipped",
+        "delivered": "Delivered",
+        "cancelled": "Cancelled"
+      },
+      "recentOrders": "Recent Orders",
+      "lowStockProducts": "Low Stock Products",
+      "topProducts": "Top Selling Products",
+      "columns": {
+        "product": "Product",
+        "sku": "SKU",
+        "stock": "Stock",
+        "threshold": "Threshold",
+        "sold": "Sold",
+        "revenue": "Revenue"
+      }
+    },
     "products": {
       "title": "Product Management",
       "add": "Add Product",
@@ -569,7 +604,8 @@
           "loadFailed": "Failed to load relations",
           "addFailed": "Failed to add relation",
           "removeFailed": "Failed to remove relation",
-          "reorderFailed": "Failed to reorder relations"
+          "reorderFailed": "Failed to reorder relations",
+          "searchFailed": "Failed to search products"
         }
       },
       "translations": {
@@ -590,7 +626,62 @@
       "shortDescription": "Short Description",
       "description": "Description",
       "metaTitle": "Meta Title",
-      "metaDescription": "Meta Description"
+      "metaDescription": "Meta Description",
+      "subtitle": "Manage your product catalog",
+      "search": "Search products...",
+      "create": "Add Product",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "feature": "Toggle Featured",
+      "empty": "No products found",
+      "error": "Failed to load products",
+      "allStatuses": "All statuses",
+      "statusFilterLabel": "Status",
+      "pageOf": "Page {{page}} of {{total}}",
+      "confirmDeactivate": "Deactivate \"{{name}}\"?",
+      "columns": {
+        "image": "Image",
+        "name": "Name",
+        "sku": "SKU",
+        "price": "Price",
+        "stock": "Stock",
+        "status": "Status",
+        "category": "Category",
+        "actions": "Actions"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "outOfStock": "Out of Stock",
+        "lowStock": "Low Stock"
+      },
+      "form": {
+        "name": "Name",
+        "sku": "SKU",
+        "slug": "Slug",
+        "price": "Price",
+        "compareAtPrice": "Compare-at Price",
+        "costPrice": "Cost Price",
+        "category": "Category",
+        "categoryPlaceholder": "Category ID (optional)",
+        "brand": "Brand",
+        "model": "Model",
+        "warrantyMonths": "Warranty (months)",
+        "weightKg": "Weight (kg)",
+        "shortDescription": "Short Description",
+        "description": "Description",
+        "isActive": "Active",
+        "isFeatured": "Featured",
+        "requiresInstallation": "Requires Installation",
+        "save": "Save",
+        "cancel": "Cancel"
+      },
+      "errors": {
+        "loadDetailFailed": "Failed to load product details",
+        "saveFailed": "Failed to save product",
+        "statusFailed": "Failed to update status",
+        "featuredFailed": "Failed to update featured flag"
+      }
     },
     "orders": {
       "title": "Order Management",
@@ -686,7 +777,68 @@
       "title": "User Management",
       "list": "User List",
       "details": "User Details",
-      "roles": "Manage Roles"
+      "roles": "Manage Roles",
+      "subtitle": "Manage customer accounts",
+      "search": "Search customers...",
+      "view": "View",
+      "empty": "No customers found",
+      "error": "Failed to load customers",
+      "pageOf": "Page {{page}} of {{total}}",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "columns": {
+        "email": "Email",
+        "name": "Name",
+        "phone": "Phone",
+        "status": "Status",
+        "orders": "Orders",
+        "spent": "Total Spent",
+        "created": "Registered",
+        "actions": "Actions"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "filter": {
+        "label": "Status",
+        "all": "All",
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "detail": {
+        "title": "Customer Details",
+        "profile": "Profile",
+        "stats": "Statistics",
+        "addresses": "Addresses",
+        "recentOrders": "Recent Orders",
+        "error": "Failed to load customer",
+        "emailConfirmed": "Email Confirmed",
+        "language": "Language",
+        "currency": "Currency",
+        "lastLogin": "Last Login",
+        "defaultAddress": "Default",
+        "noAddresses": "No addresses on file",
+        "noOrders": "No orders yet"
+      },
+      "stats": {
+        "totalOrders": "Total Orders",
+        "totalSpent": "Total Spent",
+        "averageOrder": "Average Order",
+        "reviews": "Reviews",
+        "wishlist": "Wishlist Items"
+      },
+      "orderColumns": {
+        "number": "Order #",
+        "total": "Total",
+        "status": "Status",
+        "created": "Date"
+      },
+      "toasts": {
+        "activated": "Customer activated",
+        "deactivated": "Customer deactivated",
+        "statusFailed": "Failed to update customer status"
+      }
     },
     "categories": {
       "title": "Category Management",

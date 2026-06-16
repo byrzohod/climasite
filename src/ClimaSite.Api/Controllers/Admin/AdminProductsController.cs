@@ -1,5 +1,6 @@
 using ClimaSite.Application.Features.Products.Commands;
 using ClimaSite.Application.Features.Products.Queries;
+using ClimaSite.Application.Features.Admin.Products.Queries;
 using ClimaSite.Application.Features.Admin.RelatedProducts.Commands;
 using ClimaSite.Application.Features.Admin.RelatedProducts.Queries;
 using ClimaSite.Application.Features.Admin.Translations.Commands;
@@ -22,33 +23,45 @@ public class AdminProductsController : ControllerBase
         _mediator = mediator;
     }
 
+    // Returns the admin product list (sku, stock, status, category) via the admin query, not the
+    // public catalog projection — the admin grid needs operational fields the storefront DTO omits.
     [HttpGet]
     public async Task<IActionResult> GetProducts(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] Guid? categoryId = null,
-        [FromQuery] string? searchTerm = null,
-        [FromQuery] string? brand = null,
-        [FromQuery] bool? isActive = null,
-        [FromQuery] string? sortBy = null,
-        [FromQuery] bool sortDescending = false)
+        [FromQuery] string? search = null,
+        [FromQuery] string? status = null,
+        [FromQuery] decimal? minPrice = null,
+        [FromQuery] decimal? maxPrice = null,
+        [FromQuery] string sortBy = "createdAt",
+        [FromQuery] string sortOrder = "desc")
     {
-        var query = new GetProductsQuery
+        var query = new GetAdminProductsQuery
         {
             PageNumber = pageNumber,
             PageSize = pageSize,
             CategoryId = categoryId,
-            SearchTerm = searchTerm,
-            Brand = brand,
-            IsFeatured = null,
-            InStock = null,
-            OnSale = null,
+            Search = search,
+            Status = status,
+            MinPrice = minPrice,
+            MaxPrice = maxPrice,
             SortBy = sortBy,
-            SortDescending = sortDescending
+            SortOrder = sortOrder
         };
 
         var result = await _mediator.Send(query);
         return Ok(result);
+    }
+
+    // Admin product detail by id — returns the full editable shape (sku, compareAtPrice, cost,
+    // warranty, meta, etc.) the storefront slug projection omits. The :guid constraint keeps this
+    // distinct from the public-shaped {slug} lookup below.
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetProductById(Guid id)
+    {
+        var result = await _mediator.Send(new GetAdminProductByIdQuery { Id = id });
+        return result is null ? NotFound() : Ok(result);
     }
 
     [HttpGet("{slug}")]

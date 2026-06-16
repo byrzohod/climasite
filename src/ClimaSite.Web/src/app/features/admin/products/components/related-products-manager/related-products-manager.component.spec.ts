@@ -210,4 +210,93 @@ describe('RelatedProductsManagerComponent', () => {
 
     expect(component.loading()).toBeFalsy();
   }));
+
+  it('should not search when the term is shorter than two characters (BUG-14)', fakeAsync(() => {
+    fixture.detectChanges();
+    httpMock.expectOne(req => req.url.includes('/relations')).flush(mockRelations);
+    tick();
+
+    component.searchTerm = 'a';
+    component.searchProducts();
+    tick();
+
+    expect(component.searchResults().length).toBe(0);
+    // No search request should have been issued.
+    httpMock.expectNone(req => req.params.has('search'));
+  }));
+
+  it('should call the products search endpoint and exclude self/existing relations (BUG-14)', fakeAsync(() => {
+    fixture.detectChanges();
+    httpMock.expectOne(req => req.url.includes('/relations')).flush(mockRelations);
+    tick();
+
+    component.searchTerm = 'cooler';
+    component.searchProducts();
+
+    const searchReq = httpMock.expectOne(req => req.params.get('search') === 'cooler');
+    expect(searchReq.request.method).toBe('GET');
+    expect(searchReq.request.params.get('pageSize')).toBe('10');
+    expect(searchReq.request.params.get('status')).toBe('Active');
+
+    searchReq.flush({
+      items: [
+        // Self — should be excluded.
+        {
+          id: '123e4567-e89b-12d3-a456-426614174000',
+          name: 'Test Product',
+          sku: 'SELF',
+          slug: 'test-product',
+          price: 100,
+          salePrice: null,
+          stockQuantity: 5,
+          status: 'Active',
+          primaryImageUrl: null,
+          categoryName: null,
+          createdAt: '2026-06-15T00:00:00Z',
+          updatedAt: '2026-06-15T00:00:00Z'
+        },
+        // Already related (relatedProductId prod-2) — should be excluded.
+        {
+          id: 'prod-2',
+          name: 'Similar Product 1',
+          sku: 'SKU-001',
+          slug: 'similar-1',
+          price: 199.99,
+          salePrice: null,
+          stockQuantity: 5,
+          status: 'Active',
+          primaryImageUrl: null,
+          categoryName: null,
+          createdAt: '2026-06-15T00:00:00Z',
+          updatedAt: '2026-06-15T00:00:00Z'
+        },
+        // New candidate — should be kept.
+        {
+          id: 'prod-9',
+          name: 'Brand New Cooler',
+          sku: 'SKU-009',
+          slug: 'brand-new-cooler',
+          price: 399.99,
+          salePrice: null,
+          stockQuantity: 5,
+          status: 'Active',
+          primaryImageUrl: 'https://img/9.jpg',
+          categoryName: null,
+          createdAt: '2026-06-15T00:00:00Z',
+          updatedAt: '2026-06-15T00:00:00Z'
+        }
+      ],
+      totalCount: 3,
+      pageNumber: 1,
+      pageSize: 10,
+      totalPages: 1
+    });
+    tick();
+
+    const results = component.searchResults();
+    expect(results.length).toBe(1);
+    expect(results[0].id).toBe('prod-9');
+    expect(results[0].sku).toBe('SKU-009');
+    expect(results[0].primaryImageUrl).toBe('https://img/9.jpg');
+  }));
 });
