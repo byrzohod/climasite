@@ -95,6 +95,7 @@ public class OrdersController : ControllerBase
         return Ok(result.Value);
     }
 
+    [Authorize]
     [HttpGet("by-number/{orderNumber}")]
     public async Task<IActionResult> GetOrderByNumber(string orderNumber)
     {
