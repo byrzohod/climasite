@@ -594,9 +594,93 @@
     },
     "orders": {
       "title": "Bestellungsverwaltung",
+      "subtitle": "Kundenbestellungen suchen, filtern und verwalten",
       "list": "Bestellliste",
       "details": "Bestelldetails",
-      "updateStatus": "Status aktualisieren"
+      "updateStatus": "Status aktualisieren",
+      "searchPlaceholder": "Nach Bestellnummer oder E-Mail suchen",
+      "statusFilterLabel": "Nach Status filtern",
+      "allStatuses": "Alle Status",
+      "empty": "Keine Bestellungen gefunden",
+      "view": "Ansehen",
+      "pageOf": "Seite {{ page }} von {{ total }}",
+      "backToList": "Zurück zu den Bestellungen",
+      "orderTitle": "Bestellung {{ number }}",
+      "customer": "Kunde",
+      "shippingAddress": "Lieferadresse",
+      "billingAddress": "Rechnungsadresse",
+      "noAddress": "Keine Adresse angegeben",
+      "items": "Artikel",
+      "timeline": "Zeitverlauf",
+      "trackingNumber": "Sendungsnummer",
+      "changeStatus": "Status ändern",
+      "newStatus": "Neuer Status",
+      "selectStatus": "Status auswählen",
+      "note": "Notiz",
+      "notePlaceholder": "Optionale interne Notiz",
+      "notifyCustomer": "Kunde benachrichtigen",
+      "applyStatus": "Status anwenden",
+      "noTransitions": "Für diese Bestellung sind keine weiteren Statusänderungen verfügbar",
+      "shippingTracking": "Versand & Sendungsverfolgung",
+      "shippingMethod": "Versandart",
+      "trackingPlaceholder": "Sendungsnummer eingeben",
+      "shippingMethodPlaceholder": "z. B. Standard, Express",
+      "markAsShipped": "Als versandt markieren",
+      "saveShipping": "Versand speichern",
+      "addNote": "Notiz hinzufügen",
+      "existingNotes": "Vorhandene Notizen",
+      "columns": {
+        "orderNumber": "Bestell-Nr.",
+        "customer": "Kunde",
+        "total": "Gesamt",
+        "status": "Status",
+        "items": "Artikel",
+        "created": "Erstellt",
+        "actions": "Aktionen"
+      },
+      "itemColumns": {
+        "product": "Produkt",
+        "sku": "Art.-Nr.",
+        "quantity": "Anz.",
+        "unitPrice": "Stückpreis",
+        "lineTotal": "Zeilensumme"
+      },
+      "totals": {
+        "subtotal": "Zwischensumme",
+        "shipping": "Versand",
+        "tax": "Steuer",
+        "discount": "Rabatt",
+        "total": "Gesamt"
+      },
+      "events": {
+        "created": "Erstellt",
+        "paid": "Bezahlt",
+        "shipped": "Versandt",
+        "delivered": "Zugestellt",
+        "cancelled": "Storniert"
+      },
+      "status": {
+        "Pending": "Ausstehend",
+        "Paid": "Bezahlt",
+        "Processing": "In Bearbeitung",
+        "Shipped": "Versandt",
+        "Delivered": "Zugestellt",
+        "Cancelled": "Storniert",
+        "Refunded": "Erstattet",
+        "Returned": "Zurückgesendet",
+        "PaymentFailed": "Zahlung fehlgeschlagen"
+      },
+      "toasts": {
+        "statusUpdated": "Bestellstatus aktualisiert",
+        "shippingUpdated": "Versandinformationen aktualisiert",
+        "noteAdded": "Notiz hinzugefügt"
+      },
+      "errors": {
+        "loadFailed": "Bestellungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+        "statusFailed": "Bestellstatus konnte nicht aktualisiert werden.",
+        "shippingFailed": "Versandinformationen konnten nicht aktualisiert werden.",
+        "noteFailed": "Notiz konnte nicht hinzugefügt werden."
+      }
     },
     "users": {
       "title": "Benutzerverwaltung",
