@@ -6,6 +6,7 @@ public interface IPaymentService
     Task<PaymentIntentResult> ConfirmPaymentIntentAsync(string paymentIntentId);
     Task<PaymentIntentResult> CancelPaymentIntentAsync(string paymentIntentId);
     Task<PaymentIntentResult> GetPaymentIntentAsync(string paymentIntentId);
+    Task<PaymentIntentResult> RefundAsync(string paymentIntentId, CancellationToken cancellationToken = default);
 }
 
 public record PaymentIntentResult

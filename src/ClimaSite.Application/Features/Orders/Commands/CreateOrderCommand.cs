@@ -121,6 +121,9 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
 
             if (cart == null || !cart.Items.Any())
             {
+                // Cart could have been cleared (another tab) after the card was charged;
+                // refund rather than orphan the charge.
+                await RefundOrphanedChargeAsync(request.PaymentIntentId);
                 return Result<OrderDto>.Failure("Cart is empty");
             }
 
@@ -137,19 +140,24 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
                 var product = products.FirstOrDefault(p => p.Id == item.ProductId);
                 if (product == null || !product.IsActive)
                 {
+                    // The card may already be charged (the client confirms before this call);
+                    // refund rather than orphan the charge if the product is now unavailable.
+                    await RefundOrphanedChargeAsync(request.PaymentIntentId);
                     return Result<OrderDto>.Failure($"Product '{item.ProductId}' is no longer available");
                 }
 
                 var variant = product.Variants.FirstOrDefault(v => v.Id == item.VariantId);
                 if (variant == null || !variant.IsActive)
                 {
+                    await RefundOrphanedChargeAsync(request.PaymentIntentId);
                     return Result<OrderDto>.Failure("Product variant is no longer available");
                 }
 
-                if (variant.StockQuantity < item.Quantity)
-                {
-                    return Result<OrderDto>.Failure($"Insufficient stock for '{product.Name}'");
-                }
+                // BUG-04: do NOT short-circuit on stock here. The card is already charged by
+                // the time this handler runs, and the authoritative stock gate is the atomic
+                // decrement in Loop 2 (after intent verification), which refunds the charge if
+                // stock is unavailable. An early read-only check here would return "Insufficient
+                // stock" before verification and leave the charge orphaned.
             }
 
             // Generate order number using timestamp + random suffix for uniqueness (race-condition safe)
@@ -168,7 +176,12 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
             order.SetNotes(request.Notes);
             order.SetCurrency(CheckoutPricing.Currency);
 
-            // Add order items
+            // BUG-04: verify (and record) the PaymentIntent BEFORE any stock is taken so a
+            // failed verification never leaves an orphaned charge. Loop 1 only builds the
+            // order lines (setting Subtotal); stock is decremented later in Loop 2, after the
+            // charge has been verified. Any post-verification failure refunds the charge.
+
+            // Loop 1: add order items (sets Subtotal; NO stock change yet).
             foreach (var cartItem in cart.Items)
             {
                 var product = products.First(p => p.Id == cartItem.ProductId);
@@ -183,20 +196,19 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
                     cartItem.Quantity,
                     cartItem.UnitPrice
                 );
-
-                // Reduce stock
-                variant.AdjustStock(-cartItem.Quantity);
             }
 
             // Pricing comes from the shared CheckoutPricing helper so the amount
             // displayed at checkout, charged via Stripe, and the persisted order
-            // total are always computed identically (BUG-02).
+            // total are always computed identically (BUG-02). Total is now final, so the
+            // verified intent amount can be compared against it below.
             order.SetShippingCost(CheckoutPricing.GetShippingCost(request.ShippingMethod));
             order.SetTaxAmount(CheckoutPricing.GetTax(order.Subtotal));
 
             // BUG-01: a card order MUST be backed by a verified PaymentIntent. Reject a card
             // order that arrives without one — otherwise it would create an unpaid,
-            // stock-depleting Pending order. Offline methods (e.g. bank transfer) are handled
+            // stock-depleting Pending order. Nothing has been charged in this case, so there
+            // is no refund to issue. Offline methods (e.g. bank transfer) are handled
             // separately and may legitimately remain pending-payment (see GAP-06).
             if (string.Equals(request.PaymentMethod, "card", StringComparison.OrdinalIgnoreCase)
                 && string.IsNullOrWhiteSpace(request.PaymentIntentId))
@@ -207,12 +219,15 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
             // BUG-01: verify the Stripe PaymentIntent server-side before persisting
             // the order. We never trust the client that the payment actually
             // succeeded for the correct amount and currency.
+            // BUG-04: the card was already charged client-side, so any verification failure
+            // must refund the intent — otherwise the charge is orphaned (captured with no order).
             if (!string.IsNullOrWhiteSpace(request.PaymentIntentId))
             {
                 var pi = await _paymentService.GetPaymentIntentAsync(request.PaymentIntentId);
 
                 if (!pi.Succeeded || pi.Status != "succeeded")
                 {
+                    await RefundOrphanedChargeAsync(request.PaymentIntentId);
                     return Result<OrderDto>.Failure("Payment could not be verified");
                 }
 
@@ -221,6 +236,7 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
                     _logger.LogWarning(
                         "PaymentIntent {PaymentIntentId} currency mismatch: expected {Expected} but was {Actual}",
                         request.PaymentIntentId, CheckoutPricing.Currency, pi.Currency);
+                    await RefundOrphanedChargeAsync(request.PaymentIntentId);
                     return Result<OrderDto>.Failure("Payment could not be verified");
                 }
 
@@ -230,12 +246,33 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
                     _logger.LogWarning(
                         "PaymentIntent {PaymentIntentId} amount mismatch: charged {Charged} but expected {Expected}",
                         request.PaymentIntentId, pi.Amount, expectedMinorUnits);
+                    await RefundOrphanedChargeAsync(request.PaymentIntentId);
                     return Result<OrderDto>.Failure("Payment could not be verified");
                 }
 
                 // Persist the verified payment reference so the webhook can match
                 // the order and flip it to Paid. Status stays Pending here.
                 order.SetPaymentInfo(request.PaymentIntentId, request.PaymentMethod ?? "card");
+            }
+
+            // Loop 2: now that the charge is verified, take stock atomically.
+            // BUG-05: decrement stock with a `stock >= qty` guard so two concurrent orders
+            // for the last unit can't both succeed. Zero rows affected means another order
+            // took the stock first; the surrounding transaction rolls back the order and any
+            // earlier decrements in this order.
+            // BUG-04: a card order is already charged at this point, so insufficient stock
+            // must refund the intent — otherwise the charge is orphaned.
+            foreach (var cartItem in cart.Items)
+            {
+                var stockUpdated = await _context.TryDecrementVariantStockAsync(
+                    cartItem.VariantId, cartItem.Quantity, cancellationToken);
+
+                if (stockUpdated == 0)
+                {
+                    var product = products.First(p => p.Id == cartItem.ProductId);
+                    await RefundOrphanedChargeAsync(request.PaymentIntentId);
+                    return Result<OrderDto>.Failure($"Insufficient stock for '{product.Name}'");
+                }
             }
 
             _context.Orders.Add(order);
@@ -263,6 +300,26 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
             await transaction.CommitAsync(cancellationToken);
 
             return Result<OrderDto>.Success(MapToDto(order, products));
+
+            // BUG-04: best-effort compensation for an already-charged card intent when the
+            // order cannot be created. Only card orders carry a PaymentIntentId; non-card
+            // orders pass null here and are never refunded (nothing was charged). A failed
+            // refund is logged but does not change the (already failing) outcome.
+            async Task RefundOrphanedChargeAsync(string? paymentIntentId)
+            {
+                if (string.IsNullOrWhiteSpace(paymentIntentId))
+                {
+                    return;
+                }
+
+                var refund = await _paymentService.RefundAsync(paymentIntentId, cancellationToken);
+                if (!refund.Succeeded)
+                {
+                    _logger.LogError(
+                        "Failed to refund orphaned charge for PaymentIntent {PaymentIntentId}: {Error}",
+                        paymentIntentId, refund.ErrorMessage);
+                }
+            }
         }
     }
 

@@ -167,6 +167,18 @@ public class MockDbContext : IApplicationDbContext
         return Task.FromResult(1);
     }
 
+    public Task<int> TryDecrementVariantStockAsync(Guid variantId, int quantity, CancellationToken cancellationToken = default)
+    {
+        var variant = _productVariants.FirstOrDefault(v => v.Id == variantId);
+        if (variant is null || variant.StockQuantity < quantity)
+        {
+            return Task.FromResult(0);
+        }
+
+        variant.AdjustStock(-quantity);
+        return Task.FromResult(1);
+    }
+
     private static DatabaseFacade CreateMockDatabaseFacade()
     {
         var mockTransaction = new Mock<IDbContextTransaction>();
@@ -181,10 +193,6 @@ public class MockDbContext : IApplicationDbContext
         var mockFacade = new Mock<DatabaseFacade>(mockDbContext.Object);
         mockFacade.Setup(f => f.BeginTransactionAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(mockTransaction.Object);
-        // Provide a pass-through execution strategy so production code can call
-        // strategy.ExecuteAsync(...) without a real database provider.
-        mockFacade.Setup(f => f.CreateExecutionStrategy())
-            .Returns(new PassThroughExecutionStrategy());
 
         return mockFacade.Object;
     }
@@ -225,33 +233,6 @@ public class MockDbContext : IApplicationDbContext
             });
 
         return mockSet.Object;
-    }
-}
-
-/// <summary>
-/// A non-retrying execution strategy that simply invokes the supplied operation.
-/// Lets unit tests exercise production code paths that call
-/// <c>Database.CreateExecutionStrategy().ExecuteAsync(...)</c> without a real provider.
-/// </summary>
-internal sealed class PassThroughExecutionStrategy : IExecutionStrategy
-{
-    public bool RetriesOnFailure => false;
-
-    public TResult Execute<TState, TResult>(
-        TState state,
-        Func<DbContext, TState, TResult> operation,
-        Func<DbContext, TState, ExecutionResult<TResult>>? verifySucceeded)
-    {
-        return operation(null!, state);
-    }
-
-    public Task<TResult> ExecuteAsync<TState, TResult>(
-        TState state,
-        Func<DbContext, TState, CancellationToken, Task<TResult>> operation,
-        Func<DbContext, TState, CancellationToken, Task<ExecutionResult<TResult>>>? verifySucceeded,
-        CancellationToken cancellationToken = default)
-    {
-        return operation(null!, state, cancellationToken);
     }
 }
 
