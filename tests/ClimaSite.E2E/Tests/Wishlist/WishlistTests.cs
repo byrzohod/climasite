@@ -84,12 +84,16 @@ public class WishlistTests : IAsyncLifetime
         await _page.Locator("[data-testid='wishlist-item']").First.WaitForAsync();
         (await _page.Locator("[data-testid='wishlist-item']").CountAsync()).Should().BeGreaterThanOrEqualTo(2);
 
+        // Clearing the whole wishlist is a two-step action: the first click opens an inline
+        // confirmation, the confirm button issues the server DELETE.
+        await _page.Locator("[data-testid='clear-wishlist']").ClickAsync();
+
         var responseTask = _page.WaitForResponseAsync(response =>
             response.Url.EndsWith("/api/wishlist", StringComparison.OrdinalIgnoreCase)
             && response.Request.Method == "DELETE"
             && response.Status == 200);
 
-        await _page.Locator("[data-testid='clear-wishlist']").ClickAsync();
+        await _page.Locator("[data-testid='confirm-clear-wishlist']").ClickAsync();
         await responseTask;
         await ClearWishlistLocalStorageAsync();
         await NavigateToWishlistAsync();
