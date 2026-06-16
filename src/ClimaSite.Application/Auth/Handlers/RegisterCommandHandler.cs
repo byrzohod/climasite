@@ -1,6 +1,7 @@
 using ClimaSite.Application.Auth.Commands;
 using ClimaSite.Application.Auth.DTOs;
 using ClimaSite.Application.Common.Models;
+using ClimaSite.Application.Features.Outbox;
 using ClimaSite.Core.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -11,13 +12,16 @@ namespace ClimaSite.Application.Auth.Handlers;
 public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<UserDto>>
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IEmailOutbox _emailOutbox;
     private readonly ILogger<RegisterCommandHandler> _logger;
 
     public RegisterCommandHandler(
         UserManager<ApplicationUser> userManager,
+        IEmailOutbox emailOutbox,
         ILogger<RegisterCommandHandler> logger)
     {
         _userManager = userManager;
+        _emailOutbox = emailOutbox;
         _logger = logger;
     }
 
@@ -54,6 +58,19 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Us
         await _userManager.AddToRoleAsync(user, "Customer");
 
         _logger.LogInformation("User registered successfully: {Email}", request.Email);
+
+        // Queue a welcome email via the durable outbox (ARCH-05). Non-critical: a failure here must
+        // never block registration, so it is best-effort and logged.
+        try
+        {
+            await _emailOutbox.QueueAsync(
+                OutboxMessage.ForWelcome(user.Email!, user.FirstName),
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to enqueue welcome email for {Email}.", request.Email);
+        }
 
         var roles = await _userManager.GetRolesAsync(user);
 

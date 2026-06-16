@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
 using ClimaSite.Application.Common.Interfaces;
@@ -37,6 +38,18 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // Disable the email outbox polling loop in integration tests; tests that exercise the
+        // outbox drive IOutboxProcessor directly for determinism. Force placeholder email mode so
+        // delivery never reaches a real SMTP server.
+        builder.ConfigureAppConfiguration((_, config) =>
+        {
+            config.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Outbox:Enabled"] = "false",
+                ["Email:UsePlaceholder"] = "true"
+            });
+        });
+
         builder.ConfigureServices(services =>
         {
             // Remove existing DbContext registration

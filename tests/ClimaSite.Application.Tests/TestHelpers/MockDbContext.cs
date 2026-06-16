@@ -42,6 +42,7 @@ public class MockDbContext : IApplicationDbContext
     private readonly List<InstallationRequest> _installationRequests = [];
     private readonly List<ProductPriceHistory> _productPriceHistory = [];
     private readonly List<ReviewVote> _reviewVotes = [];
+    private readonly List<OutboxMessage> _outboxMessages = [];
 
     public DatabaseFacade Database { get; }
 
@@ -78,6 +79,7 @@ public class MockDbContext : IApplicationDbContext
     public DbSet<ProductAnswer> ProductAnswers => CreateMockDbSet(_productAnswers);
     public DbSet<InstallationRequest> InstallationRequests => CreateMockDbSet(_installationRequests);
     public DbSet<ProductPriceHistory> ProductPriceHistory => CreateMockDbSet(_productPriceHistory);
+    public DbSet<OutboxMessage> OutboxMessages => CreateMockDbSet(_outboxMessages);
 
     public void AddProduct(Product product)
     {
@@ -131,6 +133,8 @@ public class MockDbContext : IApplicationDbContext
             _wishlistItems.Add(item);
         }
     }
+
+    public void AddOutboxMessage(OutboxMessage message) => _outboxMessages.Add(message);
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken)
     {

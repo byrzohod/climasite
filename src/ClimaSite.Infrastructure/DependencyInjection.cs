@@ -1,4 +1,5 @@
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Options;
 using ClimaSite.Core.Entities;
 using ClimaSite.Core.Interfaces;
 using ClimaSite.Infrastructure.Data;
@@ -68,6 +69,11 @@ public static class DependencyInjection
         services.AddScoped<ICacheService, CacheService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IPaymentService, StripePaymentService>();
+
+        // Email outbox options (ARCH-05), bound from the "Outbox" configuration section.
+        var outboxOptions = new EmailOutboxOptions();
+        configuration.GetSection(EmailOutboxOptions.SectionName).Bind(outboxOptions);
+        services.AddSingleton(outboxOptions);
 
         // MinIO Storage
         services.Configure<MinioStorageSettings>(options =>
