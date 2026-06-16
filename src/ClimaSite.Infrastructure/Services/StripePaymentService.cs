@@ -10,6 +10,7 @@ public class StripePaymentService : IPaymentService
 {
     private readonly ILogger<StripePaymentService> _logger;
     private readonly PaymentIntentService _paymentIntentService;
+    private readonly RefundService _refundService;
 
     public StripePaymentService(IConfiguration configuration, ILogger<StripePaymentService> logger)
     {
@@ -23,6 +24,7 @@ public class StripePaymentService : IPaymentService
 
         StripeConfiguration.ApiKey = secretKey;
         _paymentIntentService = new PaymentIntentService();
+        _refundService = new RefundService();
     }
 
     public async Task<PaymentIntentResult> CreatePaymentIntentAsync(
@@ -128,6 +130,32 @@ public class StripePaymentService : IPaymentService
         catch (StripeException ex)
         {
             _logger.LogError(ex, "Failed to get PaymentIntent {PaymentIntentId}", paymentIntentId);
+            return PaymentIntentResult.Failure(ex.Message);
+        }
+    }
+
+    public async Task<PaymentIntentResult> RefundAsync(
+        string paymentIntentId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Refund the entire charge backing the intent. Used to compensate an
+            // already-charged PaymentIntent when the order it was meant to back
+            // cannot be created (BUG-04: orphaned-charge compensation).
+            var refund = await _refundService.CreateAsync(
+                new RefundCreateOptions { PaymentIntent = paymentIntentId },
+                cancellationToken: cancellationToken);
+
+            _logger.LogInformation(
+                "Refunded PaymentIntent {PaymentIntentId} (refund {RefundId}, status {Status})",
+                paymentIntentId, refund.Id, refund.Status);
+
+            return PaymentIntentResult.Success(paymentIntentId, string.Empty, refund.Status);
+        }
+        catch (StripeException ex)
+        {
+            _logger.LogError(ex, "Failed to refund PaymentIntent {PaymentIntentId}", paymentIntentId);
             return PaymentIntentResult.Failure(ex.Message);
         }
     }

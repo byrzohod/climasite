@@ -24,6 +24,13 @@ public class CreateOrderCommandHandlerTests
         _paymentServiceMock = new Mock<IPaymentService>();
         _loggerMock = new Mock<ILogger<CreateOrderCommandHandler>>();
         _context = new MockDbContext();
+
+        // BUG-04: the handler refunds an already-charged intent on any post-charge failure.
+        // Default RefundAsync to a succeeded result so the await never hits a null Task; tests
+        // that assert refund behaviour can still Verify the call count.
+        _paymentServiceMock
+            .Setup(x => x.RefundAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string id, CancellationToken _) => PaymentIntentResult.Success(id, string.Empty, "succeeded"));
     }
 
     private CreateOrderCommandHandler CreateHandler() => new(
@@ -714,6 +721,54 @@ public class CreateOrderCommandHandlerTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         _paymentServiceMock.Verify(x => x.GetPaymentIntentAsync(It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_WhenChargedIntentButStockUnavailable_RefundsCharge()
+    {
+        // Arrange: a verified, correctly-charged card intent, but the variant has zero stock
+        // at order time. BUG-04: the charge would otherwise be orphaned, so it must be refunded.
+        var userId = Guid.NewGuid();
+        var product = CreateProduct();
+        var variant = product.Variants.First();
+        variant.SetStockQuantity(0); // MockDbContext.TryDecrementVariantStockAsync returns 0 when stock < qty
+
+        var cart = new Cart(userId, null);
+        cart.AddItem(product.Id, variant.Id, 1, 100m);
+
+        _context.AddProduct(product);
+        _context.AddCart(cart);
+
+        var expectedTotal = CheckoutPricing.CalculateTotal(100m, "standard");
+        _paymentServiceMock
+            .Setup(x => x.GetPaymentIntentAsync("pi_test_123"))
+            .ReturnsAsync(new PaymentIntentResult
+            {
+                Succeeded = true,
+                PaymentIntentId = "pi_test_123",
+                Status = "succeeded",
+                Currency = "eur",
+                Amount = CheckoutPricing.ToMinorUnits(expectedTotal)
+            });
+        _paymentServiceMock
+            .Setup(x => x.RefundAsync("pi_test_123", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(PaymentIntentResult.Success("pi_test_123", string.Empty, "succeeded"));
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        var handler = CreateHandler();
+        var command = CreateValidCommand() with
+        {
+            PaymentIntentId = "pi_test_123",
+            PaymentMethod = "card"
+        };
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Contain("Insufficient stock");
+        _paymentServiceMock.Verify(x => x.RefundAsync("pi_test_123", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion
