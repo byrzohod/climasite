@@ -1,5 +1,6 @@
 using ClimaSite.Application.Common.Behaviors;
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Brands.DTOs;
 using ClimaSite.Application.Features.Products.DTOs;
 using MediatR;
@@ -83,9 +84,9 @@ public class GetBrandBySlugQueryHandler : IRequestHandler<GetBrandBySlugQuery, B
                     Slug = p.Slug,
                     ShortDescription = productTranslated.ShortDescription,
                     BasePrice = p.BasePrice,
-                    SalePrice = p.IsOnSale ? p.BasePrice : null,
-                    IsOnSale = p.IsOnSale,
-                    DiscountPercentage = p.DiscountPercentage ?? 0,
+                    SalePrice = ProductPricing.GetSalePrice(p.BasePrice, p.CompareAtPrice),
+                    IsOnSale = ProductPricing.IsOnSale(p.BasePrice, p.CompareAtPrice),
+                    DiscountPercentage = ProductPricing.GetDiscountPercentage(p.BasePrice, p.CompareAtPrice),
                     Brand = p.Brand,
                     PrimaryImageUrl = p.PrimaryImage?.Url,
                     InStock = p.InStock

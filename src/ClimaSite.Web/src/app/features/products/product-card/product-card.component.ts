@@ -152,8 +152,8 @@ import { FlyingCartService } from '../../../core/services/flying-cart.service';
 
         <div class="product-price" data-testid="product-price">
           @if (product.isOnSale && product.salePrice) {
-            <span class="sale-price">{{ product.salePrice | currency:'EUR' }}</span>
-            <span class="original-price">{{ product.basePrice | currency:'EUR' }}</span>
+            <span class="sale-price">{{ product.basePrice | currency:'EUR' }}</span>
+            <span class="original-price">{{ product.salePrice | currency:'EUR' }}</span>
           } @else {
             <span class="current-price">{{ product.basePrice | currency:'EUR' }}</span>
           }

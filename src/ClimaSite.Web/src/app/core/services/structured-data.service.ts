@@ -49,7 +49,7 @@ export class StructuredDataService {
         '@type': 'Offer',
         url: `${baseUrl}/products/${product.slug}`,
         priceCurrency: 'EUR',
-        price: product.salePrice || product.basePrice,
+        price: product.basePrice,
         priceValidUntil: this.getDatePlusOneYear(),
         availability: 'https://schema.org/InStock',
         seller: {
@@ -91,7 +91,7 @@ export class StructuredDataService {
           offers: {
             '@type': 'Offer',
             priceCurrency: 'EUR',
-            price: product.salePrice || product.basePrice,
+            price: product.basePrice,
             availability: product.inStock
               ? 'https://schema.org/InStock'
               : 'https://schema.org/OutOfStock'

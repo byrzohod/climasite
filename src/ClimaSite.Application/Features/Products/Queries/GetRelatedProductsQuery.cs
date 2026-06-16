@@ -1,5 +1,6 @@
 using ClimaSite.Application.Common.Behaviors;
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Products.DTOs;
 using ClimaSite.Core.Entities;
 using MediatR;
@@ -61,11 +62,9 @@ public class GetRelatedProductsQueryHandler : IRequestHandler<GetRelatedProducts
                 Slug = rp.Related.Slug,
                 ShortDescription = translated.ShortDescription,
                 BasePrice = rp.Related.BasePrice,
-                SalePrice = rp.Related.CompareAtPrice,
-                IsOnSale = rp.Related.CompareAtPrice.HasValue && rp.Related.CompareAtPrice > rp.Related.BasePrice,
-                DiscountPercentage = rp.Related.CompareAtPrice.HasValue && rp.Related.CompareAtPrice > rp.Related.BasePrice
-                    ? Math.Round((rp.Related.CompareAtPrice.Value - rp.Related.BasePrice) / rp.Related.CompareAtPrice.Value * 100, 0)
-                    : 0,
+                SalePrice = ProductPricing.GetSalePrice(rp.Related.BasePrice, rp.Related.CompareAtPrice),
+                IsOnSale = ProductPricing.IsOnSale(rp.Related.BasePrice, rp.Related.CompareAtPrice),
+                DiscountPercentage = ProductPricing.GetDiscountPercentage(rp.Related.BasePrice, rp.Related.CompareAtPrice),
                 Brand = rp.Related.Brand,
                 AverageRating = 0,
                 ReviewCount = 0,

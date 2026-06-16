@@ -1,6 +1,7 @@
 using ClimaSite.Application.Common.Behaviors;
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Models;
+using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Products.DTOs;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -110,11 +111,9 @@ public class SearchProductsQueryHandler : IRequestHandler<SearchProductsQuery, P
                 Slug = p.Slug,
                 ShortDescription = translated.ShortDescription,
                 BasePrice = p.BasePrice,
-                SalePrice = p.CompareAtPrice,
-                IsOnSale = p.CompareAtPrice.HasValue && p.CompareAtPrice > p.BasePrice,
-                DiscountPercentage = p.CompareAtPrice.HasValue && p.CompareAtPrice > p.BasePrice
-                    ? Math.Round((p.CompareAtPrice.Value - p.BasePrice) / p.CompareAtPrice.Value * 100, 0)
-                    : 0,
+                SalePrice = ProductPricing.GetSalePrice(p.BasePrice, p.CompareAtPrice),
+                IsOnSale = ProductPricing.IsOnSale(p.BasePrice, p.CompareAtPrice),
+                DiscountPercentage = ProductPricing.GetDiscountPercentage(p.BasePrice, p.CompareAtPrice),
                 Brand = p.Brand,
                 AverageRating = 0,
                 ReviewCount = 0,
