@@ -184,8 +184,18 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
                     cartItem.UnitPrice
                 );
 
-                // Reduce stock
-                variant.AdjustStock(-cartItem.Quantity);
+                // BUG-05: decrement stock ATOMICALLY with a `stock >= qty` guard so two
+                // concurrent orders for the last unit can't both succeed. The previous
+                // read-then-write (AdjustStock) let both pass the earlier check and oversell.
+                // Zero rows affected means another order took the stock first; the surrounding
+                // transaction rolls back any earlier decrements in this order.
+                var stockUpdated = await _context.TryDecrementVariantStockAsync(
+                    cartItem.VariantId, cartItem.Quantity, cancellationToken);
+
+                if (stockUpdated == 0)
+                {
+                    return Result<OrderDto>.Failure($"Insufficient stock for '{product.Name}'");
+                }
             }
 
             // Pricing comes from the shared CheckoutPricing helper so the amount

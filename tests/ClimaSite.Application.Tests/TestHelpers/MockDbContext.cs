@@ -167,6 +167,18 @@ public class MockDbContext : IApplicationDbContext
         return Task.FromResult(1);
     }
 
+    public Task<int> TryDecrementVariantStockAsync(Guid variantId, int quantity, CancellationToken cancellationToken = default)
+    {
+        var variant = _productVariants.FirstOrDefault(v => v.Id == variantId);
+        if (variant is null || variant.StockQuantity < quantity)
+        {
+            return Task.FromResult(0);
+        }
+
+        variant.AdjustStock(-quantity);
+        return Task.FromResult(1);
+    }
+
     private static DatabaseFacade CreateMockDatabaseFacade()
     {
         var mockTransaction = new Mock<IDbContextTransaction>();

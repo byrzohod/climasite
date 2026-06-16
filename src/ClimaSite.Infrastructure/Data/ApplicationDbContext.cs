@@ -112,4 +112,11 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
 
         return base.SaveChangesAsync(cancellationToken);
     }
+
+    public Task<int> TryDecrementVariantStockAsync(Guid variantId, int quantity, CancellationToken cancellationToken = default)
+        => ProductVariants
+            .Where(v => v.Id == variantId && v.StockQuantity >= quantity)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(v => v.StockQuantity, v => v.StockQuantity - quantity),
+                cancellationToken);
 }
