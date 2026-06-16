@@ -30,6 +30,15 @@ public class GetOrderByNumberQueryHandler : IRequestHandler<GetOrderByNumberQuer
     {
         var userId = _currentUserService.UserId;
 
+        // SEC-02: anonymous callers may not look up orders by number — order numbers are
+        // semi-predictable, so an unauthenticated lookup would leak full customer PII.
+        // The endpoint is also [Authorize]d; this is defense in depth. Return the same
+        // "not found" result as a missing order so existence isn't revealed.
+        if (!userId.HasValue)
+        {
+            return Result<OrderDto>.Failure("Order not found");
+        }
+
         var order = await _context.Orders
             .Include(o => o.Items)
             .FirstOrDefaultAsync(o => o.OrderNumber == request.OrderNumber, cancellationToken);
@@ -39,10 +48,10 @@ public class GetOrderByNumberQueryHandler : IRequestHandler<GetOrderByNumberQuer
             return Result<OrderDto>.Failure("Order not found");
         }
 
-        // Check if user owns the order (unless admin)
-        if (userId.HasValue && order.UserId != userId && !_currentUserService.IsAdmin)
+        // Non-admins may only read their own orders.
+        if (order.UserId != userId && !_currentUserService.IsAdmin)
         {
-            return Result<OrderDto>.Failure("Access denied");
+            return Result<OrderDto>.Failure("Order not found");
         }
 
         var productIds = order.Items.Select(i => i.ProductId).Distinct().ToList();
