@@ -75,6 +75,11 @@ public static class DependencyInjection
         configuration.GetSection(EmailOutboxOptions.SectionName).Bind(outboxOptions);
         services.AddSingleton(outboxOptions);
 
+        // Contact form options (GAP-05), bound from the "Contact" configuration section.
+        var contactOptions = new ContactOptions();
+        configuration.GetSection(ContactOptions.SectionName).Bind(contactOptions);
+        services.AddSingleton(contactOptions);
+
         // MinIO Storage
         services.Configure<MinioStorageSettings>(options =>
         {

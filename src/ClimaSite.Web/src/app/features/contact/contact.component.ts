@@ -1,7 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
+import { ContactService } from '../../core/services/contact.service';
 
 @Component({
   selector: 'app-contact',
@@ -367,6 +368,8 @@ import { TranslateModule } from '@ngx-translate/core';
   `]
 })
 export class ContactComponent {
+  private readonly contactService = inject(ContactService);
+
   contactForm: FormGroup;
   isSubmitting = signal(false);
   submitSuccess = signal(false);
@@ -390,11 +393,16 @@ export class ContactComponent {
     this.submitSuccess.set(false);
     this.submitError.set(false);
 
-    // Simulate API call
-    setTimeout(() => {
-      this.isSubmitting.set(false);
-      this.submitSuccess.set(true);
-      this.contactForm.reset();
-    }, 1000);
+    this.contactService.submit(this.contactForm.value).subscribe({
+      next: () => {
+        this.isSubmitting.set(false);
+        this.submitSuccess.set(true);
+        this.contactForm.reset();
+      },
+      error: () => {
+        this.isSubmitting.set(false);
+        this.submitError.set(true);
+      }
+    });
   }
 }

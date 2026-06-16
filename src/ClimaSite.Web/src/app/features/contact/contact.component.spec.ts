@@ -1,12 +1,15 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ContactComponent } from './contact.component';
 import { TranslateModule } from '@ngx-translate/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 describe('ContactComponent', () => {
   let component: ContactComponent;
   let fixture: ComponentFixture<ContactComponent>;
+  let httpMock: HttpTestingController;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -14,12 +17,21 @@ describe('ContactComponent', () => {
         ContactComponent,
         TranslateModule.forRoot(),
         ReactiveFormsModule
+      ],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting()
       ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(ContactComponent);
     component = fixture.componentInstance;
+    httpMock = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    httpMock.verify();
   });
 
   it('should create', () => {
@@ -82,51 +94,63 @@ describe('ContactComponent', () => {
       expect(component.isSubmitting()).toBeFalse();
     });
 
-    it('should set isSubmitting to true during submission', fakeAsync(() => {
+    function fillValidForm(): void {
       component.contactForm.patchValue({
         name: 'Test User',
         email: 'test@example.com',
         subject: 'Test Subject',
         message: 'Test message'
       });
+    }
 
+    it('should set isSubmitting to true during submission then false on response', () => {
+      fillValidForm();
       component.onSubmit();
 
       expect(component.isSubmitting()).toBeTrue();
 
-      tick(1000);
+      const req = httpMock.expectOne(r => r.url.includes('/api/contact') && r.method === 'POST');
+      req.flush({ id: 'msg-1' });
 
       expect(component.isSubmitting()).toBeFalse();
-    }));
+    });
 
-    it('should show success message after successful submission', fakeAsync(() => {
-      component.contactForm.patchValue({
+    it('should POST the form payload to the contact endpoint', () => {
+      fillValidForm();
+      component.onSubmit();
+
+      const req = httpMock.expectOne(r => r.url.includes('/api/contact') && r.method === 'POST');
+      expect(req.request.body).toEqual({
         name: 'Test User',
         email: 'test@example.com',
         subject: 'Test Subject',
         message: 'Test message'
       });
+      req.flush({ id: 'msg-1' });
+    });
 
+    it('should show success message and reset after successful submission', () => {
+      fillValidForm();
       component.onSubmit();
-      tick(1000);
+
+      httpMock.expectOne(r => r.url.includes('/api/contact')).flush({ id: 'msg-1' });
 
       expect(component.submitSuccess()).toBeTrue();
-    }));
-
-    it('should reset form after successful submission', fakeAsync(() => {
-      component.contactForm.patchValue({
-        name: 'Test User',
-        email: 'test@example.com',
-        subject: 'Test Subject',
-        message: 'Test message'
-      });
-
-      component.onSubmit();
-      tick(1000);
-
       expect(component.contactForm.get('name')?.value).toBeFalsy();
       expect(component.contactForm.get('email')?.value).toBeFalsy();
-    }));
+    });
+
+    it('should show error state when the submission fails', () => {
+      fillValidForm();
+      component.onSubmit();
+
+      httpMock.expectOne(r => r.url.includes('/api/contact'))
+        .flush({ message: 'fail' }, { status: 500, statusText: 'Server Error' });
+
+      expect(component.isSubmitting()).toBeFalse();
+      expect(component.submitError()).toBeTrue();
+      expect(component.submitSuccess()).toBeFalse();
+    });
   });
 
   describe('Map Section', () => {
