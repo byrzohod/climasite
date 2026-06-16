@@ -69,9 +69,9 @@ import { EmptyStateComponent } from '../../shared/components/empty-state';
                 </div>
 
                 <div class="item-price" data-testid="cart-item-price">
-                  @if (item.salePrice && item.salePrice < item.unitPrice) {
-                    <span class="original-price">{{ item.unitPrice | currency }}</span>
-                    <span class="sale-price">{{ item.salePrice | currency }}</span>
+                  @if (item.salePrice && item.salePrice > item.unitPrice) {
+                    <span class="sale-price">{{ item.unitPrice | currency }}</span>
+                    <span class="original-price">{{ item.salePrice | currency }}</span>
                   } @else {
                     <span>{{ item.unitPrice | currency }}</span>
                   }

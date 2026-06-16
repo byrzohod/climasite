@@ -52,8 +52,8 @@ import { RecentlyViewedService, RecentlyViewedProduct } from '../../../core/serv
                 <span class="name">{{ product.name }}</span>
                 <div class="price">
                   @if (product.isOnSale && product.salePrice) {
-                    <span class="original">{{ product.basePrice | currency:'EUR' }}</span>
-                    <span class="sale">{{ product.salePrice | currency:'EUR' }}</span>
+                    <span class="sale">{{ product.basePrice | currency:'EUR' }}</span>
+                    <span class="original">{{ product.salePrice | currency:'EUR' }}</span>
                   } @else {
                     <span class="current">{{ product.basePrice | currency:'EUR' }}</span>
                   }

@@ -1,5 +1,6 @@
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Models;
+using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Cart.DTOs;
 using FluentValidation;
 using MediatR;
@@ -155,7 +156,7 @@ public class MergeGuestCartCommandHandler : IRequestHandler<MergeGuestCartComman
                 Sku = variant?.Sku,
                 ImageUrl = primaryImage?.Url,
                 UnitPrice = variant != null ? product.BasePrice + variant.PriceAdjustment : product.BasePrice,
-                SalePrice = product.CompareAtPrice,
+                SalePrice = ProductPricing.GetSalePrice(product.BasePrice, product.CompareAtPrice),
                 EffectivePrice = item.UnitPrice,
                 Quantity = item.Quantity,
                 LineTotal = item.UnitPrice * item.Quantity,

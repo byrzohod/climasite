@@ -99,13 +99,15 @@ describe('StructuredDataService', () => {
       });
     });
 
-    it('should include offer with sale price', () => {
+    it('should include offer with the current selling price (basePrice)', () => {
+      // BUG-06: structured data must emit basePrice, the real selling price the
+      // customer pays, not the struck-through original (salePrice).
       service.setProductData(mockProduct, 'https://example.com');
 
       const script = document.getElementById('structured-data-default');
       const data = JSON.parse(script?.textContent || '{}');
 
-      expect(data.offers.price).toBe(499);
+      expect(data.offers.price).toBe(599);
       expect(data.offers.priceCurrency).toBe('EUR');
     });
 

@@ -1,6 +1,7 @@
 #nullable enable
 
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Products.DTOs;
 using ClimaSite.Application.Features.Products.Scoring;
 using MediatR;
@@ -102,11 +103,9 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
             Slug = product.Slug,
             ShortDescription = shortDescription,
             BasePrice = product.BasePrice,
-            SalePrice = product.CompareAtPrice,
-            IsOnSale = product.CompareAtPrice.HasValue && product.CompareAtPrice > product.BasePrice,
-            DiscountPercentage = product.CompareAtPrice.HasValue && product.CompareAtPrice > product.BasePrice
-                ? Math.Round((product.CompareAtPrice.Value - product.BasePrice) / product.CompareAtPrice.Value * 100, 0)
-                : 0,
+            SalePrice = ProductPricing.GetSalePrice(product.BasePrice, product.CompareAtPrice),
+            IsOnSale = ProductPricing.IsOnSale(product.BasePrice, product.CompareAtPrice),
+            DiscountPercentage = ProductPricing.GetDiscountPercentage(product.BasePrice, product.CompareAtPrice),
             Brand = product.Brand,
             AverageRating = 0, // Will be calculated from reviews if needed
             ReviewCount = 0,

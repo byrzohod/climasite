@@ -310,10 +310,12 @@ describe('MiniCartItemComponent', () => {
     productSlug: 'test-air-conditioner',
     sku: 'AC-001',
     imageUrl: 'https://example.com/image.jpg',
+    // BUG-06: unitPrice is the current selling price the customer pays;
+    // salePrice carries the higher original (compare-at) price when on sale.
     unitPrice: 599.99,
-    salePrice: 499.99,
+    salePrice: 699.99,
     quantity: 2,
-    subtotal: 999.98,
+    subtotal: 1199.98,
     maxQuantity: 10
   };
 
@@ -347,12 +349,14 @@ describe('MiniCartItemComponent', () => {
     expect(img.getAttribute('src')).toBe('https://example.com/image.jpg');
   });
 
-  it('should display sale price when available', () => {
-    const salePrice = fixture.nativeElement.querySelector('.price-sale');
+  it('should display the current price as active and the original struck-through when on sale', () => {
+    const activePrice = fixture.nativeElement.querySelector('.price-sale');
     const originalPrice = fixture.nativeElement.querySelector('.price-original');
-    
-    expect(salePrice.textContent).toContain('499.99');
-    expect(originalPrice.textContent).toContain('599.99');
+
+    // Active (emphasized) price is the current selling price (unitPrice).
+    expect(activePrice.textContent).toContain('599.99');
+    // Struck-through price is the higher original (salePrice).
+    expect(originalPrice.textContent).toContain('699.99');
   });
 
   it('should display quantity', () => {

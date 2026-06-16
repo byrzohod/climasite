@@ -1,4 +1,5 @@
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Cart.DTOs;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -103,7 +104,7 @@ public class GetCartQueryHandler : IRequestHandler<GetCartQuery, CartDto?>
                 Sku = variant?.Sku,
                 ImageUrl = primaryImage?.Url,
                 UnitPrice = variant != null ? product.BasePrice + variant.PriceAdjustment : product.BasePrice,
-                SalePrice = product.CompareAtPrice,
+                SalePrice = ProductPricing.GetSalePrice(product.BasePrice, product.CompareAtPrice),
                 EffectivePrice = item.UnitPrice,
                 Quantity = item.Quantity,
                 LineTotal = item.UnitPrice * item.Quantity,

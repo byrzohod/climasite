@@ -1,6 +1,7 @@
 using ClimaSite.Application.Common.Behaviors;
 using ClimaSite.Application.Common.Exceptions;
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Products.DTOs;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -55,11 +56,9 @@ public class GetProductBySlugQueryHandler : IRequestHandler<GetProductBySlugQuer
             Description = description,
             ShortDescription = shortDescription,
             BasePrice = product.BasePrice,
-            SalePrice = product.CompareAtPrice,
-            IsOnSale = product.CompareAtPrice.HasValue && product.CompareAtPrice > product.BasePrice,
-            DiscountPercentage = product.CompareAtPrice.HasValue && product.CompareAtPrice > product.BasePrice
-                ? Math.Round((product.CompareAtPrice.Value - product.BasePrice) / product.CompareAtPrice.Value * 100, 0)
-                : 0,
+            SalePrice = ProductPricing.GetSalePrice(product.BasePrice, product.CompareAtPrice),
+            IsOnSale = ProductPricing.IsOnSale(product.BasePrice, product.CompareAtPrice),
+            DiscountPercentage = ProductPricing.GetDiscountPercentage(product.BasePrice, product.CompareAtPrice),
             IsActive = product.IsActive,
             IsFeatured = product.IsFeatured,
             Brand = product.Brand,

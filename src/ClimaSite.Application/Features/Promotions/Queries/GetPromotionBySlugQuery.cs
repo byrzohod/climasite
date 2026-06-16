@@ -1,5 +1,6 @@
 using ClimaSite.Application.Common.Behaviors;
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Products.DTOs;
 using ClimaSite.Application.Features.Promotions.DTOs;
 using MediatR;
@@ -81,11 +82,9 @@ public class GetPromotionBySlugQueryHandler : IRequestHandler<GetPromotionBySlug
                         Slug = prod.Slug,
                         ShortDescription = prodTranslated.ShortDescription,
                         BasePrice = prod.BasePrice,
-                        SalePrice = prod.CompareAtPrice,
-                        IsOnSale = prod.CompareAtPrice.HasValue && prod.CompareAtPrice > prod.BasePrice,
-                        DiscountPercentage = prod.CompareAtPrice.HasValue && prod.CompareAtPrice > prod.BasePrice
-                            ? Math.Round((prod.CompareAtPrice.Value - prod.BasePrice) / prod.CompareAtPrice.Value * 100, 0)
-                            : 0,
+                        SalePrice = ProductPricing.GetSalePrice(prod.BasePrice, prod.CompareAtPrice),
+                        IsOnSale = ProductPricing.IsOnSale(prod.BasePrice, prod.CompareAtPrice),
+                        DiscountPercentage = ProductPricing.GetDiscountPercentage(prod.BasePrice, prod.CompareAtPrice),
                         Brand = prod.Brand,
                         AverageRating = 0,
                         ReviewCount = 0,

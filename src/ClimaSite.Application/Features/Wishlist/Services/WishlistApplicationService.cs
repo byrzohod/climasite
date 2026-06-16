@@ -1,4 +1,5 @@
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Wishlist.DTOs;
 using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
@@ -173,9 +174,9 @@ public class WishlistApplicationService
             ImageUrl = primaryImage?.Url,
             PrimaryImageUrl = primaryImage?.Url,
             Price = product.BasePrice,
-            SalePrice = product.CompareAtPrice,
-            IsOnSale = product.IsOnSale,
-            DiscountPercentage = product.DiscountPercentage ?? 0,
+            SalePrice = ProductPricing.GetSalePrice(product.BasePrice, product.CompareAtPrice),
+            IsOnSale = ProductPricing.IsOnSale(product.BasePrice, product.CompareAtPrice),
+            DiscountPercentage = ProductPricing.GetDiscountPercentage(product.BasePrice, product.CompareAtPrice),
             AverageRating = 0,
             ReviewCount = 0,
             InStock = inStock,
