@@ -5,6 +5,7 @@ using ClimaSite.Application.Features.Wishlist.Services;
 using ClimaSite.Application.Tests.TestHelpers;
 using ClimaSite.Core.Entities;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 
 namespace ClimaSite.Application.Tests.Features.Wishlist;
@@ -64,6 +65,34 @@ public class WishlistHandlersTests
         result.IsSuccess.Should().BeTrue();
         result.Value!.Items.Should().ContainSingle();
         wishlist.Items.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void IsUniqueViolation_ReturnsTrue_ForPostgresUniqueViolationSqlState()
+    {
+        var exception = new DbUpdateException(
+            "duplicate key",
+            new FakePostgresException("23505"));
+
+        WishlistApplicationService.IsUniqueViolation(exception).Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsUniqueViolation_ReturnsFalse_ForOtherSqlState()
+    {
+        var exception = new DbUpdateException(
+            "some other failure",
+            new FakePostgresException("23503"));
+
+        WishlistApplicationService.IsUniqueViolation(exception).Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsUniqueViolation_ReturnsFalse_WhenNoSqlStatePresent()
+    {
+        var exception = new DbUpdateException("generic", new InvalidOperationException("boom"));
+
+        WishlistApplicationService.IsUniqueViolation(exception).Should().BeFalse();
     }
 
     [Fact]
@@ -269,5 +298,21 @@ public class WishlistHandlersTests
         product.Variants.Add(variant);
 
         return product;
+    }
+
+    /// <summary>
+    /// Mimics the shape of Npgsql's PostgresException by exposing a <c>SqlState</c> property,
+    /// which <see cref="WishlistApplicationService.IsUniqueViolation"/> inspects via reflection
+    /// (the Application layer has no Npgsql dependency).
+    /// </summary>
+    private sealed class FakePostgresException : Exception
+    {
+        public FakePostgresException(string sqlState)
+            : base("Simulated Postgres error")
+        {
+            SqlState = sqlState;
+        }
+
+        public string SqlState { get; }
     }
 }

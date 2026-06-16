@@ -1,14 +1,17 @@
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Wishlist.DTOs;
-using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClimaSite.Application.Features.Wishlist.Services;
 
 public class WishlistApplicationService
 {
-    private static readonly ConcurrentDictionary<Guid, SemaphoreSlim> UserMutationLocks = new();
+    /// <summary>
+    /// Postgres unique-violation SQLSTATE. Raised when a concurrent request races to
+    /// insert the same wishlist item against the unique (WishlistId, ProductId) index.
+    /// </summary>
+    private const string UniqueViolationSqlState = "23505";
 
     private readonly IApplicationDbContext _context;
 
@@ -17,25 +20,18 @@ public class WishlistApplicationService
         _context = context;
     }
 
+    /// <summary>
+    /// Runs a wishlist mutation inside a transaction using the provider execution strategy.
+    /// Concurrency/idempotency is enforced by the database unique index rather than an
+    /// in-process lock, so this is safe across multiple application instances.
+    /// </summary>
     public async Task<T> ExecuteUserMutationAsync<T>(
         Guid userId,
         Func<Task<T>> mutation,
         CancellationToken cancellationToken)
     {
-        var userLock = UserMutationLocks.GetOrAdd(userId, _ => new SemaphoreSlim(1, 1));
-        await userLock.WaitAsync(cancellationToken);
-
-        try
-        {
-            var strategy = _context.Database.CreateExecutionStrategy();
-            return strategy is null
-                ? await ExecuteInTransactionAsync()
-                : await strategy.ExecuteAsync(ExecuteInTransactionAsync);
-        }
-        finally
-        {
-            userLock.Release();
-        }
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(ExecuteInTransactionAsync);
 
         async Task<T> ExecuteInTransactionAsync()
         {
@@ -46,6 +42,25 @@ public class WishlistApplicationService
             await transaction.CommitAsync(cancellationToken);
             return result;
         }
+    }
+
+    /// <summary>
+    /// Returns true when the supplied exception is a Postgres unique-constraint violation,
+    /// which signals that the same wishlist item was inserted concurrently.
+    /// </summary>
+    public static bool IsUniqueViolation(DbUpdateException exception)
+    {
+        for (Exception? current = exception; current is not null; current = current.InnerException)
+        {
+            var sqlStateProperty = current.GetType().GetProperty("SqlState");
+            if (sqlStateProperty?.GetValue(current) is string sqlState
+                && sqlState == UniqueViolationSqlState)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public async Task<Core.Entities.Wishlist> GetOrCreateWishlistAsync(
@@ -74,17 +89,23 @@ public class WishlistApplicationService
 
     public async Task<WishlistDto> GetWishlistDtoByUserIdAsync(
         Guid userId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? language = null)
     {
-        var wishlist = await GetWishlistWithItemsByUserIdAsync(userId, cancellationToken);
+        var wishlist = await _context.Wishlists
+            .AsNoTracking()
+            .Include(w => w.Items)
+            .FirstOrDefaultAsync(w => w.UserId == userId, cancellationToken);
+
         return wishlist == null
             ? CreateEmptyDto(userId)
-            : await MapToDtoAsync(wishlist, cancellationToken);
+            : await MapToDtoAsync(wishlist, cancellationToken, language);
     }
 
     public async Task<WishlistDto?> GetSharedWishlistDtoAsync(
         string shareToken,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? language = null)
     {
         if (string.IsNullOrWhiteSpace(shareToken))
         {
@@ -93,19 +114,23 @@ public class WishlistApplicationService
 
         var normalizedToken = shareToken.Trim();
         var wishlist = await _context.Wishlists
+            .AsNoTracking()
             .Include(w => w.Items)
             .FirstOrDefaultAsync(
                 w => w.ShareToken == normalizedToken && w.IsPublic,
                 cancellationToken);
 
+        // Anonymous shared response: omit the owner's identity (SEC-10).
         return wishlist == null
             ? null
-            : await MapToDtoAsync(wishlist, cancellationToken);
+            : await MapToDtoAsync(wishlist, cancellationToken, language, includeOwner: false);
     }
 
     public async Task<WishlistDto> MapToDtoAsync(
         Core.Entities.Wishlist wishlist,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? language = null,
+        bool includeOwner = true)
     {
         var productIds = wishlist.Items
             .Select(i => i.ProductId)
@@ -113,21 +138,23 @@ public class WishlistApplicationService
             .ToList();
 
         var products = await _context.Products
+            .AsNoTracking()
             .Include(p => p.Images)
             .Include(p => p.Variants)
+            .Include(p => p.Translations)
             .Where(p => productIds.Contains(p.Id) && p.IsActive)
             .ToDictionaryAsync(p => p.Id, cancellationToken);
 
         var items = wishlist.Items
             .OrderByDescending(i => i.CreatedAt)
-            .Select(item => MapItem(item, products.GetValueOrDefault(item.ProductId)))
+            .Select(item => MapItem(item, products.GetValueOrDefault(item.ProductId), language))
             .OfType<WishlistItemDto>()
             .ToList();
 
         return new WishlistDto
         {
             Id = wishlist.Id,
-            UserId = wishlist.UserId,
+            UserId = includeOwner ? wishlist.UserId : null,
             IsPublic = wishlist.IsPublic,
             ShareToken = wishlist.ShareToken,
             Items = items,
@@ -149,7 +176,8 @@ public class WishlistApplicationService
 
     private static WishlistItemDto? MapItem(
         Core.Entities.WishlistItem item,
-        Core.Entities.Product? product)
+        Core.Entities.Product? product,
+        string? language)
     {
         if (product == null)
         {
@@ -163,13 +191,15 @@ public class WishlistApplicationService
 
         var inStock = product.Variants.Any(v => v.IsActive && v.StockQuantity > 0);
 
+        var (name, shortDescription, _, _, _) = product.GetTranslatedContent(language);
+
         return new WishlistItemDto
         {
             Id = item.Id,
             ProductId = item.ProductId,
-            ProductName = product.Name,
+            ProductName = name,
             ProductSlug = product.Slug,
-            ShortDescription = product.ShortDescription,
+            ShortDescription = shortDescription,
             Brand = product.Brand,
             ImageUrl = primaryImage?.Url,
             PrimaryImageUrl = primaryImage?.Url,

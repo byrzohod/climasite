@@ -13,6 +13,7 @@ public record UpdateCartItemCommand : IRequest<Result<CartDto>>
     public Guid ItemId { get; init; }
     public int Quantity { get; init; }
     public string? GuestSessionId { get; init; }
+    public string? Language { get; init; }
 }
 
 public class UpdateCartItemCommandValidator : AbstractValidator<UpdateCartItemCommand>
@@ -78,7 +79,7 @@ public class UpdateCartItemCommandHandler : IRequestHandler<UpdateCartItemComman
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return Result<CartDto>.Success(await MapCartToDto(cart, cancellationToken));
+        return Result<CartDto>.Success(await MapCartToDto(cart, request.Language, cancellationToken));
     }
 
     private async Task<Core.Entities.Cart?> GetCartAsync(
@@ -103,12 +104,13 @@ public class UpdateCartItemCommandHandler : IRequestHandler<UpdateCartItemComman
         return null;
     }
 
-    private async Task<CartDto> MapCartToDto(Core.Entities.Cart cart, CancellationToken cancellationToken)
+    private async Task<CartDto> MapCartToDto(Core.Entities.Cart cart, string? language, CancellationToken cancellationToken)
     {
         var productIds = cart.Items.Select(i => i.ProductId).Distinct().ToList();
         var products = await _context.Products
             .Include(p => p.Images)
             .Include(p => p.Variants)
+            .Include(p => p.Translations)
             .Where(p => productIds.Contains(p.Id))
             .ToListAsync(cancellationToken);
 
@@ -117,13 +119,14 @@ public class UpdateCartItemCommandHandler : IRequestHandler<UpdateCartItemComman
             var product = products.FirstOrDefault(p => p.Id == item.ProductId);
             var variant = product?.Variants.FirstOrDefault(v => v.Id == item.VariantId);
             var primaryImage = product?.Images.FirstOrDefault(i => i.IsPrimary);
+            var productName = product?.GetTranslatedContent(language).Name ?? "Product unavailable";
 
             return new CartItemDto
             {
                 Id = item.Id,
                 ProductId = item.ProductId,
                 VariantId = item.VariantId,
-                ProductName = product?.Name ?? "Product unavailable",
+                ProductName = productName,
                 VariantName = variant?.Name,
                 Sku = variant?.Sku,
                 ImageUrl = primaryImage?.Url,

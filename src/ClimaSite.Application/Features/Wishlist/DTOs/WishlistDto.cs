@@ -3,7 +3,12 @@ namespace ClimaSite.Application.Features.Wishlist.DTOs;
 public class WishlistDto
 {
     public Guid Id { get; init; }
-    public Guid UserId { get; init; }
+
+    /// <summary>
+    /// The wishlist owner's identifier. Null on the anonymous shared response so the
+    /// owner's internal identity is never exposed to the public (SEC-10).
+    /// </summary>
+    public Guid? UserId { get; init; }
     public bool IsPublic { get; init; }
     public string? ShareToken { get; init; }
     public List<WishlistItemDto> Items { get; init; } = [];

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using ClimaSite.Api.Tests.Infrastructure;
 using ClimaSite.Application.Features.Wishlist.DTOs;
 using ClimaSite.Core.Entities;
@@ -105,6 +106,78 @@ public class WishlistControllerTests : IntegrationTestBase
         anonymousResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var anonymousWishlist = await anonymousResponse.Content.ReadFromJsonAsync<WishlistDto>();
         anonymousWishlist!.Items.Should().ContainSingle(i => i.ProductId == product.Id);
+
+        // SEC-10: the anonymous shared response must not expose the owner's identity.
+        // The property is either omitted entirely or serialized as null; never a real GUID.
+        var rawJson = await anonymousResponse.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(rawJson);
+        if (document.RootElement.TryGetProperty("userId", out var userIdElement))
+        {
+            userIdElement.ValueKind.Should().Be(JsonValueKind.Null);
+        }
+        anonymousWishlist.UserId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task SharedWishlist_TranslatesProductName_WhenLangIsBulgarian()
+    {
+        await AuthenticateAsync($"wishlist-shared-bg-{Guid.NewGuid()}@example.com");
+        var product = await CreateProductAsync(
+            "API Shared BG AC",
+            "api-shared-bg-ac",
+            bulgarianName: "Споделен климатик");
+        await Client.PostAsync($"/api/wishlist/items/{product.Id}", null);
+
+        var shareResponse = await Client.PutAsJsonAsync("/api/wishlist/share", new { isPublic = true });
+        var sharedWishlist = await shareResponse.Content.ReadFromJsonAsync<WishlistDto>();
+
+        ClearAuthToken();
+        var anonymousResponse = await Client.GetAsync($"/api/wishlist/shared/{sharedWishlist!.ShareToken}?lang=bg");
+
+        anonymousResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var anonymousWishlist = await anonymousResponse.Content.ReadFromJsonAsync<WishlistDto>();
+        anonymousWishlist!.Items.Should().ContainSingle();
+        anonymousWishlist.Items[0].ProductName.Should().Be("Споделен климатик");
+    }
+
+    [Fact]
+    public async Task AddWishlistItem_TranslatesProductName_WhenLangIsBulgarian()
+    {
+        await AuthenticateAsync($"wishlist-bg-{Guid.NewGuid()}@example.com");
+        var product = await CreateProductAsync(
+            "API Wishlist BG AC",
+            "api-wishlist-bg-ac",
+            bulgarianName: "Климатик от списъка с желания");
+
+        var getResponse = await Client.GetAsync("/api/wishlist?lang=bg");
+        getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        await Client.PostAsync($"/api/wishlist/items/{product.Id}?lang=bg", null);
+
+        var translated = await Client.GetAsync("/api/wishlist?lang=bg");
+        var translatedWishlist = await translated.Content.ReadFromJsonAsync<WishlistDto>();
+        translatedWishlist!.Items.Should().ContainSingle();
+        translatedWishlist.Items[0].ProductName.Should().Be("Климатик от списъка с желания");
+
+        var english = await Client.GetAsync("/api/wishlist");
+        var englishWishlist = await english.Content.ReadFromJsonAsync<WishlistDto>();
+        englishWishlist!.Items[0].ProductName.Should().Be(product.Name);
+    }
+
+    [Fact]
+    public async Task AddWishlistItem_IsIdempotent_OnSequentialDuplicateAdds()
+    {
+        await AuthenticateAsync($"wishlist-dup-{Guid.NewGuid()}@example.com");
+        var product = await CreateProductAsync("API Duplicate Wishlist AC", "api-duplicate-wishlist-ac");
+
+        var first = await Client.PostAsync($"/api/wishlist/items/{product.Id}", null);
+        var second = await Client.PostAsync($"/api/wishlist/items/{product.Id}", null);
+
+        first.StatusCode.Should().Be(HttpStatusCode.OK);
+        second.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var secondWishlist = await second.Content.ReadFromJsonAsync<WishlistDto>();
+        secondWishlist!.Items.Should().ContainSingle(i => i.ProductId == product.Id);
     }
 
     [Fact]
@@ -139,7 +212,7 @@ public class WishlistControllerTests : IntegrationTestBase
         regeneratedWishlist.ShareToken.Should().NotBe(enabledWishlist!.ShareToken);
     }
 
-    private async Task<Product> CreateProductAsync(string name, string slug)
+    private async Task<Product> CreateProductAsync(string name, string slug, string? bulgarianName = null)
     {
         var unique = Guid.NewGuid().ToString("N")[..8];
         var product = new Product($"WISH-{unique}", name, $"{slug}-{unique}", 899.99m);
@@ -154,6 +227,11 @@ public class WishlistControllerTests : IntegrationTestBase
         var variant = new ProductVariant(product.Id, $"WISH-{unique}-STD", "Standard");
         variant.SetStockQuantity(12);
         product.Variants.Add(variant);
+
+        if (bulgarianName is not null)
+        {
+            product.Translations.Add(new ProductTranslation(product.Id, "bg", bulgarianName));
+        }
 
         DbContext.Products.Add(product);
         await DbContext.SaveChangesAsync();

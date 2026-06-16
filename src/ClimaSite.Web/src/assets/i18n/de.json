@@ -920,6 +920,16 @@
       "sharedTitle": "Geteilte Wunschliste",
       "notFoundTitle": "Geteilte Wunschliste nicht verfuegbar",
       "notFoundDescription": "Dieser Wunschlisten-Link ist nicht mehr aktiv oder existiert nicht."
+    },
+    "clearConfirm": {
+      "message": "Alle gespeicherten Artikel loeschen?",
+      "confirm": "Ja, alle loeschen",
+      "cancel": "Abbrechen"
+    },
+    "errors": {
+      "clearFailed": "Ihre Wunschliste konnte nicht geleert werden. Bitte versuchen Sie es erneut.",
+      "shareFailed": "Die Freigabeeinstellungen konnten nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
+      "regenerateFailed": "Es konnte kein neuer Freigabelink erstellt werden. Bitte versuchen Sie es erneut."
     }
   },
   "profile": {
