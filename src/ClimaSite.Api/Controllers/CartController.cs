@@ -26,13 +26,14 @@ public class CartController : ControllerBase
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(CartDto), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetCart([FromQuery] string? guestSessionId = null)
+    public async Task<IActionResult> GetCart([FromQuery] string? guestSessionId = null, [FromQuery] string lang = "en")
     {
         var userId = GetUserId();
         var query = new GetCartQuery
         {
             UserId = userId,
-            GuestSessionId = guestSessionId
+            GuestSessionId = guestSessionId,
+            Language = lang
         };
 
         var result = await _mediator.Send(query);
@@ -45,9 +46,9 @@ public class CartController : ControllerBase
     [HttpPost("items")]
     [ProducesResponseType(typeof(CartDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> AddToCart([FromBody] AddToCartCommand command)
+    public async Task<IActionResult> AddToCart([FromBody] AddToCartCommand command, [FromQuery] string lang = "en")
     {
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command with { Language = lang });
         if (!result.IsSuccess)
             return BadRequest(new { message = result.Error });
 
@@ -57,13 +58,15 @@ public class CartController : ControllerBase
     [HttpPut("items/{itemId:guid}")]
     public async Task<IActionResult> UpdateCartItem(
         Guid itemId,
-        [FromBody] UpdateQuantityRequest request)
+        [FromBody] UpdateQuantityRequest request,
+        [FromQuery] string lang = "en")
     {
         var command = new UpdateCartItemCommand
         {
             ItemId = itemId,
             Quantity = request.Quantity,
-            GuestSessionId = request.GuestSessionId
+            GuestSessionId = request.GuestSessionId,
+            Language = lang
         };
 
         var result = await _mediator.Send(command);
@@ -108,11 +111,12 @@ public class CartController : ControllerBase
 
     [Authorize]
     [HttpPost("merge")]
-    public async Task<IActionResult> MergeGuestCart([FromQuery] string guestSessionId)
+    public async Task<IActionResult> MergeGuestCart([FromQuery] string guestSessionId, [FromQuery] string lang = "en")
     {
         var command = new MergeGuestCartCommand
         {
-            GuestSessionId = guestSessionId
+            GuestSessionId = guestSessionId,
+            Language = lang
         };
 
         var result = await _mediator.Send(command);

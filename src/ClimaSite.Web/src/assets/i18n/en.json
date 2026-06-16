@@ -920,6 +920,16 @@
       "sharedTitle": "Shared wishlist",
       "notFoundTitle": "Shared wishlist unavailable",
       "notFoundDescription": "This wishlist link is no longer active or does not exist."
+    },
+    "clearConfirm": {
+      "message": "Clear all saved items?",
+      "confirm": "Yes, clear all",
+      "cancel": "Cancel"
+    },
+    "errors": {
+      "clearFailed": "Could not clear your wishlist. Please try again.",
+      "shareFailed": "Could not update sharing settings. Please try again.",
+      "regenerateFailed": "Could not generate a new share link. Please try again."
     }
   },
   "profile": {

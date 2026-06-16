@@ -1,7 +1,9 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { AuthService } from '../../auth/services/auth.service';
+import { LanguageService } from './language.service';
 import { ProductBrief } from '../models/product.model';
 import { environment } from '../../../environments/environment';
 import { WishlistDto, WishlistItem, WishlistService } from './wishlist.service';
@@ -85,6 +87,12 @@ describe('WishlistService', () => {
             isAuthenticated: () => authenticated,
             isLoading: () => authLoading
           }
+        },
+        {
+          provide: LanguageService,
+          useValue: jasmine.createSpyObj('LanguageService', [], {
+            currentLanguage: signal('en')
+          })
         }
       ]
     });
@@ -133,7 +141,7 @@ describe('WishlistService', () => {
     configure(true);
     httpMock.expectOne(apiUrl).flush(wishlistWithItem);
 
-    service.clearWishlist();
+    service.clearWishlist().subscribe();
 
     const req = httpMock.expectOne(apiUrl);
     expect(req.request.method).toBe('DELETE');

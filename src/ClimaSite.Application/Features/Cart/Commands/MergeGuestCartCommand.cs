@@ -11,6 +11,7 @@ namespace ClimaSite.Application.Features.Cart.Commands;
 public record MergeGuestCartCommand : IRequest<Result<CartDto>>
 {
     public string GuestSessionId { get; init; } = string.Empty;
+    public string? Language { get; init; }
 }
 
 public class MergeGuestCartCommandValidator : AbstractValidator<MergeGuestCartCommand>
@@ -60,7 +61,7 @@ public class MergeGuestCartCommandHandler : IRequestHandler<MergeGuestCartComman
 
             if (existingUserCart != null)
             {
-                return Result<CartDto>.Success(await MapCartToDto(existingUserCart, cancellationToken));
+                return Result<CartDto>.Success(await MapCartToDto(existingUserCart, request.Language, cancellationToken));
             }
 
             return Result<CartDto>.Success(new CartDto
@@ -127,15 +128,16 @@ public class MergeGuestCartCommandHandler : IRequestHandler<MergeGuestCartComman
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return Result<CartDto>.Success(await MapCartToDto(userCart, cancellationToken));
+        return Result<CartDto>.Success(await MapCartToDto(userCart, request.Language, cancellationToken));
     }
 
-    private async Task<CartDto> MapCartToDto(Core.Entities.Cart cart, CancellationToken cancellationToken)
+    private async Task<CartDto> MapCartToDto(Core.Entities.Cart cart, string? language, CancellationToken cancellationToken)
     {
         var productIds = cart.Items.Select(i => i.ProductId).Distinct().ToList();
         var products = await _context.Products
             .Include(p => p.Images)
             .Include(p => p.Variants)
+            .Include(p => p.Translations)
             .Where(p => productIds.Contains(p.Id))
             .ToListAsync(cancellationToken);
 
@@ -144,13 +146,14 @@ public class MergeGuestCartCommandHandler : IRequestHandler<MergeGuestCartComman
             var product = products.First(p => p.Id == item.ProductId);
             var variant = product.Variants.FirstOrDefault(v => v.Id == item.VariantId);
             var primaryImage = product.Images.FirstOrDefault(i => i.IsPrimary);
+            var (productName, _, _, _, _) = product.GetTranslatedContent(language);
 
             return new CartItemDto
             {
                 Id = item.Id,
                 ProductId = item.ProductId,
                 VariantId = item.VariantId,
-                ProductName = product.Name,
+                ProductName = productName,
                 ProductSlug = product.Slug,
                 VariantName = variant?.Name,
                 Sku = variant?.Sku,

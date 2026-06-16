@@ -5,7 +5,10 @@ using MediatR;
 
 namespace ClimaSite.Application.Features.Wishlist.Queries;
 
-public record GetWishlistQuery : IRequest<WishlistDto?>;
+public record GetWishlistQuery : IRequest<WishlistDto?>
+{
+    public string? Language { get; init; }
+}
 
 public class GetWishlistQueryHandler : IRequestHandler<GetWishlistQuery, WishlistDto?>
 {
@@ -30,6 +33,6 @@ public class GetWishlistQueryHandler : IRequestHandler<GetWishlistQuery, Wishlis
             return null;
         }
 
-        return await _wishlistService.GetWishlistDtoByUserIdAsync(userId.Value, cancellationToken);
+        return await _wishlistService.GetWishlistDtoByUserIdAsync(userId.Value, cancellationToken, request.Language);
     }
 }

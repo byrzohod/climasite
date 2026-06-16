@@ -19,24 +19,24 @@ public class WishlistController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetWishlist()
+    public async Task<IActionResult> GetWishlist([FromQuery] string lang = "en")
     {
-        var result = await _mediator.Send(new GetWishlistQuery());
+        var result = await _mediator.Send(new GetWishlistQuery { Language = lang });
         return Ok(result);
     }
 
     [HttpGet("shared/{shareToken}")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetSharedWishlist(string shareToken)
+    public async Task<IActionResult> GetSharedWishlist(string shareToken, [FromQuery] string lang = "en")
     {
-        var result = await _mediator.Send(new GetSharedWishlistQuery { ShareToken = shareToken });
+        var result = await _mediator.Send(new GetSharedWishlistQuery { ShareToken = shareToken, Language = lang });
         return result == null ? NotFound() : Ok(result);
     }
 
     [HttpPost("items/{productId:guid}")]
-    public async Task<IActionResult> AddToWishlist(Guid productId)
+    public async Task<IActionResult> AddToWishlist(Guid productId, [FromQuery] string lang = "en")
     {
-        var command = new AddToWishlistCommand { ProductId = productId };
+        var command = new AddToWishlistCommand { ProductId = productId, Language = lang };
         var result = await _mediator.Send(command);
 
         if (!result.IsSuccess)

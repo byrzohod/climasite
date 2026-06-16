@@ -8,6 +8,7 @@ namespace ClimaSite.Application.Features.Wishlist.Queries;
 public record GetSharedWishlistQuery : IRequest<WishlistDto?>
 {
     public string ShareToken { get; init; } = string.Empty;
+    public string? Language { get; init; }
 }
 
 public class GetSharedWishlistQueryValidator : AbstractValidator<GetSharedWishlistQuery>
@@ -33,6 +34,6 @@ public class GetSharedWishlistQueryHandler : IRequestHandler<GetSharedWishlistQu
         GetSharedWishlistQuery request,
         CancellationToken cancellationToken)
     {
-        return await _wishlistService.GetSharedWishlistDtoAsync(request.ShareToken, cancellationToken);
+        return await _wishlistService.GetSharedWishlistDtoAsync(request.ShareToken, cancellationToken, request.Language);
     }
 }

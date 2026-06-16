@@ -3,12 +3,14 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Cart, AddToCartRequest, CartSummary } from '../models/cart.model';
+import { LanguageService } from './language.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CartService {
   private readonly http = inject(HttpClient);
+  private readonly languageService = inject(LanguageService);
   private readonly apiUrl = `${environment.apiUrl}/api/cart`;
   private readonly SESSION_KEY = 'climasite_session_id';
 
@@ -48,6 +50,13 @@ export class CartService {
     return 'sess_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
   }
 
+  // Returns a `&lang=xx` suffix for the current language, or '' for the default (en),
+  // mirroring how the catalog services thread language through to the API.
+  private langSuffix(): string {
+    const lang = this.languageService.currentLanguage();
+    return lang && lang !== 'en' ? `&lang=${lang}` : '';
+  }
+
   private getHeaders(): HttpHeaders {
     return new HttpHeaders({
       'X-Session-Id': this.getSessionId()
@@ -59,7 +68,7 @@ export class CartService {
     this._error.set(null);
 
     const sessionId = this.getSessionId();
-    this.http.get<Cart>(`${this.apiUrl}?guestSessionId=${sessionId}`)
+    this.http.get<Cart>(`${this.apiUrl}?guestSessionId=${sessionId}${this.langSuffix()}`)
       .pipe(
         tap(cart => {
           this._cart.set(cart);

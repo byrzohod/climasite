@@ -64,6 +64,39 @@ public class CartControllerTests : IntegrationTestBase
         cart.ItemCount.Should().Be(2);
     }
 
+    [Fact]
+    public async Task GetCart_ReturnsTranslatedProductName_WhenLangIsBulgarian()
+    {
+        // Arrange
+        var guestSessionId = Guid.NewGuid().ToString();
+        var (product, variant) = await CreateTestProductWithVariantAsync();
+        product.Translations.Add(new ProductTranslation(product.Id, "bg", "Климатик за тест"));
+        await DbContext.SaveChangesAsync();
+
+        await Client.PostAsJsonAsync("/api/cart/items", new
+        {
+            productId = product.Id,
+            variantId = variant.Id,
+            quantity = 1,
+            guestSessionId
+        });
+
+        // Act
+        var response = await Client.GetAsync($"/api/cart?guestSessionId={guestSessionId}&lang=bg");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var cart = await response.Content.ReadFromJsonAsync<CartDto>();
+        cart.Should().NotBeNull();
+        cart!.Items.Should().ContainSingle();
+        cart.Items[0].ProductName.Should().Be("Климатик за тест");
+
+        // Default (English) request still returns the base name.
+        var enResponse = await Client.GetAsync($"/api/cart?guestSessionId={guestSessionId}");
+        var enCart = await enResponse.Content.ReadFromJsonAsync<CartDto>();
+        enCart!.Items[0].ProductName.Should().Be(product.Name);
+    }
+
     #endregion
 
     #region AddToCart Tests

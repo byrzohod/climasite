@@ -1,9 +1,10 @@
 import { Component, inject, signal, computed, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { WishlistService } from '../../core/services/wishlist.service';
 import { AuthService } from '../../auth/services/auth.service';
+import { ToastService } from '../../shared/components/toast/toast.service';
 import { ProductBrief } from '../../core/models/product.model';
 import { ProductCardComponent } from '../products/product-card/product-card.component';
 import { LoadingComponent } from '../../shared/components/loading/loading.component';
@@ -104,14 +105,38 @@ import { EmptyStateComponent } from '../../shared/components/empty-state';
                 </div>
               }
 
-            <button
-              type="button"
-              class="btn-clear"
-              (click)="clearWishlist()"
-              data-testid="clear-wishlist"
-            >
-              {{ 'wishlist.clearAll' | translate }}
-            </button>
+            @if (confirmingClear()) {
+              <div class="clear-confirm" role="group" data-testid="wishlist-clear-confirm">
+                <span class="clear-confirm-text">{{ 'wishlist.clearConfirm.message' | translate }}</span>
+                <button
+                  type="button"
+                  class="btn-clear btn-clear-danger"
+                  (click)="clearWishlist()"
+                  [disabled]="clearLoading()"
+                  data-testid="confirm-clear-wishlist"
+                >
+                  {{ 'wishlist.clearConfirm.confirm' | translate }}
+                </button>
+                <button
+                  type="button"
+                  class="btn-share-secondary"
+                  (click)="cancelClear()"
+                  [disabled]="clearLoading()"
+                  data-testid="cancel-clear-wishlist"
+                >
+                  {{ 'wishlist.clearConfirm.cancel' | translate }}
+                </button>
+              </div>
+            } @else {
+              <button
+                type="button"
+                class="btn-clear"
+                (click)="requestClear()"
+                data-testid="clear-wishlist"
+              >
+                {{ 'wishlist.clearAll' | translate }}
+              </button>
+            }
             </div>
           }
 
@@ -260,6 +285,29 @@ import { EmptyStateComponent } from '../../shared/components/empty-state';
         color: var(--color-error);
         border-color: var(--color-error);
       }
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.65;
+      }
+    }
+
+    .clear-confirm {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .clear-confirm-text {
+      font-size: 0.8125rem;
+      color: var(--color-text-secondary);
+    }
+
+    .btn-clear-danger {
+      background: var(--color-error-bg);
+      color: var(--color-error);
+      border-color: var(--color-error);
     }
 
     .product-grid {
@@ -327,6 +375,8 @@ export class WishlistComponent implements OnInit {
   readonly wishlistService = inject(WishlistService);
   private readonly route = inject(ActivatedRoute);
   readonly authService = inject(AuthService);
+  private readonly toastService = inject(ToastService);
+  private readonly translate = inject(TranslateService);
 
   readonly products = signal<ProductBrief[]>([]);
   readonly loading = signal(true);
@@ -334,6 +384,8 @@ export class WishlistComponent implements OnInit {
   readonly isSharedView = signal(false);
   readonly shareLoading = signal(false);
   readonly shareCopied = signal(false);
+  readonly confirmingClear = signal(false);
+  readonly clearLoading = signal(false);
   readonly shareUrl = computed(() => {
     const token = this.wishlistService.shareToken();
     if (!token || typeof window === 'undefined') {
@@ -399,16 +451,46 @@ export class WishlistComponent implements OnInit {
     this.products.update(products => products.filter(p => p.id !== productId));
   }
 
+  /** Show the inline confirmation before clearing the whole wishlist. */
+  requestClear(): void {
+    this.confirmingClear.set(true);
+  }
+
+  /** Dismiss the inline clear confirmation without changing anything. */
+  cancelClear(): void {
+    this.confirmingClear.set(false);
+  }
+
   clearWishlist(): void {
-    this.wishlistService.clearWishlist();
+    const snapshot = this.products();
+    this.clearLoading.set(true);
     this.products.set([]);
+
+    this.wishlistService.clearWishlist().subscribe({
+      next: () => {
+        this.clearLoading.set(false);
+        this.confirmingClear.set(false);
+      },
+      error: () => {
+        // Restore the UI snapshot so a failed clear does not leave the page out of sync
+        // with the server (the items reappear on refresh otherwise).
+        this.products.set(snapshot);
+        this.clearLoading.set(false);
+        this.confirmingClear.set(false);
+        this.toastService.error(this.translate.instant('wishlist.errors.clearFailed'));
+      }
+    });
   }
 
   toggleSharing(): void {
     this.shareLoading.set(true);
-    this.wishlistService.setSharing(!this.wishlistService.isPublic()).subscribe({
+    const enabling = !this.wishlistService.isPublic();
+    this.wishlistService.setSharing(enabling).subscribe({
       next: () => this.shareLoading.set(false),
-      error: () => this.shareLoading.set(false)
+      error: () => {
+        this.shareLoading.set(false);
+        this.toastService.error(this.translate.instant('wishlist.errors.shareFailed'));
+      }
     });
   }
 
@@ -416,7 +498,10 @@ export class WishlistComponent implements OnInit {
     this.shareLoading.set(true);
     this.wishlistService.regenerateShareToken().subscribe({
       next: () => this.shareLoading.set(false),
-      error: () => this.shareLoading.set(false)
+      error: () => {
+        this.shareLoading.set(false);
+        this.toastService.error(this.translate.instant('wishlist.errors.regenerateFailed'));
+      }
     });
   }
 

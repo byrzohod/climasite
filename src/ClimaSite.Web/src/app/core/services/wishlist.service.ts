@@ -2,14 +2,16 @@ import { Injectable, inject, signal, computed, PLATFORM_ID } from '@angular/core
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../auth/services/auth.service';
+import { LanguageService } from './language.service';
 import { ProductBrief } from '../models/product.model';
 import { environment } from '../../../environments/environment';
-import { Observable, from, of } from 'rxjs';
-import { tap, catchError, switchMap, concatMap, reduce, finalize, shareReplay } from 'rxjs';
+import { Observable, from, of, throwError } from 'rxjs';
+import { tap, map, catchError, switchMap, concatMap, reduce, finalize, shareReplay } from 'rxjs';
 
 export interface WishlistDto {
   id: string;
-  userId: string;
+  // Null/omitted on the anonymous shared response so the owner's identity is not exposed.
+  userId?: string | null;
   isPublic: boolean;
   shareToken?: string | null;
   items: WishlistApiItem[];
@@ -62,6 +64,7 @@ export interface WishlistItem {
 export class WishlistService {
   private readonly http = inject(HttpClient);
   private readonly authService = inject(AuthService);
+  private readonly languageService = inject(LanguageService);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
 
@@ -141,9 +144,16 @@ export class WishlistService {
   }
 
   /**
-   * Clear the wishlist
+   * Clear the wishlist.
+   *
+   * Optimistically clears local state, then (for authenticated users) issues the DELETE.
+   * If the request fails the previous snapshot is restored and the error is surfaced to the
+   * caller so it can notify the user, preventing the "resurrect on refresh" inconsistency.
    */
-  clearWishlist(): void {
+  clearWishlist(): Observable<void> {
+    const previousItems = this._items();
+    const previousWishlist = this._wishlist();
+
     this._items.set([]);
     this._wishlist.update(wishlist => wishlist
       ? {
@@ -155,12 +165,21 @@ export class WishlistService {
       : wishlist);
     this.saveToStorage();
 
-    if (this.authService.isAuthenticated()) {
-      this.http.delete<WishlistDto>(this.apiUrl).pipe(
-        tap(wishlist => this.applyWishlistDto(wishlist)),
-        catchError(() => of(null))
-      ).subscribe();
+    if (!this.authService.isAuthenticated()) {
+      return of(undefined);
     }
+
+    return this.http.delete<WishlistDto>(this.apiUrl).pipe(
+      tap(wishlist => this.applyWishlistDto(wishlist)),
+      map(() => undefined),
+      catchError((error: unknown) => {
+        // Restore the snapshot so the UI matches the server state on the next refresh.
+        this._items.set(previousItems);
+        this._wishlist.set(previousWishlist);
+        this.saveToStorage();
+        return throwError(() => error);
+      })
+    );
   }
 
   refreshWishlist(): Observable<WishlistDto | null> {
@@ -184,7 +203,15 @@ export class WishlistService {
   }
 
   getSharedWishlist(shareToken: string): Observable<WishlistDto> {
-    return this.http.get<WishlistDto>(`${this.apiUrl}/shared/${encodeURIComponent(shareToken)}`);
+    return this.http.get<WishlistDto>(
+      `${this.apiUrl}/shared/${encodeURIComponent(shareToken)}${this.langQuery()}`);
+  }
+
+  // Returns a `?lang=xx` query for the current language, or '' for the default (en),
+  // mirroring how the catalog services thread language through to the API.
+  private langQuery(): string {
+    const lang = this.languageService.currentLanguage();
+    return lang && lang !== 'en' ? `?lang=${lang}` : '';
   }
 
   toProductBrief(item: WishlistApiItem): ProductBrief {
@@ -246,7 +273,7 @@ export class WishlistService {
 
     this._isLoading.set(true);
 
-    this.fetchInFlight$ = this.http.get<WishlistDto>(this.apiUrl).pipe(
+    this.fetchInFlight$ = this.http.get<WishlistDto>(`${this.apiUrl}${this.langQuery()}`).pipe(
       switchMap(apiWishlist => {
         const localItems = this._items();
         const apiProductIds = new Set(apiWishlist.items.map(item => item.productId));

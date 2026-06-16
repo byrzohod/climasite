@@ -11,6 +11,7 @@ namespace ClimaSite.Application.Features.Wishlist.Commands;
 public record AddToWishlistCommand : IRequest<Result<WishlistDto>>
 {
     public Guid ProductId { get; init; }
+    public string? Language { get; init; }
 }
 
 public class AddToWishlistCommandValidator : AbstractValidator<AddToWishlistCommand>
@@ -46,14 +47,28 @@ public class AddToWishlistCommandHandler : IRequestHandler<AddToWishlistCommand,
             return Result<WishlistDto>.Failure("User must be authenticated");
         }
 
-        return await _wishlistService.ExecuteUserMutationAsync(
-            userId.Value,
-            AddToWishlistAsync,
-            cancellationToken);
+        try
+        {
+            return await _wishlistService.ExecuteUserMutationAsync(
+                userId.Value,
+                AddToWishlistAsync,
+                cancellationToken);
+        }
+        catch (DbUpdateException ex) when (WishlistApplicationService.IsUniqueViolation(ex))
+        {
+            // A concurrent request inserted the same item first; the unique
+            // (WishlistId, ProductId) index protected us and the failed transaction was
+            // rolled back. Treat as idempotent success by returning the persisted wishlist
+            // (BUG-09), reading it in a fresh, non-tracking query.
+            var existing = await _wishlistService.GetWishlistDtoByUserIdAsync(
+                userId.Value, cancellationToken, request.Language);
+            return Result<WishlistDto>.Success(existing);
+        }
 
         async Task<Result<WishlistDto>> AddToWishlistAsync()
         {
             var productExists = await _context.Products
+                .AsNoTracking()
                 .AnyAsync(p => p.Id == request.ProductId && p.IsActive, cancellationToken);
 
             if (!productExists)
@@ -65,14 +80,14 @@ public class AddToWishlistCommandHandler : IRequestHandler<AddToWishlistCommand,
 
             if (wishlist.Items.Any(i => i.ProductId == request.ProductId))
             {
-                var existingDto = await _wishlistService.MapToDtoAsync(wishlist, cancellationToken);
+                var existingDto = await _wishlistService.MapToDtoAsync(wishlist, cancellationToken, request.Language);
                 return Result<WishlistDto>.Success(existingDto);
             }
 
             wishlist.AddItem(request.ProductId);
             await _context.SaveChangesAsync(cancellationToken);
 
-            var dto = await _wishlistService.MapToDtoAsync(wishlist, cancellationToken);
+            var dto = await _wishlistService.MapToDtoAsync(wishlist, cancellationToken, request.Language);
             return Result<WishlistDto>.Success(dto);
         }
     }

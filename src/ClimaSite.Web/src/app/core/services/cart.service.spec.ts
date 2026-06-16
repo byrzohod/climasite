@@ -1,7 +1,9 @@
+import { signal } from '@angular/core';
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { CartService } from './cart.service';
+import { LanguageService } from './language.service';
 import { Cart, CartItem } from '../models/cart.model';
 import { environment } from '../../../environments/environment';
 
@@ -56,7 +58,13 @@ describe('CartService', () => {
       providers: [
         CartService,
         provideHttpClient(),
-        provideHttpClientTesting()
+        provideHttpClientTesting(),
+        {
+          provide: LanguageService,
+          useValue: jasmine.createSpyObj('LanguageService', [], {
+            currentLanguage: signal('en')
+          })
+        }
       ]
     });
 
@@ -444,7 +452,13 @@ describe('CartService', () => {
         providers: [
           CartService,
           provideHttpClient(),
-          provideHttpClientTesting()
+          provideHttpClientTesting(),
+          {
+            provide: LanguageService,
+            useValue: jasmine.createSpyObj('LanguageService', [], {
+              currentLanguage: signal('en')
+            })
+          }
         ]
       });
 
