@@ -1,6 +1,6 @@
 using ClimaSite.Application.Auth.Commands;
-using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Models;
+using ClimaSite.Application.Features.Outbox;
 using ClimaSite.Core.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
@@ -11,16 +11,16 @@ namespace ClimaSite.Application.Auth.Handlers;
 public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordCommand, Result<bool>>
 {
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly IEmailService _emailService;
+    private readonly IEmailOutbox _emailOutbox;
     private readonly ILogger<ForgotPasswordCommandHandler> _logger;
 
     public ForgotPasswordCommandHandler(
         UserManager<ApplicationUser> userManager,
-        IEmailService emailService,
+        IEmailOutbox emailOutbox,
         ILogger<ForgotPasswordCommandHandler> logger)
     {
         _userManager = userManager;
-        _emailService = emailService;
+        _emailOutbox = emailOutbox;
         _logger = logger;
     }
 
@@ -36,17 +36,19 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
 
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
 
-        // Send the reset link by email — best-effort. A delivery failure must not 500 the
-        // request or reveal whether the address exists, and the token (a credential) is NEVER
-        // logged. (Reliable delivery via an outbox is GAP-03/ARCH-05.)
+        // Queue the reset link for durable delivery via the outbox (GAP-03/ARCH-05). Enqueue is
+        // best-effort: a DB hiccup must not 500 the request or reveal whether the address exists,
+        // and the token (a credential) is NEVER logged.
         try
         {
-            await _emailService.SendPasswordResetEmailAsync(user.Email!, token, cancellationToken);
-            _logger.LogInformation("Password reset email dispatched for user {UserId}.", user.Id);
+            await _emailOutbox.QueueAsync(
+                OutboxMessage.ForPasswordReset(user.Email!, token),
+                cancellationToken);
+            _logger.LogInformation("Password reset email queued for user {UserId}.", user.Id);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to dispatch password reset email for user {UserId}.", user.Id);
+            _logger.LogError(ex, "Failed to queue password reset email for user {UserId}.", user.Id);
         }
 
         return Result<bool>.Success(true);

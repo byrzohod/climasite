@@ -2,6 +2,7 @@ using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Orders.Commands;
 using ClimaSite.Application.Features.Orders.DTOs;
+using ClimaSite.Application.Features.Outbox;
 using ClimaSite.Application.Tests.TestHelpers;
 using ClimaSite.Core.Entities;
 using FluentAssertions;
@@ -33,10 +34,13 @@ public class CreateOrderCommandHandlerTests
             .ReturnsAsync((string id, CancellationToken _) => PaymentIntentResult.Success(id, string.Empty, "succeeded"));
     }
 
+    // Use a real EmailOutbox over the mock context so tests can assert the confirmation email
+    // is staged in the same unit of work as the order (GAP-03).
     private CreateOrderCommandHandler CreateHandler() => new(
         _context,
         _currentUserServiceMock.Object,
         _paymentServiceMock.Object,
+        new EmailOutbox(_context),
         _loggerMock.Object);
 
     [Fact]
@@ -66,6 +70,11 @@ public class CreateOrderCommandHandlerTests
         result.Value.Should().NotBeNull();
         result.Value!.Items.Should().HaveCount(1);
         result.Value.CustomerEmail.Should().Be("customer@test.com");
+
+        // GAP-03: a confirmation email is staged for the customer in the same unit of work.
+        var queued = await _context.OutboxMessages.ToListAsync();
+        queued.Should().ContainSingle(m =>
+            m.Type == OutboxMessageTypes.OrderConfirmation && m.ToEmail == "customer@test.com");
     }
 
     [Fact]

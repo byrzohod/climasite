@@ -2,6 +2,7 @@ using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Models;
 using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Orders.DTOs;
+using ClimaSite.Application.Features.Outbox;
 using ClimaSite.Core.Entities;
 using FluentValidation;
 using MediatR;
@@ -68,17 +69,20 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly IPaymentService _paymentService;
+    private readonly IEmailOutbox _emailOutbox;
     private readonly ILogger<CreateOrderCommandHandler> _logger;
 
     public CreateOrderCommandHandler(
         IApplicationDbContext context,
         ICurrentUserService currentUserService,
         IPaymentService paymentService,
+        IEmailOutbox emailOutbox,
         ILogger<CreateOrderCommandHandler> logger)
     {
         _context = context;
         _currentUserService = currentUserService;
         _paymentService = paymentService;
+        _emailOutbox = emailOutbox;
         _logger = logger;
     }
 
@@ -276,6 +280,11 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
             }
 
             _context.Orders.Add(order);
+
+            // GAP-03: queue the order-confirmation email in the SAME transaction as the order, so
+            // the email can never be lost after a successful order (nor sent for an order that
+            // rolled back). The background worker delivers it asynchronously.
+            _emailOutbox.Add(OutboxMessage.ForOrderConfirmation(order.CustomerEmail, order.Id));
 
             // Clear cart
             cart.Clear();

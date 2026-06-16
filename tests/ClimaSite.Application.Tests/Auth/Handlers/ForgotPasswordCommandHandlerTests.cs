@@ -1,6 +1,6 @@
 using ClimaSite.Application.Auth.Commands;
 using ClimaSite.Application.Auth.Handlers;
-using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Features.Outbox;
 using ClimaSite.Core.Entities;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
@@ -10,13 +10,14 @@ using Moq;
 namespace ClimaSite.Application.Tests.Auth.Handlers;
 
 /// <summary>
-/// BUG-07 regression: forgot-password must dispatch the reset email and must never log the
-/// reset token (a credential). Targets the LIVE handler in ClimaSite.Application.Auth.Handlers.
+/// BUG-07 regression + GAP-03: forgot-password must queue the reset email via the durable outbox
+/// and must never log the reset token (a credential). Targets the LIVE handler in
+/// ClimaSite.Application.Auth.Handlers.
 /// </summary>
 public class ForgotPasswordCommandHandlerTests
 {
     private readonly Mock<UserManager<ApplicationUser>> _userManager;
-    private readonly Mock<IEmailService> _emailService;
+    private readonly Mock<IEmailOutbox> _emailOutbox;
     private readonly Mock<ILogger<ForgotPasswordCommandHandler>> _logger;
     private readonly ForgotPasswordCommandHandler _handler;
 
@@ -25,13 +26,13 @@ public class ForgotPasswordCommandHandlerTests
         var store = new Mock<IUserStore<ApplicationUser>>();
         _userManager = new Mock<UserManager<ApplicationUser>>(
             store.Object, null!, null!, null!, null!, null!, null!, null!, null!);
-        _emailService = new Mock<IEmailService>();
+        _emailOutbox = new Mock<IEmailOutbox>();
         _logger = new Mock<ILogger<ForgotPasswordCommandHandler>>();
-        _handler = new ForgotPasswordCommandHandler(_userManager.Object, _emailService.Object, _logger.Object);
+        _handler = new ForgotPasswordCommandHandler(_userManager.Object, _emailOutbox.Object, _logger.Object);
     }
 
     [Fact]
-    public async Task Handle_ExistingUser_SendsResetEmailAndNeverLogsTheToken()
+    public async Task Handle_ExistingUser_QueuesResetEmailAndNeverLogsTheToken()
     {
         const string email = "user@example.com";
         const string token = "super-secret-reset-token-xyz";
@@ -43,8 +44,11 @@ public class ForgotPasswordCommandHandlerTests
         var result = await _handler.Handle(new ForgotPasswordCommand(email), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        _emailService.Verify(
-            x => x.SendPasswordResetEmailAsync(email, token, It.IsAny<CancellationToken>()), Times.Once);
+        _emailOutbox.Verify(
+            x => x.QueueAsync(
+                It.Is<OutboxMessage>(m => m.Type == OutboxMessageTypes.PasswordReset && m.ToEmail == email),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
 
         // The reset token is a credential and must never be written to the log.
         _logger.Verify(
@@ -58,7 +62,7 @@ public class ForgotPasswordCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenEmailDispatchThrows_StillSucceedsAndDoesNotLogTheToken()
+    public async Task Handle_WhenEnqueueThrows_StillSucceedsAndDoesNotLogTheToken()
     {
         const string email = "user@example.com";
         const string token = "another-secret-token";
@@ -66,13 +70,13 @@ public class ForgotPasswordCommandHandlerTests
 
         _userManager.Setup(x => x.FindByEmailAsync(email)).ReturnsAsync(user);
         _userManager.Setup(x => x.GeneratePasswordResetTokenAsync(user)).ReturnsAsync(token);
-        _emailService
-            .Setup(x => x.SendPasswordResetEmailAsync(email, token, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("smtp down"));
+        _emailOutbox
+            .Setup(x => x.QueueAsync(It.IsAny<OutboxMessage>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("db down"));
 
         var result = await _handler.Handle(new ForgotPasswordCommand(email), CancellationToken.None);
 
-        // Best-effort delivery: the request still succeeds even when the email send fails.
+        // Best-effort enqueue: the request still succeeds even when the write fails.
         result.IsSuccess.Should().BeTrue();
 
         // The token must never reach the log, including the failure path.
@@ -87,7 +91,7 @@ public class ForgotPasswordCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NonExistentUser_ReturnsSuccessWithoutSendingEmail()
+    public async Task Handle_NonExistentUser_ReturnsSuccessWithoutQueuingEmail()
     {
         _userManager.Setup(x => x.FindByEmailAsync(It.IsAny<string>()))
             .ReturnsAsync((ApplicationUser?)null);
@@ -95,11 +99,10 @@ public class ForgotPasswordCommandHandlerTests
         var result = await _handler.Handle(
             new ForgotPasswordCommand("ghost@example.com"), CancellationToken.None);
 
-        // Success either way (no account enumeration), but no email is dispatched.
+        // Success either way (no account enumeration), but no email is queued.
         result.IsSuccess.Should().BeTrue();
-        _emailService.Verify(
-            x => x.SendPasswordResetEmailAsync(
-                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+        _emailOutbox.Verify(
+            x => x.QueueAsync(It.IsAny<OutboxMessage>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 }
