@@ -219,6 +219,56 @@ public class PaymentMoneyPathTests : IntegrationTestBase
         result.Error.Should().Be("ORDER_NOT_FOUND");
     }
 
+    [Fact]
+    public async Task GuestCheckout_Anonymous_CreatesOrder_AndConfirmationIsTokenGated()
+    {
+        // Arrange: a pure guest (no authentication) with a cart.
+        var guestSessionId = Guid.NewGuid().ToString();
+        var (product, variant) = await CreateTestProductWithVariantAsync(basePrice: 100m);
+        await AddToCartAsync(product.Id, variant.Id, 1, guestSessionId);
+
+        // Act 1: anonymous create-intent (amount computed server-side, never client-supplied).
+        var intentResponse = await Client.PostAsJsonAsync("/api/payments/create-intent", new
+        {
+            shippingMethod = "standard",
+            guestSessionId
+        });
+        intentResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var intent = await intentResponse.Content.ReadFromJsonAsync<CreateIntentResponse>();
+
+        // Act 2: anonymous guest order creation.
+        var orderResponse = await Client.PostAsJsonAsync("/api/orders", new
+        {
+            customerEmail = "guest-checkout@test.com",
+            shippingAddress = ValidAddress(),
+            shippingMethod = "standard",
+            paymentIntentId = intent!.PaymentIntentId,
+            paymentMethod = "card",
+            guestSessionId
+        });
+        orderResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var order = await orderResponse.Content.ReadFromJsonAsync<OrderDto>();
+        order.Should().NotBeNull();
+
+        // The creation response carries the opaque guest access token.
+        order!.GuestAccessToken.Should().NotBeNullOrEmpty();
+        var token = order.GuestAccessToken!;
+
+        // Confirmation IS readable anonymously WITH the token...
+        var withToken = await Client.GetAsync($"/api/orders/{order.Id}/guest?token={Uri.EscapeDataString(token)}");
+        withToken.StatusCode.Should().Be(HttpStatusCode.OK);
+        var fetched = await withToken.Content.ReadFromJsonAsync<OrderDto>();
+        fetched!.Id.Should().Be(order.Id);
+
+        // ...and NOT with a wrong token (no enumeration / IDOR).
+        var wrongToken = await Client.GetAsync($"/api/orders/{order.Id}/guest?token=not-the-token");
+        wrongToken.StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        // ...and the owner-only by-id endpoint still rejects anonymous access (SEC-02 intact).
+        var byId = await Client.GetAsync($"/api/orders/{order.Id}");
+        byId.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
     #region Helpers
 
     private async Task<ClimaSite.Application.Common.Models.Result<bool>> SendWebhookAsync(HandleStripeWebhookCommand command)

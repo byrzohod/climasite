@@ -25,6 +25,11 @@ public class OrderDto
     public DateTime? DeliveredAt { get; init; }
     public DateTime? CancelledAt { get; init; }
     public string? Notes { get; init; }
+    /// <summary>
+    /// Opaque token a guest uses to view this order's confirmation without an account. Populated
+    /// ONLY on the order-creation response (omitted from JSON elsewhere via WhenWritingNull).
+    /// </summary>
+    public string? GuestAccessToken { get; init; }
     public List<OrderItemDto> Items { get; init; } = [];
     public List<OrderEventDto> Events { get; init; } = [];
     public DateTime CreatedAt { get; init; }

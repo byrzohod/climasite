@@ -31,6 +31,7 @@ export class CheckoutService {
   private readonly _isProcessing = signal(false);
   private readonly _error = signal<string | null>(null);
   private readonly _lastOrderId = signal<string | null>(null);
+  private readonly _lastGuestToken = signal<string | null>(null);
 
   // Public readonly signals
   readonly currentStep = this._currentStep.asReadonly();
@@ -41,6 +42,8 @@ export class CheckoutService {
   readonly isProcessing = this._isProcessing.asReadonly();
   readonly error = this._error.asReadonly();
   readonly lastOrderId = this._lastOrderId.asReadonly();
+  /** Guest-order access token from the last order creation (GAP-07); null for account orders. */
+  readonly lastGuestToken = this._lastGuestToken.asReadonly();
 
   getSessionId(): string {
     return localStorage.getItem(this.SESSION_KEY) || '';
@@ -112,6 +115,7 @@ export class CheckoutService {
         tap((order) => {
           this._isProcessing.set(false);
           this._lastOrderId.set(order.id);
+          this._lastGuestToken.set(order.guestAccessToken ?? null);
         }),
         catchError(error => {
           console.error('Failed to create order:', error);
@@ -124,6 +128,12 @@ export class CheckoutService {
 
   getOrder(orderId: string): Observable<Order> {
     return this.http.get<Order>(`${this.apiUrl}/${orderId}`, { headers: this.getHeaders() });
+  }
+
+  /** Fetches a guest order's confirmation using its opaque access token (GAP-07). */
+  getGuestOrder(orderId: string, token: string): Observable<Order> {
+    const params = new HttpParams().set('token', token);
+    return this.http.get<Order>(`${this.apiUrl}/${orderId}/guest`, { params });
   }
 
   getOrders(params: OrdersFilterParams = {}): Observable<PaginatedOrders> {

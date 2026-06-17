@@ -170,6 +170,14 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
             // Create order
             var order = new Order(orderNumber, request.CustomerEmail);
             order.SetUser(userId);
+
+            // GAP-07: guest orders get a high-entropy access token so the buyer can view their
+            // confirmation without an account. It is returned only on this creation response.
+            if (!userId.HasValue)
+            {
+                order.SetGuestAccessToken(GenerateGuestAccessToken());
+            }
+
             order.SetCustomerPhone(request.CustomerPhone);
             order.SetShippingAddress(ConvertAddressToDict(request.ShippingAddress));
             if (request.BillingAddress != null)
@@ -344,6 +352,19 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
         return $"ORD-{now:yyyyMMdd}-{now:HHmmss}-{randomSuffix}";
     }
 
+    /// <summary>
+    /// 256 bits of cryptographic randomness, URL-safe base64 — the guest's bearer credential to
+    /// read their own order confirmation. Not guessable/enumerable (unlike the order number).
+    /// </summary>
+    private static string GenerateGuestAccessToken()
+    {
+        var bytes = System.Security.Cryptography.RandomNumberGenerator.GetBytes(32);
+        return Convert.ToBase64String(bytes)
+            .Replace('+', '-')
+            .Replace('/', '_')
+            .TrimEnd('=');
+    }
+
     private static Dictionary<string, object> ConvertAddressToDict(AddressDto address)
     {
         return new Dictionary<string, object>
@@ -367,6 +388,7 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
             Id = order.Id,
             OrderNumber = order.OrderNumber,
             UserId = order.UserId,
+            GuestAccessToken = order.GuestAccessToken,
             CustomerEmail = order.CustomerEmail,
             CustomerPhone = order.CustomerPhone,
             Status = order.Status.ToString(),

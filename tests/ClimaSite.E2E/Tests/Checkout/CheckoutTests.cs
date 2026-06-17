@@ -174,10 +174,11 @@ public class CheckoutTests : IAsyncLifetime
         // Act - Proceed to checkout as guest
         await cartPage.ProceedToCheckoutAsync();
 
-        // Assert - Should be prompted for email or redirected to login/guest checkout
-        var url = _page.Url;
-        var isOnAuthOrCheckout = url.Contains("login") || url.Contains("checkout") || url.Contains("guest");
-        isOnAuthOrCheckout.Should().BeTrue("Guest should be prompted to login or continue as guest");
+        // Assert (TS-13/GAP-07) - guest checkout is enabled: the buyer reaches /checkout WITHOUT
+        // being bounced to login. (The previous assertion passed either way and tested nothing.)
+        await _page.WaitForURLAsync(u => u.Contains("/checkout"), new PageWaitForURLOptions { Timeout = 15000 });
+        _page.Url.Should().Contain("/checkout");
+        _page.Url.Should().NotContain("/login");
     }
 
     [Fact]

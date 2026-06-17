@@ -95,6 +95,24 @@ public class OrdersController : ControllerBase
         return Ok(result.Value);
     }
 
+    /// <summary>
+    /// Guest order confirmation lookup (GAP-07). Anonymous, but requires the order's opaque
+    /// access token issued at checkout — knowing the id alone is not enough.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpGet("{id:guid}/guest")]
+    [ProducesResponseType(typeof(OrderDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetGuestOrder(Guid id, [FromQuery] string token)
+    {
+        var result = await _mediator.Send(new GetGuestOrderQuery { OrderId = id, Token = token });
+
+        if (!result.IsSuccess)
+            return NotFound(new { message = result.Error });
+
+        return Ok(result.Value);
+    }
+
     [Authorize]
     [HttpGet("by-number/{orderNumber}")]
     public async Task<IActionResult> GetOrderByNumber(string orderNumber)

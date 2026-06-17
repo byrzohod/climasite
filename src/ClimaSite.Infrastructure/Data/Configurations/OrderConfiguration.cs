@@ -126,6 +126,10 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(o => o.Notes)
             .HasColumnName("notes");
 
+        builder.Property(o => o.GuestAccessToken)
+            .HasColumnName("guest_access_token")
+            .HasMaxLength(128);
+
         builder.Property(o => o.CreatedAt)
             .HasColumnName("created_at")
             .HasDefaultValueSql("NOW()");

@@ -28,6 +28,13 @@ public class Order : BaseEntity
     public string? CancellationReason { get; private set; }
     public string? Notes { get; private set; }
 
+    /// <summary>
+    /// High-entropy, opaque token that authorizes anonymous read of THIS order's confirmation
+    /// (guest checkout). Knowing the order id is not enough — the matching token is required, which
+    /// avoids the order-number enumeration IDOR (SEC-02). Null for account orders.
+    /// </summary>
+    public string? GuestAccessToken { get; private set; }
+
     // Navigation properties
     public virtual ApplicationUser? User { get; private set; }
     public virtual ICollection<OrderItem> Items { get; private set; } = new List<OrderItem>();
@@ -47,6 +54,16 @@ public class Order : BaseEntity
             throw new ArgumentException("Order number cannot be empty", nameof(orderNumber));
 
         OrderNumber = orderNumber;
+        SetUpdatedAt();
+    }
+
+    /// <summary>Assigns the opaque guest-access token (set once, for guest orders only).</summary>
+    public void SetGuestAccessToken(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            throw new ArgumentException("Guest access token cannot be empty", nameof(token));
+
+        GuestAccessToken = token;
         SetUpdatedAt();
     }
 

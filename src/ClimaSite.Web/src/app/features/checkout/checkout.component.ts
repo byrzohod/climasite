@@ -1205,7 +1205,7 @@ ngOnInit(): void {
             // Navigate to dedicated confirmation page
             const orderId = this.checkoutService.lastOrderId();
             if (orderId) {
-              this.router.navigate(['/checkout/confirmation', orderId]);
+              this.goToConfirmation(orderId);
             } else {
               // Fallback to inline confirmation
               this.orderPlaced.set(true);
@@ -1233,7 +1233,7 @@ ngOnInit(): void {
           // Navigate to dedicated confirmation page
           const orderId = this.checkoutService.lastOrderId();
           if (orderId) {
-            this.router.navigate(['/checkout/confirmation', orderId]);
+            this.goToConfirmation(orderId);
           } else {
             // Fallback to inline confirmation
             this.orderPlaced.set(true);
@@ -1247,5 +1247,16 @@ ngOnInit(): void {
         }
       });
     }
+  }
+
+  /**
+   * Navigates to the order confirmation. For guest orders the opaque access token is carried as a
+   * query param so the unauthenticated confirmation page can fetch the order (GAP-07).
+   */
+  private goToConfirmation(orderId: string): void {
+    const token = this.checkoutService.lastGuestToken();
+    this.router.navigate(
+      ['/checkout/confirmation', orderId],
+      token ? { queryParams: { token } } : {});
   }
 }

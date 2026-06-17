@@ -44,7 +44,9 @@ public class PaymentsController : ControllerBase
     /// Create a payment intent for the current cart. The amount and currency are
     /// computed server-side from the cart and chosen shipping method (BUG-02);
     /// the client only supplies the shipping method and optional guest session id.
+    /// Anonymous so guests can pay (GAP-07) — the amount is never client-supplied.
     /// </summary>
+    [AllowAnonymous]
     [HttpPost("create-intent")]
     public async Task<IActionResult> CreatePaymentIntent([FromBody] CreatePaymentIntentCommand command)
     {
