@@ -548,6 +548,41 @@
   },
   "admin": {
     "title": "Административен панел",
+    "dashboard": {
+      "title": "Табло",
+      "error": "Неуспешно зареждане на таблото",
+      "empty": "Няма налични данни",
+      "kpis": {
+        "totalOrders": "Общо поръчки",
+        "revenue": "Приход",
+        "newCustomers": "Нови клиенти",
+        "avgOrderValue": "Средна стойност на поръчка",
+        "pendingOrders": "Чакащи поръчки",
+        "lowStock": "Ниска наличност"
+      },
+      "period": {
+        "month": "Този месец"
+      },
+      "orderStatus": {
+        "title": "Поръчки по статус",
+        "pending": "Чакащи",
+        "processing": "Обработват се",
+        "shipped": "Изпратени",
+        "delivered": "Доставени",
+        "cancelled": "Отказани"
+      },
+      "recentOrders": "Скорошни поръчки",
+      "lowStockProducts": "Продукти с ниска наличност",
+      "topProducts": "Най-продавани продукти",
+      "columns": {
+        "product": "Продукт",
+        "sku": "Код",
+        "stock": "Наличност",
+        "threshold": "Праг",
+        "sold": "Продадени",
+        "revenue": "Приход"
+      }
+    },
     "products": {
       "title": "Управление на продукти",
       "add": "Добави продукт",
@@ -570,7 +605,8 @@
           "loadFailed": "Неуспешно зареждане на връзките",
           "addFailed": "Неуспешно добавяне на връзка",
           "removeFailed": "Неуспешно премахване на връзка",
-          "reorderFailed": "Неуспешно пренареждане на връзките"
+          "reorderFailed": "Неуспешно пренареждане на връзките",
+          "searchFailed": "Неуспешно търсене на продукти"
         }
       },
       "translations": {
@@ -591,7 +627,62 @@
       "shortDescription": "Кратко описание",
       "description": "Описание",
       "metaTitle": "Мета заглавие",
-      "metaDescription": "Мета описание"
+      "metaDescription": "Мета описание",
+      "subtitle": "Управлявайте каталога с продукти",
+      "search": "Търсене на продукти...",
+      "create": "Добави продукт",
+      "activate": "Активирай",
+      "deactivate": "Деактивирай",
+      "feature": "Превключи препоръчан",
+      "empty": "Няма намерени продукти",
+      "error": "Неуспешно зареждане на продуктите",
+      "allStatuses": "Всички статуси",
+      "statusFilterLabel": "Статус",
+      "pageOf": "Страница {{page}} от {{total}}",
+      "confirmDeactivate": "Деактивиране на „{{name}}“?",
+      "columns": {
+        "image": "Изображение",
+        "name": "Име",
+        "sku": "Код",
+        "price": "Цена",
+        "stock": "Наличност",
+        "status": "Статус",
+        "category": "Категория",
+        "actions": "Действия"
+      },
+      "status": {
+        "active": "Активен",
+        "inactive": "Неактивен",
+        "outOfStock": "Изчерпан",
+        "lowStock": "Ниска наличност"
+      },
+      "form": {
+        "name": "Име",
+        "sku": "Код",
+        "slug": "Slug",
+        "price": "Цена",
+        "compareAtPrice": "Сравнителна цена",
+        "costPrice": "Себестойност",
+        "category": "Категория",
+        "categoryPlaceholder": "ID на категория (по избор)",
+        "brand": "Марка",
+        "model": "Модел",
+        "warrantyMonths": "Гаранция (месеци)",
+        "weightKg": "Тегло (кг)",
+        "shortDescription": "Кратко описание",
+        "description": "Описание",
+        "isActive": "Активен",
+        "isFeatured": "Препоръчан",
+        "requiresInstallation": "Изисква монтаж",
+        "save": "Запази",
+        "cancel": "Отказ"
+      },
+      "errors": {
+        "loadDetailFailed": "Неуспешно зареждане на детайлите на продукта",
+        "saveFailed": "Неуспешно записване на продукта",
+        "statusFailed": "Неуспешно обновяване на статуса",
+        "featuredFailed": "Неуспешно обновяване на маркер „препоръчан“"
+      }
     },
     "orders": {
       "title": "Управление на поръчки",
@@ -687,7 +778,68 @@
       "title": "Управление на потребители",
       "list": "Списък с потребители",
       "details": "Детайли на потребител",
-      "roles": "Управление на роли"
+      "roles": "Управление на роли",
+      "subtitle": "Управление на клиентски акаунти",
+      "search": "Търсене на клиенти...",
+      "view": "Преглед",
+      "empty": "Няма намерени клиенти",
+      "error": "Неуспешно зареждане на клиентите",
+      "pageOf": "Страница {{page}} от {{total}}",
+      "activate": "Активирай",
+      "deactivate": "Деактивирай",
+      "columns": {
+        "email": "Имейл",
+        "name": "Име",
+        "phone": "Телефон",
+        "status": "Статус",
+        "orders": "Поръчки",
+        "spent": "Общо похарчено",
+        "created": "Регистриран",
+        "actions": "Действия"
+      },
+      "status": {
+        "active": "Активен",
+        "inactive": "Неактивен"
+      },
+      "filter": {
+        "label": "Статус",
+        "all": "Всички",
+        "active": "Активни",
+        "inactive": "Неактивни"
+      },
+      "detail": {
+        "title": "Детайли за клиента",
+        "profile": "Профил",
+        "stats": "Статистика",
+        "addresses": "Адреси",
+        "recentOrders": "Скорошни поръчки",
+        "error": "Неуспешно зареждане на клиента",
+        "emailConfirmed": "Имейл потвърден",
+        "language": "Език",
+        "currency": "Валута",
+        "lastLogin": "Последно влизане",
+        "defaultAddress": "По подразбиране",
+        "noAddresses": "Няма записани адреси",
+        "noOrders": "Все още няма поръчки"
+      },
+      "stats": {
+        "totalOrders": "Общо поръчки",
+        "totalSpent": "Общо похарчено",
+        "averageOrder": "Средна поръчка",
+        "reviews": "Отзиви",
+        "wishlist": "Артикули в списъка с желания"
+      },
+      "orderColumns": {
+        "number": "Поръчка №",
+        "total": "Общо",
+        "status": "Статус",
+        "created": "Дата"
+      },
+      "toasts": {
+        "activated": "Клиентът е активиран",
+        "deactivated": "Клиентът е деактивиран",
+        "statusFailed": "Неуспешно обновяване на статуса на клиента"
+      }
     },
     "categories": {
       "title": "Управление на категории",

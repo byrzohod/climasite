@@ -7,6 +7,7 @@ import {
   ProductRelationsDto,
   RelatedProductDto
 } from '../../services/admin-related-products.service';
+import { AdminProductsService } from '../../../../../core/services/admin-products.service';
 import { apiErrorToTranslationKey } from '../../../../../core/utils/translation-key.util';
 
 @Component({
@@ -402,7 +403,10 @@ export class RelatedProductsManagerComponent {
 
   readonly relationTypes = ['Similar', 'Accessory', 'Upgrade', 'Bundle', 'FrequentlyBoughtTogether'];
 
-  constructor(private relatedProductsService: AdminRelatedProductsService) {
+  constructor(
+    private relatedProductsService: AdminRelatedProductsService,
+    private productsService: AdminProductsService
+  ) {
     effect(() => {
       const id = this.productId();
       if (id) {
@@ -513,16 +517,35 @@ export class RelatedProductsManagerComponent {
   }
 
   searchProducts(): void {
-    // This would typically call an API to search for products
-    // For now, we'll leave it as a placeholder that can be implemented
-    // when the product search endpoint is available
-    if (this.searchTerm.length < 2) {
+    const term = this.searchTerm.trim();
+    if (term.length < 2) {
       this.searchResults.set([]);
       return;
     }
 
-    // TODO: Implement actual product search
-    // For now, clear results to indicate search is not fully implemented
-    this.searchResults.set([]);
+    this.productsService.searchProducts(term).subscribe({
+      next: (result) => {
+        const currentId = this.productId();
+        const existingIds = new Set(
+          this.currentRelations().map(r => r.relatedProductId)
+        );
+
+        this.searchResults.set(
+          result.items
+            // Exclude the product itself and items already related in this group.
+            .filter(item => item.id !== currentId && !existingIds.has(item.id))
+            .map(item => ({
+              id: item.id,
+              name: item.name,
+              sku: item.sku,
+              primaryImageUrl: item.primaryImageUrl ?? undefined
+            }))
+        );
+      },
+      error: (err) => {
+        this.searchResults.set([]);
+        this.error.set(apiErrorToTranslationKey(err, 'admin.products.relatedProductsManager.errors.searchFailed'));
+      }
+    });
   }
 }
