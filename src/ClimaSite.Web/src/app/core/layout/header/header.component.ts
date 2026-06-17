@@ -1,14 +1,17 @@
-import { Component, inject, signal, HostListener, ElementRef, ViewChild } from '@angular/core';
+import { Component, inject, signal, effect, HostListener, ElementRef, ViewChild, OnInit, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ThemeToggleComponent } from '../../../shared/components/theme-toggle/theme-toggle.component';
 import { LanguageSelectorComponent } from '../../../shared/components/language-selector/language-selector.component';
 import { MegaMenuComponent } from '../../../shared/components/mega-menu/mega-menu.component';
 import { MiniCartDrawerComponent } from '../../../shared/components/mini-cart-drawer';
 import { CartService } from '../../services/cart.service';
 import { WishlistService } from '../../services/wishlist.service';
+import { NotificationService, NotificationItem } from '../../services/notification.service';
 import { AuthService } from '../../../auth/services/auth.service';
 
 @Component({
@@ -111,6 +114,82 @@ import { AuthService } from '../../../auth/services/auth.service';
                 <span class="cart-badge" data-testid="cart-count">{{ cartService.itemCount() }}</span>
               }
             </button>
+
+            <!-- GAP-09: Notification bell (authenticated users only) -->
+            @if (authService.isAuthenticated()) {
+              <div class="notification-menu" data-testid="notification-menu">
+                <button
+                  type="button"
+                  class="action-btn action-btn--bell"
+                  (click)="toggleNotificationMenu()"
+                  [attr.aria-expanded]="notificationMenuOpen()"
+                  aria-haspopup="menu"
+                  [attr.aria-label]="'notifications.title' | translate"
+                  data-testid="notification-bell"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M5.25 9a6.75 6.75 0 0113.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 01-.297 1.206c-1.544.57-3.16.99-4.831 1.243a3.75 3.75 0 11-7.48 0 24.585 24.585 0 01-4.831-1.244.75.75 0 01-.298-1.205A8.217 8.217 0 005.25 9.75V9zm4.502 8.9a2.25 2.25 0 104.496 0 25.057 25.057 0 01-4.496 0z" clip-rule="evenodd"/>
+                  </svg>
+                  @if (notificationService.unreadCount() > 0) {
+                    <span class="notification-badge" data-testid="notification-badge">{{ notificationService.unreadCount() }}</span>
+                  }
+                </button>
+
+                @if (notificationMenuOpen()) {
+                  <div class="notification-dropdown" role="menu" aria-orientation="vertical" data-testid="notification-dropdown">
+                    <div class="notification-dropdown-header">
+                      <span class="notification-dropdown-title">{{ 'notifications.title' | translate }}</span>
+                      @if (notificationService.unreadCount() > 0) {
+                        <button
+                          type="button"
+                          class="notification-mark-all"
+                          (click)="markAllNotificationsRead()"
+                          data-testid="notification-mark-all"
+                        >
+                          {{ 'notifications.markAllRead' | translate }}
+                        </button>
+                      }
+                    </div>
+
+                    @if (notificationService.recent().length > 0) {
+                      <ul class="notification-list">
+                        @for (notification of notificationService.recent(); track notification.id) {
+                          <li>
+                            <a
+                              [routerLink]="notification.link"
+                              class="notification-item"
+                              [class.notification-item--unread]="!notification.isRead"
+                              role="menuitem"
+                              (click)="onNotificationClick(notification)"
+                              data-testid="notification-item"
+                            >
+                              @if (!notification.isRead) {
+                                <span class="notification-item-dot" aria-hidden="true"></span>
+                              }
+                              <span class="notification-item-body">
+                                <span class="notification-item-title">{{ notification.title }}</span>
+                                <span class="notification-item-message">{{ notification.message }}</span>
+                                <span class="notification-item-time">{{ relativeTime(notification.createdAt) }}</span>
+                              </span>
+                            </a>
+                          </li>
+                        }
+                      </ul>
+                    } @else {
+                      <div class="notification-empty" data-testid="notification-empty">
+                        {{ 'notifications.empty' | translate }}
+                      </div>
+                    }
+
+                    <div class="notification-dropdown-footer">
+                      <a routerLink="/account/notifications" class="notification-view-all" (click)="closeNotificationMenu()" data-testid="notification-view-all">
+                        {{ 'notifications.viewAll' | translate }}
+                      </a>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
 
             <!-- User Menu -->
             @if (authService.isAuthenticated()) {
@@ -685,6 +764,174 @@ import { AuthService } from '../../../auth/services/auth.service';
       font-size: 0.625rem;
       font-weight: 600;
       border-radius: 9999px;
+    }
+
+    /* GAP-09: Notification bell + dropdown */
+    .notification-menu {
+      position: relative;
+    }
+
+    .action-btn--bell {
+      position: relative;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: 0.125rem;
+      right: 0.125rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.125rem;
+      height: 1.125rem;
+      padding: 0 0.25rem;
+      background-color: var(--color-error);
+      color: var(--color-text-inverse);
+      font-size: 0.625rem;
+      font-weight: 600;
+      border-radius: 9999px;
+    }
+
+    .notification-dropdown {
+      position: absolute;
+      top: calc(100% + 0.5rem);
+      right: 0;
+      width: 340px;
+      max-width: 90vw;
+      background: var(--glass-bg-heavy);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-2xl);
+      z-index: var(--z-dropdown, 20);
+      overflow: hidden;
+      animation: fadeInDown var(--duration-normal) var(--ease-out-quart);
+    }
+
+    .notification-dropdown-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      background: var(--color-bg-secondary);
+      border-bottom: 1px solid var(--color-border-primary);
+    }
+
+    .notification-dropdown-title {
+      font-weight: 600;
+      color: var(--color-text-primary);
+      font-size: 0.9375rem;
+    }
+
+    .notification-mark-all {
+      background: none;
+      border: none;
+      color: var(--color-primary);
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 0.25rem 0.375rem;
+      border-radius: var(--radius-md);
+      transition: background-color var(--duration-fast) var(--ease-smooth);
+
+      &:hover {
+        background-color: var(--color-primary-light);
+      }
+    }
+
+    .notification-list {
+      list-style: none;
+      margin: 0;
+      padding: 0.25rem;
+      max-height: 360px;
+      overflow-y: auto;
+    }
+
+    .notification-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.625rem;
+      padding: 0.625rem 0.75rem;
+      text-decoration: none;
+      border-radius: 0.5rem;
+      transition: background-color var(--duration-fast) var(--ease-smooth);
+
+      &:hover {
+        background-color: var(--color-bg-hover);
+      }
+
+      &--unread {
+        background-color: var(--color-primary-light);
+
+        &:hover {
+          background-color: var(--color-primary-light);
+        }
+      }
+    }
+
+    .notification-item-dot {
+      flex-shrink: 0;
+      width: 0.5rem;
+      height: 0.5rem;
+      margin-top: 0.375rem;
+      background-color: var(--color-primary);
+      border-radius: 9999px;
+    }
+
+    .notification-item-body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+      min-width: 0;
+    }
+
+    .notification-item-title {
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: var(--color-text-primary);
+    }
+
+    .notification-item-message {
+      font-size: 0.8125rem;
+      color: var(--color-text-secondary);
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .notification-item-time {
+      font-size: 0.75rem;
+      color: var(--color-text-tertiary);
+    }
+
+    .notification-empty {
+      padding: 1.5rem 1rem;
+      text-align: center;
+      color: var(--color-text-secondary);
+      font-size: 0.875rem;
+    }
+
+    .notification-dropdown-footer {
+      padding: 0.5rem;
+      border-top: 1px solid var(--color-border-primary);
+      text-align: center;
+    }
+
+    .notification-view-all {
+      display: block;
+      padding: 0.5rem;
+      color: var(--color-primary);
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-decoration: none;
+      border-radius: 0.5rem;
+      transition: background-color var(--duration-fast) var(--ease-smooth);
+
+      &:hover {
+        background-color: var(--color-primary-light);
+      }
     }
 
     /* User Menu */
@@ -1416,20 +1663,52 @@ import { AuthService } from '../../../auth/services/auth.service';
     }
   `]
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit {
   private readonly elementRef = inject(ElementRef);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly translate = inject(TranslateService);
   readonly cartService = inject(CartService);
   readonly wishlistService = inject(WishlistService);
+  readonly notificationService = inject(NotificationService);
   readonly authService = inject(AuthService);
 
   @ViewChild('mobileMenuRef') mobileMenuRef!: ElementRef<HTMLElement>;
 
   readonly isSticky = signal(false);
   readonly userMenuOpen = signal(false);
+  readonly notificationMenuOpen = signal(false);
   readonly mobileMenuOpen = signal(false);
   readonly mobileSearchOpen = signal(false);
   searchQuery = '';
+
+  constructor() {
+    // Refresh the notification summary whenever the auth state flips to authenticated.
+    effect(() => {
+      if (this.authService.isAuthenticated()) {
+        this.notificationService.loadSummary().subscribe();
+      }
+    });
+  }
+
+  ngOnInit(): void {
+    // Initial load (in case auth was already resolved before the effect ran) plus a light refresh
+    // on each navigation — no aggressive polling.
+    if (this.authService.isAuthenticated()) {
+      this.notificationService.loadSummary().subscribe();
+    }
+
+    this.router.events
+      .pipe(
+        filter(event => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(() => {
+        if (this.authService.isAuthenticated()) {
+          this.notificationService.loadSummary().subscribe();
+        }
+      });
+  }
 
   private lastScrollY = 0;
   private previouslyFocusedElement: HTMLElement | null = null;
@@ -1460,11 +1739,17 @@ export class HeaderComponent {
     if (userMenu && !userMenu.contains(event.target as Node)) {
       this.userMenuOpen.set(false);
     }
+
+    const notificationMenu = this.elementRef.nativeElement.querySelector('.notification-menu');
+    if (notificationMenu && !notificationMenu.contains(event.target as Node)) {
+      this.notificationMenuOpen.set(false);
+    }
   }
 
   @HostListener('document:keydown.escape')
   onEscapeKey(): void {
     this.userMenuOpen.set(false);
+    this.notificationMenuOpen.set(false);
     this.mobileMenuOpen.set(false);
   }
 
@@ -1474,6 +1759,63 @@ export class HeaderComponent {
 
   closeUserMenu(): void {
     this.userMenuOpen.set(false);
+  }
+
+  toggleNotificationMenu(): void {
+    const opening = !this.notificationMenuOpen();
+    this.notificationMenuOpen.set(opening);
+    if (opening) {
+      this.userMenuOpen.set(false);
+      this.notificationService.loadSummary().subscribe();
+    }
+  }
+
+  closeNotificationMenu(): void {
+    this.notificationMenuOpen.set(false);
+  }
+
+  markAllNotificationsRead(): void {
+    this.notificationService.markAllAsRead().subscribe();
+  }
+
+  /**
+   * Navigate to the notification's target and mark it read. The router link handles navigation;
+   * we only fire the mark-read for unread items.
+   */
+  onNotificationClick(notification: NotificationItem): void {
+    this.closeNotificationMenu();
+    if (!notification.isRead) {
+      this.notificationService.markAsRead(notification.id).subscribe();
+    }
+  }
+
+  /**
+   * Render a coarse relative time ("just now", "5m", "3h", "2d") for a notification timestamp,
+   * falling back to a localized "just now" for invalid/future dates.
+   */
+  relativeTime(isoDate: string): string {
+    const then = new Date(isoDate).getTime();
+    if (Number.isNaN(then)) {
+      return this.translate.instant('notifications.time.justNow');
+    }
+
+    const diffSeconds = Math.floor((Date.now() - then) / 1000);
+    if (diffSeconds < 60) {
+      return this.translate.instant('notifications.time.justNow');
+    }
+
+    const minutes = Math.floor(diffSeconds / 60);
+    if (minutes < 60) {
+      return this.translate.instant('notifications.time.minutes', { count: minutes });
+    }
+
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) {
+      return this.translate.instant('notifications.time.hours', { count: hours });
+    }
+
+    const days = Math.floor(hours / 24);
+    return this.translate.instant('notifications.time.days', { count: days });
   }
 
   toggleMobileMenu(): void {

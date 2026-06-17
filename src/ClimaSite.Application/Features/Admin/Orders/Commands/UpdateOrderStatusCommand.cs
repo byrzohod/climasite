@@ -81,6 +81,16 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
                 _emailOutbox.Add(OutboxMessage.ForGeneric(order.CustomerEmail, subject, body));
             }
 
+            // GAP-09: emit an in-app notification in the same unit of work as the status change,
+            // but only for authenticated orders (guest orders have no UserId / no inbox to read it).
+            if (order.UserId is Guid uid)
+            {
+                var (type, title, message) = BuildNotificationContent(order, newStatus);
+                var notification = new Notification(uid, type, title, message);
+                notification.SetLink($"/account/orders/{order.Id}");
+                _context.Notifications.Add(notification);
+            }
+
             await _context.SaveChangesAsync(cancellationToken);
 
             return Result.Success();
@@ -89,5 +99,37 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
         {
             return Result.Failure(ex.Message);
         }
+    }
+
+    /// <summary>
+    /// Maps an order status to the in-app notification type/title/message. Title and message are
+    /// short, human-readable English fallbacks; the frontend localizes by <c>type</c> where it can.
+    /// </summary>
+    private static (string Type, string Title, string Message) BuildNotificationContent(
+        Core.Entities.Order order, OrderStatus status)
+    {
+        return status switch
+        {
+            OrderStatus.Shipped => (
+                NotificationTypes.OrderShipped,
+                "Order shipped",
+                $"Your order {order.OrderNumber} has shipped."),
+            OrderStatus.Delivered => (
+                NotificationTypes.OrderDelivered,
+                "Order delivered",
+                $"Your order {order.OrderNumber} has been delivered."),
+            OrderStatus.Cancelled => (
+                NotificationTypes.OrderCancelled,
+                "Order cancelled",
+                $"Your order {order.OrderNumber} has been cancelled."),
+            OrderStatus.Paid => (
+                NotificationTypes.PaymentReceived,
+                "Payment received",
+                $"We received payment for your order {order.OrderNumber}."),
+            _ => (
+                NotificationTypes.OrderPlaced,
+                "Order updated",
+                $"Your order {order.OrderNumber} status is now {status}.")
+        };
     }
 }

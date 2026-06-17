@@ -1117,6 +1117,26 @@
     "drainPumps": "Kondensatpumpen",
     "comingSoon": "Kategorieliste demnächst verfügbar..."
   },
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "empty": "Sie haben noch keine Benachrichtigungen",
+    "markAllRead": "Alle als gelesen markieren",
+    "viewAll": "Alle anzeigen",
+    "time": {
+      "justNow": "gerade eben",
+      "minutes": "vor {{count}} Min.",
+      "hours": "vor {{count}} Std.",
+      "days": "vor {{count}} Tagen"
+    },
+    "types": {
+      "orderPlaced": "Bestellung aufgegeben",
+      "orderShipped": "Bestellung versandt",
+      "orderDelivered": "Bestellung zugestellt",
+      "orderCancelled": "Bestellung storniert",
+      "paymentReceived": "Zahlung erhalten",
+      "paymentFailed": "Zahlung fehlgeschlagen"
+    }
+  },
   "wishlist": {
     "title": "Wunschliste",
     "empty": {

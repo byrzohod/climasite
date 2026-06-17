@@ -1117,6 +1117,26 @@
     "thermostats": "Термостати",
     "comingSoon": "Списъкът с категории очаквайте скоро..."
   },
+  "notifications": {
+    "title": "Известия",
+    "empty": "Все още нямате известия",
+    "markAllRead": "Маркирай всички като прочетени",
+    "viewAll": "Виж всички",
+    "time": {
+      "justNow": "току-що",
+      "minutes": "преди {{count}} мин",
+      "hours": "преди {{count}} ч",
+      "days": "преди {{count}} дни"
+    },
+    "types": {
+      "orderPlaced": "Поръчка направена",
+      "orderShipped": "Поръчка изпратена",
+      "orderDelivered": "Поръчка доставена",
+      "orderCancelled": "Поръчка отменена",
+      "paymentReceived": "Плащане получено",
+      "paymentFailed": "Неуспешно плащане"
+    }
+  },
   "wishlist": {
     "title": "Любими",
     "empty": {
