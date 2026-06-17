@@ -23,7 +23,7 @@ ClimaSite is a production-grade online shop specializing in air conditioners, he
 | Motion/Animation System | Complete | AnimationService, flying cart, confetti, parallax |
 | Performance Optimizations | Complete | Core Web Vitals, lazy loading, preconnect hints |
 | Home page (v3 — Configurator-First) | Complete | Plan 18 Phase 1 done; real recommendations endpoint, tests, E2E, visual QA, a11y, and Lighthouse verified |
-| Project completion plan (Plan 18) | In progress | Phase 0 and Phase 1 done; Phase 2 Wishlist slice complete; Notifications and Animation Audit 21F remain |
+| Project completion plan (Plan 18) | In progress | Phase 0/1 done; M2 batch complete: ARCH-05 outbox, GAP-02 admin, GAP-03 emails, GAP-04 legal, GAP-05 contact, GAP-07 guest checkout. Optional GAP-06/08/09 + Animation Audit 21F remain |
 
 ### Recently Completed
 
@@ -46,6 +46,9 @@ ClimaSite is a production-grade online shop specializing in air conditioners, he
 | Email Outbox (ARCH-05) | Complete | Durable Postgres `outbox_messages` + `BackgroundService` worker with retry/backoff; `IEmailOutbox`/`OutboxProcessor`; ADR 0001 |
 | Transactional Emails (GAP-03) | Complete | Order confirmation (transactional), order-shipped, welcome, password-reset, and admin notify-customer (BUG-16) all delivered via the outbox |
 | Admin Panel CRUD (GAP-02) | Complete | Real admin products list/create/edit/deactivate + translation & related-products editors (BUG-14), customers list/detail/status, dashboard KPIs; EN/BG/DE + tests + E2E |
+| Contact Endpoint (GAP-05) | Complete | `POST /api/contact` persists a `ContactMessage` + queues a business notification via the outbox; form wired to a real request with success/error states |
+| Guest Checkout (GAP-07) | Complete | Opaque `GuestAccessToken` + anonymous token-gated confirmation lookup (SEC-02 intact), anonymous create-intent (server-computed amount), `/checkout` guard dropped, TS-13 fixed |
+| Legal Pages + Cookie Consent (GAP-04) | Complete | terms/privacy/cookies/returns/shipping/FAQ + German Impressum, consent banner (`ConsentService`), footer 404s closed; EN/BG/DE + specs + E2E |
 
 ---
 

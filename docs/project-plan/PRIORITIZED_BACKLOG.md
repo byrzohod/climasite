@@ -260,6 +260,7 @@ Detail: `_review/product.md` (flow inventory + "highest-leverage path"), `_revie
 - **Depends on:** BUG-07 (same wiring pattern, do first); O-1/ARCH-05 for outbox reliability (synchronous fire-and-forget acceptable as v1); SEC-07 for SMTP config names.
 
 ### GAP-04 — Legal pages (terms/privacy/cookies/returns/shipping/FAQ/Impressum) + cookie consent (P1, Medium)
+- **Status:** ✅ DONE (2026-06-17, #25). Lazy `features/legal/` with a shared `LegalPageComponent` (terms/privacy/cookies/returns/shipping/Impressum) + accessible FAQ accordion; root routes wired; footer 404s closed and Impressum link added; social `href="#"` replaced. `ConsentService` + `CookieConsentComponent` banner (non-essential storage withheld until accepted). EN/BG/DE placeholder legal prose (flagged) + unit specs + E2E. Built functional/direct per owner (no Stitch for utility pages).
 - **Description:** All six footer legal/support links 404 (routes don't exist) while the footer shows a "GDPR Compliant" badge; no cookie-consent component exists; social links are `href="#"`. EU (BG/DE) distance-selling legal floor: add a lazy `legal` feature with translated static pages incl. German Impressum, a consent banner (no analytics scripts found, so banner is less acute than the mandatory pages), and fix/remove socials.
 - **Closes:** `_review/product.md` #6 (P1 confirmed); UI_UX_REVIEW item #4.
 - **Affected:** `core/layout/footer/footer.component.ts:43-56,93-103`, `app.routes.ts`, new `features/legal/`.
@@ -267,6 +268,7 @@ Detail: `_review/product.md` (flow inventory + "highest-leverage path"), `_revie
 - **Depends on:** Real legal text from the owner (placeholder first); GAP-10 (privacy page should link the GDPR endpoints).
 
 ### GAP-05 — Real contact endpoint (form currently fakes success via setTimeout) (P1, Small)
+- **Status:** ✅ DONE (2026-06-17, #23). `ContactMessage` entity + `contact_messages` table; `CreateContactMessageCommand` persists the enquiry AND queues a business-notification email via the ARCH-05 outbox (atomic); public `POST /api/contact`; the form now issues a real request with success/error states. Handler unit + Api integration + frontend specs.
 - **Description:** `contact.component.ts:384-399` simulates success with `setTimeout` — every submission (sales leads, complaints, GDPR inquiries) is silently discarded. Add `POST /api/contact` that emails the business via `IEmailService` and/or persists a ContactMessage; wire the form with real success/error states.
 - **Closes:** `_review/product.md` #7 (P1 confirmed); UI_UX_REVIEW item #5.
 - **Affected:** `features/contact/contact.component.ts`, new controller/command in `ClimaSite.Api`/`ClimaSite.Application`.
@@ -281,6 +283,7 @@ Detail: `_review/product.md` (flow inventory + "highest-leverage path"), `_revie
 - **Depends on:** BUG-01 (PaymentMethod persistence lands there).
 
 ### GAP-07 — Guest checkout: decide, then implement or descope (P1, decision + Medium/Large)
+- **Status:** ✅ DONE (2026-06-17, #24; DEC-GUEST = enable). `Order.GuestAccessToken` (256-bit opaque, guest orders only, returned only on creation) + anonymous token-gated `GET /api/orders/{id}/guest?token=` (constant-time compare, generic 404 — SEC-02 owner-only by-id/by-number left intact). `create-intent` is `[AllowAnonymous]` (amount is server-computed). `/checkout` guard dropped; confirmation is token-gated; TS-13 tautological E2E rewritten. Unit + integration + frontend specs.
 - **Description:** `/checkout` is auth-guarded while the backend explicitly supports anonymous guest orders and CLAUDE.md documents guest checkout; `PaymentsController` is `[Authorize]` so guests couldn't pay anyway; the existing guest E2E is tautological (passes either way). Either enable end-to-end (drop guard, anonymous create-intent tied to server-computed totals, guest confirmation via order number + email — interacts with SEC-02) or remove the backend guest path and fix docs.
 - **Closes:** `_review/product.md` #9; `_review/bugs.md` #15 (BUG-15); `_review/uiux.md` #16; TS-13.
 - **Affected:** `app.routes.ts:82-89`, `OrdersController.cs`, `PaymentsController.cs`, `CheckoutTests.cs`, CLAUDE.md business rules.
