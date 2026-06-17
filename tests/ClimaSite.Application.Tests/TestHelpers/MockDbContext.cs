@@ -138,6 +138,8 @@ public class MockDbContext : IApplicationDbContext
 
     public void AddOutboxMessage(OutboxMessage message) => _outboxMessages.Add(message);
 
+    public void AddInstallationRequest(InstallationRequest request) => _installationRequests.Add(request);
+
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken)
     {
         // Sync any new items that might have been added to navigation properties

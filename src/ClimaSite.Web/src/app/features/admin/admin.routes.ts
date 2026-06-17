@@ -25,5 +25,9 @@ export const adminRoutes: Routes = [
   {
     path: 'moderation',
     loadComponent: () => import('./moderation/admin-moderation.component').then(m => m.AdminModerationComponent)
+  },
+  {
+    path: 'installation-requests',
+    loadComponent: () => import('./installation/admin-installation.component').then(m => m.AdminInstallationComponent)
   }
 ];

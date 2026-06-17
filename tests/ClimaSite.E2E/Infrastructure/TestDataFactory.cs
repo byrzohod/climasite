@@ -281,6 +281,55 @@ public class TestDataFactory
     }
 
     /// <summary>
+    /// Submits a real installation request for a product through the public installation API.
+    /// Returns the created request id (or Guid.Empty on failure).
+    /// </summary>
+    public async Task<TestInstallationRequest> CreateInstallationRequestAsync(
+        TestProduct? product = null,
+        string installationType = "Standard")
+    {
+        product ??= await CreateProductAsync();
+
+        var customerEmail = $"install_{_correlationId:N}_{_faker.Random.AlphaNumeric(6)}@test.com";
+
+        // The installation endpoint is public (no auth required). Clear any admin auth header
+        // so the request is treated as anonymous, matching real customer behaviour.
+        _apiClient.DefaultRequestHeaders.Authorization = null;
+
+        var response = await _apiClient.PostAsJsonAsync("/api/installation/requests", new
+        {
+            productId = product.Id,
+            installationType,
+            customerName = $"{_faker.Name.FirstName()} {_faker.Name.LastName()}",
+            customerEmail,
+            customerPhone = _faker.Phone.PhoneNumber("+359########"),
+            addressLine1 = _faker.Address.StreetAddress(),
+            city = _faker.Address.City(),
+            postalCode = _faker.Address.ZipCode("####"),
+            country = "Bulgaria"
+        });
+
+        var request = new TestInstallationRequest
+        {
+            ProductName = product.Name,
+            CustomerEmail = customerEmail
+        };
+
+        if (response.IsSuccessStatusCode)
+        {
+            var result = await response.Content.ReadFromJsonAsync<InstallationRequestResponse>();
+            request.Id = result?.Id ?? Guid.Empty;
+        }
+        else
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Installation request creation failed: {response.StatusCode} - {errorContent}");
+        }
+
+        return request;
+    }
+
+    /// <summary>
     /// Creates an admin user for tests requiring elevated privileges.
     /// </summary>
     public async Task<TestUser> CreateAdminUserAsync()
@@ -364,6 +413,13 @@ public class TestOrder
     public decimal TotalAmount { get; set; }
 }
 
+public class TestInstallationRequest
+{
+    public Guid Id { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public string CustomerEmail { get; set; } = string.Empty;
+}
+
 // API Response DTOs
 public record RegisterResponse(
     [property: System.Text.Json.Serialization.JsonPropertyName("id")] Guid Id,
@@ -395,3 +451,6 @@ public record OrderResponse(
 public record CategoryResponse(
     [property: System.Text.Json.Serialization.JsonPropertyName("id")] Guid Id,
     [property: System.Text.Json.Serialization.JsonPropertyName("name")] string Name);
+public record InstallationRequestResponse(
+    [property: System.Text.Json.Serialization.JsonPropertyName("id")] Guid Id,
+    [property: System.Text.Json.Serialization.JsonPropertyName("status")] string Status);

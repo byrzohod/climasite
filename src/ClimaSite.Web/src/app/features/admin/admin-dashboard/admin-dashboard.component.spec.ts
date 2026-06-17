@@ -122,9 +122,12 @@ describe('AdminDashboardComponent', () => {
 
     expect(fixture.nativeElement.querySelector('[data-testid="admin-dashboard"]')).toBeTruthy();
 
-    // Original navigation tiles must still be present.
+    // Navigation tiles: products, orders, users, moderation, and installation requests (GAP-08).
     const navLinks = fixture.nativeElement.querySelectorAll('.admin-link');
-    expect(navLinks.length).toBe(4);
+    expect(navLinks.length).toBe(5);
+
+    // The GAP-08 installation requests tile must be present.
+    expect(fixture.nativeElement.querySelector('[data-testid="admin-installation-tile"]')).toBeTruthy();
   });
 
   it('shows the loading state before data resolves', () => {
