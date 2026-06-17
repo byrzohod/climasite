@@ -547,6 +547,41 @@
   },
   "admin": {
     "title": "Admin-Dashboard",
+    "dashboard": {
+      "title": "Dashboard",
+      "error": "Dashboard konnte nicht geladen werden",
+      "empty": "Keine Daten verfügbar",
+      "kpis": {
+        "totalOrders": "Gesamtbestellungen",
+        "revenue": "Umsatz",
+        "newCustomers": "Neue Kunden",
+        "avgOrderValue": "Durchschn. Bestellwert",
+        "pendingOrders": "Ausstehende Bestellungen",
+        "lowStock": "Niedriger Bestand"
+      },
+      "period": {
+        "month": "Diesen Monat"
+      },
+      "orderStatus": {
+        "title": "Bestellungen nach Status",
+        "pending": "Ausstehend",
+        "processing": "In Bearbeitung",
+        "shipped": "Versandt",
+        "delivered": "Zugestellt",
+        "cancelled": "Storniert"
+      },
+      "recentOrders": "Letzte Bestellungen",
+      "lowStockProducts": "Produkte mit niedrigem Bestand",
+      "topProducts": "Meistverkaufte Produkte",
+      "columns": {
+        "product": "Produkt",
+        "sku": "Art.-Nr.",
+        "stock": "Bestand",
+        "threshold": "Schwellenwert",
+        "sold": "Verkauft",
+        "revenue": "Umsatz"
+      }
+    },
     "products": {
       "title": "Produktverwaltung",
       "add": "Produkt hinzufügen",
@@ -569,7 +604,8 @@
           "loadFailed": "Beziehungen konnten nicht geladen werden",
           "addFailed": "Beziehung konnte nicht hinzugefügt werden",
           "removeFailed": "Beziehung konnte nicht entfernt werden",
-          "reorderFailed": "Beziehungen konnten nicht neu sortiert werden"
+          "reorderFailed": "Beziehungen konnten nicht neu sortiert werden",
+          "searchFailed": "Produktsuche fehlgeschlagen"
         }
       },
       "translations": {
@@ -590,7 +626,62 @@
       "shortDescription": "Kurzbeschreibung",
       "description": "Beschreibung",
       "metaTitle": "Meta-Titel",
-      "metaDescription": "Meta-Beschreibung"
+      "metaDescription": "Meta-Beschreibung",
+      "subtitle": "Verwalten Sie Ihren Produktkatalog",
+      "search": "Produkte suchen...",
+      "create": "Produkt hinzufügen",
+      "activate": "Aktivieren",
+      "deactivate": "Deaktivieren",
+      "feature": "Hervorhebung umschalten",
+      "empty": "Keine Produkte gefunden",
+      "error": "Produkte konnten nicht geladen werden",
+      "allStatuses": "Alle Status",
+      "statusFilterLabel": "Status",
+      "pageOf": "Seite {{page}} von {{total}}",
+      "confirmDeactivate": "„{{name}}“ deaktivieren?",
+      "columns": {
+        "image": "Bild",
+        "name": "Name",
+        "sku": "Art.-Nr.",
+        "price": "Preis",
+        "stock": "Bestand",
+        "status": "Status",
+        "category": "Kategorie",
+        "actions": "Aktionen"
+      },
+      "status": {
+        "active": "Aktiv",
+        "inactive": "Inaktiv",
+        "outOfStock": "Nicht auf Lager",
+        "lowStock": "Niedriger Bestand"
+      },
+      "form": {
+        "name": "Name",
+        "sku": "Art.-Nr.",
+        "slug": "Slug",
+        "price": "Preis",
+        "compareAtPrice": "Vergleichspreis",
+        "costPrice": "Einkaufspreis",
+        "category": "Kategorie",
+        "categoryPlaceholder": "Kategorie-ID (optional)",
+        "brand": "Marke",
+        "model": "Modell",
+        "warrantyMonths": "Garantie (Monate)",
+        "weightKg": "Gewicht (kg)",
+        "shortDescription": "Kurzbeschreibung",
+        "description": "Beschreibung",
+        "isActive": "Aktiv",
+        "isFeatured": "Hervorgehoben",
+        "requiresInstallation": "Installation erforderlich",
+        "save": "Speichern",
+        "cancel": "Abbrechen"
+      },
+      "errors": {
+        "loadDetailFailed": "Produktdetails konnten nicht geladen werden",
+        "saveFailed": "Produkt konnte nicht gespeichert werden",
+        "statusFailed": "Status konnte nicht aktualisiert werden",
+        "featuredFailed": "Hervorhebungs-Markierung konnte nicht aktualisiert werden"
+      }
     },
     "orders": {
       "title": "Bestellungsverwaltung",
@@ -686,7 +777,68 @@
       "title": "Benutzerverwaltung",
       "list": "Benutzerliste",
       "details": "Benutzerdetails",
-      "roles": "Rollen verwalten"
+      "roles": "Rollen verwalten",
+      "subtitle": "Kundenkonten verwalten",
+      "search": "Kunden suchen...",
+      "view": "Ansehen",
+      "empty": "Keine Kunden gefunden",
+      "error": "Kunden konnten nicht geladen werden",
+      "pageOf": "Seite {{page}} von {{total}}",
+      "activate": "Aktivieren",
+      "deactivate": "Deaktivieren",
+      "columns": {
+        "email": "E-Mail",
+        "name": "Name",
+        "phone": "Telefon",
+        "status": "Status",
+        "orders": "Bestellungen",
+        "spent": "Gesamtausgaben",
+        "created": "Registriert",
+        "actions": "Aktionen"
+      },
+      "status": {
+        "active": "Aktiv",
+        "inactive": "Inaktiv"
+      },
+      "filter": {
+        "label": "Status",
+        "all": "Alle",
+        "active": "Aktiv",
+        "inactive": "Inaktiv"
+      },
+      "detail": {
+        "title": "Kundendetails",
+        "profile": "Profil",
+        "stats": "Statistiken",
+        "addresses": "Adressen",
+        "recentOrders": "Letzte Bestellungen",
+        "error": "Kunde konnte nicht geladen werden",
+        "emailConfirmed": "E-Mail bestätigt",
+        "language": "Sprache",
+        "currency": "Währung",
+        "lastLogin": "Letzte Anmeldung",
+        "defaultAddress": "Standard",
+        "noAddresses": "Keine Adressen hinterlegt",
+        "noOrders": "Noch keine Bestellungen"
+      },
+      "stats": {
+        "totalOrders": "Gesamtbestellungen",
+        "totalSpent": "Gesamtausgaben",
+        "averageOrder": "Durchschnittliche Bestellung",
+        "reviews": "Bewertungen",
+        "wishlist": "Wunschlisten-Artikel"
+      },
+      "orderColumns": {
+        "number": "Bestell-Nr.",
+        "total": "Gesamt",
+        "status": "Status",
+        "created": "Datum"
+      },
+      "toasts": {
+        "activated": "Kunde aktiviert",
+        "deactivated": "Kunde deaktiviert",
+        "statusFailed": "Kundenstatus konnte nicht aktualisiert werden"
+      }
     },
     "categories": {
       "title": "Kategorieverwaltung",

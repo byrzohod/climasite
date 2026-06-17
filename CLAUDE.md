@@ -43,6 +43,9 @@ ClimaSite is a production-grade online shop specializing in air conditioners, he
 | Animation Audit (21F) | Partial | Phases 1-2 complete: Removed FloatingDirective, TiltEffectDirective, ParallaxDirective; simplified RevealDirective to fade/fade-up/fade-down only |
 | Home v3 Completion | Complete | Configurator-first homepage, real product recommendations, translation coverage, deferred below-fold content, browser QA, and Lighthouse mobile 0.97 / desktop 1.00 |
 | Wishlist Completion | Complete | Hydrated wishlist API, public share links, guest-to-login merge, concurrent add protection, translations, and full local test coverage |
+| Email Outbox (ARCH-05) | Complete | Durable Postgres `outbox_messages` + `BackgroundService` worker with retry/backoff; `IEmailOutbox`/`OutboxProcessor`; ADR 0001 |
+| Transactional Emails (GAP-03) | Complete | Order confirmation (transactional), order-shipped, welcome, password-reset, and admin notify-customer (BUG-16) all delivered via the outbox |
+| Admin Panel CRUD (GAP-02) | Complete | Real admin products list/create/edit/deactivate + translation & related-products editors (BUG-14), customers list/detail/status, dashboard KPIs; EN/BG/DE + tests + E2E |
 
 ---
 
