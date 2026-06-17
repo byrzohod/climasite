@@ -1906,5 +1906,14 @@
         }
       }
     }
+  },
+  "accessibility": {
+    "reduceMotion": {
+      "label": "Reduced motion",
+      "system": "System",
+      "on": "On",
+      "off": "Off",
+      "description": "Control animations and motion effects. Choose System to follow your device setting, On to minimise motion, or Off to always show animations."
+    }
   }
 }

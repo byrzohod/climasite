@@ -28,15 +28,18 @@ import { CommonModule } from '@angular/common';
   styles: [`
     .card {
       background-color: var(--color-bg-card);
+      border: 1px solid transparent;
       border-radius: 0.75rem;
       box-shadow: 0 1px 3px 0 var(--shadow-color), 0 1px 2px -1px var(--shadow-color);
-      transition: box-shadow 0.2s ease, transform 0.2s ease;
+      /* Plan 21F TASK-21F-012: subtle shadow/border feedback only — no lift/translate. */
+      transition: box-shadow 0.2s ease, border-color 0.2s ease;
       overflow: hidden;
     }
 
-    .card-hoverable:hover {
+    .card-hoverable:hover,
+    .card-hoverable:focus-within {
       box-shadow: 0 10px 15px -3px var(--shadow-color-lg), 0 4px 6px -4px var(--shadow-color);
-      transform: translateY(-2px);
+      border-color: var(--color-border-secondary);
     }
 
     .card-clickable {

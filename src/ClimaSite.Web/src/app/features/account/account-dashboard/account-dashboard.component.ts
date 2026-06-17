@@ -31,6 +31,10 @@ import { AuthService } from '../../../auth/services/auth.service';
           <span class="icon">📍</span>
           <span>{{ 'account.addresses.title' | translate }}</span>
         </a>
+        <a routerLink="settings" class="account-link" data-testid="account-settings-link">
+          <span class="icon">⚙️</span>
+          <span>{{ 'accessibility.reduceMotion.label' | translate }}</span>
+        </a>
       </div>
     </div>
   `,

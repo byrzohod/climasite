@@ -15,7 +15,7 @@ interface Particle {
   rotation: number;
   rotationSpeed: number;
   opacity: number;
-  shape: 'square' | 'circle' | 'ribbon';
+  shape: 'square';
 }
 
 /**
@@ -41,11 +41,11 @@ export class ConfettiService {
   private startTime = 0;
   
   // Animation configuration
-  private readonly PARTICLE_COUNT = 75; // 50-100 range
-  private readonly ANIMATION_DURATION = 3000; // 3 seconds
+  private readonly PARTICLE_COUNT = 50; // subtle burst
+  private readonly ANIMATION_DURATION = 2000; // 2 seconds
   private readonly GRAVITY = 0.25;
   private readonly WIND = 0.02;
-  private readonly FADE_START = 2000; // Start fading at 2 seconds
+  private readonly FADE_START = 1200; // Start fading before the 2s cleanup
 
   /**
    * Launch confetti celebration from center of screen
@@ -172,8 +172,6 @@ export class ConfettiService {
     const colors = this.getBrandColors();
     const centerX = window.innerWidth / 2;
     const centerY = window.innerHeight / 2;
-    const shapes: Particle['shape'][] = ['square', 'circle', 'ribbon'];
-
     for (let i = 0; i < this.PARTICLE_COUNT; i++) {
       // Random angle for burst direction (mostly upward)
       const angle = (Math.random() * Math.PI * 0.8) + Math.PI * 0.1; // 10 to 170 degrees (mostly up)
@@ -189,7 +187,7 @@ export class ConfettiService {
         rotation: Math.random() * 360,
         rotationSpeed: (Math.random() - 0.5) * 15,
         opacity: 1,
-        shape: shapes[Math.floor(Math.random() * shapes.length)]
+        shape: 'square'
       });
     }
   }
@@ -260,32 +258,13 @@ export class ConfettiService {
     this.ctx.globalAlpha = particle.opacity;
     this.ctx.fillStyle = particle.color;
 
-    switch (particle.shape) {
-      case 'square':
-        this.ctx.fillRect(
-          -particle.size / 2,
-          -particle.size / 2,
-          particle.size,
-          particle.size
-        );
-        break;
-
-      case 'circle':
-        this.ctx.beginPath();
-        this.ctx.arc(0, 0, particle.size / 2, 0, Math.PI * 2);
-        this.ctx.fill();
-        break;
-
-      case 'ribbon':
-        // Ribbon shape - elongated rectangle
-        this.ctx.fillRect(
-          -particle.size / 2,
-          -particle.size / 6,
-          particle.size,
-          particle.size / 3
-        );
-        break;
-    }
+    // Squares only (Plan 21F Phase 3 — removed circle/ribbon shapes)
+    this.ctx.fillRect(
+      -particle.size / 2,
+      -particle.size / 2,
+      particle.size,
+      particle.size
+    );
 
     this.ctx.restore();
   }

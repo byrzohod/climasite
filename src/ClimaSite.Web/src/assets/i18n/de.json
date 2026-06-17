@@ -1906,5 +1906,14 @@
         }
       }
     }
+  },
+  "accessibility": {
+    "reduceMotion": {
+      "label": "Reduzierte Bewegung",
+      "system": "System",
+      "on": "Ein",
+      "off": "Aus",
+      "description": "Steuern Sie Animationen und Bewegungseffekte. Wählen Sie „System“, um der Geräteeinstellung zu folgen, „Ein“, um Bewegung zu reduzieren, oder „Aus“, um Animationen immer anzuzeigen."
+    }
   }
 }
