@@ -1032,13 +1032,13 @@ export class AdminProductsComponent implements OnInit {
   }
 
   private hydrateForm(detail: AdminProductDetail): void {
+    // Keep the already-seeded/edited identity fields (name, sku, slug, basePrice — the row carries
+    // the same values as the detail) so a fast edit made before this async detail arrives is NOT
+    // clobbered. Only fill the fields the list row could not provide.
     this.form = {
-      name: detail.name,
-      sku: detail.sku,
-      slug: detail.slug,
+      ...this.form,
       shortDescription: detail.shortDescription ?? '',
       description: detail.description ?? '',
-      basePrice: detail.basePrice,
       compareAtPrice: detail.compareAtPrice ?? null,
       costPrice: detail.costPrice ?? null,
       categoryId: detail.categoryId ?? '',
