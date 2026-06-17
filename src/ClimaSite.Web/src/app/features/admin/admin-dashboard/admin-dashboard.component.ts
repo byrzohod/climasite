@@ -248,6 +248,10 @@ interface OrderStatusBar {
           <span class="icon">🛡️</span>
           <span>{{ 'admin.moderation.title' | translate }}</span>
         </a>
+        <a routerLink="installation-requests" class="admin-link" data-testid="admin-installation-tile">
+          <span class="icon">🔧</span>
+          <span>{{ 'admin.installation.title' | translate }}</span>
+        </a>
       </div>
     </div>
   `,

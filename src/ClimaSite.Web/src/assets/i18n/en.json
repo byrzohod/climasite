@@ -841,6 +841,53 @@
         "statusFailed": "Failed to update customer status"
       }
     },
+    "installation": {
+      "title": "Installation Requests",
+      "subtitle": "Manage installation requests and their status",
+      "empty": "No installation requests found",
+      "error": "Failed to load installation requests",
+      "pageOf": "Page {{page}} of {{total}}",
+      "columns": {
+        "product": "Product",
+        "type": "Type",
+        "customer": "Customer",
+        "city": "Location",
+        "status": "Status",
+        "preferredDate": "Preferred",
+        "scheduledDate": "Scheduled",
+        "estimatedPrice": "Estimated",
+        "created": "Submitted",
+        "actions": "Actions"
+      },
+      "type": {
+        "Standard": "Standard",
+        "Premium": "Premium",
+        "Express": "Express"
+      },
+      "status": {
+        "Pending": "Pending",
+        "Confirmed": "Confirmed",
+        "Scheduled": "Scheduled",
+        "InProgress": "In Progress",
+        "Completed": "Completed",
+        "Cancelled": "Cancelled"
+      },
+      "filters": {
+        "label": "Status",
+        "all": "All statuses"
+      },
+      "actions": {
+        "selectStatus": "Change status",
+        "choose": "Choose status…",
+        "scheduledDate": "Scheduled date",
+        "apply": "Apply"
+      },
+      "toasts": {
+        "updated": "Installation request updated",
+        "updateFailed": "Failed to update the installation request",
+        "scheduledDateRequired": "A scheduled date is required to schedule an installation"
+      }
+    },
     "categories": {
       "title": "Category Management",
       "add": "Add Category",

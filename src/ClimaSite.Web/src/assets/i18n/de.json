@@ -841,6 +841,53 @@
         "statusFailed": "Kundenstatus konnte nicht aktualisiert werden"
       }
     },
+    "installation": {
+      "title": "Installationsanfragen",
+      "subtitle": "Installationsanfragen und deren Status verwalten",
+      "empty": "Keine Installationsanfragen gefunden",
+      "error": "Installationsanfragen konnten nicht geladen werden",
+      "pageOf": "Seite {{page}} von {{total}}",
+      "columns": {
+        "product": "Produkt",
+        "type": "Typ",
+        "customer": "Kunde",
+        "city": "Standort",
+        "status": "Status",
+        "preferredDate": "Bevorzugt",
+        "scheduledDate": "Geplant",
+        "estimatedPrice": "Geschätzt",
+        "created": "Eingereicht",
+        "actions": "Aktionen"
+      },
+      "type": {
+        "Standard": "Standard",
+        "Premium": "Premium",
+        "Express": "Express"
+      },
+      "status": {
+        "Pending": "Ausstehend",
+        "Confirmed": "Bestätigt",
+        "Scheduled": "Geplant",
+        "InProgress": "In Bearbeitung",
+        "Completed": "Abgeschlossen",
+        "Cancelled": "Storniert"
+      },
+      "filters": {
+        "label": "Status",
+        "all": "Alle Status"
+      },
+      "actions": {
+        "selectStatus": "Status ändern",
+        "choose": "Status wählen…",
+        "scheduledDate": "Geplantes Datum",
+        "apply": "Anwenden"
+      },
+      "toasts": {
+        "updated": "Installationsanfrage aktualisiert",
+        "updateFailed": "Installationsanfrage konnte nicht aktualisiert werden",
+        "scheduledDateRequired": "Für die Planung einer Installation ist ein geplantes Datum erforderlich"
+      }
+    },
     "categories": {
       "title": "Kategorieverwaltung",
       "add": "Kategorie hinzufügen",
