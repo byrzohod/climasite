@@ -145,8 +145,8 @@ describe('CheckoutService', () => {
 
   describe('payment method', () => {
     it('should set payment method', () => {
-      service.setPaymentMethod('paypal');
-      expect(service.paymentMethod()).toBe('paypal');
+      service.setPaymentMethod('bank');
+      expect(service.paymentMethod()).toBe('bank');
     });
   });
 
@@ -288,7 +288,7 @@ describe('CheckoutService', () => {
       service.setStep('review');
       service.setShippingAddress(mockAddress);
       service.setBillingAddress(mockAddress);
-      service.setPaymentMethod('paypal');
+      service.setPaymentMethod('bank');
     });
 
     it('should reset step to shipping', () => {

@@ -80,6 +80,11 @@ public static class DependencyInjection
         configuration.GetSection(ContactOptions.SectionName).Bind(contactOptions);
         services.AddSingleton(contactOptions);
 
+        // Bank transfer details (GAP-06), bound from the "BankTransfer" configuration section.
+        var bankTransferOptions = new BankTransferOptions();
+        configuration.GetSection(BankTransferOptions.SectionName).Bind(bankTransferOptions);
+        services.AddSingleton(bankTransferOptions);
+
         // MinIO Storage
         services.Configure<MinioStorageSettings>(options =>
         {

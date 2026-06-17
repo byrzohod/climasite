@@ -1,4 +1,5 @@
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Options;
 using ClimaSite.Application.Features.Payments.Commands;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -15,29 +16,42 @@ public class PaymentsController : ControllerBase
     private readonly IMediator _mediator;
     private readonly IPaymentService _paymentService;
     private readonly IConfiguration _configuration;
+    private readonly BankTransferOptions _bankTransferOptions;
     private readonly ILogger<PaymentsController> _logger;
 
     public PaymentsController(
         IMediator mediator,
         IPaymentService paymentService,
         IConfiguration configuration,
+        BankTransferOptions bankTransferOptions,
         ILogger<PaymentsController> logger)
     {
         _mediator = mediator;
         _paymentService = paymentService;
         _configuration = configuration;
+        _bankTransferOptions = bankTransferOptions;
         _logger = logger;
     }
 
     /// <summary>
-    /// Get the Stripe publishable key for frontend use
+    /// Get the public payment configuration: the Stripe publishable key plus the bank-transfer
+    /// account details (GAP-06) so the frontend can show wiring instructions.
     /// </summary>
     [AllowAnonymous]
     [HttpGet("config")]
     public IActionResult GetConfig()
     {
         var publishableKey = _configuration["Stripe:PublishableKey"];
-        return Ok(new { publishableKey });
+        return Ok(new
+        {
+            publishableKey,
+            bankTransfer = new
+            {
+                iban = _bankTransferOptions.Iban,
+                accountName = _bankTransferOptions.AccountName,
+                bankName = _bankTransferOptions.BankName
+            }
+        });
     }
 
     /// <summary>

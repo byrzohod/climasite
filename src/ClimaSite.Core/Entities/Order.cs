@@ -206,6 +206,19 @@ public class Order : BaseEntity
         SetUpdatedAt();
     }
 
+    /// <summary>
+    /// Records the chosen payment method for an offline order (e.g. bank transfer) that has no
+    /// PaymentIntent. The order remains Pending until payment is received and reconciled (GAP-06).
+    /// </summary>
+    public void SetPaymentMethod(string paymentMethod)
+    {
+        if (string.IsNullOrWhiteSpace(paymentMethod))
+            throw new ArgumentException("Payment method cannot be empty", nameof(paymentMethod));
+
+        PaymentMethod = paymentMethod;
+        SetUpdatedAt();
+    }
+
     public void SetCancellationReason(string? reason)
     {
         CancellationReason = reason;

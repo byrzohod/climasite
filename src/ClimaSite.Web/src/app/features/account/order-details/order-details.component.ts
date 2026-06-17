@@ -208,7 +208,6 @@ import { apiErrorToTranslationKey } from '../../../core/utils/translation-key.ut
                   <p class="payment-method">
                     @switch (order()!.paymentMethod) {
                       @case ('card') { <span class="payment-icon">&#128179;</span> {{ 'checkout.payment.card' | translate }} }
-                      @case ('paypal') { <span class="payment-icon">&#127359;</span> {{ 'checkout.payment.paypal' | translate }} }
                       @case ('bank') { <span class="payment-icon">&#127974;</span> {{ 'checkout.payment.bank' | translate }} }
                       @default { {{ order()!.paymentMethod }} }
                     }

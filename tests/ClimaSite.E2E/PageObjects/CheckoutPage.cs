@@ -161,6 +161,25 @@ public class CheckoutPage : BasePage
         return await IsVisibleAsync(OrderConfirmation);
     }
 
+    /// <summary>GAP-06: waits for and reads the bank-transfer instructions panel on the confirmation page.</summary>
+    public async Task<bool> IsBankTransferInstructionsVisibleAsync()
+    {
+        await Page.WaitForSelectorAsync("[data-testid='bank-transfer-instructions']",
+            new PageWaitForSelectorOptions { Timeout = 15000 });
+        return await IsVisibleAsync("[data-testid='bank-transfer-instructions']");
+    }
+
+    public async Task<string> GetBankTransferReferenceAsync()
+    {
+        return await GetTextAsync("[data-testid='bank-reference']");
+    }
+
+    /// <summary>True if a bank-info panel is shown in the checkout payment step.</summary>
+    public async Task<bool> IsBankInfoPanelVisibleAsync()
+    {
+        return await IsVisibleAsync("[data-testid='bank-info-panel']");
+    }
+
     public async Task<bool> IsOnCheckoutPageAsync()
     {
         return Page.Url.Contains("checkout");

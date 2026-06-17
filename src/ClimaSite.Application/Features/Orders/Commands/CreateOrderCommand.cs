@@ -1,5 +1,7 @@
+using System.Globalization;
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Models;
+using ClimaSite.Application.Common.Options;
 using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Orders.DTOs;
 using ClimaSite.Application.Features.Outbox;
@@ -61,15 +63,29 @@ public class CreateOrderCommandValidator : AbstractValidator<CreateOrderCommand>
 
         RuleFor(x => x.ShippingMethod)
             .NotEmpty().WithMessage("Shipping method is required");
+
+        // GAP-06: only the real payment methods are accepted. The fake "paypal" option (and any
+        // unknown value) is rejected here so it can never reach an order.
+        RuleFor(x => x.PaymentMethod)
+            .Must(BeASupportedPaymentMethod)
+            .WithMessage("Payment method must be either 'card' or 'bank'.")
+            .When(x => !string.IsNullOrWhiteSpace(x.PaymentMethod));
     }
+
+    private static bool BeASupportedPaymentMethod(string? paymentMethod) =>
+        string.Equals(paymentMethod, "card", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(paymentMethod, "bank", StringComparison.OrdinalIgnoreCase);
 }
 
 public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Result<OrderDto>>
 {
+    private const string BankPaymentMethod = "bank";
+
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly IPaymentService _paymentService;
     private readonly IEmailOutbox _emailOutbox;
+    private readonly BankTransferOptions _bankTransferOptions;
     private readonly ILogger<CreateOrderCommandHandler> _logger;
 
     public CreateOrderCommandHandler(
@@ -77,12 +93,14 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
         ICurrentUserService currentUserService,
         IPaymentService paymentService,
         IEmailOutbox emailOutbox,
+        BankTransferOptions bankTransferOptions,
         ILogger<CreateOrderCommandHandler> logger)
     {
         _context = context;
         _currentUserService = currentUserService;
         _paymentService = paymentService;
         _emailOutbox = emailOutbox;
+        _bankTransferOptions = bankTransferOptions;
         _logger = logger;
     }
 
@@ -266,6 +284,13 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
                 // the order and flip it to Paid. Status stays Pending here.
                 order.SetPaymentInfo(request.PaymentIntentId, request.PaymentMethod ?? "card");
             }
+            else if (!string.IsNullOrWhiteSpace(request.PaymentMethod))
+            {
+                // GAP-06: offline order (e.g. bank transfer) — no PaymentIntent to verify, but the
+                // chosen method must still be persisted so the buyer and admin see how it will be
+                // paid. The order legitimately stays Pending until payment is received.
+                order.SetPaymentMethod(request.PaymentMethod);
+            }
 
             // Loop 2: now that the charge is verified, take stock atomically.
             // BUG-05: decrement stock with a `stock >= qty` guard so two concurrent orders
@@ -293,6 +318,14 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
             // the email can never be lost after a successful order (nor sent for an order that
             // rolled back). The background worker delivers it asynchronously.
             _emailOutbox.Add(OutboxMessage.ForOrderConfirmation(order.CustomerEmail, order.Id));
+
+            // GAP-06: a bank-transfer order also gets the wiring instructions (amount, payment
+            // reference = order number, and the bank account details) staged in the SAME unit of
+            // work. The order remains Pending until the wire is received and reconciled.
+            if (string.Equals(request.PaymentMethod, BankPaymentMethod, StringComparison.OrdinalIgnoreCase))
+            {
+                _emailOutbox.Add(BuildBankTransferEmail(order));
+            }
 
             // Clear cart
             cart.Clear();
@@ -338,6 +371,30 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Builds the bank-transfer instructions email (GAP-06): the amount to wire, the payment
+    /// reference (the order number, so the wire can be reconciled), and the destination account.
+    /// </summary>
+    private OutboxMessage BuildBankTransferEmail(Order order)
+    {
+        var subject = $"Bank transfer instructions — {order.OrderNumber}";
+        var amount = order.Total.ToString("0.00", CultureInfo.InvariantCulture);
+
+        var body =
+            $"Thank you for your order {order.OrderNumber}.\n\n" +
+            "Please complete your purchase with a bank transfer using the details below. " +
+            "Your order will be processed once we receive the payment.\n\n" +
+            $"Amount: {amount} {order.Currency}\n" +
+            $"Payment reference: {order.OrderNumber}\n" +
+            $"Account name: {_bankTransferOptions.AccountName}\n" +
+            $"IBAN: {_bankTransferOptions.Iban}\n" +
+            $"Bank: {_bankTransferOptions.BankName}\n\n" +
+            "Important: include the payment reference so we can match your transfer to this order. " +
+            "The order stays pending until payment is received.";
+
+        return OutboxMessage.ForGeneric(order.CustomerEmail, subject, body);
     }
 
     /// <summary>

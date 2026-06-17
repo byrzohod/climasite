@@ -1,4 +1,5 @@
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Options;
 using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Orders.Commands;
 using ClimaSite.Application.Features.Orders.DTOs;
@@ -18,6 +19,14 @@ public class CreateOrderCommandHandlerTests
     private readonly Mock<IPaymentService> _paymentServiceMock;
     private readonly Mock<ILogger<CreateOrderCommandHandler>> _loggerMock;
     private readonly MockDbContext _context;
+
+    // GAP-06: bank-transfer account details surfaced in the instructions email.
+    private static readonly BankTransferOptions BankOptions = new()
+    {
+        Iban = "BG80BNBG96611020345678",
+        AccountName = "ClimaSite EOOD",
+        BankName = "placeholder Bank"
+    };
 
     public CreateOrderCommandHandlerTests()
     {
@@ -41,6 +50,7 @@ public class CreateOrderCommandHandlerTests
         _currentUserServiceMock.Object,
         _paymentServiceMock.Object,
         new EmailOutbox(_context),
+        BankOptions,
         _loggerMock.Object);
 
     [Fact]
@@ -778,6 +788,166 @@ public class CreateOrderCommandHandlerTests
         result.IsSuccess.Should().BeFalse();
         result.Error.Should().Contain("Insufficient stock");
         _paymentServiceMock.Verify(x => x.RefundAsync("pi_test_123", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    #endregion
+
+    #region Bank transfer / offline orders (GAP-06)
+
+    [Fact]
+    public async Task Handle_BankTransferOrder_PersistsMethodAndStaysPending()
+    {
+        // Arrange: an offline (bank) order has no PaymentIntent, so the payment service is never
+        // called, the method is still persisted, and the order legitimately remains Pending.
+        var userId = Guid.NewGuid();
+        var product = CreateProduct();
+        var variant = product.Variants.First();
+        variant.SetStockQuantity(10);
+
+        var cart = new Cart(userId, null);
+        cart.AddItem(product.Id, variant.Id, 1, 100m);
+
+        _context.AddProduct(product);
+        _context.AddCart(cart);
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        var handler = CreateHandler();
+        var command = CreateValidCommand() with { PaymentMethod = "bank" };
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.PaymentMethod.Should().Be("bank");
+        result.Value.Status.Should().Be("Pending");
+
+        var persisted = await _context.Orders.SingleAsync();
+        persisted.PaymentMethod.Should().Be("bank");
+        persisted.PaymentIntentId.Should().BeNull();
+        persisted.Status.Should().Be(OrderStatus.Pending);
+
+        // No card verification happens for an offline order.
+        _paymentServiceMock.Verify(x => x.GetPaymentIntentAsync(It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_BankTransferOrder_EnqueuesBankInstructionsEmail()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var product = CreateProduct();
+        var variant = product.Variants.First();
+        variant.SetStockQuantity(10);
+
+        var cart = new Cart(userId, null);
+        cart.AddItem(product.Id, variant.Id, 1, 100m);
+
+        _context.AddProduct(product);
+        _context.AddCart(cart);
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        var handler = CreateHandler();
+        var command = CreateValidCommand() with { PaymentMethod = "bank" };
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert: both the confirmation email AND the bank-instructions email are staged for the
+        // customer in the same unit of work (real EmailOutbox over the mock context).
+        result.IsSuccess.Should().BeTrue();
+        var queued = await _context.OutboxMessages.ToListAsync();
+
+        queued.Should().Contain(m =>
+            m.Type == OutboxMessageTypes.OrderConfirmation && m.ToEmail == "customer@test.com");
+
+        var bankEmail = queued.SingleOrDefault(m =>
+            m.Type == OutboxMessageTypes.Generic && m.ToEmail == "customer@test.com");
+        bankEmail.Should().NotBeNull();
+        // The instructions carry the payment reference (order number), the bank account, and amount.
+        bankEmail!.Payload.Should().Contain(result.Value!.OrderNumber);
+        bankEmail.Payload.Should().Contain(BankOptions.Iban);
+        bankEmail.Payload.Should().Contain(BankOptions.AccountName);
+        bankEmail.Payload.Should().Contain("Bank transfer instructions");
+    }
+
+    [Fact]
+    public async Task Handle_CardOrderWithVerifiedIntent_DoesNotEnqueueBankEmail()
+    {
+        // Arrange: a verified card order must NOT stage bank-transfer instructions.
+        var userId = Guid.NewGuid();
+        var product = CreateProduct();
+        var variant = product.Variants.First();
+        variant.SetStockQuantity(10);
+
+        var cart = new Cart(userId, null);
+        cart.AddItem(product.Id, variant.Id, 1, 100m);
+
+        _context.AddProduct(product);
+        _context.AddCart(cart);
+
+        var expectedTotal = CheckoutPricing.CalculateTotal(100m, "standard");
+        _paymentServiceMock
+            .Setup(x => x.GetPaymentIntentAsync("pi_test_123"))
+            .ReturnsAsync(new PaymentIntentResult
+            {
+                Succeeded = true,
+                PaymentIntentId = "pi_test_123",
+                Status = "succeeded",
+                Currency = "eur",
+                Amount = CheckoutPricing.ToMinorUnits(expectedTotal)
+            });
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        var handler = CreateHandler();
+        var command = CreateValidCommand() with { PaymentIntentId = "pi_test_123", PaymentMethod = "card" };
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        var queued = await _context.OutboxMessages.ToListAsync();
+        queued.Should().NotContain(m => m.Type == OutboxMessageTypes.Generic);
+    }
+
+    [Fact]
+    public void Validator_WhenPaymentMethodIsPaypal_ReturnsValidationError()
+    {
+        // GAP-06: the fake "paypal" option is no longer accepted.
+        var validator = new CreateOrderCommandValidator();
+        var command = CreateValidCommand() with { PaymentMethod = "paypal" };
+
+        var result = validator.Validate(command);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == "PaymentMethod");
+    }
+
+    [Fact]
+    public void Validator_WhenPaymentMethodIsUnknown_ReturnsValidationError()
+    {
+        var validator = new CreateOrderCommandValidator();
+        var command = CreateValidCommand() with { PaymentMethod = "crypto" };
+
+        var result = validator.Validate(command);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == "PaymentMethod");
+    }
+
+    [Theory]
+    [InlineData("card")]
+    [InlineData("bank")]
+    [InlineData("BANK")]
+    public void Validator_WhenPaymentMethodIsSupported_PassesValidation(string method)
+    {
+        var validator = new CreateOrderCommandValidator();
+        var command = CreateValidCommand() with { PaymentMethod = method };
+
+        var result = validator.Validate(command);
+
+        result.IsValid.Should().BeTrue();
     }
 
     #endregion

@@ -23,8 +23,9 @@ describe('CheckoutComponent - double-submit guard', () => {
   beforeEach(() => {
     paymentService = jasmine.createSpyObj<PaymentService>(
       'PaymentService',
-      ['createPaymentIntent', 'confirmPayment', 'destroyElements', 'initialize', 'createElements']
+      ['createPaymentIntent', 'confirmPayment', 'destroyElements', 'initialize', 'createElements', 'loadConfig']
     );
+    paymentService.loadConfig.and.returnValue(Promise.resolve(null));
     checkoutService = jasmine.createSpyObj<CheckoutService>(
       'CheckoutService',
       ['createOrder', 'setError', 'setStep', 'setShippingAddress', 'setPaymentMethod', 'setShippingMethod', 'getSessionId', 'paymentMethod', 'shippingMethod', 'shippingAddress', 'lastOrderId', 'isProcessing']
@@ -77,5 +78,66 @@ describe('CheckoutComponent - double-submit guard', () => {
     expect(component.placingOrder()).toBeFalse();
     void component.placeOrder();
     expect(component.placingOrder()).toBeTrue();
+  });
+});
+
+/**
+ * GAP-06: bank transfer is a real, supported payment method; the fake PayPal option is gone.
+ * Selecting "bank" loads the bank-transfer config so the instructions panel can render.
+ */
+describe('CheckoutComponent - bank transfer payment (GAP-06)', () => {
+  let component: CheckoutComponent;
+  let paymentService: jasmine.SpyObj<PaymentService>;
+  let checkoutService: jasmine.SpyObj<CheckoutService>;
+
+  beforeEach(() => {
+    paymentService = jasmine.createSpyObj<PaymentService>(
+      'PaymentService',
+      ['createPaymentIntent', 'confirmPayment', 'destroyElements', 'initialize', 'createElements', 'loadConfig']
+    );
+    paymentService.loadConfig.and.returnValue(Promise.resolve(null));
+    paymentService.initialize.and.returnValue(Promise.resolve(true));
+
+    checkoutService = jasmine.createSpyObj<CheckoutService>(
+      'CheckoutService',
+      ['createOrder', 'setError', 'setStep', 'setShippingAddress', 'setPaymentMethod', 'setShippingMethod', 'getSessionId', 'paymentMethod', 'shippingMethod', 'shippingAddress', 'lastOrderId', 'isProcessing']
+    );
+    checkoutService.paymentMethod.and.returnValue('bank');
+
+    const cartService = jasmine.createSpyObj<CartService>('CartService', ['clearCart']);
+    const addressService = jasmine.createSpyObj<AddressService>('AddressService', ['loadAddresses', 'hasAddresses', 'addresses']);
+    const authService = jasmine.createSpyObj<AuthService>('AuthService', ['isAuthenticated']);
+    authService.isAuthenticated.and.returnValue(false);
+    const confettiService = jasmine.createSpyObj<ConfettiService>('ConfettiService', ['burst', 'stop']);
+    const router = jasmine.createSpyObj<Router>('Router', ['navigate']);
+
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: CartService, useValue: cartService },
+        { provide: CheckoutService, useValue: checkoutService },
+        { provide: AddressService, useValue: addressService },
+        { provide: AuthService, useValue: authService },
+        { provide: PaymentService, useValue: paymentService },
+        { provide: ConfettiService, useValue: confettiService },
+        { provide: Router, useValue: router }
+      ]
+    });
+
+    component = TestBed.runInInjectionContext(() => new CheckoutComponent());
+  });
+
+  it('loads bank-transfer config when bank is selected', () => {
+    component.selectPaymentMethod('bank');
+    expect(checkoutService.setPaymentMethod).toHaveBeenCalledWith('bank');
+    expect(paymentService.loadConfig).toHaveBeenCalled();
+    // Bank is offline: no Stripe card elements are created.
+    expect(paymentService.destroyElements).toHaveBeenCalled();
+  });
+
+  it('does not load bank config when card is selected', () => {
+    component.selectPaymentMethod('card');
+    expect(checkoutService.setPaymentMethod).toHaveBeenCalledWith('card');
+    expect(paymentService.loadConfig).not.toHaveBeenCalled();
+    expect(paymentService.initialize).toHaveBeenCalled();
   });
 });
