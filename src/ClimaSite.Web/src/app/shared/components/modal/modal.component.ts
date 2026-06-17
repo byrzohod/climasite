@@ -97,24 +97,24 @@ import { TranslateModule } from '@ngx-translate/core';
                     }
 
                     @keyframes modalEnter {
-                      from { 
-                        opacity: 0; 
-                        transform: scale(0.9) translateY(20px); 
+                      from {
+                        opacity: 0;
+                        transform: translateY(20px);
                       }
-                      to { 
-                        opacity: 1; 
-                        transform: scale(1) translateY(0); 
+                      to {
+                        opacity: 1;
+                        transform: translateY(0);
                       }
                     }
-                    
+
                     @keyframes modalExit {
-                      from { 
-                        opacity: 1; 
-                        transform: scale(1) translateY(0); 
+                      from {
+                        opacity: 1;
+                        transform: translateY(0);
                       }
-                      to { 
-                        opacity: 0; 
-                        transform: scale(0.9) translateY(20px); 
+                      to {
+                        opacity: 0;
+                        transform: translateY(20px);
                       }
                     }
 
@@ -128,7 +128,7 @@ import { TranslateModule } from '@ngx-translate/core';
                       background-color: var(--color-bg-card);
                       border-radius: var(--radius-xl);
                       box-shadow: var(--shadow-xl);
-                      animation: modalEnter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+                      animation: modalEnter 0.2s var(--ease-decelerate) forwards;
                       overflow: hidden;
                       
                       &.closing {

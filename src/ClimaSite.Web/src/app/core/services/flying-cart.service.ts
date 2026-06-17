@@ -28,8 +28,8 @@ export class FlyingCartService {
   private readonly cartService = inject(CartService);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   
-  private readonly ANIMATION_DURATION = 600; // ms
-  private readonly IMAGE_SIZE = 60; // px
+  private readonly ANIMATION_DURATION = 400; // ms
+  private readonly IMAGE_SIZE = 48; // px
   private readonly MINI_CART_OPEN_DELAY = 400; // ms after animation completes
   
   /**
@@ -79,7 +79,7 @@ export class FlyingCartService {
     
     // Calculate arc control point (above the midpoint)
     const midX = (startX + endX) / 2;
-    const midY = Math.min(startY, endY) - 100; // Arc height
+    const midY = Math.min(startY, endY) - 50; // Arc height (subtle apex)
     
     // Animate using requestAnimationFrame for smooth performance
     this.animateArc(flyingEl, startX, startY, midX, midY, endX, endY, () => {

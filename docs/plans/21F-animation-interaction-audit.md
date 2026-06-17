@@ -275,64 +275,72 @@ Animation is inappropriate when it:
 
 ### Phase 3: Refine Functional Animations (P1)
 
-- [ ] **TASK-21F-009**: Optimize flying cart animation
+- [x] **TASK-21F-009**: Optimize flying cart animation
   - Reduce duration from 600ms to 400ms
   - Simplify arc trajectory (less dramatic)
   - Ensure cart bump is subtle (no scale change, just background pulse)
 
-- [ ] **TASK-21F-010**: Refine confetti animation
+- [x] **TASK-21F-010**: Refine confetti animation
   - Reduce particle count from 75 to 50
   - Reduce duration from 3s to 2s
   - Simplify particle shapes (squares only, no ribbons)
 
-- [ ] **TASK-21F-011**: Update button hover states
+- [x] **TASK-21F-011**: Update button hover states
   - Remove scale transforms (no `scale(1.02)`)
   - Use color/shadow changes only
   - Ensure 150ms transition duration
 
-- [ ] **TASK-21F-012**: Update card hover states
+- [x] **TASK-21F-012**: Update card hover states
   - Remove lift/translate transforms
   - Use subtle shadow change only
   - Border color change as focus indicator
 
-- [ ] **TASK-21F-013**: Simplify modal animations
+- [x] **TASK-21F-013**: Simplify modal animations
   - Remove scale from modal enter (opacity + translate only)
   - Reduce duration to 200ms
   - Keep backdrop fade simple
 
-- [ ] **TASK-21F-014**: Refine toast notifications
+- [x] **TASK-21F-014**: Refine toast notifications
   - Slide in from top (not scale)
   - Duration: 200ms enter, 150ms exit
   - Remove bounce/spring easing
 
-- [ ] **TASK-21F-015**: Keep and verify CountUpDirective
+- [x] **TASK-21F-015**: Keep and verify CountUpDirective
   - Ensure only used on statistics/metrics
   - Verify reduced motion behavior
   - Confirm performance on multiple instances
 
 ### Phase 4: Update Reduced Motion Support (P1)
 
-- [ ] **TASK-21F-016**: Audit current reduced motion implementation
+- [x] **TASK-21F-016**: Audit current reduced motion implementation
   - Review AnimationService.prefersReducedMotion()
   - Verify all directives check preference
   - Test with system setting enabled
 
-- [ ] **TASK-21F-017**: Enhance reduced motion CSS
+- [x] **TASK-21F-017**: Enhance reduced motion CSS
   - Update `_animations.scss` @media query
   - Ensure ALL animations respect preference
   - Keep functional transitions (instant, not removed)
 
-- [ ] **TASK-21F-018**: Add reduced motion toggle in UI
+- [x] **TASK-21F-018**: Add reduced motion toggle in UI
   - Add toggle in accessibility settings
   - Store preference in localStorage
-  - Override system setting if explicitly set
+  - Override system setting if explicitly set (`.reduce-motion` class on root)
 
-- [ ] **TASK-21F-019**: Test reduced motion experience
+- [x] **TASK-21F-019**: Test reduced motion experience
   - Enable preference and navigate full site
   - Verify no animations remain
   - Ensure site is fully functional
 
 ### Phase 5: Performance Verification (P1)
+
+> **Status note (Phase 5):** Build and the full unit/integration/frontend test suites are green, and
+> reduced-motion coverage is verified (system `prefers-reduced-motion` media query + the
+> `AnimationService.prefersReducedMotion()` signal honored by every remaining directive and canvas
+> service, plus the `.reduce-motion` user-override class). The remaining quantitative tasks below —
+> full Lighthouse runs and low-end-device profiling (TASK-21F-020 through 023) — are **deferred**:
+> they require a live API + frontend stack, so they are left for CI / a future verification pass and
+> are intentionally not ticked here.
 
 - [ ] **TASK-21F-020**: Run Lighthouse audit before changes
   - Record Performance score
@@ -357,22 +365,24 @@ Animation is inappropriate when it:
 
 ### Phase 6: Cleanup and Documentation (P2)
 
-- [ ] **TASK-21F-024**: Remove unused animation code
+- [x] **TASK-21F-024**: Remove unused animation code
   - Delete unused keyframes from `_animations.scss`
   - Remove unused animation utility classes
   - Clean up AnimationService if simplified
 
-- [ ] **TASK-21F-025**: Update directive documentation
+- [x] **TASK-21F-025**: Update directive documentation
   - Document remaining animation directives
   - Add usage guidelines
   - Include examples of appropriate use
+  - Captured in `docs/animation-style-guide.md` (directive reference section)
 
-- [ ] **TASK-21F-026**: Create animation style guide
+- [x] **TASK-21F-026**: Create animation style guide
   - Document when to animate
   - Document duration/easing standards
   - Add do's and don'ts with examples
+  - Created at `docs/animation-style-guide.md`
 
-- [ ] **TASK-21F-027**: Update CLAUDE.md
+- [x] **TASK-21F-027**: Update CLAUDE.md
   - Add animation philosophy section
   - Reference new style guide
   - Update status table

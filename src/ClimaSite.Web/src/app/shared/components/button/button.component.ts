@@ -130,12 +130,11 @@ export type IconPosition = 'left' | 'right';
       text-decoration: none;
       border: none;
       border-radius: var(--radius-lg, 0.5rem);
-      transition: 
+      transition:
         background-color var(--duration-fast, 150ms) var(--ease-smooth, ease),
         color var(--duration-fast, 150ms) var(--ease-smooth, ease),
         border-color var(--duration-fast, 150ms) var(--ease-smooth, ease),
         box-shadow var(--duration-fast, 150ms) var(--ease-smooth, ease),
-        transform var(--duration-fast, 150ms) var(--ease-spring, ease),
         opacity var(--duration-fast, 150ms) var(--ease-smooth, ease);
     }
 
@@ -153,10 +152,6 @@ export type IconPosition = 'left' | 'right';
       opacity: 0.5;
       cursor: not-allowed;
       pointer-events: none;
-    }
-
-    .btn:active:not(:disabled) {
-      transform: scale(0.98);
     }
 
     /* Sizes */
@@ -215,11 +210,9 @@ export type IconPosition = 'left' | 'right';
     }
     .btn-primary:hover:not(:disabled) {
       box-shadow: var(--shadow-btn-hover), var(--glow-sm-primary);
-      transform: translateY(-1px);
     }
     .btn-primary:active:not(:disabled) {
       box-shadow: var(--shadow-btn-active);
-      transform: translateY(0) scale(0.98);
     }
 
     .btn-secondary {
@@ -323,7 +316,6 @@ export type IconPosition = 'left' | 'right';
     }
     .btn-warm:hover:not(:disabled) {
       box-shadow: var(--shadow-btn-hover), var(--shadow-warning);
-      transform: translateY(-1px);
     }
 
     /* Modifiers */

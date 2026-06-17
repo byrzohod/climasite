@@ -84,33 +84,28 @@ import { ToastService, Toast } from './toast.service';
       box-shadow: var(--shadow-lg);
       border: 1px solid var(--color-border-primary);
       overflow: hidden;
-      animation: toastEnter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-      transition: transform 0.2s ease;
-    }
-
-    .toast:hover {
-      transform: scale(1.02);
+      animation: toastEnter 0.2s var(--ease-decelerate) forwards;
     }
 
     .toast.exiting {
-      animation: toastExit 0.3s ease-in forwards;
+      animation: toastExit 0.15s ease-in forwards;
     }
 
     @keyframes toastEnter {
       from {
         opacity: 0;
-        transform: translateX(100%) scale(0.9);
+        transform: translateY(-100%);
       }
       to {
         opacity: 1;
-        transform: translateX(0) scale(1);
+        transform: translateY(0);
       }
     }
 
     @keyframes toastExit {
       0% {
         opacity: 1;
-        transform: translateX(0);
+        transform: translateY(0);
         max-height: 100px;
         margin-bottom: 0;
         padding-top: 1rem;
@@ -118,7 +113,7 @@ import { ToastService, Toast } from './toast.service';
       }
       50% {
         opacity: 0;
-        transform: translateX(100%);
+        transform: translateY(-100%);
         max-height: 100px;
         margin-bottom: 0;
         padding-top: 1rem;
@@ -126,7 +121,7 @@ import { ToastService, Toast } from './toast.service';
       }
       100% {
         opacity: 0;
-        transform: translateX(100%);
+        transform: translateY(-100%);
         max-height: 0;
         margin-bottom: -0.75rem;
         padding-top: 0;
@@ -425,7 +420,7 @@ export class ToastItemComponent implements OnInit, OnDestroy {
     // Wait for exit animation to complete before emitting dismiss
     setTimeout(() => {
       this.dismissed.emit(this.toast().id);
-    }, 300); // Match the exit animation duration
+    }, 150); // Match the exit animation duration
   }
 }
 

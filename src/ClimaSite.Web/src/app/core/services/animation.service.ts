@@ -1,4 +1,4 @@
-import { Injectable, PLATFORM_ID, inject, signal, computed } from '@angular/core';
+import { Injectable, PLATFORM_ID, inject, signal, computed, effect } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
 export interface ScrollState {
@@ -7,6 +7,20 @@ export interface ScrollState {
   direction: 'up' | 'down';
   velocity: number;
 }
+
+/**
+ * User-controllable reduced-motion preference.
+ * - 'system' defers to the OS `prefers-reduced-motion` media query
+ * - 'on' forces reduced motion regardless of OS
+ * - 'off' opts out of reduced motion (animations always run)
+ */
+export type MotionPreference = 'system' | 'on' | 'off';
+
+/** localStorage key for the persisted motion preference. */
+export const MOTION_PREFERENCE_STORAGE_KEY = 'climasite_reduce_motion';
+
+/** Class applied to <html> when reduced motion is effectively active. */
+const REDUCE_MOTION_CLASS = 'reduce-motion';
 
 /**
  * AnimationService - Centralized animation control and utilities
@@ -33,16 +47,37 @@ export class AnimationService {
   private lastScrollTime = 0;
   private rafId: number | null = null;
   
-  // Reduced motion preference
-  private _prefersReducedMotion = signal(false);
-  
+  // OS-level reduced motion preference (from prefers-reduced-motion media query)
+  private _systemPrefersReducedMotion = signal(false);
+
+  // User override: 'system' | 'on' | 'off' (persisted to localStorage)
+  private _motionPreference = signal<MotionPreference>(this.getStoredMotionPreference());
+
   // Public readonly signals
   readonly scrollY = this._scrollY.asReadonly();
   readonly scrollProgress = this._scrollProgress.asReadonly();
   readonly scrollDirection = this._scrollDirection.asReadonly();
   readonly scrollVelocity = this._scrollVelocity.asReadonly();
-  readonly prefersReducedMotion = this._prefersReducedMotion.asReadonly();
-  
+
+  // User's selected motion preference
+  readonly motionPreference = this._motionPreference.asReadonly();
+
+  // Raw OS preference (exposed for consumers that need the system value directly)
+  readonly systemPrefersReducedMotion = this._systemPrefersReducedMotion.asReadonly();
+
+  /**
+   * Effective reduced-motion state.
+   * Reduced motion is active when the user forces it on, OR when they defer to
+   * the system ('system') and the OS prefers reduced motion. An explicit 'off'
+   * always opts out, regardless of the OS setting.
+   */
+  readonly prefersReducedMotion = computed<boolean>(() => {
+    const preference = this._motionPreference();
+    if (preference === 'on') return true;
+    if (preference === 'off') return false;
+    return this._systemPrefersReducedMotion();
+  });
+
   // Computed scroll state
   readonly scrollState = computed<ScrollState>(() => ({
     scrollY: this._scrollY(),
@@ -59,6 +94,41 @@ export class AnimationService {
       this.initScrollTracking();
       this.initReducedMotionDetection();
     }
+
+    // Reflect the effective reduced-motion state onto <html> so the global
+    // `html.reduce-motion` CSS rules take effect for an 'on' override (and any
+    // component CSS keyed off the class). Runs once on construction and on every
+    // change to either the user preference or the OS media query.
+    effect(() => {
+      const reduce = this.prefersReducedMotion();
+      if (!this.isBrowser) return;
+
+      document.documentElement.classList.toggle(REDUCE_MOTION_CLASS, reduce);
+    });
+  }
+
+  /**
+   * Sets the user's motion preference and persists it to localStorage.
+   * The effective reduced-motion state (and the <html> class) update reactively.
+   */
+  setMotionPreference(preference: MotionPreference): void {
+    this._motionPreference.set(preference);
+    if (this.isBrowser) {
+      localStorage.setItem(MOTION_PREFERENCE_STORAGE_KEY, preference);
+    }
+  }
+
+  /**
+   * Reads the stored motion preference, defaulting to 'system'.
+   */
+  private getStoredMotionPreference(): MotionPreference {
+    if (!this.isBrowser) return 'system';
+
+    const stored = localStorage.getItem(MOTION_PREFERENCE_STORAGE_KEY);
+    if (stored === 'system' || stored === 'on' || stored === 'off') {
+      return stored;
+    }
+    return 'system';
   }
   
   /**
@@ -82,10 +152,10 @@ export class AnimationService {
    */
   private initReducedMotionDetection(): void {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    this._prefersReducedMotion.set(mediaQuery.matches);
-    
+    this._systemPrefersReducedMotion.set(mediaQuery.matches);
+
     mediaQuery.addEventListener('change', (e) => {
-      this._prefersReducedMotion.set(e.matches);
+      this._systemPrefersReducedMotion.set(e.matches);
     });
   }
   
@@ -148,7 +218,7 @@ export class AnimationService {
    * @returns Delay in milliseconds
    */
   getStaggerDelay(index: number, baseDelay = 50, maxDelay = 500): number {
-    if (this._prefersReducedMotion()) return 0;
+    if (this.prefersReducedMotion()) return 0;
     return Math.min(index * baseDelay, maxDelay);
   }
   
@@ -158,7 +228,7 @@ export class AnimationService {
    * @param reducedDuration - Duration when reduced motion is preferred (default: 0)
    */
   getDuration(normalDuration: number, reducedDuration = 0): number {
-    return this._prefersReducedMotion() ? reducedDuration : normalDuration;
+    return this.prefersReducedMotion() ? reducedDuration : normalDuration;
   }
   
   /**
@@ -219,7 +289,7 @@ export class AnimationService {
     
     window.scrollTo({
       top: targetPosition,
-      behavior: this._prefersReducedMotion() ? 'auto' : 'smooth'
+      behavior: this.prefersReducedMotion() ? 'auto' : 'smooth'
     });
   }
   
@@ -231,7 +301,7 @@ export class AnimationService {
     
     window.scrollTo({
       top: 0,
-      behavior: this._prefersReducedMotion() ? 'auto' : 'smooth'
+      behavior: this.prefersReducedMotion() ? 'auto' : 'smooth'
     });
   }
   

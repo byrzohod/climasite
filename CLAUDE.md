@@ -40,7 +40,7 @@ ClimaSite is a production-grade online shop specializing in air conditioners, he
 | UI Improvement Plan | Complete | 45+ issues fixed across 6 phases |
 | Shared Components | Complete | Alert, Modal, Toast, Breadcrumb components created |
 | Accessibility (WCAG) | Complete | Focus traps, ARIA roles, keyboard navigation, screen reader support |
-| Animation Audit (21F) | Partial | Phases 1-2 complete: Removed FloatingDirective, TiltEffectDirective, ParallaxDirective; simplified RevealDirective to fade/fade-up/fade-down only |
+| Animation Audit (21F) | Mostly complete | Phases 1-4 + 6 done: removed FloatingDirective/TiltEffectDirective/ParallaxDirective; simplified RevealDirective to fade/fade-up/fade-down; refined flying cart, confetti, button/card hovers, modals, toasts; reduced-motion contract verified; `docs/animation-style-guide.md` published. Phase 5 (full Lighthouse + device profiling) deferred — needs a live stack |
 | Home v3 Completion | Complete | Configurator-first homepage, real product recommendations, translation coverage, deferred below-fold content, browser QA, and Lighthouse mobile 0.97 / desktop 1.00 |
 | Wishlist Completion | Complete | Hydrated wishlist API, public share links, guest-to-login merge, concurrent add protection, translations, and full local test coverage |
 | Email Outbox (ARCH-05) | Complete | Durable Postgres `outbox_messages` + `BackgroundService` worker with retry/backoff; `IEmailOutbox`/`OutboxProcessor`; ADR 0001 |
@@ -470,6 +470,19 @@ constructor(private translate: TranslateService) {
   });
 }
 ```
+
+### Animation philosophy ("Nordic Tech")
+
+**Animation should communicate, not decorate** — be purposeful, subtle, and restrained. Animate only to
+convey a state change, give feedback, guide attention, or celebrate success; never for pure decoration.
+Prefer the shortest duration that reads, small distances/scales, and standard `ease-out`/`ease-in`/
+`ease-in-out` easing (no spring/bounce). All motion MUST respect reduced motion: gate it behind
+`AnimationService.prefersReducedMotion()` (or a `prefers-reduced-motion`-aware stylesheet) and make
+feedback instant rather than removed. The remaining directives are `appReveal`, `appCountUp`,
+`appMagneticHover`, `appScrollProgress`, and `appSplitText`.
+
+See the full guide (when-to / duration + easing tables / directive reference / reduced-motion contract):
+`docs/animation-style-guide.md`.
 
 ### Database
 

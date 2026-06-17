@@ -203,20 +203,14 @@ import { FlyingCartService } from '../../../core/services/flying-cart.service';
       border-radius: var(--card-radius);
       border: 1px solid var(--color-border-primary);
       overflow: hidden;
-      transition: 
-        transform var(--duration-normal) var(--ease-out-quart),
+      transition:
         box-shadow var(--duration-normal) var(--ease-smooth),
         border-color var(--duration-fast) var(--ease-smooth);
 
       &:hover,
       &.is-hovered {
-        transform: translateY(-4px);
-        box-shadow: var(--shadow-xl);
+        box-shadow: var(--shadow-md);
         border-color: var(--color-border-secondary);
-
-        .product-image img {
-          transform: scale(1.08);
-        }
 
         .quick-actions {
           opacity: 1;
@@ -599,11 +593,6 @@ import { FlyingCartService } from '../../../core/services/flying-cart.service';
       &:hover:not(:disabled) {
         background: var(--color-primary-dark);
         box-shadow: var(--glow-sm-primary);
-        transform: translateY(-1px);
-      }
-
-      &:active:not(:disabled) {
-        transform: translateY(0) scale(0.98);
       }
 
       &:disabled {
