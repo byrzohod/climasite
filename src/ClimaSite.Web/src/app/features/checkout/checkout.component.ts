@@ -202,12 +202,6 @@ import { apiErrorToTranslationKey, toTranslationKey } from '../../core/utils/tra
                     <span>{{ 'checkout.payment.card' | translate }}</span>
                   </label>
 
-                  <label class="payment-option" [class.selected]="checkoutService.paymentMethod() === 'paypal'">
-                    <input type="radio" name="paymentMethod" value="paypal" [checked]="checkoutService.paymentMethod() === 'paypal'" (change)="selectPaymentMethod('paypal')" data-testid="payment-paypal" />
-                    <span class="payment-icon"><app-icon name="wallet" size="lg" /></span>
-                    <span>{{ 'checkout.payment.paypal' | translate }}</span>
-                  </label>
-
                   <label class="payment-option" [class.selected]="checkoutService.paymentMethod() === 'bank'">
                     <input type="radio" name="paymentMethod" value="bank" [checked]="checkoutService.paymentMethod() === 'bank'" (change)="selectPaymentMethod('bank')" data-testid="payment-bank" />
                     <span class="payment-icon"><app-icon name="building-2" size="lg" /></span>
@@ -230,6 +224,29 @@ import { apiErrorToTranslationKey, toTranslationKey } from '../../core/utils/tra
                         }
                       </div>
                     }
+                  </div>
+                }
+
+                @if (checkoutService.paymentMethod() === 'bank') {
+                  <div class="bank-info-panel" data-testid="bank-info-panel">
+                    <h3>{{ 'checkout.payment.bankInstructions.title' | translate }}</h3>
+                    @if (paymentService.bankTransfer(); as bank) {
+                      <dl class="bank-details">
+                        <div class="bank-detail-row">
+                          <dt>{{ 'checkout.payment.bankInstructions.accountName' | translate }}</dt>
+                          <dd>{{ bank.accountName }}</dd>
+                        </div>
+                        <div class="bank-detail-row">
+                          <dt>{{ 'checkout.payment.bankInstructions.iban' | translate }}</dt>
+                          <dd>{{ bank.iban }}</dd>
+                        </div>
+                        <div class="bank-detail-row">
+                          <dt>{{ 'checkout.payment.bankInstructions.bankName' | translate }}</dt>
+                          <dd>{{ bank.bankName }}</dd>
+                        </div>
+                      </dl>
+                    }
+                    <p class="bank-note">{{ 'checkout.payment.bankInstructions.beforeOrderNote' | translate }}</p>
                   </div>
                 }
 
@@ -277,7 +294,6 @@ import { apiErrorToTranslationKey, toTranslationKey } from '../../core/utils/tra
                   <p class="payment-display">
                     @switch (checkoutService.paymentMethod()) {
                       @case ('card') { <app-icon name="credit-card" size="sm" /> {{ 'checkout.payment.card' | translate }} }
-                      @case ('paypal') { <app-icon name="wallet" size="sm" /> {{ 'checkout.payment.paypal' | translate }} }
                       @case ('bank') { <app-icon name="building-2" size="sm" /> {{ 'checkout.payment.bank' | translate }} }
                     }
                   </p>
@@ -678,6 +694,53 @@ import { apiErrorToTranslationKey, toTranslationKey } from '../../core/utils/tra
       background: var(--color-bg-secondary);
       border-radius: 8px;
       margin-bottom: 1.5rem;
+    }
+
+    .bank-info-panel {
+      padding: 1.5rem;
+      background: var(--color-bg-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+
+      h3 {
+        font-size: 1rem;
+        color: var(--color-text-primary);
+        margin: 0 0 1rem;
+      }
+
+      .bank-details {
+        margin: 0 0 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .bank-detail-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+
+        dt {
+          color: var(--color-text-secondary);
+          font-size: 0.875rem;
+        }
+
+        dd {
+          margin: 0;
+          color: var(--color-text-primary);
+          font-weight: 500;
+          font-family: monospace;
+          text-align: right;
+          word-break: break-all;
+        }
+      }
+
+      .bank-note {
+        margin: 0;
+        color: var(--color-text-secondary);
+        font-size: 0.875rem;
+      }
     }
 
     .stripe-element {
@@ -1134,6 +1197,11 @@ ngOnInit(): void {
     } else {
       this.paymentService.destroyElements();
     }
+
+    // GAP-06: load bank-transfer details so the instructions panel can render.
+    if (method === 'bank') {
+      this.paymentService.loadConfig();
+    }
   }
 
   selectShippingMethod(method: string): void {
@@ -1225,7 +1293,8 @@ ngOnInit(): void {
         ));
       }
     } else {
-// Non-card payment (PayPal, bank transfer, etc.)
+      // Offline payment (bank transfer): no Stripe charge — the order is created Pending and the
+      // buyer receives wiring instructions (GAP-06).
       this.checkoutService.createOrder(email, phone).subscribe({
         next: () => {
           this.cartService.clearCart().subscribe();

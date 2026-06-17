@@ -220,6 +220,79 @@ public class PaymentMoneyPathTests : IntegrationTestBase
     }
 
     [Fact]
+    public async Task CreateBankTransferOrder_NoPaymentIntent_PersistsMethodPendingAndQueuesInstructions()
+    {
+        // Arrange: a guest cart paid by bank transfer (GAP-06). No Stripe involved.
+        var guestSessionId = Guid.NewGuid().ToString();
+        var (product, variant) = await CreateTestProductWithVariantAsync(basePrice: 100m);
+        await AddToCartAsync(product.Id, variant.Id, 1, guestSessionId);
+
+        // Act: create the order with paymentMethod = bank and NO paymentIntentId.
+        var orderResponse = await Client.PostAsJsonAsync("/api/orders", new
+        {
+            customerEmail = "bank-buyer@test.com",
+            shippingAddress = ValidAddress(),
+            shippingMethod = "standard",
+            paymentMethod = "bank",
+            guestSessionId
+        });
+
+        // Assert: order is created Pending with the bank method persisted.
+        orderResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var order = await orderResponse.Content.ReadFromJsonAsync<OrderDto>();
+        order.Should().NotBeNull();
+        order!.Status.Should().Be("Pending");
+        order.PaymentMethod.Should().Be("bank");
+
+        var persisted = await QueryOrderAsync(order.Id);
+        persisted.Should().NotBeNull();
+        persisted!.PaymentMethod.Should().Be("bank");
+        persisted.PaymentIntentId.Should().BeNull();
+        persisted.Status.Should().Be(OrderStatus.Pending);
+
+        // A bank-transfer instructions email is queued to the customer in the same unit of work.
+        var bankEmail = await QueryOutboxAsync(
+            OutboxMessageTypes.Generic, "bank-buyer@test.com");
+        bankEmail.Should().NotBeNull();
+        bankEmail!.Payload.Should().Contain(order.OrderNumber);
+    }
+
+    [Fact]
+    public async Task CreateOrder_WithPaypalMethod_IsRejected()
+    {
+        // GAP-06: the fake "paypal" method is rejected by the validator.
+        var guestSessionId = Guid.NewGuid().ToString();
+        var (product, variant) = await CreateTestProductWithVariantAsync(basePrice: 100m);
+        await AddToCartAsync(product.Id, variant.Id, 1, guestSessionId);
+
+        var orderResponse = await Client.PostAsJsonAsync("/api/orders", new
+        {
+            customerEmail = "paypal-buyer@test.com",
+            shippingAddress = ValidAddress(),
+            shippingMethod = "standard",
+            paymentMethod = "paypal",
+            guestSessionId
+        });
+
+        orderResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task GetConfig_ReturnsBankTransferDetails()
+    {
+        // GAP-06: the public payment config exposes the bank account details for the UI.
+        var response = await Client.GetAsync("/api/payments/config");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var config = await response.Content.ReadFromJsonAsync<PaymentConfigResponse>();
+        config.Should().NotBeNull();
+        config!.BankTransfer.Should().NotBeNull();
+        config.BankTransfer!.Iban.Should().NotBeNullOrEmpty();
+        config.BankTransfer.AccountName.Should().NotBeNullOrEmpty();
+        config.BankTransfer.BankName.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
     public async Task GuestCheckout_Anonymous_CreatesOrder_AndConfirmationIsTokenGated()
     {
         // Arrange: a pure guest (no authentication) with a cart.
@@ -285,6 +358,14 @@ public class PaymentMoneyPathTests : IntegrationTestBase
         return await db.Orders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == orderId);
     }
 
+    private async Task<OutboxMessage?> QueryOutboxAsync(string type, string toEmail)
+    {
+        using var scope = Factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        return await db.OutboxMessages.AsNoTracking()
+            .FirstOrDefaultAsync(m => m.Type == type && m.ToEmail == toEmail);
+    }
+
     private async Task SetVariantStockAsync(Guid variantId, int stockQuantity)
     {
         using var scope = Factory.Services.CreateScope();
@@ -343,6 +424,19 @@ public class PaymentMoneyPathTests : IntegrationTestBase
         public string ClientSecret { get; init; } = string.Empty;
         public decimal Amount { get; init; }
         public string Currency { get; init; } = string.Empty;
+    }
+
+    private record PaymentConfigResponse
+    {
+        public string? PublishableKey { get; init; }
+        public BankTransferConfig? BankTransfer { get; init; }
+    }
+
+    private record BankTransferConfig
+    {
+        public string Iban { get; init; } = string.Empty;
+        public string AccountName { get; init; } = string.Empty;
+        public string BankName { get; init; } = string.Empty;
     }
 
     #endregion

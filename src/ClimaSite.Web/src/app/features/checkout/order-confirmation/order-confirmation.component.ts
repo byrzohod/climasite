@@ -5,6 +5,7 @@ import { TranslateModule } from '@ngx-translate/core';
 
 import { CheckoutService } from '../../../core/services/checkout.service';
 import { ConfettiService } from '../../../core/services/confetti.service';
+import { PaymentService } from '../../../core/services/payment.service';
 import { Order } from '../../../core/models/order.model';
 import { IconComponent } from '../../../shared/components/icon';
 import { apiErrorToTranslationKey } from '../../../core/utils/translation-key.util';
@@ -116,7 +117,6 @@ import { apiErrorToTranslationKey } from '../../../core/utils/translation-key.ut
                   <p class="payment-method">
                     @switch (order()!.paymentMethod) {
                       @case ('card') { {{ 'checkout.payment.card' | translate }} }
-                      @case ('paypal') { {{ 'checkout.payment.paypal' | translate }} }
                       @case ('bank') { {{ 'checkout.payment.bank' | translate }} }
                       @default { {{ order()!.paymentMethod }} }
                     }
@@ -216,6 +216,41 @@ import { apiErrorToTranslationKey } from '../../../core/utils/translation-key.ut
             </div>
           </div>
         </div>
+
+        <!-- Bank Transfer Instructions (GAP-06) -->
+        @if (order()!.paymentMethod === 'bank') {
+          <div class="bank-instructions-card" data-testid="bank-transfer-instructions">
+            <div class="info-header">
+              <app-icon name="building-2" size="md" />
+              <h3>{{ 'checkout.orderConfirmation.bankInstructions.title' | translate }}</h3>
+            </div>
+            <dl class="bank-details">
+              <div class="bank-detail-row">
+                <dt>{{ 'checkout.orderConfirmation.bankInstructions.amount' | translate }}</dt>
+                <dd data-testid="bank-amount">{{ order()!.total | currency:order()!.currency }}</dd>
+              </div>
+              <div class="bank-detail-row">
+                <dt>{{ 'checkout.orderConfirmation.bankInstructions.reference' | translate }}</dt>
+                <dd data-testid="bank-reference">{{ order()!.orderNumber }}</dd>
+              </div>
+              @if (paymentService.bankTransfer(); as bank) {
+                <div class="bank-detail-row">
+                  <dt>{{ 'checkout.orderConfirmation.bankInstructions.accountName' | translate }}</dt>
+                  <dd>{{ bank.accountName }}</dd>
+                </div>
+                <div class="bank-detail-row">
+                  <dt>{{ 'checkout.orderConfirmation.bankInstructions.iban' | translate }}</dt>
+                  <dd>{{ bank.iban }}</dd>
+                </div>
+                <div class="bank-detail-row">
+                  <dt>{{ 'checkout.orderConfirmation.bankInstructions.bankName' | translate }}</dt>
+                  <dd>{{ bank.bankName }}</dd>
+                </div>
+              }
+            </dl>
+            <p class="bank-note">{{ 'checkout.orderConfirmation.bankInstructions.pendingNote' | translate }}</p>
+          </div>
+        }
 
         <!-- What's Next Section -->
         <div class="whats-next-card" data-testid="whats-next">
@@ -703,6 +738,63 @@ import { apiErrorToTranslationKey } from '../../../core/utils/translation-key.ut
       }
     }
 
+    /* Bank Transfer Instructions (GAP-06) */
+    .bank-instructions-card {
+      background: var(--color-bg-primary);
+      border: 1px solid var(--color-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+
+      .info-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        color: var(--color-text-secondary);
+
+        h3 {
+          font-size: 1rem;
+          font-weight: 600;
+          color: var(--color-text-primary);
+          margin: 0;
+        }
+      }
+
+      .bank-details {
+        margin: 0 0 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .bank-detail-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+
+        dt {
+          color: var(--color-text-secondary);
+          font-size: 0.875rem;
+        }
+
+        dd {
+          margin: 0;
+          color: var(--color-text-primary);
+          font-weight: 600;
+          font-family: monospace;
+          text-align: right;
+          word-break: break-all;
+        }
+      }
+
+      .bank-note {
+        margin: 0;
+        color: var(--color-text-secondary);
+        font-size: 0.875rem;
+      }
+    }
+
     /* Action Buttons */
     .action-buttons {
       display: flex;
@@ -856,6 +948,8 @@ export class OrderConfirmationComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly checkoutService = inject(CheckoutService);
   private readonly confettiService = inject(ConfettiService);
+  // GAP-06: bank-transfer account details for the instructions panel on a bank order.
+  readonly paymentService = inject(PaymentService);
 
   // State signals
   order = signal<Order | null>(null);
@@ -939,6 +1033,11 @@ export class OrderConfirmationComponent implements OnInit, OnDestroy {
       next: (order) => {
         this.order.set(order);
         this.loading.set(false);
+
+        // GAP-06: a bank-transfer order shows wiring instructions; fetch the account details.
+        if (order.paymentMethod === 'bank') {
+          this.paymentService.loadConfig();
+        }
 
         // Show confetti only on first successful load and if order is recent (within 5 minutes)
         if (!this.confettiShown) {

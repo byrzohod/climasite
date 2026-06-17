@@ -357,4 +357,55 @@ public class CheckoutTests : IAsyncLifetime
         var orderNumber = await checkoutPage.GetOrderNumberAsync();
         orderNumber.Should().NotBeNullOrEmpty("Order number should be displayed");
     }
+
+    [Fact]
+    public async Task Checkout_BankTransfer_ShowsInstructionsWithReferenceOnConfirmation()
+    {
+        // Arrange - Create user and product (GAP-06: bank transfer is a real, supported method).
+        var product = await _dataFactory.CreateProductAsync(name: "Bank Transfer Test AC", price: 1299.99m);
+        var user = await _dataFactory.CreateUserAsync();
+
+        var loginPage = new LoginPage(_page);
+        await loginPage.NavigateAsync();
+        await loginPage.LoginAsync(user.Email, user.Password);
+
+        var productPage = new ProductPage(_page);
+        await productPage.NavigateAsync(product.Slug);
+        await productPage.AddToCartAsync();
+
+        var cartPage = new CartPage(_page);
+        await cartPage.NavigateAsync();
+        await cartPage.ProceedToCheckoutAsync();
+
+        // Fill shipping address
+        var checkoutPage = new CheckoutPage(_page);
+        await checkoutPage.FillShippingAddressAsync(
+            firstName: "Bank",
+            lastName: "Buyer",
+            email: user.Email,
+            street: "12 Wire Transfer Street",
+            city: "Sofia",
+            state: "Sofia",
+            postalCode: "1000",
+            country: "Bulgaria",
+            phone: "+359888111222"
+        );
+        await checkoutPage.SubmitShippingFormAsync();
+
+        // Select bank transfer — an info panel with the bank details should appear in checkout.
+        await checkoutPage.SelectPaymentMethodAsync("bank");
+        var bankInfoVisible = await checkoutPage.IsBankInfoPanelVisibleAsync();
+        bankInfoVisible.Should().BeTrue("Bank info panel should be shown when bank transfer is selected");
+
+        // Proceed to review and place the order (no Stripe needed for bank transfer).
+        await checkoutPage.ProceedToReviewAsync();
+        await checkoutPage.PlaceOrderAsync();
+
+        // Assert - The confirmation page shows the bank-transfer instructions with the reference.
+        var instructionsVisible = await checkoutPage.IsBankTransferInstructionsVisibleAsync();
+        instructionsVisible.Should().BeTrue("Bank transfer instructions should be displayed on confirmation");
+
+        var reference = await checkoutPage.GetBankTransferReferenceAsync();
+        reference.Should().StartWith("ORD-", "The payment reference is the order number");
+    }
 }

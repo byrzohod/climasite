@@ -6,9 +6,12 @@ import { TranslateModule } from '@ngx-translate/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { of, throwError } from 'rxjs';
 
+import { signal } from '@angular/core';
+
 import { OrderConfirmationComponent } from './order-confirmation.component';
 import { CheckoutService } from '../../../core/services/checkout.service';
 import { ConfettiService } from '../../../core/services/confetti.service';
+import { PaymentService, BankTransferConfig } from '../../../core/services/payment.service';
 import { Order, OrderStatus } from '../../../core/models/order.model';
 import { ICON_REGISTRY } from '../../../shared/components/icon';
 
@@ -17,6 +20,8 @@ describe('OrderConfirmationComponent', () => {
   let fixture: ComponentFixture<OrderConfirmationComponent>;
   let checkoutService: jasmine.SpyObj<CheckoutService>;
   let confettiService: jasmine.SpyObj<ConfettiService>;
+  let paymentService: jasmine.SpyObj<PaymentService>;
+  const bankTransferSignal = signal<BankTransferConfig | null>(null);
 
   const mockOrder: Order = {
     id: 'test-order-123',
@@ -74,6 +79,11 @@ describe('OrderConfirmationComponent', () => {
   beforeEach(async () => {
     const checkoutSpy = jasmine.createSpyObj('CheckoutService', ['getOrder']);
     const confettiSpy = jasmine.createSpyObj('ConfettiService', ['burst', 'stop']);
+    bankTransferSignal.set(null);
+    const paymentSpy = jasmine.createSpyObj<PaymentService>('PaymentService', ['loadConfig']);
+    paymentSpy.loadConfig.and.returnValue(Promise.resolve(null));
+    // Expose the bankTransfer readonly signal on the spy.
+    Object.defineProperty(paymentSpy, 'bankTransfer', { value: bankTransferSignal.asReadonly() });
 
     await TestBed.configureTestingModule({
       imports: [
@@ -99,12 +109,14 @@ describe('OrderConfirmationComponent', () => {
           }
         },
         { provide: CheckoutService, useValue: checkoutSpy },
-        { provide: ConfettiService, useValue: confettiSpy }
+        { provide: ConfettiService, useValue: confettiSpy },
+        { provide: PaymentService, useValue: paymentSpy }
       ]
     }).compileComponents();
 
     checkoutService = TestBed.inject(CheckoutService) as jasmine.SpyObj<CheckoutService>;
     confettiService = TestBed.inject(ConfettiService) as jasmine.SpyObj<ConfettiService>;
+    paymentService = TestBed.inject(PaymentService) as jasmine.SpyObj<PaymentService>;
   });
 
   describe('when order loads successfully', () => {
@@ -195,6 +207,46 @@ describe('OrderConfirmationComponent', () => {
       const discountRow = fixture.nativeElement.querySelector('.totals-row.discount');
       expect(discountRow).toBeTruthy();
       expect(discountRow.textContent).toContain('50');
+    });
+  });
+
+  describe('payment method (GAP-06)', () => {
+    it('does not show bank instructions or paypal for a card order', () => {
+      checkoutService.getOrder.and.returnValue(of(mockOrder));
+      fixture = TestBed.createComponent(OrderConfirmationComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      const bankPanel = fixture.nativeElement.querySelector('[data-testid="bank-transfer-instructions"]');
+      expect(bankPanel).toBeFalsy();
+      expect(fixture.nativeElement.textContent).not.toContain('PayPal');
+      expect(paymentService.loadConfig).not.toHaveBeenCalled();
+    });
+
+    it('shows bank transfer instructions with amount and reference for a bank order', () => {
+      bankTransferSignal.set({
+        iban: 'BG80BNBG96611020345678',
+        accountName: 'ClimaSite EOOD',
+        bankName: 'placeholder Bank'
+      });
+      const bankOrder = { ...mockOrder, paymentMethod: 'bank' };
+      checkoutService.getOrder.and.returnValue(of(bankOrder));
+      fixture = TestBed.createComponent(OrderConfirmationComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      const bankPanel = fixture.nativeElement.querySelector('[data-testid="bank-transfer-instructions"]');
+      expect(bankPanel).toBeTruthy();
+
+      const reference = fixture.nativeElement.querySelector('[data-testid="bank-reference"]');
+      expect(reference.textContent).toContain('CLM-2026-001234');
+
+      const amount = fixture.nativeElement.querySelector('[data-testid="bank-amount"]');
+      expect(amount.textContent).toContain('1,916.40');
+
+      expect(bankPanel.textContent).toContain('BG80BNBG96611020345678');
+      expect(bankPanel.textContent).toContain('ClimaSite EOOD');
+      expect(paymentService.loadConfig).toHaveBeenCalled();
     });
   });
 

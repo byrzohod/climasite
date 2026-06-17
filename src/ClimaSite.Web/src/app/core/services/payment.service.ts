@@ -5,8 +5,15 @@ import { environment } from '../../../environments/environment';
 import { loadStripe, Stripe, StripeElements, StripeCardElement } from '@stripe/stripe-js';
 import { toTranslationKey } from '../utils/translation-key.util';
 
+export interface BankTransferConfig {
+  iban: string;
+  accountName: string;
+  bankName: string;
+}
+
 export interface PaymentConfig {
   publishableKey: string;
+  bankTransfer?: BankTransferConfig;
 }
 
 export interface PaymentIntentResponse {
@@ -36,11 +43,32 @@ export class PaymentService {
   private readonly _isInitialized = signal(false);
   private readonly _isProcessing = signal(false);
   private readonly _error = signal<string | null>(null);
+  // GAP-06: bank-transfer account details from the public payment config, shown in the bank
+  // instructions panels. Cached after the first fetch.
+  private readonly _bankTransfer = signal<BankTransferConfig | null>(null);
 
   // Public readonly signals
   readonly isInitialized = this._isInitialized.asReadonly();
   readonly isProcessing = this._isProcessing.asReadonly();
   readonly error = this._error.asReadonly();
+  readonly bankTransfer = this._bankTransfer.asReadonly();
+
+  /**
+   * Loads the public payment config (Stripe key + bank-transfer details) and caches the bank
+   * details. Safe to call regardless of the selected payment method (GAP-06).
+   */
+  async loadConfig(): Promise<PaymentConfig | null> {
+    try {
+      const config = await this.http.get<PaymentConfig>(`${this.apiUrl}/config`).toPromise();
+      if (config?.bankTransfer) {
+        this._bankTransfer.set(config.bankTransfer);
+      }
+      return config ?? null;
+    } catch (error) {
+      console.error('Failed to load payment config:', error);
+      return null;
+    }
+  }
 
   async initialize(): Promise<boolean> {
     if (this.stripe) {
@@ -49,7 +77,7 @@ export class PaymentService {
     }
 
     try {
-      const config = await this.http.get<PaymentConfig>(`${this.apiUrl}/config`).toPromise();
+      const config = await this.loadConfig();
 
       if (!config?.publishableKey) {
         this._error.set('checkout.payment.errors.configUnavailable');
