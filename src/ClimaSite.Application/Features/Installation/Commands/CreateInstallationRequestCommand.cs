@@ -1,9 +1,12 @@
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Options;
 using ClimaSite.Application.Features.Installation.DTOs;
+using ClimaSite.Application.Features.Outbox;
 using ClimaSite.Core.Entities;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace ClimaSite.Application.Features.Installation.Commands;
 
@@ -82,10 +85,20 @@ public class CreateInstallationRequestCommandValidator : AbstractValidator<Creat
 public class CreateInstallationRequestCommandHandler : IRequestHandler<CreateInstallationRequestCommand, InstallationRequestDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IEmailOutbox _emailOutbox;
+    private readonly ContactOptions _contactOptions;
+    private readonly ILogger<CreateInstallationRequestCommandHandler> _logger;
 
-    public CreateInstallationRequestCommandHandler(IApplicationDbContext context)
+    public CreateInstallationRequestCommandHandler(
+        IApplicationDbContext context,
+        IEmailOutbox emailOutbox,
+        ContactOptions contactOptions,
+        ILogger<CreateInstallationRequestCommandHandler> logger)
     {
         _context = context;
+        _emailOutbox = emailOutbox;
+        _contactOptions = contactOptions;
+        _logger = logger;
     }
 
     public async Task<InstallationRequestDto> Handle(
@@ -144,7 +157,21 @@ public class CreateInstallationRequestCommandHandler : IRequestHandler<CreateIns
         }
 
         _context.InstallationRequests.Add(installationRequest);
+
+        // GAP-08: notify the business about the new installation request in the SAME unit of work
+        // as the persisted request, so the row and its notification email commit together (no lead
+        // silently lost). The outbox sends from the system address, so the customer's contact
+        // details are included in the body for follow-up.
+        _emailOutbox.Add(OutboxMessage.ForGeneric(
+            _contactOptions.RecipientEmail,
+            BuildNotificationSubject(installationRequest),
+            BuildNotificationBody(installationRequest)));
+
         await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Installation request {RequestId} stored and queued for {Recipient}.",
+            installationRequest.Id, _contactOptions.RecipientEmail);
 
         return new InstallationRequestDto
         {
@@ -180,5 +207,33 @@ public class CreateInstallationRequestCommandHandler : IRequestHandler<CreateIns
             InstallationType.Express => Math.Round(productPrice * 0.35m, 2),  // 35% of product price (includes priority scheduling)
             _ => 0
         };
+    }
+
+    private static string BuildNotificationSubject(InstallationRequest request) =>
+        $"[Installation] {request.InstallationType} request for {request.ProductName}";
+
+    private static string BuildNotificationBody(InstallationRequest request)
+    {
+        var preferred = request.PreferredDate.HasValue
+            ? request.PreferredDate.Value.ToString("yyyy-MM-dd")
+            : "—";
+        var timeSlot = string.IsNullOrWhiteSpace(request.PreferredTimeSlot) ? "—" : request.PreferredTimeSlot;
+        var addressLine2 = string.IsNullOrWhiteSpace(request.AddressLine2) ? string.Empty : $"{request.AddressLine2}\n";
+
+        return
+            $"A new installation request has been submitted.\n\n" +
+            $"Product: {request.ProductName}\n" +
+            $"Installation type: {request.InstallationType}\n" +
+            $"Estimated price: {request.EstimatedPrice:0.00}\n\n" +
+            $"Customer: {request.CustomerName}\n" +
+            $"Email: {request.CustomerEmail}\n" +
+            $"Phone: {request.CustomerPhone}\n\n" +
+            $"Address:\n" +
+            $"{request.AddressLine1}\n" +
+            addressLine2 +
+            $"{request.City}, {request.PostalCode}\n" +
+            $"{request.Country}\n\n" +
+            $"Preferred date: {preferred}\n" +
+            $"Preferred time slot: {timeSlot}";
     }
 }
