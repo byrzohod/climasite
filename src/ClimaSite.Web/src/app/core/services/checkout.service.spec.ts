@@ -412,4 +412,28 @@ describe('CheckoutService', () => {
       req.flush(mockOrder);
     });
   });
+
+  describe('guest checkout (GAP-07)', () => {
+    it('createOrder captures the guest access token into lastGuestToken', () => {
+      service.setShippingAddress(mockAddress);
+      service.createOrder('guest@example.com').subscribe();
+
+      const req = httpMock.expectOne(apiUrl);
+      req.flush({ ...mockOrder, userId: undefined, guestAccessToken: 'tok-123' });
+
+      expect(service.lastGuestToken()).toBe('tok-123');
+    });
+
+    it('getGuestOrder hits the token-gated guest endpoint', () => {
+      let result: Order | undefined;
+      service.getGuestOrder('order-1', 'tok-123').subscribe(o => (result = o));
+
+      const req = httpMock.expectOne(r =>
+        r.url === `${apiUrl}/order-1/guest` && r.params.get('token') === 'tok-123');
+      expect(req.request.method).toBe('GET');
+      req.flush(mockOrder);
+
+      expect(result?.id).toBe('order-1');
+    });
+  });
 });

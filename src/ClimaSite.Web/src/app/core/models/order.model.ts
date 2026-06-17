@@ -24,6 +24,8 @@ export interface Order {
   cancelledAt?: string;
   cancellationReason?: string;
   notes?: string;
+  /** Guest confirmation token, present only on the order-creation response (GAP-07). */
+  guestAccessToken?: string;
   events: OrderEvent[];
   createdAt: string;
   updatedAt: string;

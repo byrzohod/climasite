@@ -91,6 +91,9 @@ describe('OrderConfirmationComponent', () => {
             snapshot: {
               paramMap: {
                 get: () => 'test-order-123'
+              },
+              queryParamMap: {
+                get: () => null
               }
             }
           }

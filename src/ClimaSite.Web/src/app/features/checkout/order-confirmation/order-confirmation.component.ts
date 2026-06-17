@@ -913,8 +913,10 @@ export class OrderConfirmationComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const orderId = this.route.snapshot.paramMap.get('orderId');
+    // GAP-07: a guest confirmation carries an opaque access token; use the guest lookup with it.
+    const token = this.route.snapshot.queryParamMap.get('token');
     if (orderId) {
-      this.loadOrder(orderId);
+      this.loadOrder(orderId, token);
     } else {
       this.error.set('checkout.orderConfirmation.errors.orderIdNotFound');
       this.loading.set(false);
@@ -925,11 +927,15 @@ export class OrderConfirmationComponent implements OnInit, OnDestroy {
     this.confettiService.stop();
   }
 
-  private loadOrder(orderId: string): void {
+  private loadOrder(orderId: string, token?: string | null): void {
     this.loading.set(true);
     this.error.set(null);
 
-    this.checkoutService.getOrder(orderId).subscribe({
+    const source = token
+      ? this.checkoutService.getGuestOrder(orderId, token)
+      : this.checkoutService.getOrder(orderId);
+
+    source.subscribe({
       next: (order) => {
         this.order.set(order);
         this.loading.set(false);
@@ -956,8 +962,9 @@ export class OrderConfirmationComponent implements OnInit, OnDestroy {
 
   retryLoad(): void {
     const orderId = this.route.snapshot.paramMap.get('orderId');
+    const token = this.route.snapshot.queryParamMap.get('token');
     if (orderId) {
-      this.loadOrder(orderId);
+      this.loadOrder(orderId, token);
     }
   }
 

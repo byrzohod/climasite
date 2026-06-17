@@ -82,8 +82,9 @@ export const routes: Routes = [
     path: 'checkout',
     children: [
       {
+        // GAP-07: guest checkout is enabled — no auth guard. The checkout flow uses the guest
+        // cart session for anonymous users and issues a token-protected confirmation.
         path: '',
-        canActivate: [authGuard],
         loadComponent: () => import('./features/checkout/checkout.component').then(m => m.CheckoutComponent),
         data: { animation: 'checkout' }
       },
