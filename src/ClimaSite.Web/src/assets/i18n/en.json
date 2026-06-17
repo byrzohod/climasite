@@ -1099,6 +1099,26 @@
     "thermostats": "Thermostats",
     "comingSoon": "Category list coming soon..."
   },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "You have no notifications yet",
+    "markAllRead": "Mark all read",
+    "viewAll": "View all",
+    "time": {
+      "justNow": "just now",
+      "minutes": "{{count}}m ago",
+      "hours": "{{count}}h ago",
+      "days": "{{count}}d ago"
+    },
+    "types": {
+      "orderPlaced": "Order placed",
+      "orderShipped": "Order shipped",
+      "orderDelivered": "Order delivered",
+      "orderCancelled": "Order cancelled",
+      "paymentReceived": "Payment received",
+      "paymentFailed": "Payment failed"
+    }
+  },
   "wishlist": {
     "title": "Wishlist",
     "empty": {

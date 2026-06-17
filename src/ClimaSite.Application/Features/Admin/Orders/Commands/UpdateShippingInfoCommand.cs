@@ -76,6 +76,19 @@ public class UpdateShippingInfoCommandHandler : IRequestHandler<UpdateShippingIn
         {
             _emailOutbox.Add(OutboxMessage.ForOrderShipped(
                 order.CustomerEmail, order.Id, order.TrackingNumber ?? string.Empty));
+
+            // GAP-09: emit an in-app "shipped" notification (with tracking) for authenticated
+            // orders, in the same unit of work. Guest orders (null UserId) are skipped.
+            if (order.UserId is Guid uid)
+            {
+                var message = string.IsNullOrWhiteSpace(order.TrackingNumber)
+                    ? $"Your order {order.OrderNumber} has shipped."
+                    : $"Your order {order.OrderNumber} has shipped. Tracking: {order.TrackingNumber}.";
+                var notification = new Notification(
+                    uid, NotificationTypes.OrderShipped, "Order shipped", message);
+                notification.SetLink($"/account/orders/{order.Id}");
+                _context.Notifications.Add(notification);
+            }
         }
 
         await _context.SaveChangesAsync(cancellationToken);

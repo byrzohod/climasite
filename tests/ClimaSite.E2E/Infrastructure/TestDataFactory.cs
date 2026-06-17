@@ -364,6 +364,29 @@ public class TestDataFactory
     }
 
     /// <summary>
+    /// GAP-09: Transitions an order to a new status as an admin (via the admin API). This is the
+    /// real producer for in-app notifications — an authenticated order's user gets a notification
+    /// row created in the same unit of work.
+    /// </summary>
+    public async Task UpdateOrderStatusAsync(Guid orderId, string status, bool notifyCustomer = false)
+    {
+        await EnsureAdminAuthAsync();
+
+        var response = await _apiClient.PutAsJsonAsync($"/api/admin/orders/{orderId}/status", new
+        {
+            status,
+            notifyCustomer
+        });
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            throw new InvalidOperationException(
+                $"Failed to update order {orderId} status to {status}: {response.StatusCode} - {error}");
+        }
+    }
+
+    /// <summary>
     /// Cleanup all test data created by this factory instance.
     /// </summary>
     public async Task CleanupAsync()
