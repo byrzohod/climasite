@@ -18,12 +18,12 @@ ClimaSite is a production-grade online shop specializing in air conditioners, he
 | Reviews & Ratings | Complete | Q&A, verified purchases |
 | Search & Navigation | Complete | Full-text search, facets, filters |
 | Inventory Management | Complete | Stock tracking, reservations |
-| Notifications System | Partial | Email notifications implemented |
+| Notifications System | Complete | Transactional emails via the outbox (GAP-03) + in-app notifications: order-status producers, header bell/dropdown (GAP-09) |
 | Wishlist | Complete | Backend DTO sync, public sharing, guest login merge, EN/BG/DE i18n, unit/API/E2E coverage |
 | Motion/Animation System | Complete | AnimationService, flying cart, confetti, parallax |
 | Performance Optimizations | Complete | Core Web Vitals, lazy loading, preconnect hints |
 | Home page (v3 — Configurator-First) | Complete | Plan 18 Phase 1 done; real recommendations endpoint, tests, E2E, visual QA, a11y, and Lighthouse verified |
-| Project completion plan (Plan 18) | In progress | Phase 0/1 done; M2 batch complete: ARCH-05 outbox, GAP-02 admin, GAP-03 emails, GAP-04 legal, GAP-05 contact, GAP-07 guest checkout. Optional GAP-06/08/09 + Animation Audit 21F remain |
+| Project completion plan (Plan 18) | In progress | Phase 0/1 done; M2 + optional GAPs complete: ARCH-05 outbox, GAP-02 admin, GAP-03 emails, GAP-04 legal, GAP-05 contact, GAP-06 payment methods, GAP-07 guest checkout, GAP-08 installation requests, GAP-09 notifications. Animation Audit 21F remains |
 
 ### Recently Completed
 
@@ -49,6 +49,9 @@ ClimaSite is a production-grade online shop specializing in air conditioners, he
 | Contact Endpoint (GAP-05) | Complete | `POST /api/contact` persists a `ContactMessage` + queues a business notification via the outbox; form wired to a real request with success/error states |
 | Guest Checkout (GAP-07) | Complete | Opaque `GuestAccessToken` + anonymous token-gated confirmation lookup (SEC-02 intact), anonymous create-intent (server-computed amount), `/checkout` guard dropped, TS-13 fixed |
 | Legal Pages + Cookie Consent (GAP-04) | Complete | terms/privacy/cookies/returns/shipping/FAQ + German Impressum, consent banner (`ConsentService`), footer 404s closed; EN/BG/DE + specs + E2E |
+| Installation Requests (GAP-08) | Complete | Business email per request (outbox) + admin list/manage (`GET/PUT /api/admin/installation-requests`) + dashboard tile; EN/BG/DE + tests + E2E |
+| Payment Methods (GAP-06) | Complete | Removed fake PayPal; real bank transfer (persisted method, Pending, IBAN/reference instructions on confirmation + outbox email); validator card\|bank |
+| In-App Notifications (GAP-09) | Complete | Producers on order-status changes (authenticated) + header bell/dropdown + `NotificationService`; EN/BG/DE + specs + E2E |
 
 ---
 
