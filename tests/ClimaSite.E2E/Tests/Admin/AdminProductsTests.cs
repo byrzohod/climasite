@@ -102,7 +102,9 @@ public class AdminProductsTests : IAsyncLifetime
         await productsPage.SetNameAsync(updatedName);
         await productsPage.SubmitFormAsync();
 
-        // The list reloaded but the search box may have been cleared by the reload; re-search.
+        // Re-navigate for a clean list (avoids any stale in-component search state left from the
+        // pre-edit filter), then search by the new name.
+        await productsPage.NavigateToListAsync();
         await productsPage.SearchAsync(updatedName);
 
         // Assert — the same product id row now shows the updated name.
