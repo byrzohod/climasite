@@ -276,6 +276,7 @@ Detail: `_review/product.md` (flow inventory + "highest-leverage path"), `_revie
 - **Depends on:** Email wiring base (BUG-07/GAP-03).
 
 ### GAP-06 — Remove or finish fake payment methods (PayPal, bank transfer) (P1, Small)
+- **Status:** ✅ DONE (2026-06-17, #28). PayPal removed from checkout/review/confirmation. Bank transfer made real: `Order.SetPaymentMethod` persists the method for offline orders (stays Pending), a bank-instructions email (amount, reference = order number, IBAN/account/bank from `BankTransferOptions`) is staged via the outbox in the order's transaction, and `GET /api/payments/config` now returns bank details for the UI (instructions shown on the bank option + confirmation, `data-testid bank-transfer-instructions`). Validator restricts PaymentMethod to card|bank. Unit + Api integration + frontend specs + E2E.
 - **Description:** Non-card options create orders nobody can pay: no PayPal integration, no bank-transfer instructions, payment method not even persisted, stock decremented unconditionally. Remove PayPal until integrated; for bank transfer persist the method, show IBAN/reference instructions on confirmation + email, keep status Pending-payment.
 - **Closes:** `_review/product.md` #8 (P1 confirmed); UI_UX_REVIEW item #6.
 - **Affected:** `checkout.component.ts:199-214,1210-1232`, `CreateOrderCommand.cs` (PaymentMethod field — shared with BUG-01).
@@ -291,6 +292,7 @@ Detail: `_review/product.md` (flow inventory + "highest-leverage path"), `_revie
 - **Depends on:** **DEC-GUEST (blocking)**; BUG-01/BUG-02 must land first if enabling.
 
 ### GAP-08 — Installation requests: notify the business and make them viewable (P1, Medium)
+- **Status:** ✅ DONE (2026-06-17, #27). `CreateInstallationRequestCommand` queues a business-notification email via the outbox (to `ContactOptions.RecipientEmail`), transactionally with the persist. Admin: `GetAdminInstallationRequestsQuery` (paged + status filter), `UpdateInstallationRequestStatusCommand` (Confirm/Schedule/InProgress/Complete/Cancel), `AdminInstallationController` (GET list, PUT {id}/status), + admin list UI with status management, dashboard tile, EN/BG/DE. No migration (Status already on the entity). Unit + Api integration + frontend specs + E2E.
 - **Description:** The PDP solicits installation bookings; requests are stored but there is no list endpoint, no admin view, no email — i18n copy promises "We will contact you" and nothing can fulfill it. Minimum: business email per request via `IEmailService`. Proper: `GET /api/admin/installation-requests` + status field + admin list view.
 - **Closes:** `_review/product.md` #10 (P1 confirmed).
 - **Affected:** `InstallationController.cs`, `CreateInstallationRequestCommand.cs`, admin UI (rides on GAP-02 shell).
@@ -298,6 +300,7 @@ Detail: `_review/product.md` (flow inventory + "highest-leverage path"), `_revie
 - **Depends on:** Email wiring (GAP-03); admin shell (GAP-01/02) for the list view — email-only can ship first.
 
 ### GAP-09 — Notifications system: complete Plan 18 NOT-100..111 or formally descope (P2, Large)
+- **Status:** ✅ DONE (2026-06-17, #29 — completed the loop). Producers: `UpdateOrderStatusCommand` + `UpdateShippingInfoCommand` create a `Notification` (transactionally, authenticated orders only — guests skipped) on status changes, mapped to type + linked to the order. Frontend `NotificationService` (unreadCount + recent signals; summary/list/mark-read/mark-all/delete) + header bell with unread badge + dropdown (authenticated-only, accessible). EN/BG/DE i18n; service + header specs; cross-user E2E. No migration (table existed). Preferences (NOT-106) not built — basic loop only.
 - **Description:** In-app notifications have a full backend API with **zero producers and zero UI** (no bell, no `NotificationService`, nothing creates notifications); master overview falsely says "Complete". Either complete the loop (emit from order-status changes, header bell + dropdown + preferences per Plan 18 NOT-106) or remove the controller and mark Plan 12 in-app scope deferred.
 - **Closes:** `_review/product.md` #12 (P2 adjusted); `_review/status.md` #3 (in-app slice); Plan 18 Phase 2 NOT-* (or its descope).
 - **Affected:** `NotificationsController.cs`, `Features/Notifications/`, `header.component.ts`, new frontend feature.
