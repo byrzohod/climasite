@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, adminGuard, guestGuard } from './auth/guards/auth.guard';
+import { LEGAL_ROUTES } from './features/legal/legal.routes';
 
 export const routes: Routes = [
   {
@@ -132,6 +133,9 @@ export const routes: Routes = [
     loadComponent: () => import('./features/resources/resources.component').then(m => m.ResourcesComponent),
     data: { animation: 'resources' }
   },
+  // GAP-04: Legal & support pages (terms, privacy, cookies, returns, shipping, impressum, faq)
+  // registered at the root so the footer's absolute-path links resolve.
+  ...LEGAL_ROUTES,
   {
     path: '**',
     loadComponent: () => import('./features/not-found/not-found.component').then(m => m.NotFoundComponent),
