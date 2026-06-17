@@ -43,7 +43,7 @@ public class PlaywrightFixture : IAsyncLifetime
         };
     }
 
-    public async Task<IPage> CreatePageAsync()
+    public async Task<IPage> CreatePageAsync(bool seedCookieConsent = true)
     {
         var context = await Browser.NewContextAsync(new BrowserNewContextOptions
         {
@@ -52,6 +52,15 @@ public class PlaywrightFixture : IAsyncLifetime
             RecordVideoDir = Environment.GetEnvironmentVariable("E2E_RECORD_VIDEO") == "true"
                 ? "videos/" : null
         });
+
+        // GAP-04: the cookie-consent banner is fixed at the viewport bottom and would intercept
+        // clicks on bottom-of-page controls. Pre-accept it by default so existing flows are
+        // unaffected; tests that exercise the banner itself pass seedCookieConsent: false.
+        if (seedCookieConsent)
+        {
+            await context.AddInitScriptAsync(
+                "try { localStorage.setItem('climasite_cookie_consent', 'accepted'); } catch (e) {}");
+        }
 
         var page = await context.NewPageAsync();
 

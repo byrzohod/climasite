@@ -6,12 +6,13 @@ import { HeaderComponent } from '../header/header.component';
 import { FooterComponent } from '../footer/footer.component';
 import { ToastContainerComponent } from '../../../shared/components/toast/toast.component';
 import { BottomNavComponent } from '../../../shared/components/bottom-nav';
+import { CookieConsentComponent } from '../../../shared/components/cookie-consent/cookie-consent.component';
 import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, RouterOutlet, TranslateModule, HeaderComponent, FooterComponent, ToastContainerComponent, BottomNavComponent],
+  imports: [CommonModule, RouterModule, RouterOutlet, TranslateModule, HeaderComponent, FooterComponent, ToastContainerComponent, BottomNavComponent, CookieConsentComponent],
   template: `
     <div class="layout" data-testid="main-layout">
       @defer (on timer(3200ms)) {
@@ -64,6 +65,7 @@ import { ThemeService } from '../../services/theme.service';
       }
       <app-bottom-nav />
       <app-toast-container />
+      <app-cookie-consent />
     </div>
   `,
   styles: [`
