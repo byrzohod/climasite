@@ -135,7 +135,10 @@ jobs:
     name: E2E Tests
     runs-on: ubuntu-latest
     needs: [unit-tests, integration-tests, frontend-tests]
-    timeout-minutes: 30
+    # Setup (container start + backend build + e2e frontend build + ng serve warmup) can take
+    # ~20min on a cold/slow runner; 30min left too little for the suite and the job was canceled
+    # mid-run, surfacing as intermittent "flaky" E2E failures. 50min gives headroom.
+    timeout-minutes: 50
 
     services:
       postgres:

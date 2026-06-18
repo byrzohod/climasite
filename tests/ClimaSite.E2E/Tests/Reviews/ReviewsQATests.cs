@@ -403,10 +403,8 @@ public class ReviewsQATests : IAsyncLifetime
         await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Answer form should close after submission (answers go through moderation)
-        await Task.Delay(1000);
-
-        var formStillVisible = await answerForm.IsVisibleAsync();
-        formStillVisible.Should().BeFalse("Answer form should close after submission");
+        await Assertions.Expect(answerForm).Not.ToBeVisibleAsync(
+            new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
     }
 
     #endregion

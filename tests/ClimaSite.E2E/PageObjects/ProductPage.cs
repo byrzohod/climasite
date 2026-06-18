@@ -85,13 +85,24 @@ public class ProductPage : BasePage
         }
         catch (TimeoutException)
         {
-            // Cart notification might not show, check if cart count updated in header instead
-            await Task.Delay(2000);
+            // Cart notification might not show; prefer to wait for the header cart badge — but stay
+            // best-effort: on out-of-stock / overselling paths the cart legitimately does NOT update,
+            // and callers assert the resulting state themselves. Must not throw here.
+            try
+            {
+                await Page.WaitForSelectorAsync("[data-testid='cart-count']", new PageWaitForSelectorOptions { Timeout = 5000 });
+            }
+            catch (TimeoutException)
+            {
+                // Tolerated — no cart confirmation appeared (e.g. add was rejected).
+            }
         }
     }
 
     public async Task<int> GetProductCardCountAsync()
     {
+        // Tolerant settle: a rendered list OR an empty state both count as "settled" (0 is valid).
+        await Page.WaitForSelectorAsync($"{ProductCard}, .empty-state", new PageWaitForSelectorOptions { Timeout = 10000 });
         var cards = await Page.QuerySelectorAllAsync(ProductCard);
         return cards.Count;
     }

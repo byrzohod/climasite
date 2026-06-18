@@ -61,7 +61,9 @@ public class ProductFilteringTests : IAsyncLifetime
                 await searchInput.PressAsync("Enter");
             }
             await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-            await _page.WaitForTimeoutAsync(500); // Allow for any client-side navigation
+            await _page.WaitForSelectorAsync(
+                "[data-testid='product-card'], [data-testid='no-results'], [data-testid='empty-state'], .no-products",
+                new PageWaitForSelectorOptions { Timeout = 10000 });
         }
 
         // Assert - Either navigated to search results or search was performed

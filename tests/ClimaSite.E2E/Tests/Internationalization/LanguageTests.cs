@@ -72,9 +72,6 @@ public class LanguageTests : IAsyncLifetime
         await productPage.NavigateToListAsync();
         await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-        // Wait a bit for any async rendering
-        await _page.WaitForTimeoutAsync(500);
-
         // Assert - Product list should render
         var pageContent = await _page.ContentAsync();
         pageContent.Should().NotBeNullOrEmpty();

@@ -73,9 +73,6 @@ public class CheckoutPage : BasePage
         // Wait for network to be idle (cart data might still be loading)
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-        // Wait a bit more for Angular to settle (cart service loads asynchronously)
-        await Task.Delay(500);
-
         // Wait for checkout page to be fully rendered
         // Check both possible states: shipping form (has cart items) or empty cart message
         try
@@ -203,7 +200,8 @@ public class CheckoutPage : BasePage
         // method can be: card, paypal, bank
         // The input is hidden (styled), so click on the parent label element
         await Page.Locator($"[data-testid='payment-{method}']").Locator("..").ClickAsync();
-        await Task.Delay(100); // Wait for UI to update
+        // Wait for the radio to register as selected instead of a fixed delay
+        await Assertions.Expect(Page.Locator($"[data-testid='payment-{method}']")).ToBeCheckedAsync();
     }
 
     public async Task ProceedToReviewAsync()

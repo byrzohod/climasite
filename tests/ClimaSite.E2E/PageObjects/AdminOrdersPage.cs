@@ -59,9 +59,8 @@ public class AdminOrdersPage : BasePage
 
     public async Task<string> GetStatusBadgeTextAsync()
     {
-        var badge = await Page.QuerySelectorAsync("[data-testid='order-status-badge']");
-        if (badge == null) return string.Empty;
-        return (await badge.TextContentAsync() ?? string.Empty).Trim();
+        await Page.WaitForSelectorAsync("[data-testid='order-status-badge']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        return (await Page.Locator("[data-testid='order-status-badge']").InnerTextAsync()).Trim();
     }
 
     public async Task ChangeStatusAsync(string statusValue, string? note = null, bool notifyCustomer = false)
@@ -109,9 +108,8 @@ public class AdminOrdersPage : BasePage
 
     public async Task<string> GetTrackingNumberAsync()
     {
-        var tracking = await Page.QuerySelectorAsync("[data-testid='order-tracking-number']");
-        if (tracking == null) return string.Empty;
-        return (await tracking.TextContentAsync() ?? string.Empty).Trim();
+        await Page.WaitForSelectorAsync("[data-testid='order-tracking-number']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        return (await Page.Locator("[data-testid='order-tracking-number']").InnerTextAsync()).Trim();
     }
 
     public async Task<bool> HasTrackingNumberAsync()

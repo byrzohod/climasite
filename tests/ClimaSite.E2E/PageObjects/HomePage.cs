@@ -95,6 +95,9 @@ public class HomePage : BasePage
 
     public async Task<int> GetCategoryCountAsync()
     {
+        // Home below-fold content is deferred; wait for at least one category to render
+        // before counting (callers expect >=1 category).
+        await WaitForSelectorAsync(CategoryCard, 15000);
         var categories = await Page.QuerySelectorAllAsync(CategoryCard);
         return categories.Count;
     }

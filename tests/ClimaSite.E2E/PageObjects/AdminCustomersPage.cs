@@ -70,9 +70,8 @@ public class AdminCustomersPage : BasePage
 
     public async Task<string> GetActiveBadgeTextAsync()
     {
-        var badge = await Page.QuerySelectorAsync("[data-testid='customer-active-badge']");
-        if (badge == null) return string.Empty;
-        return (await badge.TextContentAsync() ?? string.Empty).Trim();
+        await Page.WaitForSelectorAsync("[data-testid='customer-active-badge']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        return (await Page.Locator("[data-testid='customer-active-badge']").InnerTextAsync()).Trim();
     }
 
     /// <summary>
