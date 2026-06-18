@@ -85,8 +85,17 @@ public class ProductPage : BasePage
         }
         catch (TimeoutException)
         {
-            // Cart notification might not show; wait for the header cart badge to update instead
-            await Page.WaitForSelectorAsync("[data-testid='cart-count']", new PageWaitForSelectorOptions { Timeout = 5000 });
+            // Cart notification might not show; prefer to wait for the header cart badge — but stay
+            // best-effort: on out-of-stock / overselling paths the cart legitimately does NOT update,
+            // and callers assert the resulting state themselves. Must not throw here.
+            try
+            {
+                await Page.WaitForSelectorAsync("[data-testid='cart-count']", new PageWaitForSelectorOptions { Timeout = 5000 });
+            }
+            catch (TimeoutException)
+            {
+                // Tolerated — no cart confirmation appeared (e.g. add was rejected).
+            }
         }
     }
 
