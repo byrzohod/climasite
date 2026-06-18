@@ -16,14 +16,22 @@ public static class CheckoutPricing
     /// <summary>
     /// Resolves the shipping cost for a shipping method. Matching is
     /// case-insensitive; unknown methods fall back to the default rate.
+    /// Only the methods the UI actually offers (standard/express/overnight) are priced;
+    /// an unknown method must never resolve to free shipping (it would let a client POST an
+    /// undisplayed method to ship for €0). Server-side validators reject unknown methods, so the
+    /// default rate here is a defence-in-depth fallback rather than a billable path.
     /// </summary>
+    // NOTE: the UI labels standard shipping as "free" and renders prices with a "$" symbol,
+    // whereas the server charges €5.99 standard / €15.99 express / €19.99 overnight in EUR. That
+    // label/currency-display mismatch is a separate, pre-existing front-end display inconsistency
+    // and is intentionally out of scope for this backend fix.
     public static decimal GetShippingCost(string? method)
     {
         return (method?.ToLowerInvariant()) switch
         {
             "express" => 15.99m,
             "standard" => 5.99m,
-            "free" => 0m,
+            "overnight" => 19.99m,
             _ => 9.99m
         };
     }

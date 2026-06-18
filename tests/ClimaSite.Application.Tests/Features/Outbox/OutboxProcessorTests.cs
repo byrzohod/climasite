@@ -121,4 +121,98 @@ public class OutboxProcessorTests
         secondPass.Should().Be(0);
         _emailService.Verify(x => x.SendEmailAsync("once@example.com", "S", "B", It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public async Task ProcessPendingAsync_ReclaimsStaleProcessingMessage_AndResends()
+    {
+        // A worker crashed mid-attempt: the row was saved as Processing but never reached a
+        // terminal state. BeginAttempt() stamps UpdatedAt before ProcessPendingAsync captures its
+        // own `now`, so with a 0-minute reclaim window the row is stale (UpdatedAt < now).
+        _options.ProcessingReclaimMinutes = 0;
+        var stale = OutboxMessage.ForWelcome("stranded@example.com", "Grace");
+        stale.BeginAttempt(); // -> Processing, AttemptCount = 1
+        _context.AddOutboxMessage(stale);
+
+        var sent = await CreateSut().ProcessPendingAsync();
+
+        sent.Should().Be(1);
+        stale.Status.Should().Be(OutboxMessageStatus.Sent);
+        stale.AttemptCount.Should().Be(2, "the reclaimed row runs through BeginAttempt() again");
+        _emailService.Verify(x => x.SendWelcomeEmailAsync("stranded@example.com", "Grace", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ProcessPendingAsync_DoesNotReclaimFreshProcessingMessage()
+    {
+        // With the default 10-minute window a just-now Processing row (a genuinely in-flight
+        // message from a concurrent run) must NOT be reclaimed.
+        var inFlight = OutboxMessage.ForWelcome("inflight@example.com", "Ida");
+        inFlight.BeginAttempt();
+        _context.AddOutboxMessage(inFlight);
+
+        var sent = await CreateSut().ProcessPendingAsync();
+
+        sent.Should().Be(0);
+        inFlight.AttemptCount.Should().Be(1, "a fresh Processing row is left alone");
+        _emailService.Verify(x => x.SendWelcomeEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ProcessPendingAsync_UnknownType_MarksFailedAfterOneAttempt_NoRetry()
+    {
+        _options.MaxAttempts = 5; // plenty of retries available; a poison message must not use them
+        var poison = new OutboxMessage("totally-unknown-type", "poison@example.com", "{}");
+        _context.AddOutboxMessage(poison);
+
+        var sent = await CreateSut().ProcessPendingAsync();
+
+        sent.Should().Be(0);
+        poison.Status.Should().Be(OutboxMessageStatus.Failed, "an unknown type can never succeed, so it fails immediately");
+        poison.AttemptCount.Should().Be(1, "a poison message is not retried");
+        poison.ProcessedAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task ProcessPendingAsync_PasswordReset_ClearsPayloadAfterSuccessfulSend()
+    {
+        var reset = OutboxMessage.ForPasswordReset("user@example.com", "secret-reset-token");
+        _context.AddOutboxMessage(reset);
+        reset.Payload.Should().Contain("secret-reset-token");
+
+        var sent = await CreateSut().ProcessPendingAsync();
+
+        sent.Should().Be(1);
+        reset.Status.Should().Be(OutboxMessageStatus.Sent);
+        reset.Payload.Should().Be("{}", "the live reset token must not be retained after send");
+        reset.Payload.Should().NotContain("secret-reset-token");
+    }
+
+    [Fact]
+    public async Task ProcessPendingAsync_PasswordReset_ClearsPayloadAfterPermanentFailure()
+    {
+        _options.MaxAttempts = 1;
+        var reset = OutboxMessage.ForPasswordReset("user@example.com", "secret-reset-token");
+        _context.AddOutboxMessage(reset);
+        _emailService
+            .Setup(x => x.SendPasswordResetEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("smtp down"));
+
+        var sent = await CreateSut().ProcessPendingAsync();
+
+        sent.Should().Be(0);
+        reset.Status.Should().Be(OutboxMessageStatus.Failed);
+        reset.Payload.Should().Be("{}", "the reset token must not be retained even on permanent failure");
+    }
+
+    [Fact]
+    public async Task ProcessPendingAsync_NonPasswordReset_RetainsPayloadForAudit()
+    {
+        var welcome = OutboxMessage.ForWelcome("user@example.com", "Ada");
+        _context.AddOutboxMessage(welcome);
+
+        await CreateSut().ProcessPendingAsync();
+
+        welcome.Status.Should().Be(OutboxMessageStatus.Sent);
+        welcome.Payload.Should().Contain("Ada", "non-credential payloads are kept for audit");
+    }
 }

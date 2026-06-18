@@ -14,8 +14,9 @@ public class CheckoutPricingTests
     [Theory]
     [InlineData("express", 15.99)]
     [InlineData("standard", 5.99)]
-    [InlineData("free", 0)]
-    [InlineData("overnight", 9.99)] // unknown -> default
+    [InlineData("overnight", 19.99)]
+    [InlineData("free", 9.99)]   // "free" is no longer a recognized method -> default rate (security fix)
+    [InlineData("unknown", 9.99)] // unknown -> default
     [InlineData(null, 9.99)]
     [InlineData("", 9.99)]
     public void GetShippingCost_ReturnsExpectedRate(string? method, decimal expected)
@@ -26,7 +27,7 @@ public class CheckoutPricingTests
     [Theory]
     [InlineData("EXPRESS", 15.99)]
     [InlineData("Standard", 5.99)]
-    [InlineData("Free", 0)]
+    [InlineData("OverNight", 19.99)]
     public void GetShippingCost_IsCaseInsensitive(string method, decimal expected)
     {
         CheckoutPricing.GetShippingCost(method).Should().Be(expected);
@@ -45,7 +46,7 @@ public class CheckoutPricingTests
     // subtotal + shipping + tax
     [InlineData(100, "standard", 125.99)]  // 100 + 5.99 + 20.00
     [InlineData(100, "express", 135.99)]   // 100 + 15.99 + 20.00
-    [InlineData(100, "free", 120.00)]      // 100 + 0 + 20.00
+    [InlineData(100, "overnight", 139.99)] // 100 + 19.99 + 20.00
     [InlineData(50, "standard", 65.99)]    // 50 + 5.99 + 10.00
     public void CalculateTotal_EqualsSubtotalPlusShippingPlusTax(decimal subtotal, string method, decimal expectedTotal)
     {

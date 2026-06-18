@@ -21,4 +21,11 @@ public class EmailOutboxOptions
 
     /// <summary>Base delay for exponential backoff between retries: delay = Base * 2^(attempt-1).</summary>
     public int BaseRetryDelaySeconds { get; set; } = 30;
+
+    /// <summary>
+    /// Minutes after which a row stuck in <c>Processing</c> (a worker crashed mid-attempt, between
+    /// the Processing save and the terminal save) is reclaimed and retried. Without this, such a
+    /// row would sit in Processing forever and the email would be silently lost.
+    /// </summary>
+    public int ProcessingReclaimMinutes { get; set; } = 10;
 }

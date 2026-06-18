@@ -2,6 +2,7 @@ using ClimaSite.Application.Features.Contact.Commands;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace ClimaSite.Api.Controllers;
 
@@ -22,6 +23,7 @@ public class ContactController : ControllerBase
     /// </summary>
     [HttpPost]
     [AllowAnonymous]
+    [EnableRateLimiting("strict")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Submit([FromBody] CreateContactMessageCommand command)
