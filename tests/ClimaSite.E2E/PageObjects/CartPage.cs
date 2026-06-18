@@ -42,6 +42,14 @@ public class CartPage : BasePage
 
     public async Task<int> GetItemCountAsync()
     {
+        // Tolerant settle: an empty-cart message, a cart item, or the total all mean the
+        // cart region has rendered. 0 items (empty cart) is a valid answer, so stay tolerant.
+        try
+        {
+            await Page.WaitForSelectorAsync($"{EmptyCartMessage}, {CartItem}, {CartTotal}", new PageWaitForSelectorOptions { Timeout = 5000 });
+        }
+        catch { }
+
         var items = await Page.QuerySelectorAllAsync(CartItem);
         return items.Count;
     }

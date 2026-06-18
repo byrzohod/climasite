@@ -125,9 +125,8 @@ public class AdminProductsPage : BasePage
 
     public async Task<string> GetStatusBadgeTextAsync(string productId)
     {
-        var badge = await Page.QuerySelectorAsync(
-            $"[data-testid='product-row'][data-product-id='{productId}'] [data-testid='product-status-badge']");
-        if (badge == null) return string.Empty;
-        return (await badge.TextContentAsync() ?? string.Empty).Trim();
+        var sel = $"[data-testid='product-row'][data-product-id='{productId}'] [data-testid='product-status-badge']";
+        await Page.WaitForSelectorAsync(sel, new PageWaitForSelectorOptions { Timeout = 10000 });
+        return (await Page.Locator(sel).InnerTextAsync()).Trim();
     }
 }

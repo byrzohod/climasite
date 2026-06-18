@@ -97,6 +97,8 @@ public class OrderActionsTests : IAsyncLifetime
         // Refresh page to see updated state
         await _page.ReloadAsync();
         await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.WaitForSelectorAsync("[data-testid='order-number'], [data-testid='error-message']",
+            new PageWaitForSelectorOptions { Timeout = 10000 });
 
         // Assert - Cancel button should be disabled or hidden
         var canCancel = await ordersPage.CanCancelOrderAsync();

@@ -38,10 +38,9 @@ public class AdminInstallationPage : BasePage
 
     public async Task<string> GetStatusBadgeTextAsync(string requestId)
     {
-        var badge = await Page.QuerySelectorAsync(
-            $"[data-testid='installation-row'][data-request-id='{requestId}'] [data-testid='installation-status-badge']");
-        if (badge == null) return string.Empty;
-        return (await badge.TextContentAsync() ?? string.Empty).Trim();
+        var sel = $"[data-testid='installation-row'][data-request-id='{requestId}'] [data-testid='installation-status-badge']";
+        await Page.WaitForSelectorAsync(sel, new PageWaitForSelectorOptions { Timeout = 10000 });
+        return (await Page.Locator(sel).InnerTextAsync()).Trim();
     }
 
     /// <summary>

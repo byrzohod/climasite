@@ -178,9 +178,9 @@ public class AdminPanelTests : IAsyncLifetime
         rowCount.Should().BeGreaterThan(0, "the admin orders list should render the created order");
 
         // The created order's "View" link should be present
-        var viewLink = await _page.QuerySelectorAsync(
-            $"[data-testid='view-order'][data-order-id='{order.Id}']");
-        viewLink.Should().NotBeNull("the created order should be listed with a View action");
+        await Assertions.Expect(_page.Locator(
+            $"[data-testid='view-order'][data-order-id='{order.Id}']"))
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
     }
 
     [Fact]
@@ -198,8 +198,8 @@ public class AdminPanelTests : IAsyncLifetime
         await ordersPage.OpenOrderAsync(order.Id.ToString());
 
         // Assert - The order detail page shows the order with a status badge
-        var detail = await _page.QuerySelectorAsync("[data-testid='admin-order-detail']");
-        detail.Should().NotBeNull("the order detail page should be displayed");
+        await Assertions.Expect(_page.Locator("[data-testid='admin-order-detail']"))
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
 
         var status = await ordersPage.GetStatusBadgeTextAsync();
         status.Should().NotBeNullOrWhiteSpace("the order detail should display the current status");

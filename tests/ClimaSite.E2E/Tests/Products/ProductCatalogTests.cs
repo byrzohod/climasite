@@ -639,7 +639,6 @@ public class ProductCatalogTests : IAsyncLifetime
         if (await filterToggle.IsVisibleAsync())
         {
             await filterToggle.ClickAsync();
-            await _page.WaitForTimeoutAsync(300); // Wait for animation
 
             // Assert - Filter panel should be visible
             var filterPanel = _page.Locator("[data-testid='filter-panel'], [data-testid='filters-sidebar'], .filter-sidebar");

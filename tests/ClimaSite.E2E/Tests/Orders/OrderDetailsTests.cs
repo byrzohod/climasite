@@ -147,8 +147,8 @@ public class OrderDetailsTests : IAsyncLifetime
         await ordersPage.NavigateToOrderDetailsAsync(order.Id.ToString());
 
         // Assert - Check for shipping address section
-        var addressElement = await _page.QuerySelectorAsync("[data-testid='shipping-address']");
-        addressElement.Should().NotBeNull("Shipping address should be displayed");
+        await Assertions.Expect(_page.Locator("[data-testid='shipping-address']"))
+            .ToBeVisibleAsync();
     }
 
     [Fact]
@@ -167,8 +167,8 @@ public class OrderDetailsTests : IAsyncLifetime
         await ordersPage.NavigateToOrderDetailsAsync(order.Id.ToString());
 
         // Assert - Check for payment method section
-        var paymentElement = await _page.QuerySelectorAsync("[data-testid='payment-method']");
-        paymentElement.Should().NotBeNull("Payment method should be displayed");
+        await Assertions.Expect(_page.Locator("[data-testid='payment-method']"))
+            .ToBeVisibleAsync();
     }
 
     [Fact]
