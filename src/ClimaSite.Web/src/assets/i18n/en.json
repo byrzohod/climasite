@@ -1121,7 +1121,10 @@
     "title": "Notifications",
     "empty": "You have no notifications yet",
     "markAllRead": "Mark all read",
+    "markRead": "Mark read",
+    "view": "View",
     "viewAll": "View all",
+    "loadError": "We couldn't load your notifications.",
     "time": {
       "justNow": "just now",
       "minutes": "{{count}}m ago",

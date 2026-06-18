@@ -46,8 +46,38 @@ export class CartService {
     return sessionId;
   }
 
+  // Guest cart/order/payment-intent access is keyed on this id (it is reachable via the
+  // anonymous create-intent endpoint), so it MUST be unguessable. Use the CSPRNG-backed
+  // crypto.randomUUID(); fall back to crypto.getRandomValues() on older runtimes that
+  // lack randomUUID. Existing stored ids keep working — only generation changes here.
   private generateSessionId(): string {
-    return 'sess_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+    return 'sess_' + this.secureUuid();
+  }
+
+  private secureUuid(): string {
+    const cryptoObj = typeof crypto !== 'undefined' ? crypto : undefined;
+
+    if (cryptoObj?.randomUUID) {
+      return cryptoObj.randomUUID();
+    }
+
+    // Fallback: build an RFC-4122 v4 UUID from CSPRNG bytes.
+    if (cryptoObj?.getRandomValues) {
+      const bytes = cryptoObj.getRandomValues(new Uint8Array(16));
+      bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
+      bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant 10xx
+      const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0'));
+      return (
+        hex.slice(0, 4).join('') +
+        '-' + hex.slice(4, 6).join('') +
+        '-' + hex.slice(6, 8).join('') +
+        '-' + hex.slice(8, 10).join('') +
+        '-' + hex.slice(10, 16).join('')
+      );
+    }
+
+    // Last-resort fallback (non-CSPRNG) — only reached if Web Crypto is entirely unavailable.
+    return Math.random().toString(36).substring(2) + Date.now().toString(36);
   }
 
   // Returns a `&lang=xx` suffix for the current language, or '' for the default (en),

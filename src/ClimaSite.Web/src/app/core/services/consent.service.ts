@@ -31,6 +31,16 @@ export class ConsentService {
   /**
    * Whether non-essential storage (analytics, marketing) may be used.
    * Anything other than an explicit "accepted" decision returns false.
+   *
+   * HONEST-GATE NOTE (session-review Fix 4): As of this writing the app performs NO
+   * non-essential storage writes. Every `localStorage.setItem` is functional/essential —
+   * cart session id, auth token, theme, language, motion preference, wishlist, the consent
+   * record itself, and user-initiated feature state (product comparison, recently-viewed,
+   * Q&A vote dedupe). There is no analytics or marketing tracking. So this gate is a
+   * deliberate no-op TODAY: there is nothing to gate, and we do NOT fake-gate essential
+   * storage. The hook is kept ready so any future analytics/marketing writer can guard on
+   * `nonEssentialGranted()` (write only when true) and be cleared on reject — matching the
+   * essential-only promise made in the cookie banner and Cookie Policy page.
    */
   readonly nonEssentialGranted = computed(() => this.decision() === 'accepted');
 

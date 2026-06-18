@@ -474,5 +474,70 @@ describe('CartService', () => {
 
       newHttpMock.verify();
     });
+
+    it('should generate a CSPRNG-backed UUID session id with the sess_ prefix', () => {
+      localStorage.removeItem('climasite_session_id');
+
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          CartService,
+          provideHttpClient(),
+          provideHttpClientTesting(),
+          {
+            provide: LanguageService,
+            useValue: jasmine.createSpyObj('LanguageService', [], {
+              currentLanguage: signal('en')
+            })
+          }
+        ]
+      });
+
+      const newHttpMock = TestBed.inject(HttpTestingController);
+      TestBed.inject(CartService);
+
+      const req = newHttpMock.expectOne(req => req.url.includes('/api/cart'));
+      req.flush(emptyCart);
+
+      const storedSessionId = localStorage.getItem('climasite_session_id') ?? '';
+      // sess_ prefix followed by an RFC-4122 v4 UUID (crypto.randomUUID / getRandomValues fallback).
+      expect(storedSessionId).toMatch(
+        /^sess_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+      );
+
+      newHttpMock.verify();
+    });
+
+    it('should not regenerate or migrate an existing stored session id', () => {
+      // A legacy (pre-CSPRNG) id must keep working untouched.
+      const legacyId = 'sess_legacyabc123';
+      localStorage.setItem('climasite_session_id', legacyId);
+
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          CartService,
+          provideHttpClient(),
+          provideHttpClientTesting(),
+          {
+            provide: LanguageService,
+            useValue: jasmine.createSpyObj('LanguageService', [], {
+              currentLanguage: signal('en')
+            })
+          }
+        ]
+      });
+
+      const newHttpMock = TestBed.inject(HttpTestingController);
+      TestBed.inject(CartService);
+
+      const req = newHttpMock.expectOne(req => req.url.includes('/api/cart'));
+      expect(req.request.url).toContain(`guestSessionId=${legacyId}`);
+      req.flush(emptyCart);
+
+      expect(localStorage.getItem('climasite_session_id')).toBe(legacyId);
+
+      newHttpMock.verify();
+    });
   });
 });
