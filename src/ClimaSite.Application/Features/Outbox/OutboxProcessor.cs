@@ -30,9 +30,18 @@ public class OutboxProcessor : IOutboxProcessor
     public async Task<int> ProcessPendingAsync(CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
+        var reclaimBefore = now.AddMinutes(-_options.ProcessingReclaimMinutes);
 
+        // Due = Pending rows whose backoff has elapsed, PLUS stale Processing rows. A row stuck in
+        // Processing means a worker crashed after BeginAttempt() saved the Processing state but
+        // before the terminal save; without reclaiming it the email would be lost forever. The
+        // in-flight row from the current run is NOT reclaimed because its UpdatedAt == now (it is
+        // not strictly before reclaimBefore). A reclaimed row simply runs through BeginAttempt()
+        // again, which re-counts the attempt — acceptable.
         var due = await _context.OutboxMessages
-            .Where(m => m.Status == OutboxMessageStatus.Pending && m.NextAttemptAt <= now)
+            .Where(m =>
+                (m.Status == OutboxMessageStatus.Pending && m.NextAttemptAt <= now)
+                || (m.Status == OutboxMessageStatus.Processing && m.UpdatedAt < reclaimBefore))
             .OrderBy(m => m.NextAttemptAt)
             .Take(_options.BatchSize)
             .ToListAsync(cancellationToken);
@@ -48,6 +57,15 @@ public class OutboxProcessor : IOutboxProcessor
                 await DispatchAsync(message, cancellationToken);
                 message.MarkSent();
                 sent++;
+            }
+            catch (NotSupportedException ex)
+            {
+                // Poison message: an unknown message Type can NEVER be dispatched, so retrying it
+                // only wastes the retry budget and delays the inevitable. Fail it immediately.
+                _logger.LogError(ex,
+                    "Outbox message {MessageId} ({Type}) is unsupported and was failed without retry.",
+                    message.Id, message.Type);
+                message.MarkFailed(ex.Message);
             }
             catch (Exception ex)
             {
@@ -67,6 +85,15 @@ public class OutboxProcessor : IOutboxProcessor
                         message.Id, message.Type, message.AttemptCount, nextAttempt);
                     message.ScheduleRetry(ex.Message, nextAttempt);
                 }
+            }
+
+            // Once a message reaches a terminal state (Sent or permanently Failed), drop the
+            // password-reset payload so the live reset token is not retained in the database.
+            // Only password-reset payloads are credential-bearing; others are kept for audit.
+            if ((message.Status == OutboxMessageStatus.Sent || message.Status == OutboxMessageStatus.Failed)
+                && message.Type == OutboxMessageTypes.PasswordReset)
+            {
+                message.ClearPayload();
             }
 
             await _context.SaveChangesAsync(cancellationToken);
@@ -105,7 +132,9 @@ public class OutboxProcessor : IOutboxProcessor
                 break;
 
             default:
-                throw new InvalidOperationException($"Unknown outbox message type '{message.Type}'.");
+                // Distinct exception type so the processing loop can fail this immediately
+                // (a poison message) instead of burning the whole retry budget on it.
+                throw new NotSupportedException($"Unknown outbox message type '{message.Type}'.");
         }
     }
 

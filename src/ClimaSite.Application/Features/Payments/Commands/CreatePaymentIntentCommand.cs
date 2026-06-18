@@ -36,7 +36,12 @@ public class CreatePaymentIntentCommandValidator : AbstractValidator<CreatePayme
     public CreatePaymentIntentCommandValidator()
     {
         RuleFor(x => x.ShippingMethod)
-            .NotEmpty().WithMessage("Shipping method is required");
+            .NotEmpty().WithMessage("Shipping method is required")
+            .Must(ShippingMethods.IsAllowed)
+            .WithMessage($"Shipping method must be one of: {ShippingMethods.AllowedDisplay}.")
+            // Scope the allow-list check to ONLY this rule so an empty value still trips NotEmpty
+            // above (rather than being skipped by a chain-wide condition).
+            .When(x => !string.IsNullOrWhiteSpace(x.ShippingMethod), ApplyConditionTo.CurrentValidator);
     }
 }
 

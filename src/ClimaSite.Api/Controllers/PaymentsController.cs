@@ -4,6 +4,7 @@ using ClimaSite.Application.Features.Payments.Commands;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Configuration;
 
 namespace ClimaSite.Api.Controllers;
@@ -61,6 +62,7 @@ public class PaymentsController : ControllerBase
     /// Anonymous so guests can pay (GAP-07) — the amount is never client-supplied.
     /// </summary>
     [AllowAnonymous]
+    [EnableRateLimiting("strict")]
     [HttpPost("create-intent")]
     public async Task<IActionResult> CreatePaymentIntent([FromBody] CreatePaymentIntentCommand command)
     {

@@ -162,6 +162,36 @@ public class CreatePaymentIntentCommandHandlerTests
         result.Errors.Should().Contain(e => e.PropertyName == "ShippingMethod");
     }
 
+    [Theory]
+    [InlineData("free")]       // undisplayed method that used to ship for €0 — must be rejected
+    [InlineData("overnightt")] // typo / unknown
+    [InlineData("pickup")]
+    public void Validator_WhenShippingMethodNotAllowed_ReturnsValidationError(string method)
+    {
+        var validator = new CreatePaymentIntentCommandValidator();
+        var command = new CreatePaymentIntentCommand { ShippingMethod = method };
+
+        var result = validator.Validate(command);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == "ShippingMethod");
+    }
+
+    [Theory]
+    [InlineData("standard")]
+    [InlineData("express")]
+    [InlineData("overnight")]
+    [InlineData("STANDARD")] // case-insensitive
+    public void Validator_WhenShippingMethodAllowed_Passes(string method)
+    {
+        var validator = new CreatePaymentIntentCommandValidator();
+        var command = new CreatePaymentIntentCommand { ShippingMethod = method };
+
+        var result = validator.Validate(command);
+
+        result.IsValid.Should().BeTrue();
+    }
+
     private static Product CreateProduct(string sku = "TEST-SKU", string name = "Test Product")
     {
         var product = new Product(sku, name, name.ToLower().Replace(" ", "-"), 100m);

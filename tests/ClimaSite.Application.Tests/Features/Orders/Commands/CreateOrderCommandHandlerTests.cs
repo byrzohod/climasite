@@ -546,6 +546,42 @@ public class CreateOrderCommandHandlerTests
         result.IsValid.Should().BeTrue();
     }
 
+    [Theory]
+    [InlineData("free")]       // undisplayed €0-shipping method — must be rejected (security fix)
+    [InlineData("pickup")]
+    [InlineData("expresss")]   // typo / unknown
+    public void Validator_WhenShippingMethodNotAllowed_ReturnsValidationError(string method)
+    {
+        // Arrange
+        var validator = new CreateOrderCommandValidator();
+        var command = CreateValidCommand() with { ShippingMethod = method };
+
+        // Act
+        var result = validator.Validate(command);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == "ShippingMethod");
+    }
+
+    [Theory]
+    [InlineData("standard")]
+    [InlineData("express")]
+    [InlineData("overnight")]
+    [InlineData("Overnight")] // case-insensitive
+    public void Validator_WhenShippingMethodAllowed_Passes(string method)
+    {
+        // Arrange
+        var validator = new CreateOrderCommandValidator();
+        var command = CreateValidCommand() with { ShippingMethod = method };
+
+        // Act
+        var result = validator.Validate(command);
+
+        // Assert
+        result.IsValid.Should().BeTrue();
+    }
+
     #region Payment intent verification (BUG-01)
 
     [Fact]

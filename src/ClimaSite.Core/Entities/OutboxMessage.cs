@@ -84,6 +84,17 @@ public class OutboxMessage : BaseEntity
         SetUpdatedAt();
     }
 
+    /// <summary>
+    /// Drops the payload after a terminal state so a credential-bearing payload (e.g. the
+    /// password-reset token) is not retained in the database indefinitely. Replaces it with an
+    /// empty JSON object so the column stays valid JSON.
+    /// </summary>
+    public void ClearPayload()
+    {
+        Payload = "{}";
+        SetUpdatedAt();
+    }
+
     private static string Truncate(string value) =>
         string.IsNullOrEmpty(value) || value.Length <= 2000 ? value : value[..2000];
 
