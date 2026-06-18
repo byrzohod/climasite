@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { Location } from '@angular/common';
 import { provideRouter, ActivatedRoute } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -359,6 +360,85 @@ describe('OrderConfirmationComponent', () => {
       tick(2000);
       expect(component.copied()).toBe(false);
     }));
+  });
+
+  describe('guest token handling (GAP-07)', () => {
+    let guestToken: string | null;
+    let locationReplaceSpy: jasmine.Spy;
+
+    function configureWithToken(token: string | null): void {
+      guestToken = token;
+      TestBed.resetTestingModule();
+      const checkoutSpy = jasmine.createSpyObj('CheckoutService', ['getOrder', 'getGuestOrder']);
+      const confettiSpy = jasmine.createSpyObj('ConfettiService', ['burst', 'stop']);
+      const paymentSpy = jasmine.createSpyObj<PaymentService>('PaymentService', ['loadConfig']);
+      paymentSpy.loadConfig.and.returnValue(Promise.resolve(null));
+      Object.defineProperty(paymentSpy, 'bankTransfer', { value: signal<BankTransferConfig | null>(null).asReadonly() });
+      checkoutSpy.getOrder.and.returnValue(of(mockOrder));
+      checkoutSpy.getGuestOrder.and.returnValue(of(mockOrder));
+
+      TestBed.configureTestingModule({
+        imports: [
+          OrderConfirmationComponent,
+          TranslateModule.forRoot(),
+          LucideAngularModule.pick(ICON_REGISTRY)
+        ],
+        providers: [
+          provideRouter([]),
+          provideHttpClient(),
+          provideHttpClientTesting(),
+          {
+            provide: ActivatedRoute,
+            useValue: {
+              snapshot: {
+                paramMap: { get: () => 'test-order-123' },
+                queryParamMap: { get: () => guestToken }
+              }
+            }
+          },
+          { provide: CheckoutService, useValue: checkoutSpy },
+          { provide: ConfettiService, useValue: confettiSpy },
+          { provide: PaymentService, useValue: paymentSpy }
+        ]
+      });
+
+      checkoutService = TestBed.inject(CheckoutService) as jasmine.SpyObj<CheckoutService>;
+      const location = TestBed.inject(Location);
+      locationReplaceSpy = spyOn(location, 'replaceState').and.callThrough();
+    }
+
+    it('loads the guest order with the token and strips it from the URL', () => {
+      configureWithToken('guest-token-abc');
+      fixture = TestBed.createComponent(OrderConfirmationComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      expect(checkoutService.getGuestOrder).toHaveBeenCalledWith('test-order-123', 'guest-token-abc');
+      expect(locationReplaceSpy).toHaveBeenCalledWith('/checkout/confirmation/test-order-123');
+    });
+
+    it('does not call replaceState when there is no token', () => {
+      configureWithToken(null);
+      fixture = TestBed.createComponent(OrderConfirmationComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      expect(checkoutService.getOrder).toHaveBeenCalledWith('test-order-123');
+      expect(checkoutService.getGuestOrder).not.toHaveBeenCalled();
+      expect(locationReplaceSpy).not.toHaveBeenCalled();
+    });
+
+    it('retryLoad reuses the captured token after the URL has been stripped', () => {
+      configureWithToken('guest-token-abc');
+      fixture = TestBed.createComponent(OrderConfirmationComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      checkoutService.getGuestOrder.calls.reset();
+      component.retryLoad();
+
+      expect(checkoutService.getGuestOrder).toHaveBeenCalledWith('test-order-123', 'guest-token-abc');
+    });
   });
 
   describe('cleanup', () => {

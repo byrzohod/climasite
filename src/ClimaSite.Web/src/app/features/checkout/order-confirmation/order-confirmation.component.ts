@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -946,10 +946,16 @@ import { apiErrorToTranslationKey } from '../../../core/utils/translation-key.ut
 export class OrderConfirmationComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly location = inject(Location);
   private readonly checkoutService = inject(CheckoutService);
   private readonly confettiService = inject(ConfettiService);
   // GAP-06: bank-transfer account details for the instructions panel on a bank order.
   readonly paymentService = inject(PaymentService);
+
+  // GAP-07: the guest access token is held in component state, never re-read from the URL.
+  // It is stripped from the address bar in ngOnInit so it cannot leak via history, the
+  // referrer header, or shoulder-surfing — while retryLoad() can still reuse it.
+  private guestToken: string | null = null;
 
   // State signals
   order = signal<Order | null>(null);
@@ -1007,13 +1013,31 @@ export class OrderConfirmationComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const orderId = this.route.snapshot.paramMap.get('orderId');
-    // GAP-07: a guest confirmation carries an opaque access token; use the guest lookup with it.
-    const token = this.route.snapshot.queryParamMap.get('token');
+    // GAP-07: a guest confirmation carries an opaque access token; capture it into component
+    // state, then strip it from the URL so the bearer token never lingers in the address bar.
+    this.guestToken = this.route.snapshot.queryParamMap.get('token');
     if (orderId) {
-      this.loadOrder(orderId, token);
+      this.stripTokenFromUrl(orderId);
+      this.loadOrder(orderId, this.guestToken);
     } else {
       this.error.set('checkout.orderConfirmation.errors.orderIdNotFound');
       this.loading.set(false);
+    }
+  }
+
+  /**
+   * Replace the current history entry with a token-free URL (no reload). Only acts when a
+   * token was present. Guarded so it is a safe no-op in environments where Location is a
+   * stub (e.g. unit tests).
+   */
+  private stripTokenFromUrl(orderId: string): void {
+    if (!this.guestToken) {
+      return;
+    }
+    try {
+      this.location.replaceState(`/checkout/confirmation/${orderId}`);
+    } catch {
+      // Location unavailable (test stub / non-browser) — token stays in component state regardless.
     }
   }
 
@@ -1061,9 +1085,9 @@ export class OrderConfirmationComponent implements OnInit, OnDestroy {
 
   retryLoad(): void {
     const orderId = this.route.snapshot.paramMap.get('orderId');
-    const token = this.route.snapshot.queryParamMap.get('token');
+    // Reuse the token captured in ngOnInit — the URL no longer carries it (GAP-07).
     if (orderId) {
-      this.loadOrder(orderId, token);
+      this.loadOrder(orderId, this.guestToken);
     }
   }
 

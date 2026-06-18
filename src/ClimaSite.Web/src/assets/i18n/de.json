@@ -1121,7 +1121,10 @@
     "title": "Benachrichtigungen",
     "empty": "Sie haben noch keine Benachrichtigungen",
     "markAllRead": "Alle als gelesen markieren",
+    "markRead": "Als gelesen markieren",
+    "view": "Anzeigen",
     "viewAll": "Alle anzeigen",
+    "loadError": "Ihre Benachrichtigungen konnten nicht geladen werden.",
     "time": {
       "justNow": "gerade eben",
       "minutes": "vor {{count}} Min.",
