@@ -109,7 +109,10 @@ export interface BottomNavItem {
         bottom: 0;
         left: 0;
         right: 0;
-        z-index: 1000;
+        /* Sticky layer (200): below the mobile-menu overlay (400) and panel
+           (500) so an open menu sits above the bottom-nav, but above page
+           content. */
+        z-index: var(--z-sticky, 200);
       }
     }
 

@@ -228,4 +228,21 @@ describe('HeaderComponent — notification bell (authenticated)', () => {
     component.onNotificationClick(sampleNotifications[0]);
     expect(notificationServiceStub.markAsRead).toHaveBeenCalledWith('n-1');
   });
+
+  describe('Z-Index Layering (mobile menu overlay stacking)', () => {
+    // The mobile-menu overlay must sit on the overlay token layer (400) and the
+    // panel on the modal layer (500), so the open menu paints above the
+    // bottom-nav (sticky, 200). Guards against regressing to the previous
+    // hardcoded 200/201 that let the bottom-nav punch through the open menu.
+    const componentCss = (): string =>
+      ((HeaderComponent as unknown as { ɵcmp: { styles: string[] } }).ɵcmp.styles || []).join('\n');
+
+    it('layers the mobile-menu overlay and panel on the token scale', () => {
+      const css = componentCss();
+      expect(css).toContain('z-index: var(--z-overlay, 400)');
+      expect(css).toContain('z-index: var(--z-modal, 500)');
+      expect(css).not.toContain('z-index: 200;');
+      expect(css).not.toContain('z-index: 201;');
+    });
+  });
 });

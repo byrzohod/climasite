@@ -91,7 +91,7 @@ import { apiErrorToTranslationKey } from '../../../../core/utils/translation-key
           <div class="login-prompt" data-testid="qa-login-prompt">
             <span class="icon">?</span>
             <span>{{ 'products.qa.loginToAsk' | translate }}</span>
-            <a [routerLink]="['/auth/login']" class="login-link" data-testid="qa-login-link">
+            <a [routerLink]="['/login']" class="login-link" data-testid="qa-login-link">
               {{ 'products.qa.loginNow' | translate }}
             </a>
           </div>
@@ -126,7 +126,7 @@ import { apiErrorToTranslationKey } from '../../../../core/utils/translation-key
                       {{ 'products.qa.answer' | translate }}
                     </button>
                   } @else {
-                    <a [routerLink]="['/auth/login']" class="answer-btn login-to-answer" data-testid="login-to-answer">
+                    <a [routerLink]="['/login']" class="answer-btn login-to-answer" data-testid="login-to-answer">
                       {{ 'products.qa.loginToAnswer' | translate }}
                     </a>
                   }

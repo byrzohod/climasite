@@ -14,7 +14,7 @@ import { AuthService } from '../../../auth/services/auth.service';
 
       @if (authService.user(); as user) {
         <div class="welcome-section">
-          <p>Welcome, {{ user.firstName }} {{ user.lastName }}!</p>
+          <p data-testid="account-welcome">{{ 'account.welcome' | translate:{ name: user.firstName + ' ' + user.lastName } }}</p>
         </div>
       }
 

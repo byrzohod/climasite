@@ -108,6 +108,7 @@
     "reviewContent": "Your Review",
     "contentPlaceholder": "Tell others about your experience with this product...",
     "submitReview": "Submit Review",
+    "submitSuccess": "Thank you! Your review has been posted.",
     "sortBy": "Sort by",
     "sort": {
       "newest": "Newest First",
@@ -173,6 +174,7 @@
   },
   "checkout": {
     "title": "Checkout",
+    "cardUnavailable": "Card payments are temporarily unavailable. Please use bank transfer to complete your order.",
     "progress_navigation": "Checkout progress",
     "step_completed": "Completed",
     "step_current": "Current step",
@@ -307,6 +309,7 @@
   },
   "account": {
     "title": "My Account",
+    "welcome": "Welcome, {{name}}",
     "dashboard": "Dashboard",
     "orders": {
       "title": "My Orders",

@@ -97,20 +97,16 @@ $border-radius: (
 // -----------------------------------------------------------------------------
 // Z-INDEX SCALE
 // -----------------------------------------------------------------------------
-$z-index: (
-  'behind': -1,
-  'base': 0,
-  'raised': 10,
-  'dropdown': 20,
-  'sticky': 30,
-  'fixed': 40,
-  'modal-backdrop': 50,
-  'modal': 60,
-  'popover': 70,
-  'tooltip': 80,
-  'toast': 90,
-  'max': 9999,
-);
+// NOTE: The canonical z-index scale (--z-docked / --z-dropdown / --z-sticky /
+// --z-banner / --z-overlay / --z-modal / --z-popover / --z-toast / --z-tooltip
+// / --z-max) lives in `_tokens.scss` and is the SINGLE SOURCE OF TRUTH.
+// A duplicate $z-index map used to be emitted here, but because this file is
+// @used AFTER 'styles/tokens' it clobbered the good scale (e.g. --z-modal
+// resolved to 60 instead of 500, dropping the mini-cart drawer below its
+// backdrop). It has been removed. Only the modal-backdrop alias below - which
+// the canonical scale does not define and which has exactly one consumer
+// (product-list filter drawer) - is emitted, pinned to the overlay layer (400)
+// so it sits below --z-modal (500), matching the drawer/backdrop pattern.
 
 // -----------------------------------------------------------------------------
 // CSS CUSTOM PROPERTIES
@@ -146,11 +142,10 @@ $z-index: (
   --radius-4xl: #{map.get($border-radius, '4xl')};
   --radius-full: #{map.get($border-radius, 'full')};
   
-  // Z-Index
-  @each $key, $value in $z-index {
-    --z-#{$key}: #{$value};
-  }
-  
+  // Z-Index: modal backdrop alias only (canonical scale lives in _tokens.scss).
+  // Pinned to the overlay layer so it stays below --z-modal (500).
+  --z-modal-backdrop: var(--z-overlay);
+
   // Layout Constants
   --header-height: 4rem;
   --header-height-scrolled: 3.5rem;

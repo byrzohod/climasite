@@ -223,4 +223,19 @@ describe('BottomNavComponent', () => {
       });
     });
   });
+
+  describe('Z-Index Layering (overlay stacking)', () => {
+    // The fixed host must sit on the canonical "sticky" token layer (200), below
+    // the mobile-menu overlay (400) and panel (500), so an open menu is never
+    // punched through by the bottom-nav. Guards against regressing to a
+    // hardcoded high z-index (was 1000).
+    const componentCss = (): string =>
+      ((BottomNavComponent as unknown as { ɵcmp: { styles: string[] } }).ɵcmp.styles || []).join('\n');
+
+    it('pins the fixed host to the --z-sticky token, not a hardcoded value', () => {
+      const css = componentCss();
+      expect(css).toContain('z-index: var(--z-sticky, 200)');
+      expect(css).not.toContain('z-index: 1000');
+    });
+  });
 });

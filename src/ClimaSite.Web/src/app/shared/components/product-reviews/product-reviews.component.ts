@@ -72,7 +72,7 @@ import { apiErrorToTranslationKey } from '../../../core/utils/translation-key.ut
         <div class="login-prompt" data-testid="reviews-login-prompt">
           <span class="prompt-icon">★</span>
           <span>{{ 'reviews.loginToReview' | translate }}</span>
-          <a routerLink="/auth/login" class="login-link" data-testid="reviews-login-link">
+          <a [routerLink]="['/login']" class="login-link" data-testid="reviews-login-link">
             {{ 'reviews.loginNow' | translate }}
           </a>
         </div>
@@ -143,6 +143,22 @@ import { apiErrorToTranslationKey } from '../../../core/utils/translation-key.ut
             } @else {
               {{ 'reviews.submitReview' | translate }}
             }
+          </button>
+        </div>
+      }
+
+      <!-- Submit success banner -->
+      @if (reviewSubmittedSuccess()) {
+        <div class="review-success" role="status" data-testid="review-submit-success">
+          <span class="success-text">{{ 'reviews.submitSuccess' | translate }}</span>
+          <button
+            type="button"
+            class="success-dismiss"
+            (click)="reviewSubmittedSuccess.set(false)"
+            [attr.aria-label]="'common.close' | translate"
+            data-testid="review-submit-success-dismiss"
+          >
+            &#10005;
           </button>
         </div>
       }
@@ -506,6 +522,38 @@ import { apiErrorToTranslationKey } from '../../../core/utils/translation-key.ut
       margin-bottom: 1rem;
     }
 
+    .review-success {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.875rem 1.25rem;
+      background: var(--color-success-light);
+      border: 1px solid var(--color-success);
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+
+      .success-text {
+        flex: 1;
+        color: var(--color-success);
+        font-weight: 500;
+      }
+
+      .success-dismiss {
+        background: none;
+        border: none;
+        color: var(--color-success);
+        font-size: 1rem;
+        line-height: 1;
+        cursor: pointer;
+        padding: 0.25rem;
+        border-radius: 4px;
+
+        &:hover {
+          background: var(--color-bg-primary);
+        }
+      }
+    }
+
     .btn-submit-review {
       padding: 0.75rem 1.5rem;
       background: var(--color-primary);
@@ -742,6 +790,7 @@ export class ProductReviewsComponent implements OnInit {
   hoverRating = signal(0);
   isSubmitting = signal(false);
   submitError = signal<string | null>(null);
+  reviewSubmittedSuccess = signal(false);
 
   ngOnInit(): void {
     this.loadReviews();
@@ -823,6 +872,7 @@ export class ProductReviewsComponent implements OnInit {
 
     this.isSubmitting.set(true);
     this.submitError.set(null);
+    this.reviewSubmittedSuccess.set(false);
 
     this.reviewService.createReview({
       productId: this.productId(),
@@ -834,6 +884,10 @@ export class ProductReviewsComponent implements OnInit {
         this.isSubmitting.set(false);
         this.showReviewForm.set(false);
         this.resetForm();
+        // Confirm submission to the shopper. Reviews now auto-approve, so the
+        // new review appears immediately after we reload.
+        this.reviewSubmittedSuccess.set(true);
+        setTimeout(() => this.reviewSubmittedSuccess.set(false), 5000);
         // Reload reviews and summary
         this.currentPage.set(1);
         this.loadReviews();
