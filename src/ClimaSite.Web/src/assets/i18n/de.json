@@ -108,6 +108,7 @@
     "reviewContent": "Ihre Bewertung",
     "contentPlaceholder": "Erzählen Sie anderen von Ihren Erfahrungen mit diesem Produkt...",
     "submitReview": "Bewertung absenden",
+    "submitSuccess": "Vielen Dank! Ihre Bewertung wurde veröffentlicht.",
     "sortBy": "Sortieren nach",
     "sort": {
       "newest": "Neueste zuerst",
@@ -173,6 +174,7 @@
   },
   "checkout": {
     "title": "Kasse",
+    "cardUnavailable": "Kartenzahlungen sind vorübergehend nicht verfügbar. Bitte verwenden Sie eine Banküberweisung, um Ihre Bestellung abzuschließen.",
     "progress_navigation": "Bestellfortschritt",
     "step_completed": "Abgeschlossen",
     "step_current": "Aktueller Schritt",
@@ -307,6 +309,7 @@
   },
   "account": {
     "title": "Mein Konto",
+    "welcome": "Willkommen, {{name}}",
     "dashboard": "Übersicht",
     "orders": {
       "title": "Meine Bestellungen",
@@ -614,8 +617,8 @@
       "relations": {
         "Similar": "Ähnliche Produkte",
         "Accessory": "Zubehör",
-        "Upgrade": "Upgrades",
-        "Bundle": "Bundles",
+        "Upgrade": "Erweiterungen",
+        "Bundle": "Pakete",
         "FrequentlyBoughtTogether": "Häufig zusammen gekauft"
       },
       "relatedProductsManager": {
@@ -677,7 +680,7 @@
       "form": {
         "name": "Name",
         "sku": "Art.-Nr.",
-        "slug": "Slug",
+        "slug": "Slug (URL-Kürzel)",
         "price": "Preis",
         "compareAtPrice": "Vergleichspreis",
         "costPrice": "Einkaufspreis",

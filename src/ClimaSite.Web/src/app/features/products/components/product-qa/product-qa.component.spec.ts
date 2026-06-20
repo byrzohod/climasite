@@ -4,6 +4,7 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { TranslateModule, TranslateLoader } from '@ngx-translate/core';
 import { Observable, of } from 'rxjs';
 import { Component, signal } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { ProductQaComponent } from './product-qa.component';
 import { QuestionsService, ProductQuestions, Question } from '../../services/questions.service';
 import { AuthService } from '../../../../auth/services/auth.service';
@@ -126,6 +127,7 @@ describe('ProductQaComponent', () => {
       providers: [
         QuestionsService,
         { provide: AuthService, useClass: MockAuthService },
+        provideRouter([]),
         provideHttpClient(),
         provideHttpClientTesting()
       ]
@@ -260,6 +262,35 @@ describe('ProductQaComponent', () => {
     fixture.detectChanges();
 
     expect(component.questionSubmitted()).toBeTruthy();
+  }));
+
+  it('should point the ask-question login link to /login (not /auth/login)', fakeAsync(() => {
+    (component as unknown as { authService: MockAuthService }).authService.isAuthenticated.set(false);
+    fixture.detectChanges();
+    const req = httpMock.expectOne(req => req.url.includes('/questions/product/'));
+    req.flush(mockQuestions);
+    tick();
+    fixture.detectChanges();
+
+    const loginLink: HTMLAnchorElement | null =
+      fixture.nativeElement.querySelector('[data-testid="qa-login-link"]');
+    expect(loginLink).toBeTruthy();
+    // routerLink resolves to the href attribute in tests.
+    expect(loginLink!.getAttribute('href')).toBe('/login');
+  }));
+
+  it('should point the login-to-answer link to /login (not /auth/login)', fakeAsync(() => {
+    (component as unknown as { authService: MockAuthService }).authService.isAuthenticated.set(false);
+    fixture.detectChanges();
+    const req = httpMock.expectOne(req => req.url.includes('/questions/product/'));
+    req.flush(mockQuestions);
+    tick();
+    fixture.detectChanges();
+
+    const answerLink: HTMLAnchorElement | null =
+      fixture.nativeElement.querySelector('[data-testid="login-to-answer"]');
+    expect(answerLink).toBeTruthy();
+    expect(answerLink!.getAttribute('href')).toBe('/login');
   }));
 
   it('should map raw question submission errors to a translation key', fakeAsync(() => {

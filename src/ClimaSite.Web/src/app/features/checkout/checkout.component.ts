@@ -1231,7 +1231,10 @@ ngOnInit(): void {
         ).toPromise();
 
         if (!intentResponse?.clientSecret) {
-          this.checkoutService.setError('checkout.payment.errors.intentInitFailed');
+          // Create-intent succeeded over HTTP but returned no usable intent (e.g. a
+          // misconfigured/placeholder Stripe key). Card is unavailable — steer the buyer
+          // to bank transfer rather than showing a generic failure.
+          this.checkoutService.setError('checkout.cardUnavailable');
           this.placingOrder.set(false);
           return;
         }
@@ -1286,11 +1289,14 @@ ngOnInit(): void {
           }
         });
       } catch (error: unknown) {
+        // The only call awaited inside this try that can throw is createPaymentIntent
+        // (confirmPayment resolves with {success,error} and is handled above). A rejection
+        // here therefore means create-intent failed — typically a payment/config problem
+        // such as a 400 'Invalid API Key' from a placeholder Stripe key. Surface the
+        // clearer "card unavailable" message that steers the buyer to bank transfer,
+        // unless the error already carries a specific translation key to preserve.
         this.placingOrder.set(false);
-        this.checkoutService.setError(toTranslationKey(
-          error instanceof Error ? error.message : null,
-          'checkout.payment.errors.failed'
-        ));
+        this.checkoutService.setError(apiErrorToTranslationKey(error, 'checkout.cardUnavailable'));
       }
     } else {
       // Offline payment (bank transfer): no Stripe charge — the order is created Pending and the

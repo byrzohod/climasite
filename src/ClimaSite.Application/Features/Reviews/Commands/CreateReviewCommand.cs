@@ -95,6 +95,10 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, R
             review.SetVerifiedPurchase(true, order.Id);
         }
 
+        // Auto-approve so the review appears immediately to shoppers.
+        // Admins can still hide/reject it afterwards via ModerateReviewCommand.
+        review.SetStatus(ReviewStatus.Approved);
+
         _context.Reviews.Add(review);
         await _context.SaveChangesAsync(cancellationToken);
 

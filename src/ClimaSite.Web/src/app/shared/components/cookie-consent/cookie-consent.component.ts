@@ -57,11 +57,22 @@ import { ConsentService } from '../../../core/services/consent.service';
       left: 0;
       right: 0;
       bottom: 0;
-      z-index: 1000;
+      /* Banner layer (300): sits below the overlay (400) / modal (500) layers
+         so an open drawer or modal is never blocked by the consent banner. */
+      z-index: var(--z-banner, 300);
       padding: 1rem;
       background-color: var(--color-bg-secondary);
       border-top: 1px solid var(--color-border-primary);
       box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    /* On mobile, offset the banner above the 56px fixed bottom-nav so it does
+       not cover the navigation. The bottom-nav already accounts for the safe
+       area inset, so we add that here too to clear notched devices. */
+    @media (max-width: 767px) {
+      .cookie-consent {
+        bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+      }
     }
 
     .cookie-consent__inner {

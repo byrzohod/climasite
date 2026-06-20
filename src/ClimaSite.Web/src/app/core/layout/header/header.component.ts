@@ -1337,7 +1337,7 @@ import { AuthService } from '../../../auth/services/auth.service';
       position: fixed;
       inset: 0;
       background: var(--color-bg-overlay);
-      z-index: 200;
+      z-index: var(--z-overlay, 400); /* below the mobile-menu panel (500) */
       animation: overlayFadeIn 0.3s ease-out;
     }
 
@@ -1358,7 +1358,7 @@ import { AuthService } from '../../../auth/services/auth.service';
       max-width: 100%;
       height: 100vh;
       background: var(--color-bg-primary);
-      z-index: 201;
+      z-index: var(--z-modal, 500); /* above its overlay (400) and the bottom-nav (200) */
       display: flex;
       flex-direction: column;
       box-shadow: -4px 0 20px var(--shadow-color-lg);
