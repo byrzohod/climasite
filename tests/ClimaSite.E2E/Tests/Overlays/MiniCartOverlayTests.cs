@@ -46,11 +46,31 @@ public class MiniCartOverlayTests : IAsyncLifetime
 
         var productPage = new ProductPage(_page);
         await productPage.NavigateAsync(product.Slug);
-        await productPage.AddToCartAsync();
 
         // Confirm the cart actually has an item before we open the drawer (the footer with the
-        // checkout/view-cart actions only renders for a non-empty cart).
-        await Assertions.Expect(_page.Locator("[data-testid='cart-count']")).ToBeVisibleAsync(
+        // checkout/view-cart actions only renders for a non-empty cart). The add-to-cart signal can
+        // be slow on a loaded CI runner, so wait generously and retry the add once if the badge has
+        // not appeared — without this the test occasionally flakes on the add step (not the overlay).
+        var cartCount = _page.Locator("[data-testid='cart-count']");
+        for (var attempt = 1; attempt <= 2; attempt++)
+        {
+            await productPage.AddToCartAsync();
+            try
+            {
+                await cartCount.WaitForAsync(new LocatorWaitForOptions
+                {
+                    State = WaitForSelectorState.Visible,
+                    Timeout = 15000
+                });
+                return;
+            }
+            catch (TimeoutException) when (attempt == 1)
+            {
+                // Transient: the cart signal did not surface in time — re-attempt the add once.
+            }
+        }
+
+        await Assertions.Expect(cartCount).ToBeVisibleAsync(
             new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
     }
 

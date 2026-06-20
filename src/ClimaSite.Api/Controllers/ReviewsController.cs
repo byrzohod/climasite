@@ -5,12 +5,17 @@ using ClimaSite.Application.Features.Reviews.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace ClimaSite.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+// Reviews auto-approve and must appear immediately after submission; the 5-minute base output-cache
+// policy would otherwise serve a stale list (a just-posted review would be invisible for up to 5 min).
+// Mirror CartController and keep review reads fresh.
+[OutputCache(NoStore = true)]
 public class ReviewsController : ControllerBase
 {
     private readonly IMediator _mediator;
