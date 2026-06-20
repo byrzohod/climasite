@@ -32,41 +32,65 @@ public class MiniCartDrawer : BasePage
         await Page.WaitForSelectorAsync(Drawer, new PageWaitForSelectorOptions { Timeout = 10000 });
         await Page.WaitForSelectorAsync(Footer, new PageWaitForSelectorOptions { Timeout = 10000 });
 
-        // Drawer slides in via an Angular animation; wait for the checkout action to settle into place
-        // so element-at-point assertions read the final layout, not a mid-transition frame.
+        // Drawer slides in via an Angular transform animation; wait for the checkout action to settle
+        // into its final, on-screen position so element-at-point assertions read the settled layout,
+        // not a mid-transition (possibly off-screen) frame.
         await Assertions.Expect(Page.Locator(CheckoutButton)).ToBeVisibleAsync(
             new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+        await WaitForSettledOnScreenAsync(CheckoutButton);
     }
 
     public async Task<bool> IsOpenAsync() => await IsVisibleAsync(Drawer);
 
     /// <summary>
+    /// Waits until the control has a finite, non-zero bounding box whose centre is inside the viewport.
+    /// The drawer animates in with a CSS transform, so a too-early read can produce an off-screen or
+    /// non-finite point (which makes document.elementFromPoint throw "non-finite value").
+    /// </summary>
+    private async Task WaitForSettledOnScreenAsync(string selector)
+    {
+        await Page.WaitForFunctionAsync(
+            @"(sel) => {
+                const el = document.querySelector(sel);
+                if (!el) return false;
+                const r = el.getBoundingClientRect();
+                if (!r || !isFinite(r.left) || !isFinite(r.top) || r.width <= 0 || r.height <= 0) return false;
+                const cx = r.left + r.width / 2;
+                const cy = r.top + r.height / 2;
+                return cx >= 0 && cy >= 0 && cx <= window.innerWidth && cy <= window.innerHeight;
+            }",
+            selector,
+            new PageWaitForFunctionOptions { Timeout = 10000 });
+    }
+
+    /// <summary>
     /// Returns the element-tag/testid that the browser hit-tests at the centre of a drawer control.
     /// Used to prove the control — not the backdrop or the cookie banner — is the real topmost element.
+    /// The coordinate is computed and hit-tested entirely in the browser (from getBoundingClientRect),
+    /// guarded against non-finite values, so it never feeds a NaN point to elementFromPoint.
     /// </summary>
     public async Task<TopmostElement> GetTopmostElementAtAsync(string selector)
     {
-        var handle = await Page.WaitForSelectorAsync(selector,
-            new PageWaitForSelectorOptions { Timeout = 10000 });
-        if (handle is null)
-        {
-            throw new InvalidOperationException($"Drawer control not found: {selector}");
-        }
+        await WaitForSettledOnScreenAsync(selector);
 
-        var box = await handle.BoundingBoxAsync()
-            ?? throw new InvalidOperationException($"Drawer control has no bounding box: {selector}");
-
-        var centerX = box.X + box.Width / 2;
-        var centerY = box.Y + box.Height / 2;
-
-        // Resolve the topmost element at the control's centre, then walk up its ancestor chain so a hit
-        // on an inner <span>/<svg> still resolves to the owning [data-testid] control.
         var result = await Page.EvaluateAsync<TopmostElement>(
-            @"({ x, y }) => {
+            @"(sel) => {
+                const target = document.querySelector(sel);
+                if (!target) {
+                    return { found: false, tag: '', testId: '', matchedTestId: '' };
+                }
+                const r = target.getBoundingClientRect();
+                const x = Math.round(r.left + r.width / 2);
+                const y = Math.round(r.top + r.height / 2);
+                if (!isFinite(x) || !isFinite(y)) {
+                    return { found: false, tag: '', testId: '', matchedTestId: '' };
+                }
                 const el = document.elementFromPoint(x, y);
                 if (!el) {
                     return { found: false, tag: '', testId: '', matchedTestId: '' };
                 }
+                // Walk up the ancestor chain so a hit on an inner <span>/<svg> still resolves to the
+                // owning [data-testid] control.
                 let node = el;
                 let matchedTestId = '';
                 while (node) {
@@ -81,7 +105,7 @@ public class MiniCartDrawer : BasePage
                     matchedTestId
                 };
             }",
-            new { x = centerX, y = centerY });
+            selector);
 
         return result;
     }
