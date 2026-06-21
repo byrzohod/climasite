@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
     <ProjectReference Include="..\ClimaSite.Core\ClimaSite.Core.csproj" />
@@ -22,6 +22,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dcf821de-a3f7-463a-9a14-8ed36b35fa83</UserSecretsId>
   </PropertyGroup>
 
 </Project>

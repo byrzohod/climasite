@@ -9,6 +9,7 @@ import { AddressService } from '../../core/services/address.service';
 import { AuthService } from '../../auth/services/auth.service';
 import { PaymentService, PaymentIntentResponse } from '../../core/services/payment.service';
 import { ConfettiService } from '../../core/services/confetti.service';
+import { Order } from '../../core/models/order.model';
 
 /**
  * BUG-04: a rapid double-click on "Place order" must not fire two create-intent
@@ -234,5 +235,133 @@ describe('CheckoutComponent - card payment failure messaging (SLICE C)', () => {
 
     expect(checkoutService.setError).toHaveBeenCalledWith('checkout.payment.errors.cardDeclined');
     expect(checkoutService.setError).not.toHaveBeenCalledWith('checkout.cardUnavailable');
+  });
+});
+
+/**
+ * Stripe CARD fix: the card form lives on the payment step but the order is confirmed on the
+ * review step (where the live card element is gone). proceedFromPayment() captures a Stripe
+ * PaymentMethod *before* leaving the payment step. On success it stores the id and advances to
+ * review; on failure it surfaces the error and stays on payment. The captured id is later passed
+ * to confirmPayment() as the 3rd argument inside placeOrder().
+ */
+describe('CheckoutComponent - proceedFromPayment (Stripe card capture)', () => {
+  let component: CheckoutComponent;
+  let paymentService: jasmine.SpyObj<PaymentService>;
+  let checkoutService: jasmine.SpyObj<CheckoutService>;
+
+  function buildComponent(paymentMethod: 'card' | 'bank'): void {
+    paymentService = jasmine.createSpyObj<PaymentService>(
+      'PaymentService',
+      ['createPaymentIntent', 'confirmPayment', 'createCardPaymentMethod', 'destroyElements', 'initialize', 'createElements', 'loadConfig']
+    );
+    paymentService.loadConfig.and.returnValue(Promise.resolve(null));
+    paymentService.initialize.and.returnValue(Promise.resolve(true));
+
+    checkoutService = jasmine.createSpyObj<CheckoutService>(
+      'CheckoutService',
+      ['createOrder', 'setError', 'setStep', 'setShippingAddress', 'setPaymentMethod', 'setShippingMethod', 'getSessionId', 'paymentMethod', 'shippingMethod', 'shippingAddress', 'lastOrderId', 'lastGuestToken', 'isProcessing']
+    );
+    checkoutService.paymentMethod.and.returnValue(paymentMethod);
+    checkoutService.shippingMethod.and.returnValue('standard');
+    checkoutService.shippingAddress.and.returnValue(null);
+    checkoutService.getSessionId.and.returnValue('session-1');
+    checkoutService.lastOrderId.and.returnValue(null);
+    checkoutService.lastGuestToken.and.returnValue(null);
+
+    const cartService = jasmine.createSpyObj<CartService>('CartService', ['clearCart']);
+    cartService.clearCart.and.returnValue(of(void 0));
+    const addressService = jasmine.createSpyObj<AddressService>('AddressService', ['loadAddresses', 'hasAddresses', 'addresses']);
+    const authService = jasmine.createSpyObj<AuthService>('AuthService', ['isAuthenticated']);
+    authService.isAuthenticated.and.returnValue(false);
+    const confettiService = jasmine.createSpyObj<ConfettiService>('ConfettiService', ['burst', 'stop']);
+    const router = jasmine.createSpyObj<Router>('Router', ['navigate']);
+
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: CartService, useValue: cartService },
+        { provide: CheckoutService, useValue: checkoutService },
+        { provide: AddressService, useValue: addressService },
+        { provide: AuthService, useValue: authService },
+        { provide: PaymentService, useValue: paymentService },
+        { provide: ConfettiService, useValue: confettiService },
+        { provide: Router, useValue: router }
+      ]
+    });
+
+    component = TestBed.runInInjectionContext(() => new CheckoutComponent());
+    component.shippingForm.patchValue({ email: 'buyer@test.com', phone: '+359888000000' });
+  }
+
+  it('captures the card payment method and advances to review on success (card)', async () => {
+    buildComponent('card');
+    paymentService.createCardPaymentMethod.and.returnValue(
+      Promise.resolve({ success: true, paymentMethodId: 'pm_captured_1' })
+    );
+
+    await component.proceedFromPayment();
+
+    expect(paymentService.createCardPaymentMethod).toHaveBeenCalledTimes(1);
+    // Advances to the review step (goToStep delegates to checkoutService.setStep).
+    expect(checkoutService.setStep).toHaveBeenCalledWith('review');
+    // Any prior error is cleared on success.
+    expect(checkoutService.setError).toHaveBeenCalledWith(null);
+  });
+
+  it('passes the captured payment method id to confirmPayment as the 3rd arg in placeOrder', async () => {
+    buildComponent('card');
+    paymentService.createCardPaymentMethod.and.returnValue(
+      Promise.resolve({ success: true, paymentMethodId: 'pm_captured_1' })
+    );
+    paymentService.createPaymentIntent.and.returnValue(
+      of({ clientSecret: 'cs_review_1' } as PaymentIntentResponse)
+    );
+    paymentService.confirmPayment.and.returnValue(
+      Promise.resolve({ success: true, paymentIntentId: 'pi_ok_1' })
+    );
+    // The component's success callback ignores the emitted order, so an empty cast suffices.
+    checkoutService.createOrder.and.returnValue(of({} as unknown as Order));
+
+    await component.proceedFromPayment();
+    await component.placeOrder();
+
+    expect(paymentService.confirmPayment).toHaveBeenCalledTimes(1);
+    const args = paymentService.confirmPayment.calls.mostRecent().args;
+    expect(args[0]).toBe('cs_review_1');
+    expect(args[2]).toBe('pm_captured_1');
+  });
+
+  it('surfaces the error and does NOT advance to review when capture fails (card)', async () => {
+    buildComponent('card');
+    paymentService.createCardPaymentMethod.and.returnValue(
+      Promise.resolve({ success: false, error: 'checkout.payment.errors.cardDeclined' })
+    );
+
+    await component.proceedFromPayment();
+
+    expect(checkoutService.setError).toHaveBeenCalledWith('checkout.payment.errors.cardDeclined');
+    // Must stay on the payment step: never advance to review.
+    expect(checkoutService.setStep).not.toHaveBeenCalledWith('review');
+  });
+
+  it('falls back to checkout.payment.errors.failed when capture fails without a translation key', async () => {
+    buildComponent('card');
+    paymentService.createCardPaymentMethod.and.returnValue(
+      Promise.resolve({ success: false, error: 'Your card number is incomplete.' })
+    );
+
+    await component.proceedFromPayment();
+
+    expect(checkoutService.setError).toHaveBeenCalledWith('checkout.payment.errors.failed');
+    expect(checkoutService.setStep).not.toHaveBeenCalledWith('review');
+  });
+
+  it('goes straight to review without capturing a card method when bank is selected', async () => {
+    buildComponent('bank');
+
+    await component.proceedFromPayment();
+
+    expect(paymentService.createCardPaymentMethod).not.toHaveBeenCalled();
+    expect(checkoutService.setStep).toHaveBeenCalledWith('review');
   });
 });

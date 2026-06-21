@@ -160,8 +160,11 @@ export class PaymentService {
       postal_code?: string;
       country?: string;
     };
-  }): Promise<{ success: boolean; paymentIntentId?: string; error?: string }> {
-    if (!this.stripe || !this.cardElement) {
+  }, paymentMethodId?: string): Promise<{ success: boolean; paymentIntentId?: string; error?: string }> {
+    // A pre-created PaymentMethod id is used when the live card element is no longer mounted: the
+    // card form lives on the payment step but the order is confirmed on the review step, where the
+    // element has been removed from the DOM. Fall back to the live element only when no id is given.
+    if (!this.stripe || (!paymentMethodId && !this.cardElement)) {
       return { success: false, error: 'checkout.payment.errors.notInitialized' };
     }
 
@@ -169,12 +172,12 @@ export class PaymentService {
     this._error.set(null);
 
     try {
-      const { error, paymentIntent } = await this.stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: this.cardElement,
-          billing_details: billingDetails
-        }
-      });
+      const { error, paymentIntent } = await this.stripe.confirmCardPayment(
+        clientSecret,
+        paymentMethodId
+          ? { payment_method: paymentMethodId }
+          : { payment_method: { card: this.cardElement!, billing_details: billingDetails } }
+      );
 
       this._isProcessing.set(false);
 
@@ -192,6 +195,51 @@ export class PaymentService {
     } catch (err: unknown) {
       const message = toTranslationKey(err instanceof Error ? err.message : null, 'checkout.payment.errors.failed');
       this._isProcessing.set(false);
+      this._error.set(message);
+      return { success: false, error: message };
+    }
+  }
+
+  /**
+   * Creates a Stripe PaymentMethod from the live card element while it is still mounted. Call this
+   * before leaving the payment step (the element is destroyed on the review step). The returned id
+   * is then passed to confirmPayment(), which can confirm without the element in the DOM.
+   */
+  async createCardPaymentMethod(billingDetails?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    address?: {
+      line1?: string;
+      line2?: string;
+      city?: string;
+      state?: string;
+      postal_code?: string;
+      country?: string;
+    };
+  }): Promise<{ success: boolean; paymentMethodId?: string; error?: string }> {
+    if (!this.stripe || !this.cardElement) {
+      return { success: false, error: 'checkout.payment.errors.notInitialized' };
+    }
+
+    this._error.set(null);
+
+    try {
+      const { error, paymentMethod } = await this.stripe.createPaymentMethod({
+        type: 'card',
+        card: this.cardElement,
+        billing_details: billingDetails
+      });
+
+      if (error) {
+        const errorKey = toTranslationKey(error.message, 'checkout.payment.errors.failed');
+        this._error.set(errorKey);
+        return { success: false, error: errorKey };
+      }
+
+      return { success: true, paymentMethodId: paymentMethod?.id };
+    } catch (err: unknown) {
+      const message = toTranslationKey(err instanceof Error ? err.message : null, 'checkout.payment.errors.failed');
       this._error.set(message);
       return { success: false, error: message };
     }

@@ -254,7 +254,7 @@ import { apiErrorToTranslationKey, toTranslationKey } from '../../core/utils/tra
                   <button type="button" class="btn-secondary" (click)="goToStep('shipping')" data-testid="previous-step">
                     {{ 'common.back' | translate }}
                   </button>
-                  <button type="button" class="btn-primary" (click)="goToStep('review')" data-testid="next-step">
+                  <button type="button" class="btn-primary" (click)="proceedFromPayment()" data-testid="next-step">
                     {{ 'common.next' | translate }}: {{ 'checkout.steps.review' | translate }}
                   </button>
                 </div>
@@ -1091,6 +1091,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   // create-intent call — so a rapid double-click can't fire two intent/charge sequences.
   // checkoutService.isProcessing() only flips inside createOrder(), which runs too late.
   readonly placingOrder = signal(false);
+  // Stripe PaymentMethod id captured from the card element on the payment step (the element is
+  // removed from the DOM on the review step, so we cannot confirm with the live element there).
+  private cardPaymentMethodId: string | null = null;
 
 ngOnInit(): void {
     // Load saved addresses if user is authenticated
@@ -1185,7 +1188,10 @@ ngOnInit(): void {
     };
 
     this.checkoutService.setShippingAddress(address);
-    this.checkoutService.setStep('payment');
+    // Route through goToStep (not setStep) so Stripe Elements initialize when the payment step is
+    // entered via the shipping "Next" button. Card is the default method, so its (change) event
+    // never fires on this path — without this the card field stays stuck on "Loading Stripe…".
+    this.goToStep('payment');
   }
 
   selectPaymentMethod(method: string): void {
@@ -1206,6 +1212,43 @@ ngOnInit(): void {
 
   selectShippingMethod(method: string): void {
     this.checkoutService.setShippingMethod(method);
+  }
+
+  /**
+   * Advance from the payment step to the review step. For card payments this captures a Stripe
+   * PaymentMethod from the card element *now*, while it is still mounted — the element is removed
+   * from the DOM on the review step, so confirming there with the live element fails. If capture
+   * fails (e.g. an incomplete card), we surface the error and stay on the payment step.
+   */
+  async proceedFromPayment(): Promise<void> {
+    if (this.checkoutService.paymentMethod() === 'card') {
+      const result = await this.paymentService.createCardPaymentMethod(this.buildCardBillingDetails());
+      if (!result.success) {
+        this.checkoutService.setError(toTranslationKey(result.error, 'checkout.payment.errors.failed'));
+        return;
+      }
+      this.cardPaymentMethodId = result.paymentMethodId ?? null;
+      this.checkoutService.setError(null);
+    }
+    this.goToStep('review');
+  }
+
+  /** Billing details for Stripe, derived from the shipping form + saved address. */
+  private buildCardBillingDetails() {
+    const address = this.checkoutService.shippingAddress();
+    return {
+      name: `${this.shippingForm.get('firstName')?.value} ${this.shippingForm.get('lastName')?.value}`,
+      email: this.shippingForm.get('email')?.value,
+      phone: this.shippingForm.get('phone')?.value,
+      address: address ? {
+        line1: address.addressLine1,
+        line2: address.addressLine2,
+        city: address.city,
+        state: address.state,
+        postal_code: address.postalCode,
+        country: address.country === 'Bulgaria' ? 'BG' : address.country
+      } : undefined
+    };
   }
 
   async placeOrder(): Promise<void> {
@@ -1239,33 +1282,22 @@ ngOnInit(): void {
           return;
         }
 
-        // Get billing details from form
-        const address = this.checkoutService.shippingAddress();
-        const billingDetails = {
-          name: `${this.shippingForm.get('firstName')?.value} ${this.shippingForm.get('lastName')?.value}`,
-          email,
-          phone,
-          address: address ? {
-            line1: address.addressLine1,
-            line2: address.addressLine2,
-            city: address.city,
-            state: address.state,
-            postal_code: address.postalCode,
-            country: address.country === 'Bulgaria' ? 'BG' : address.country
-          } : undefined
-        };
-
-        // Confirm payment with Stripe
+        // Confirm payment with Stripe. Prefer the PaymentMethod captured on the payment step
+        // (cardPaymentMethodId) — the card element is no longer mounted on this review step.
+        // Fall back to the live element + billing details if no id was captured.
         const paymentResult = await this.paymentService.confirmPayment(
           intentResponse.clientSecret,
-          billingDetails
+          this.buildCardBillingDetails(),
+          this.cardPaymentMethodId ?? undefined
         );
 
         if (!paymentResult.success) {
           this.checkoutService.setError(toTranslationKey(paymentResult.error, 'checkout.payment.errors.failed'));
+          this.cardPaymentMethodId = null;
           this.placingOrder.set(false);
           return;
         }
+        this.cardPaymentMethodId = null;
 
 // Payment succeeded, create order with payment intent ID
         this.checkoutService.createOrder(email, phone, paymentResult.paymentIntentId).subscribe({
