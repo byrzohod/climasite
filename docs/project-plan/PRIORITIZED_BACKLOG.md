@@ -716,6 +716,18 @@ Detail: `_review/docs.md` (incl. the full per-file Disposition Table) and `_revi
 
 ---
 
+## 10. Process (PROC)
+
+### PROC-01 — SDLC hardening: gated phases, agents/skills, and CI/hook enforcement (P1, Large)
+- **Status:** 🚧 IN PROGRESS (2026-06-21). Plan owner-approved; canonical detail in `docs/project-plan/SDLC_HARDENING_PLAN.md`; live execution tracker in `docs/features/PROC-01/STATE.md`. Wave 0 merged (#40); Wave 1 in progress.
+- **Description:** Build the development process "like a real company": eight discrete, gated phases (research → plan → verify-plan → track → implement → test → review → merge) that can't be skipped, enforced via pinned agents/skills + phase-aware hooks + CI required-checks + branch protection. Strongest gates are TEST (real-infra E2E/UI/visual/a11y/perf, no mocking) and REVIEW (independent read-only reviewer/verifier agents).
+- **Closes:** the process/governance gaps in `_review/devops.md`, `_review/testing.md`, `_review/docs.md` (doc drift, advisory-only coverage, no visual/perf gate, untested money path).
+- **Affected:** `.claude/agents/*`, `.claude/skills/*`, `.claude/settings.json` + `hooks/`, `.github/workflows/*`, `docs/features/*`, `CLAUDE.md`, `DEV_WORKFLOW.md`.
+- **Acceptance:** Each of the 7 waves lands as its own green-CI PR; the eight-phase pipeline is documented (`docs/features/README.md`) and dogfooded; hard gates (Wave 2 hooks, Wave 3 coverage, Wave 6 real-card E2E) enforce the phases. Owner-approved pauses before flipping any gate that could block all future PRs.
+- **Depends on:** None (foundational). Waves are sequential (each builds on the prior).
+
+---
+
 ## Next 10 tasks — the strict execution order
 
 1. **OPS-01 — Commit, push, and PR the wishlist slice.** Four days of finished multi-layer work is one `git checkout .` from non-recoverable loss, and every status doc already claims it as done; the PR's CI run also closes the missing test evidence (TS-01). Take SEC-10/BUG-09/BUG-10/UX-02 as riders if cheap.

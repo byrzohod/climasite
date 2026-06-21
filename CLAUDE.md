@@ -197,6 +197,34 @@ X-Correlation-Id: <guid>           # Request tracking
 
 ---
 
+## MANDATORY: Per-Feature Pipeline (PROC-01)
+
+Every non-trivial feature or fix flows through **eight gated phases**, each producing an artifact in
+`docs/features/<FEAT-ID>/`. The canonical lifecycle doc is **`docs/features/README.md`** (the full
+phase table + how to start). The testing and post-implementation sections below are Phases 6 and 8 of
+this same pipeline. The four **front phases** (before any code) are non-negotiable:
+
+1. **Research** → `research.md`. **No plan without research.** Fill it from the real working tree
+   (grep every affected-file path), list the constraints (payment/auth/GDPR/i18n/theme/a11y/migration),
+   and write ≥1 happy + ≥1 edge + ≥1 error user journey.
+2. **Plan** → `plan.md` with `plan_status: draft`. Must have a non-empty **exit-criteria table** and a
+   **test matrix** naming the concrete E2E/visual/a11y cases; flag an ADR if it touches
+   payment/auth/GDPR/migration.
+3. **Verify-Plan** → run **`/verify-plan <FEAT-ID>`**. An independent, **read-only `verifier` agent**
+   re-checks the plan against the working tree; the skill records the verdict in `plan-verification.md`
+   and flips `plan_status: approved` only if it holds up.
+   **Do not edit `src/` until `plan_status: approved`**, and **never hand-edit `plan_status` to
+   approved** — the verifier is read-only precisely so a plan can't be self-laundered. (Wave 2 hooks
+   will enforce this; until then it is a hard discipline rule.)
+4. **Track** → backlog row (full anatomy in `PRIORITIZED_BACKLOG.md`) + `test-design.md` mapping every
+   journey to a stable Scenario ID (`automated`|`manual`); write the ADR if Phase 2 flagged one.
+
+**Start a feature with `/feature-kickoff <FEAT-ID> "<title>"`** — it scaffolds the folder from
+`docs/features/_template/` and registers the backlog row. Tiny doc/config tweaks that never touch
+`src/` may skip the folder; anything touching `src/` needs an approved `plan.md`.
+
+---
+
 ## CRITICAL: Testing Requirements
 
 ### MANDATORY Testing Policy

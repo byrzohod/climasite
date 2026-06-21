@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Home v3 concept proposals and interactive HTML mock at `docs/concepts/home-v3/`.
 - Gap audit report at `docs/audit/2026-04-08-gap-report.md`.
 - Home v3 unit and E2E coverage for recommendations, translations, reduced motion, responsive viewports, keyboard navigation, and route behavior. (HOME-008, HOME-009, HOME-011)
+- SDLC hardening (PROC-01) Waves 0–1: pinned read-only `reviewer`/`verifier`/`security` + `qa`/`developer` agents and the `verify-work`/`perf-budget`/`accessibility-audit`/`refactor`/`skill-verifier` skills into `.claude/`; added the gated per-feature pipeline (`docs/features/_template/*`, `docs/features/README.md`) with the `/feature-kickoff` and `/verify-plan` skills and the CLAUDE.md front-phase rules; declared `DEV_WORKFLOW.md` canonical and fixed the workflow doc drift.
 
 ### Changed
 
