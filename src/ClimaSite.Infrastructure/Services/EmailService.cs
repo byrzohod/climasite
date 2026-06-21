@@ -21,7 +21,7 @@ public class EmailService : IEmailService
     {
         // Check if placeholder mode is enabled (for development)
         var usePlaceholder = _configuration.GetValue<bool>("Email:UsePlaceholder", true);
-        
+
         if (usePlaceholder)
         {
             _logger.LogInformation(
@@ -106,7 +106,7 @@ public class EmailService : IEmailService
         {
             using var client = new SmtpClient(smtpHost, smtpPort);
             client.EnableSsl = enableSsl;
-            
+
             // Set credentials if provided
             if (!string.IsNullOrEmpty(smtpUsername) && !string.IsNullOrEmpty(smtpPassword))
             {
@@ -128,7 +128,7 @@ public class EmailService : IEmailService
             };
 
             await client.SendMailAsync(message, cancellationToken);
-            
+
             _logger.LogInformation("Email sent successfully to {To} with subject '{Subject}'", to, subject);
         }
         catch (SmtpException ex)
@@ -410,7 +410,7 @@ public class EmailService : IEmailService
     {
         if (string.IsNullOrEmpty(input))
             return string.Empty;
-            
+
         return System.Web.HttpUtility.HtmlEncode(input);
     }
 }

@@ -39,7 +39,7 @@ public class GdprController : ControllerBase
         }
 
         // Set filename for download
-        Response.Headers.Append("Content-Disposition", 
+        Response.Headers.Append("Content-Disposition",
             $"attachment; filename=\"climasite-data-export-{DateTime.UtcNow:yyyy-MM-dd}.json\"");
 
         return Ok(result.Value);
@@ -71,8 +71,8 @@ public class GdprController : ControllerBase
             return BadRequest(new { message = result.Error });
         }
 
-        return Ok(new 
-        { 
+        return Ok(new
+        {
             message = "Your account and data have been successfully deleted. A confirmation email has been sent.",
             deletedAt = DateTime.UtcNow
         });

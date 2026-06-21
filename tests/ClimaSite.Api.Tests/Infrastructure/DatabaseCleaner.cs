@@ -1,5 +1,5 @@
-using Microsoft.EntityFrameworkCore;
 using ClimaSite.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClimaSite.Api.Tests.Infrastructure;
 

@@ -1,5 +1,5 @@
-using ClimaSite.Application.Common.Models;
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Models;
 using ClimaSite.Core.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;

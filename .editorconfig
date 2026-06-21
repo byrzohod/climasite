@@ -1,0 +1,38 @@
+# Root EditorConfig for the .NET solution (the Angular app has its own under src/ClimaSite.Web).
+# Kept close to the .NET SDK defaults so `dotnet format` is a no-op on already-clean files.
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+trim_trailing_whitespace = true
+insert_final_newline = true
+# NOTE: end_of_line is intentionally unset so `dotnet format` never rewrites line endings
+# (the repo has mixed CRLF/LF history — git handles normalization, not the formatter).
+
+[*.{cs,csx}]
+indent_size = 4
+
+[*.{csproj,props,targets,json,yml,yaml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+# --- C# style (uncontroversial; matches existing code so the format gate is low-churn) ---
+[*.cs]
+# Namespaces, usings
+csharp_using_directive_placement = outside_namespace:silent
+dotnet_sort_system_directives_first = true
+# Braces / newlines (Allman, the C# default)
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+# Spacing
+csharp_space_after_keywords_in_control_flow_statements = true
+# 'this.' not required (matches codebase)
+dotnet_style_qualification_for_field = false:silent
+dotnet_style_qualification_for_property = false:silent
+dotnet_style_qualification_for_method = false:silent
+dotnet_style_qualification_for_event = false:silent

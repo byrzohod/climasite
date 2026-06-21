@@ -1,6 +1,6 @@
-using Microsoft.Extensions.DependencyInjection;
-using ClimaSite.Infrastructure.Data;
 using System.Net.Http.Json;
+using ClimaSite.Infrastructure.Data;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ClimaSite.Api.Tests.Infrastructure;
 
