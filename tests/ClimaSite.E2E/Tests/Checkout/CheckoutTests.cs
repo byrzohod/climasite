@@ -149,6 +149,11 @@ public class CheckoutTests : IAsyncLifetime
         );
         await checkoutPage.SubmitShippingFormAsync();
 
+        // This test asserts the review-step total, not card payment. Card now requires a captured
+        // Stripe PaymentMethod before advancing to review, so a totals-only walk must take the
+        // no-Stripe path (bank transfer) to reach the review step.
+        await checkoutPage.SelectPaymentMethodAsync("bank");
+
         // Act - Go to review
         await checkoutPage.ProceedToReviewAsync();
 
