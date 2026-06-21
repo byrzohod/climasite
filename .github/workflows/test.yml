@@ -323,6 +323,7 @@ jobs:
         with:
           scan-type: fs
           scan-ref: .
+          scanners: vuln          # vuln-only; secrets are gitleaks' job (Trivy's secret scanner false-flagged the dummy appsettings Stripe key, SEC-07)
           severity: CRITICAL
           exit-code: '1'
           ignore-unfixed: true
