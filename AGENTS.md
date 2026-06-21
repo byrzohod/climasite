@@ -4,6 +4,8 @@
 **Commit:** 69b7e8b  
 **Branch:** main
 
+> **Canonical workflow & commands:** `docs/project-plan/DEV_WORKFLOW.md` is the single source of truth for local setup, test commands, branching, and release. This knowledge base is a structural map of the codebase; where any command or workflow here differs from DEV_WORKFLOW.md, **DEV_WORKFLOW.md wins.** (Note: `main` is branch-protected — never push to it directly; ship every change as a feature-branch PR.)
+
 ## OVERVIEW
 
 HVAC e-commerce platform. ASP.NET Core 10 API + Angular 19 SPA + PostgreSQL + Redis. Multi-language (EN/BG/DE), dual-theme (light/dark), Stripe payments.
