@@ -4,7 +4,7 @@ Every non-obvious architectural or technical decision in ClimaSite lives here as
 
 ## Format
 
-- File name: `NNN-kebab-case-title.md` where `NNN` is a zero-padded sequence number.
+- File name: `NNNN-kebab-case-title.md` where `NNNN` is a four-digit zero-padded sequence number (e.g. `0003-...`). This is the go-forward convention (it matches the most recent ADR `0001-...` and the SDLC pipeline's verify-plan gate). The legacy three-digit files (`001-`, `002-`) are left as-is — do not renumber them; continue from `0003` onward.
 - Status: `Proposed` → `Accepted` → (optionally) `Superseded by ADR NNN` or `Deprecated`.
 - Never edit the body of an accepted ADR to reverse its decision. Write a new ADR that supersedes it.
 
