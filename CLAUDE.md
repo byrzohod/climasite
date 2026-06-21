@@ -52,6 +52,7 @@ ClimaSite is a production-grade online shop specializing in air conditioners, he
 | Installation Requests (GAP-08) | Complete | Business email per request (outbox) + admin list/manage (`GET/PUT /api/admin/installation-requests`) + dashboard tile; EN/BG/DE + tests + E2E |
 | Payment Methods (GAP-06) | Complete | Removed fake PayPal; real bank transfer (persisted method, Pending, IBAN/reference instructions on confirmation + outbox email); validator card\|bank |
 | In-App Notifications (GAP-09) | Complete | Producers on order-status changes (authenticated) + header bell/dropdown + `NotificationService`; EN/BG/DE + specs + E2E |
+| Live-bug sweep (overlay/reviews) | Complete | Found by driving the running app: fixed the duplicate z-index scale that made the mini-cart drawer unclickable (BUG-19, `_tokens.scss` now the single `--z-*` source), cookie-banner/bottom-nav stacking (BUG-20/21), reviews auto-approve + output-cache freshness so a submitted review appears immediately (BUG-22/24), `/auth/login`→`/login` 404 (BUG-23), clearer card-unavailable checkout message (BUG-25); added complete-workflow E2E (mini-cart overlay click-through, guest-checkout completion, mini-cart purchase, review-appears-immediately). PRs #35/#36; see `docs/project-plan/BUGS_AND_TECH_DEBT.md` §8 |
 
 ---
 
@@ -448,6 +449,13 @@ export class ProductCardComponent {
   color: white;
 }
 ```
+
+### Z-Index & Layering (CRITICAL)
+
+- **The `--z-*` layering scale is defined ONLY in `src/ClimaSite.Web/src/styles/_tokens.scss`** (the single source of truth): `docked 10 / dropdown 100 / sticky 200 / banner 300 / overlay 400 / modal 500 / popover 600 / toast 700 / tooltip 800 / max 9999`.
+- **NEVER re-introduce a `$z-index` map or a `--z-*` emission in `_spacing.scss`** (or any file `@use`d after `tokens` in `styles.scss`). A duplicate scale there once clobbered `--z-modal` to `60` at runtime and silently put the mini-cart drawer *below its own backdrop*, making checkout unclickable (BUG-19, fixed in #35).
+- **Prefer `var(--z-*)` over hardcoded `z-index` numbers** for any new overlay/drawer/modal. Backdrops use `var(--z-overlay)`; the panel they dim uses `var(--z-modal)` (panel must be strictly above its backdrop). Transient bottom sheets (e.g. the cookie banner) use `var(--z-banner)` so they never cover an open modal/drawer, and must offset above the 56px mobile bottom-nav on `<768px`.
+- Verify after any layering change: `getComputedStyle(document.documentElement).getPropertyValue('--z-modal')` must be `500`. The overlay regression test pattern (`document.elementFromPoint` at a control's centre to prove it is the real topmost element) lives in `tests/ClimaSite.E2E/Tests/Overlays/MiniCartOverlayTests.cs` — copy it for new interactive-overlay coverage.
 
 ### Internationalization (i18n)
 
