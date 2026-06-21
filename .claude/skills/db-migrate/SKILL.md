@@ -49,11 +49,12 @@ Implements section 13 (Database Management) of the Agent Workflow.
 
 7. **Test on a production-sized copy** if available. Use `EXPLAIN ANALYZE` for any backfill SQL.
 
-8. **Run all tests**:
+8. **Run all tests** (from the repo root — per-project, never a bare root `dotnet test`, which pulls in the server-dependent E2E project and produces ~200 false failures):
    ```bash
-   dotnet test
-   cd ../ClimaSite.Web && ng test --watch=false --browsers=ChromeHeadless
-   cd ../../tests/ClimaSite.E2E && npx playwright test
+   dotnet test ClimaSite.NoE2E.slnf                       # all non-E2E tests via the solution filter
+   cd src/ClimaSite.Web && ng test --watch=false --browsers=ChromeHeadless
+   # E2E (needs API on :5029 + ng serve on :4200; CI runs it for you):
+   #   dotnet test tests/ClimaSite.E2E
    ```
 
 9. **Commit** with `feat(db): <description>` or `chore(db): <description>` — atomic, just the migration files and any code that depends on them.

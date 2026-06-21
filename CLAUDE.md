@@ -259,6 +259,8 @@ test('user can complete checkout', async ({ page, request }) => {
 
 ### MANDATORY: Post-Implementation Workflow
 
+> **Canonical operating manual:** `docs/project-plan/DEV_WORKFLOW.md` is the single source of truth for local setup, exact test commands, branching, and the release flow. This section is the summary; where the two differ, **DEV_WORKFLOW.md wins.**
+
 **`main` is branch-protected. NEVER push to `main` directly — direct pushes and force-pushes are rejected. Every change ships on a feature branch via a pull request, and merges only when all six CI checks are green.**
 
 After EVERY change, you MUST:
