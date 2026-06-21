@@ -4,6 +4,17 @@
     "defaultMode": "bypassPermissions"
   },
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/session-phase.sh"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "matcher": "",
@@ -11,6 +22,21 @@
           {
             "type": "command",
             "command": ".claude/hooks/workflow-check.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/phase-stop-check.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/test-ran-marker.sh"
           }
         ]
       }
@@ -48,6 +74,12 @@
             "if": "Bash(git commit*)",
             "command": "bash -c 'CMD=$(jq -r .tool_input.command); MSG=\"\"; if echo \"$CMD\" | grep -qP \"\\-m\\s\"; then MSG=$(echo \"$CMD\" | grep -oP \"(?<=-m\\s[\\x27\\\"]).*?(?=[\\x27\\\"])\"); elif echo \"$CMD\" | grep -q \"cat <<\"; then MSG=$(echo \"$CMD\" | sed -n \"s/.*cat <<[\\x27]*EOF[\\x27]*//p\" | head -1 | sed \"s/^[[:space:]]*//\"); fi; if [ -n \"$MSG\" ] && ! echo \"$MSG\" | grep -qE \"^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\\(.+\\))?(!)?:\\s\"; then echo \"BLOCKED: Commit message must use conventional format (e.g., feat: add login). Got: $MSG\" >&2; exit 2; fi'",
             "statusMessage": "Checking commit format..."
+          },
+          {
+            "type": "command",
+            "if": "Bash(git commit*)",
+            "command": ".claude/hooks/require-tests-on-commit.sh",
+            "statusMessage": "PROC-01: tests-with-feature gate..."
           }
         ]
       },
@@ -58,6 +90,11 @@
             "type": "command",
             "command": "bash -c 'FILE=$(jq -r \".tool_input.file_path\"); if echo \"$FILE\" | grep -qiE \"\\.(env|pem|key|p12|pfx)$|credentials\\.json|secrets\\.(yml|yaml|json)\"; then echo \"BLOCKED: Cannot write to sensitive file: $FILE. Use .env.example for documentation, keep actual secrets out of the repo.\" >&2; exit 2; fi'",
             "statusMessage": "Checking file safety..."
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/require-approved-plan.sh",
+            "statusMessage": "PROC-01: approved-plan gate..."
           }
         ]
       }
