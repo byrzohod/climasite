@@ -9,7 +9,7 @@ _template/ set via /feature-kickoff.
 
 # STATE — PROC-01: SDLC hardening (process overhaul)
 
-- **Current phase:** Implement (Wave 5 of 7)
+- **Current phase:** Implement (Wave 6 of 7)
 - **plan_status:** approved (owner-approved 2026-06-21; canonical plan: `docs/project-plan/SDLC_HARDENING_PLAN.md`)
 - **Research + Plan:** `docs/project-plan/SDLC_HARDENING_PLAN.md` (8 gated phases, 7 waves, owner decisions §4)
 - **Last updated:** 2026-06-22
@@ -32,7 +32,9 @@ _template/ set via /feature-kickoff.
 | 5d — Ephemeral visual capture | `VisualSnapshotTests` — key pages × light/dark (+ mobile home) full-page screenshots → 7-day E2E artifact, no committed baselines | 🚧 in progress | this PR |
 | 5b — Screenshot/trace on E2E failure | DEFERRED — needs a per-test adopt pattern (PlaywrightFixture is a shared collection fixture, no xUnit failure hook); the visual snapshots + .trx already aid debugging | ⏳ deferred | — |
 | 5e — E2E sharding | DEFERRED — split E2E (functional/visual/a11y/perf/payments) to beat the 50-min timeout; not yet needed | ⏳ deferred | — |
-| 6 — Close coverage gaps | real Stripe card E2E (CI secrets) + webhook contract; GDPR export/delete; inventory; search facets; auth flows; address book; etc. | ⏳ pending | — |
+| 6a — Api integration tests | 163 real-infra integration tests (Testcontainers) for the 17 0%-covered controllers; Api.Tests 109→272. Found + FIXED BUG-26 (GDPR delete broken under retry strategy) | 🚧 in progress | this PR |
+| 6b — Real-card e2e-payments | scaffold secret-gated `e2e-payments` job + real-card E2E (4242/decline/3DS) — **BLOCKED: owner must add STRIPE_*_KEY GitHub Actions secrets** | ⏳ owner-blocked | — |
+| 6c — Remaining gaps | webhook signature/reconcile contract (rejection path done in 6a), auth-flow E2E (forgot/reset/lockout), search-facet coverage | ⏳ pending | — |
 
 ## Owner decisions in force (from SDLC_HARDENING_PLAN.md §4)
 1. Real card E2E in CI = YES (Stripe test keys → GitHub Actions secrets; `e2e-payments` job). Wave 6.
@@ -44,6 +46,7 @@ _template/ set via /feature-kickoff.
 Wave 2 PreToolUse blocking hooks and the Wave 3 coverage gate.
 
 ## Log (newest first)
+- 2026-06-22 — Wave 6a: 163 real-infra integration tests (4-agent workflow) for the 17 0%-covered Api controllers; Api.Tests 109→272. The tests found a P0 GDPR bug (BUG-26: account deletion threw under the retry strategy) — fixed the handler (execution-strategy-wrapped transaction) + flipped the delete test to assert success. Wave 5 (5a perf + 5c a11y + 5d visual) done; 5b/5e deferred.
 - 2026-06-22 — Wave 4: review hardening — PR template + CODEOWNERS + a `PR Checklist` CI gate (danger.js-equivalent) wired into Test Summary. Self-gates to a no-op on push events.
 - 2026-06-22 — Wave 3c: flipped the Coverage Gate to ENFORCING (owner-approved) — backend line ≥80% / frontend line ≥70%, added to the Test Summary required checks. Dogfoods on its own PR (main is at 85.6%/~72%).
 - 2026-06-22 — Wave 3b complete: 3 workflow batches added 750 backend unit tests (Application + Core) + a MockDbContext FindAsync/async-AsQueryable fix. Backend line coverage 66.8%→71.3%→78.6%→**85.6%**; Core 73.7%→81.25%; frontend ~72%. Merged #45/#46/#47 (foundation #44). Also closed Wave-6 P0/P1 gaps for GDPR + Inventory at the unit level. Found integration tests just needed the postgres image pre-pulled (Mac Docker), not a code fix.
