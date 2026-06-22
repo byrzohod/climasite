@@ -33,8 +33,8 @@ _template/ set via /feature-kickoff.
 | 5b — Screenshot/trace on E2E failure | DEFERRED — needs a per-test adopt pattern (PlaywrightFixture is a shared collection fixture, no xUnit failure hook); the visual snapshots + .trx already aid debugging | ⏳ deferred | — |
 | 5e — E2E sharding | DEFERRED — split E2E (functional/visual/a11y/perf/payments) to beat the 50-min timeout; not yet needed | ⏳ deferred | — |
 | 6a — Api integration tests | 163 real-infra integration tests (Testcontainers) for the 17 0%-covered controllers; Api.Tests 109→272. Found + FIXED BUG-26 (GDPR delete broken under retry strategy) | 🚧 in progress | this PR |
-| 6b — Real-card e2e-payments | scaffold secret-gated `e2e-payments` job + real-card E2E (4242/decline/3DS) — **BLOCKED: owner must add STRIPE_*_KEY GitHub Actions secrets** | ⏳ owner-blocked | — |
-| 6c — Remaining gaps | webhook signature/reconcile contract (rejection path done in 6a), auth-flow E2E (forgot/reset/lockout), search-facet coverage | ⏳ pending | — |
+| 6b — Real-card E2E (ready for secrets) | `CardPaymentE2ETests` (4242 happy + decline) + Stripe secrets wired into the E2E job env; self-skips on the dummy key so it never blocks. **Owner action: add STRIPE_SECRET_KEY + STRIPE_PUBLISHABLE_KEY (TEST keys) as Actions secrets → it runs.** | 🚧 in progress | this PR |
+| 6c — Remaining gaps | webhook signed-event reconcile contract (rejection path done in 6a), auth-flow E2E (forgot/reset/lockout — partial: PasswordResetFlowTests exists), search-facet coverage; **SEC-14** (GDPR Orders-PII), SEC-12 (Angular upgrade), SEC-13 (gitleaks enforce) | ⏳ pending | — |
 
 ## Owner decisions in force (from SDLC_HARDENING_PLAN.md §4)
 1. Real card E2E in CI = YES (Stripe test keys → GitHub Actions secrets; `e2e-payments` job). Wave 6.

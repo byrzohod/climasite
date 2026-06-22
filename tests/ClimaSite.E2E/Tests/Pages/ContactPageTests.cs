@@ -1,6 +1,6 @@
 using ClimaSite.E2E.Infrastructure;
-using Microsoft.Playwright;
 using FluentAssertions;
+using Microsoft.Playwright;
 
 namespace ClimaSite.E2E.Tests.Pages;
 

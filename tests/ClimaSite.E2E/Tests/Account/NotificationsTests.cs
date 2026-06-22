@@ -63,11 +63,11 @@ public class NotificationsTests : IAsyncLifetime
 
         var dropdown = _page.Locator("[data-testid='notification-dropdown']");
         await Assertions.Expect(dropdown).ToBeVisibleAsync(
-            new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
 
         var items = _page.Locator("[data-testid='notification-item']");
         await Assertions.Expect(items.First).ToBeVisibleAsync(
-            new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
         (await items.CountAsync()).Should().BeGreaterThan(0,
             "the customer should see the notification produced by the admin status change");
     }

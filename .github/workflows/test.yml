@@ -216,6 +216,13 @@ jobs:
           JWT_ISSUER: "http://localhost:5029"
           JWT_AUDIENCE: "http://localhost:4200"
           TestSettings__AdminSecret: "test-admin-secret"
+          # Wave 6: add STRIPE_SECRET_KEY + STRIPE_PUBLISHABLE_KEY (Stripe TEST keys only) as repo
+          # Actions secrets to turn on the real-card money-path E2E (CardPaymentE2ETests). When unset,
+          # these FALL BACK to the appsettings dummy keys (NOT empty — an empty override changed the
+          # API's Stripe config and broke order-flow E2E), so /api/payments/config serves the dummy and
+          # the card E2E self-skips ("Dummy"). When the real secrets are present, the card E2E runs.
+          Stripe__SecretKey: ${{ secrets.STRIPE_SECRET_KEY || 'sk_test_51DummyKeyForTestingPurposesOnly000000000000' }}
+          Stripe__PublishableKey: ${{ secrets.STRIPE_PUBLISHABLE_KEY || 'pk_test_51DummyKeyForTestingPurposesOnly000000000000' }}
 
       - name: Start Angular Dev Server
         run: |

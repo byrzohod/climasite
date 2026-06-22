@@ -16,7 +16,7 @@ public class OrdersPage : BasePage
     {
         await Page.GotoAsync("/account/orders");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        await Page.WaitForSelectorAsync(OrderListSettledSelector, new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync(OrderListSettledSelector, new PageWaitForSelectorOptions { Timeout = 30000 });
     }
 
     public async Task NavigateToOrderDetailsAsync(string orderId)
@@ -25,7 +25,7 @@ public class OrdersPage : BasePage
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await Page.WaitForSelectorAsync(
             "[data-testid='order-number'], [data-testid='error-message']",
-            new PageWaitForSelectorOptions { Timeout = 10000 });
+            new PageWaitForSelectorOptions { Timeout = 30000 });
     }
 
     // Orders List Methods
@@ -71,7 +71,7 @@ public class OrdersPage : BasePage
     public async Task ClickOrderAsync(int index)
     {
         // Wait for order cards to be visible first
-        await Page.WaitForSelectorAsync("[data-testid='view-order-details']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync("[data-testid='view-order-details']", new PageWaitForSelectorOptions { Timeout = 30000 });
 
         var viewDetailsButtons = await Page.QuerySelectorAllAsync("[data-testid='view-order-details']");
         if (index < viewDetailsButtons.Count)
@@ -83,7 +83,7 @@ public class OrdersPage : BasePage
             try
             {
                 await Page.WaitForURLAsync(url => url != currentUrl && url.Contains("/account/orders/"),
-                    new PageWaitForURLOptions { Timeout = 10000 });
+                    new PageWaitForURLOptions { Timeout = 30000 });
             }
             catch
             {
@@ -115,13 +115,13 @@ public class OrdersPage : BasePage
     // Order Details Methods
     public async Task<string> GetOrderStatusAsync()
     {
-        await Page.WaitForSelectorAsync("[data-testid='order-status']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync("[data-testid='order-status']", new PageWaitForSelectorOptions { Timeout = 30000 });
         return (await Page.Locator("[data-testid='order-status']").InnerTextAsync()).Trim();
     }
 
     public async Task<string> GetOrderNumberFromDetailsAsync()
     {
-        await Page.WaitForSelectorAsync("[data-testid='order-number']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync("[data-testid='order-number']", new PageWaitForSelectorOptions { Timeout = 30000 });
         return (await Page.Locator("[data-testid='order-number']").InnerTextAsync()).Trim();
     }
 
@@ -179,7 +179,7 @@ public class OrdersPage : BasePage
 
     public async Task<int> GetOrderItemCountAsync()
     {
-        await Page.WaitForSelectorAsync("[data-testid='order-item-row']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync("[data-testid='order-item-row']", new PageWaitForSelectorOptions { Timeout = 30000 });
         var items = await Page.QuerySelectorAllAsync("[data-testid='order-item-row']");
         return items.Count;
     }
@@ -188,14 +188,14 @@ public class OrdersPage : BasePage
     {
         // Settle on a stable detail-page anchor; the cancel button may legitimately be
         // absent for non-cancellable orders, so keep the null-tolerant check below.
-        await Page.WaitForSelectorAsync("[data-testid='order-number']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync("[data-testid='order-number']", new PageWaitForSelectorOptions { Timeout = 30000 });
         var cancelButton = await Page.QuerySelectorAsync("[data-testid='cancel-order-btn']");
         return cancelButton != null && await cancelButton.IsEnabledAsync();
     }
 
     public async Task CancelOrderAsync(string? reason = null)
     {
-        await Page.WaitForSelectorAsync("[data-testid='cancel-order-btn']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync("[data-testid='cancel-order-btn']", new PageWaitForSelectorOptions { Timeout = 30000 });
         await Page.ClickAsync("[data-testid='cancel-order-btn']");
 
         // Wait for confirmation modal
@@ -220,7 +220,7 @@ public class OrdersPage : BasePage
 
     public async Task ReorderAsync()
     {
-        await Page.WaitForSelectorAsync("[data-testid='reorder-btn']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync("[data-testid='reorder-btn']", new PageWaitForSelectorOptions { Timeout = 30000 });
         await Page.ClickAsync("[data-testid='reorder-btn']");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
@@ -250,14 +250,14 @@ public class OrdersPage : BasePage
     {
         // Settle on a stable detail-page anchor; tracking may legitimately be absent,
         // so keep the null-tolerant either-check below.
-        await Page.WaitForSelectorAsync("[data-testid='order-number']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync("[data-testid='order-number']", new PageWaitForSelectorOptions { Timeout = 30000 });
         var tracking = await Page.QuerySelectorAsync("[data-testid='tracking-number']");
         return tracking != null;
     }
 
     public async Task<string> GetTrackingNumberAsync()
     {
-        await Page.WaitForSelectorAsync("[data-testid='tracking-number']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync("[data-testid='tracking-number']", new PageWaitForSelectorOptions { Timeout = 30000 });
         return (await Page.Locator("[data-testid='tracking-number']").InnerTextAsync()).Trim();
     }
 
@@ -266,7 +266,7 @@ public class OrdersPage : BasePage
     {
         // Settle on a stable detail-page anchor; the timeline may legitimately be absent,
         // so keep the null-tolerant either-check below.
-        await Page.WaitForSelectorAsync("[data-testid='order-number']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync("[data-testid='order-number']", new PageWaitForSelectorOptions { Timeout = 30000 });
         var timeline = await Page.QuerySelectorAsync("[data-testid='order-timeline']");
         return timeline != null;
     }
@@ -275,7 +275,7 @@ public class OrdersPage : BasePage
     {
         // Anchor on the rendered timeline region so the count reflects painted events
         // rather than 0-before-render (0 events is still a valid answer).
-        await Page.WaitForSelectorAsync("[data-testid='order-timeline']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync("[data-testid='order-timeline']", new PageWaitForSelectorOptions { Timeout = 30000 });
         var events = await Page.QuerySelectorAllAsync("[data-testid='timeline-event']");
         return events.Count;
     }

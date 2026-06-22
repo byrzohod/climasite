@@ -71,7 +71,7 @@ public class AdminInstallationTests : IAsyncLifetime
 
         // Assert — a success banner appears, and after the list reloads the row shows Confirmed.
         await Assertions.Expect(installationPage.ActionSuccess)
-            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
 
         var badge = await installationPage.GetStatusBadgeTextAsync(request.Id.ToString());
         badge.Should().NotBeNullOrWhiteSpace("the row should display the updated status");

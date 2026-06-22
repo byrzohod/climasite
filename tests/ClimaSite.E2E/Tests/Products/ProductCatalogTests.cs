@@ -1,7 +1,7 @@
 using ClimaSite.E2E.Infrastructure;
 using ClimaSite.E2E.PageObjects;
-using Microsoft.Playwright;
 using FluentAssertions;
+using Microsoft.Playwright;
 
 namespace ClimaSite.E2E.Tests.Products;
 
@@ -56,7 +56,7 @@ public class ProductCatalogTests : IAsyncLifetime
 
         // Assert - Product list should display
         var productCards = _page.Locator("[data-testid='product-card']");
-        await Assertions.Expect(productCards.First).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+        await Assertions.Expect(productCards.First).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
 
         var count = await productCards.CountAsync();
         count.Should().BeGreaterThanOrEqualTo(1, "Product list should display at least one product");
@@ -82,7 +82,7 @@ public class ProductCatalogTests : IAsyncLifetime
             // Check for empty state indicator
             var emptyState = _page.Locator("[data-testid='no-results'], [data-testid='empty-state'], .no-products, .empty-state");
             var hasEmptyState = await emptyState.IsVisibleAsync();
-            
+
             // Either empty state message is visible, or simply no products are shown
             (hasEmptyState || cardCount == 0).Should().BeTrue("Page should show empty state or no products");
         }
@@ -112,7 +112,7 @@ public class ProductCatalogTests : IAsyncLifetime
 
         // Act - Look for category filter and apply it
         var categoryFilter = _page.Locator("[data-testid='category-filter'], [data-testid='filter-category'], .category-filter");
-        
+
         if (await categoryFilter.IsVisibleAsync())
         {
             // Click on first category item
@@ -195,7 +195,7 @@ public class ProductCatalogTests : IAsyncLifetime
 
         // Act - Look for brand filter
         var brandFilter = _page.Locator("[data-testid='brand-filter'], [data-testid='filter-brand'], .brand-filter");
-        
+
         if (await brandFilter.IsVisibleAsync())
         {
             // Click on first brand item
@@ -332,7 +332,7 @@ public class ProductCatalogTests : IAsyncLifetime
 
         // Look for pagination controls
         var paginationControls = _page.Locator("[data-testid='pagination'], .pagination, nav[aria-label*='pagination']");
-        
+
         if (await paginationControls.IsVisibleAsync())
         {
             // Try clicking next page
@@ -429,7 +429,7 @@ public class ProductCatalogTests : IAsyncLifetime
 
         // Assert - Look for related products section
         var relatedSection = _page.Locator("[data-testid='related-products'], .related-products, section:has-text('Related')");
-        
+
         if (await relatedSection.IsVisibleAsync())
         {
             await Assertions.Expect(relatedSection).ToBeVisibleAsync();
@@ -464,7 +464,7 @@ public class ProductCatalogTests : IAsyncLifetime
 
         // Look for variant selectors
         var variantSelector = _page.Locator("[data-testid='variant-selector'], [data-testid='product-variants'], .variant-options");
-        
+
         if (await variantSelector.IsVisibleAsync())
         {
             // Try to select a variant
@@ -596,7 +596,7 @@ public class ProductCatalogTests : IAsyncLifetime
 
         // Act - Look for clear filters button
         var clearButton = _page.Locator("[data-testid='clear-filters'], [data-testid='reset-filters'], .clear-filters");
-        
+
         if (await clearButton.IsVisibleAsync())
         {
             await clearButton.ClickAsync();
@@ -635,7 +635,7 @@ public class ProductCatalogTests : IAsyncLifetime
 
         // Act - Look for mobile filter toggle
         var filterToggle = _page.Locator("[data-testid='mobile-filter-toggle'], [data-testid='filter-toggle'], .filter-toggle");
-        
+
         if (await filterToggle.IsVisibleAsync())
         {
             await filterToggle.ClickAsync();

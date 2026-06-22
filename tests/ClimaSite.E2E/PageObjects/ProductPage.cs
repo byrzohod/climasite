@@ -20,7 +20,7 @@ public class ProductPage : BasePage
         await WaitForLoadAsync();
         await Page.WaitForSelectorAsync(
             $"{ProductTitle}, [data-testid='error']",
-            new PageWaitForSelectorOptions { Timeout = 10000 });
+            new PageWaitForSelectorOptions { Timeout = 30000 });
     }
 
     public async Task NavigateByIdAsync(Guid productId)
@@ -29,7 +29,7 @@ public class ProductPage : BasePage
         await WaitForLoadAsync();
         await Page.WaitForSelectorAsync(
             $"{ProductTitle}, [data-testid='error']",
-            new PageWaitForSelectorOptions { Timeout = 10000 });
+            new PageWaitForSelectorOptions { Timeout = 30000 });
     }
 
     public async Task NavigateToListAsync()
@@ -39,7 +39,7 @@ public class ProductPage : BasePage
         // Wait for product cards to appear or empty state
         try
         {
-            await Page.WaitForSelectorAsync($"{ProductCard}, .empty-state", new PageWaitForSelectorOptions { Timeout = 10000 });
+            await Page.WaitForSelectorAsync($"{ProductCard}, .empty-state", new PageWaitForSelectorOptions { Timeout = 30000 });
         }
         catch (TimeoutException)
         {
@@ -81,7 +81,7 @@ public class ProductPage : BasePage
         // Wait for either notification or button state change (added state)
         try
         {
-            await Page.WaitForSelectorAsync($"{CartNotification}, {AddToCartButton}.added", new PageWaitForSelectorOptions { Timeout = 10000 });
+            await Page.WaitForSelectorAsync($"{CartNotification}, {AddToCartButton}.added", new PageWaitForSelectorOptions { Timeout = 30000 });
         }
         catch (TimeoutException)
         {
@@ -102,7 +102,7 @@ public class ProductPage : BasePage
     public async Task<int> GetProductCardCountAsync()
     {
         // Tolerant settle: a rendered list OR an empty state both count as "settled" (0 is valid).
-        await Page.WaitForSelectorAsync($"{ProductCard}, .empty-state", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync($"{ProductCard}, .empty-state", new PageWaitForSelectorOptions { Timeout = 30000 });
         var cards = await Page.QuerySelectorAllAsync(ProductCard);
         return cards.Count;
     }

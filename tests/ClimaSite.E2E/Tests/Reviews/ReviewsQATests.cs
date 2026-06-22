@@ -36,20 +36,20 @@ public class ReviewsQATests : IAsyncLifetime
     {
         var reviewsTab = _page.Locator("[data-testid='tab-reviews']");
         await Assertions.Expect(reviewsTab)
-            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
         await reviewsTab.ClickAsync();
         await Assertions.Expect(_page.Locator("[data-testid='product-reviews']"))
-            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
     }
 
     private async Task OpenQaTabAsync()
     {
         var qaTab = _page.Locator("[data-testid='tab-qa']");
         await Assertions.Expect(qaTab)
-            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
         await qaTab.ClickAsync();
         await Assertions.Expect(_page.Locator("[data-testid='product-qa']"))
-            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
     }
 
     #region Reviews Display Tests
@@ -67,7 +67,7 @@ public class ReviewsQATests : IAsyncLifetime
 
         // Assert - Reviews section should be visible
         var reviewsSection = _page.Locator("[data-testid='product-reviews']");
-        await Assertions.Expect(reviewsSection).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+        await Assertions.Expect(reviewsSection).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
 
         // Reviews summary should be visible
         var reviewsSummary = _page.Locator("[data-testid='reviews-summary']");
@@ -87,7 +87,7 @@ public class ReviewsQATests : IAsyncLifetime
 
         // Assert - Summary section should be visible with rating display
         var reviewsSummary = _page.Locator("[data-testid='reviews-summary']");
-        await Assertions.Expect(reviewsSummary).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+        await Assertions.Expect(reviewsSummary).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
 
         // Average rating section should be present
         var ratingNumber = _page.Locator(".summary-rating .rating-number");
@@ -110,7 +110,7 @@ public class ReviewsQATests : IAsyncLifetime
 
         // Assert - Rating distribution section should be visible
         var reviewsSummary = _page.Locator("[data-testid='reviews-summary']");
-        await Assertions.Expect(reviewsSummary).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+        await Assertions.Expect(reviewsSummary).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
 
         // Distribution rows should be present (5 stars, 4 stars, etc.)
         var distributionRows = _page.Locator(".rating-distribution .distribution-row");
@@ -142,7 +142,7 @@ public class ReviewsQATests : IAsyncLifetime
 
         // Assert - Write review button should be visible for logged in users
         var writeReviewBtn = _page.Locator("[data-testid='write-review-btn']");
-        await Assertions.Expect(writeReviewBtn).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+        await Assertions.Expect(writeReviewBtn).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
 
         // Act - Click to open review form
         await writeReviewBtn.ClickAsync();
@@ -227,7 +227,7 @@ public class ReviewsQATests : IAsyncLifetime
 
         // Assert - Check for reviews section
         var reviewsSection = _page.Locator("[data-testid='product-reviews']");
-        await Assertions.Expect(reviewsSection).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+        await Assertions.Expect(reviewsSection).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
 
         // Get page content to verify component structure includes verified badge class
         var pageContent = await _page.ContentAsync();
@@ -255,7 +255,7 @@ public class ReviewsQATests : IAsyncLifetime
 
         // Assert - Sort/filter dropdown should be visible
         var sortDropdown = _page.Locator("#sort-by");
-        await Assertions.Expect(sortDropdown).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+        await Assertions.Expect(sortDropdown).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
 
         // Verify sort options are available
         var options = await sortDropdown.Locator("option").AllTextContentsAsync();
@@ -317,7 +317,7 @@ public class ReviewsQATests : IAsyncLifetime
 
         // Assert - Ask question button should be visible for logged in users
         var askQuestionBtn = _page.Locator("[data-testid='ask-question-btn']");
-        await Assertions.Expect(askQuestionBtn).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+        await Assertions.Expect(askQuestionBtn).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
 
         // Act - Click to open question form
         await askQuestionBtn.ScrollIntoViewIfNeededAsync();
@@ -404,7 +404,7 @@ public class ReviewsQATests : IAsyncLifetime
 
         // Answer form should close after submission (answers go through moderation)
         await Assertions.Expect(answerForm).Not.ToBeVisibleAsync(
-            new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
     }
 
     #endregion

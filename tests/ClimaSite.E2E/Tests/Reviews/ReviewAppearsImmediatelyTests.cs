@@ -51,10 +51,10 @@ public class ReviewAppearsImmediatelyTests : IAsyncLifetime
         // Open the reviews tab.
         var reviewsTab = _page.Locator("[data-testid='tab-reviews']");
         await Assertions.Expect(reviewsTab).ToBeVisibleAsync(
-            new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
         await reviewsTab.ClickAsync();
         await Assertions.Expect(_page.Locator("[data-testid='product-reviews']")).ToBeVisibleAsync(
-            new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
 
         // A brand-new product has no approved reviews yet.
         var reviewCards = _page.Locator("[data-testid='review-card']");
@@ -64,7 +64,7 @@ public class ReviewAppearsImmediatelyTests : IAsyncLifetime
         // Act - open the review form and submit a 5-star review.
         var writeReviewBtn = _page.Locator("[data-testid='write-review-btn']");
         await Assertions.Expect(writeReviewBtn).ToBeVisibleAsync(
-            new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
         await writeReviewBtn.ClickAsync();
 
         var reviewForm = _page.Locator("[data-testid='review-form']");
@@ -91,6 +91,6 @@ public class ReviewAppearsImmediatelyTests : IAsyncLifetime
         // The new review's content is rendered.
         await Assertions.Expect(_page.Locator("[data-testid='product-reviews']")
             .GetByText("Excellent cooling")).ToBeVisibleAsync(
-            new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
     }
 }

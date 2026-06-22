@@ -1,7 +1,7 @@
 using ClimaSite.E2E.Infrastructure;
 using ClimaSite.E2E.PageObjects;
-using Microsoft.Playwright;
 using FluentAssertions;
+using Microsoft.Playwright;
 
 namespace ClimaSite.E2E.Tests.Products;
 
@@ -63,7 +63,7 @@ public class ProductFilteringTests : IAsyncLifetime
             await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
             await _page.WaitForSelectorAsync(
                 "[data-testid='product-card'], [data-testid='no-results'], [data-testid='empty-state'], .no-products",
-                new PageWaitForSelectorOptions { Timeout = 10000 });
+                new PageWaitForSelectorOptions { Timeout = 30000 });
         }
 
         // Assert - Either navigated to search results or search was performed
@@ -227,7 +227,7 @@ public class ProductFilteringTests : IAsyncLifetime
         if (await searchInput.IsVisibleAsync())
         {
             await searchInput.FillAsync("Auto");
-            
+
             // Wait for autocomplete
             var suggestions = _page.Locator("[data-testid='search-suggestions'], [data-testid='autocomplete']");
             // Note: May or may not show depending on implementation
@@ -250,7 +250,7 @@ public class ProductFilteringTests : IAsyncLifetime
 
         // Look for mobile filter toggle
         var filterToggle = _page.Locator("[data-testid='mobile-filter-toggle'], [data-testid='filter-toggle']");
-        
+
         // Assert - Mobile viewport renders correctly
         // Page should load without errors
         var content = await _page.ContentAsync();

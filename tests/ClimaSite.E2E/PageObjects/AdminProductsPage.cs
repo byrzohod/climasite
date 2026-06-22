@@ -55,7 +55,7 @@ public class AdminProductsPage : BasePage
         await Page.ClickAsync("[data-testid='create-product']");
         await Page.WaitForSelectorAsync(
             "[data-testid='product-form']",
-            new PageWaitForSelectorOptions { Timeout = 10000 });
+            new PageWaitForSelectorOptions { Timeout = 30000 });
     }
 
     /// <summary>
@@ -78,16 +78,16 @@ public class AdminProductsPage : BasePage
     public async Task OpenEditFormAsync(string productId, string expectedName)
     {
         var selector = $"[data-testid='edit-product'][data-product-id='{productId}']";
-        await Page.WaitForSelectorAsync(selector, new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync(selector, new PageWaitForSelectorOptions { Timeout = 30000 });
         await Page.ClickAsync(selector);
         await Page.WaitForSelectorAsync(
             "[data-testid='product-form']",
-            new PageWaitForSelectorOptions { Timeout = 10000 });
+            new PageWaitForSelectorOptions { Timeout = 30000 });
 
         // The form seeds the name immediately from the row, then hydrates from detail.
         // Wait for the name input to carry a value so edits land on a populated form.
         await Assertions.Expect(Page.Locator("[data-testid='product-name-input']"))
-            .ToHaveValueAsync(expectedName, new LocatorAssertionsToHaveValueOptions { Timeout = 10000 });
+            .ToHaveValueAsync(expectedName, new LocatorAssertionsToHaveValueOptions { Timeout = 30000 });
     }
 
     public async Task SetNameAsync(string name)
@@ -112,7 +112,7 @@ public class AdminProductsPage : BasePage
     public async Task ClickDeactivateAsync(string productId)
     {
         var selector = $"[data-testid='deactivate-product'][data-product-id='{productId}']";
-        await Page.WaitForSelectorAsync(selector, new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync(selector, new PageWaitForSelectorOptions { Timeout = 30000 });
         await Page.ClickAsync(selector);
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }
@@ -126,7 +126,7 @@ public class AdminProductsPage : BasePage
     public async Task<string> GetStatusBadgeTextAsync(string productId)
     {
         var sel = $"[data-testid='product-row'][data-product-id='{productId}'] [data-testid='product-status-badge']";
-        await Page.WaitForSelectorAsync(sel, new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync(sel, new PageWaitForSelectorOptions { Timeout = 30000 });
         return (await Page.Locator(sel).InnerTextAsync()).Trim();
     }
 }

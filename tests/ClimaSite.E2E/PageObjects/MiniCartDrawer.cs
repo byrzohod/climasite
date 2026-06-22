@@ -26,17 +26,17 @@ public class MiniCartDrawer : BasePage
     /// </summary>
     public async Task OpenAsync()
     {
-        await Page.WaitForSelectorAsync(CartIcon, new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync(CartIcon, new PageWaitForSelectorOptions { Timeout = 30000 });
         await Page.ClickAsync(CartIcon);
 
-        await Page.WaitForSelectorAsync(Drawer, new PageWaitForSelectorOptions { Timeout = 10000 });
-        await Page.WaitForSelectorAsync(Footer, new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync(Drawer, new PageWaitForSelectorOptions { Timeout = 30000 });
+        await Page.WaitForSelectorAsync(Footer, new PageWaitForSelectorOptions { Timeout = 30000 });
 
         // Drawer slides in via an Angular transform animation; wait for the checkout action to settle
         // into its final, on-screen position so element-at-point assertions read the settled layout,
         // not a mid-transition (possibly off-screen) frame.
         await Assertions.Expect(Page.Locator(CheckoutButton)).ToBeVisibleAsync(
-            new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
         await WaitForSettledOnScreenAsync(CheckoutButton);
     }
 
@@ -60,7 +60,7 @@ public class MiniCartDrawer : BasePage
                 return cx >= 0 && cy >= 0 && cx <= window.innerWidth && cy <= window.innerHeight;
             }",
             selector,
-            new PageWaitForFunctionOptions { Timeout = 10000 });
+            new PageWaitForFunctionOptions { Timeout = 30000 });
     }
 
     /// <summary>

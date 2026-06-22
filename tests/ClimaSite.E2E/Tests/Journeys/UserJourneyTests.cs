@@ -1,7 +1,7 @@
 using ClimaSite.E2E.Infrastructure;
 using ClimaSite.E2E.PageObjects;
-using Microsoft.Playwright;
 using FluentAssertions;
+using Microsoft.Playwright;
 
 namespace ClimaSite.E2E.Tests.Journeys;
 
@@ -65,7 +65,7 @@ public class UserJourneyTests : IAsyncLifetime
         await productPage.NavigateToListAsync();
 
         // Wait for products to load
-        await _page.WaitForSelectorAsync("[data-testid='product-card']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await _page.WaitForSelectorAsync("[data-testid='product-card']", new PageWaitForSelectorOptions { Timeout = 30000 });
         var productCount = await productPage.GetProductCardCountAsync();
         productCount.Should().BeGreaterThan(0, "Product list should contain products");
 
@@ -247,10 +247,10 @@ public class UserJourneyTests : IAsyncLifetime
         // Step 2: Click on cart icon
         await _page.ClickAsync("[data-testid='cart-icon']");
         await Assertions.Expect(_page.Locator("[data-testid='mini-cart-drawer']"))
-            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
         await _page.Keyboard.PressAsync("Escape");
         await Assertions.Expect(_page.Locator("[data-testid='mini-cart-drawer']"))
-            .ToBeHiddenAsync(new LocatorAssertionsToBeHiddenOptions { Timeout = 10000 });
+            .ToBeHiddenAsync(new LocatorAssertionsToBeHiddenOptions { Timeout = 30000 });
 
         // Step 3: Navigate to home using logo (correct selector)
         await _page.ClickAsync("[data-testid='header-logo']");

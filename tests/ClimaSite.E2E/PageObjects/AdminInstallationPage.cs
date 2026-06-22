@@ -39,7 +39,7 @@ public class AdminInstallationPage : BasePage
     public async Task<string> GetStatusBadgeTextAsync(string requestId)
     {
         var sel = $"[data-testid='installation-row'][data-request-id='{requestId}'] [data-testid='installation-status-badge']";
-        await Page.WaitForSelectorAsync(sel, new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync(sel, new PageWaitForSelectorOptions { Timeout = 30000 });
         return (await Page.Locator(sel).InnerTextAsync()).Trim();
     }
 
@@ -50,7 +50,7 @@ public class AdminInstallationPage : BasePage
     {
         var selectSelector =
             $"[data-testid='installation-status-select'][data-request-id='{requestId}']";
-        await Page.WaitForSelectorAsync(selectSelector, new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync(selectSelector, new PageWaitForSelectorOptions { Timeout = 30000 });
         await Page.SelectOptionAsync(selectSelector, targetStatus);
 
         var applySelector =

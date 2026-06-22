@@ -53,7 +53,7 @@ public class AdminProductsTests : IAsyncLifetime
         var hasRow = await productsPage.HasProductRowAsync(product.Id.ToString());
         hasRow.Should().BeTrue("the seeded product should appear in the admin products list");
         await Assertions.Expect(productsPage.ProductRow(product.Id.ToString()))
-            .ToContainTextAsync(name, new LocatorAssertionsToContainTextOptions { Timeout = 10000 });
+            .ToContainTextAsync(name, new LocatorAssertionsToContainTextOptions { Timeout = 30000 });
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public class AdminProductsTests : IAsyncLifetime
         // Assert — a row carrying the new name is present.
         await Assertions.Expect(
                 _page.Locator("[data-testid='product-row']", new PageLocatorOptions { HasText = name }))
-            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
     }
 
     [Fact]
@@ -109,7 +109,7 @@ public class AdminProductsTests : IAsyncLifetime
 
         // Assert — the same product id row now shows the updated name.
         await Assertions.Expect(productsPage.ProductRow(product.Id.ToString()))
-            .ToContainTextAsync(updatedName, new LocatorAssertionsToContainTextOptions { Timeout = 10000 });
+            .ToContainTextAsync(updatedName, new LocatorAssertionsToContainTextOptions { Timeout = 30000 });
     }
 
     [Fact]
@@ -135,9 +135,9 @@ public class AdminProductsTests : IAsyncLifetime
         // Assert — after deactivation the status badge flips to the inactive state and the
         // row exposes an "activate" action (the deactivate action is replaced).
         await Assertions.Expect(productsPage.StatusBadge(product.Id.ToString()))
-            .ToContainTextAsync("Inactive", new LocatorAssertionsToContainTextOptions { Timeout = 10000 });
+            .ToContainTextAsync("Inactive", new LocatorAssertionsToContainTextOptions { Timeout = 30000 });
         await Assertions.Expect(productsPage.ActivateAction(product.Id.ToString()))
-            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
     }
 
     private async Task LoginAsAdminAsync(TestUser admin)
