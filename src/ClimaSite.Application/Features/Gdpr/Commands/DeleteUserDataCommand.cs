@@ -82,80 +82,86 @@ public class DeleteUserDataCommandHandler : IRequestHandler<DeleteUserDataComman
 
         try
         {
-            // Start transaction
-            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-
-            // 1. Hard delete sensitive data that shouldn't be retained
-
-            // Delete notifications (no legal requirement to retain)
-            var notifications = await _context.Notifications
-                .Where(n => n.UserId == userId.Value)
-                .ToListAsync(cancellationToken);
-            _context.Notifications.RemoveRange(notifications);
-
-            // Delete wishlist items
-            var wishlist = await _context.Wishlists
-                .Include(w => w.Items)
-                .FirstOrDefaultAsync(w => w.UserId == userId.Value, cancellationToken);
-            if (wishlist != null)
+            // Run the multi-step deletion inside the execution strategy so the manual transaction is
+            // compatible with EnableRetryOnFailure (NpgsqlRetryingExecutionStrategy); otherwise
+            // BeginTransactionAsync throws and GDPR account deletion (Article 17) fails. (BUG-26)
+            var strategy = _context.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
             {
-                _context.WishlistItems.RemoveRange(wishlist.Items);
-                _context.Wishlists.Remove(wishlist);
-            }
+                await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
 
-            // Delete cart
-            var cart = await _context.Carts
-                .Include(c => c.Items)
-                .FirstOrDefaultAsync(c => c.UserId == userId.Value, cancellationToken);
-            if (cart != null)
-            {
-                _context.CartItems.RemoveRange(cart.Items);
-                _context.Carts.Remove(cart);
-            }
+                // 1. Hard delete sensitive data that shouldn't be retained
 
-            // Delete addresses
-            var addresses = await _context.Addresses
-                .Where(a => a.UserId == userId.Value)
-                .ToListAsync(cancellationToken);
-            _context.Addresses.RemoveRange(addresses);
+                // Delete notifications (no legal requirement to retain)
+                var notifications = await _context.Notifications
+                    .Where(n => n.UserId == userId.Value)
+                    .ToListAsync(cancellationToken);
+                _context.Notifications.RemoveRange(notifications);
 
-            // Delete review votes
-            var reviewVotes = await _context.ReviewVotes
-                .Where(v => v.UserId == userId.Value)
-                .ToListAsync(cancellationToken);
-            _context.ReviewVotes.RemoveRange(reviewVotes);
+                // Delete wishlist items
+                var wishlist = await _context.Wishlists
+                    .Include(w => w.Items)
+                    .FirstOrDefaultAsync(w => w.UserId == userId.Value, cancellationToken);
+                if (wishlist != null)
+                {
+                    _context.WishlistItems.RemoveRange(wishlist.Items);
+                    _context.Wishlists.Remove(wishlist);
+                }
 
-            // 2. Anonymize data that has legal retention requirements
+                // Delete cart
+                var cart = await _context.Carts
+                    .Include(c => c.Items)
+                    .FirstOrDefaultAsync(c => c.UserId == userId.Value, cancellationToken);
+                if (cart != null)
+                {
+                    _context.CartItems.RemoveRange(cart.Items);
+                    _context.Carts.Remove(cart);
+                }
 
-            // Anonymize reviews (keep for product integrity but remove personal info)
-            var reviews = await _context.Reviews
-                .Where(r => r.UserId == userId.Value)
-                .ToListAsync(cancellationToken);
-            foreach (var review in reviews)
-            {
-                // Keep the review content but mark as no longer verified
-                // Using the proper method to update verified status
-                review.SetVerifiedPurchase(false, null);
-            }
+                // Delete addresses
+                var addresses = await _context.Addresses
+                    .Where(a => a.UserId == userId.Value)
+                    .ToListAsync(cancellationToken);
+                _context.Addresses.RemoveRange(addresses);
 
-            // 3. Soft-delete the user account
-            user.IsActive = false;
-            user.Email = $"deleted_{userId.Value}@deleted.local";
-            user.NormalizedEmail = user.Email.ToUpperInvariant();
-            user.UserName = $"deleted_{userId.Value}";
-            user.NormalizedUserName = user.UserName.ToUpperInvariant();
-            user.FirstName = "Deleted";
-            user.LastName = "User";
-            user.PhoneNumber = null;
-            user.RefreshToken = null;
-            user.RefreshTokenExpiryTime = null;
-            user.PasswordHash = null; // Prevent login
-            user.SecurityStamp = Guid.NewGuid().ToString(); // Invalidate tokens
-            user.SetUpdatedAt();
+                // Delete review votes
+                var reviewVotes = await _context.ReviewVotes
+                    .Where(v => v.UserId == userId.Value)
+                    .ToListAsync(cancellationToken);
+                _context.ReviewVotes.RemoveRange(reviewVotes);
 
-            await _userManager.UpdateAsync(user);
-            await _context.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+                // 2. Anonymize data that has legal retention requirements
+
+                // Anonymize reviews (keep for product integrity but remove personal info)
+                var reviews = await _context.Reviews
+                    .Where(r => r.UserId == userId.Value)
+                    .ToListAsync(cancellationToken);
+                foreach (var review in reviews)
+                {
+                    // Keep the review content but mark as no longer verified
+                    // Using the proper method to update verified status
+                    review.SetVerifiedPurchase(false, null);
+                }
+
+                // 3. Soft-delete the user account
+                user.IsActive = false;
+                user.Email = $"deleted_{userId.Value}@deleted.local";
+                user.NormalizedEmail = user.Email.ToUpperInvariant();
+                user.UserName = $"deleted_{userId.Value}";
+                user.NormalizedUserName = user.UserName.ToUpperInvariant();
+                user.FirstName = "Deleted";
+                user.LastName = "User";
+                user.PhoneNumber = null;
+                user.RefreshToken = null;
+                user.RefreshTokenExpiryTime = null;
+                user.PasswordHash = null; // Prevent login
+                user.SecurityStamp = Guid.NewGuid().ToString(); // Invalidate tokens
+                user.SetUpdatedAt();
+
+                await _userManager.UpdateAsync(user);
+                await _context.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            });
 
             _logger.LogInformation(
                 "GDPR deletion completed for user {UserId}. Email: {Email}",

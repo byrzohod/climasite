@@ -244,6 +244,13 @@ IDs match `docs/project-plan/BUGS_AND_TECH_DEBT.md` exactly; full evidence there
 - **Acceptance:** Integration test: webhook for an unknown intent returns retryable status (or is stored and reconciled); duplicate events are idempotent.
 - **Depends on:** BUG-01.
 
+### BUG-26 — GDPR account deletion fails in production (transaction vs retry strategy) (P0, Small)
+- **Status:** ✅ FIXED (2026-06-22, Wave 6a). Surfaced by the new `GdprControllerTests` integration tests.
+- **Description:** `DeleteUserDataCommandHandler` opened a manual `BeginTransactionAsync`, which throws `InvalidOperationException` under the `NpgsqlRetryingExecutionStrategy` (`EnableRetryOnFailure(3)`, `Infrastructure/DependencyInjection.cs`). The handler swallowed it → generic 400, so a logged-in user with the correct password **could not delete their account (GDPR Article 17 right-to-erasure broken)**. Fix: run the deletion inside `_context.Database.CreateExecutionStrategy().ExecuteAsync(...)` so the transaction is retry-compatible.
+- **Affected:** `src/ClimaSite.Application/Features/Gdpr/Commands/DeleteUserDataCommand.cs`; test `tests/ClimaSite.Api.Tests/Controllers/GdprControllerTests.cs` flipped from pinning the broken 400 to asserting success/anonymize/blocked-login.
+- **Acceptance:** Integration test: valid password + confirmation → 200, account anonymized (deactivated, email scrubbed, password cleared), old credentials rejected. ✅
+- **Depends on:** none. Security-review recommended (GDPR + auth surface).
+
 ---
 
 ## 3. Product gaps (GAP)
