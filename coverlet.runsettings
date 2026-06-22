@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Coverage settings for the PROC-01 backend coverage gate (Wave 3b).
+  Excludes auto-generated code so the metric reflects real, testable logic, not EF migrations
+  (which execute during test-DB setup and otherwise inflate coverage) or compiler-generated members.
+  Wired into the CI "Coverage Report" job via the dotnet test settings flag.
+-->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <!-- Auto-generated: EF migrations + ModelSnapshot live under any Migrations/ folder. -->
+          <ExcludeByFile>**/Migrations/*.cs,**/Migrations/**/*.cs</ExcludeByFile>
+          <ExcludeByAttribute>GeneratedCodeAttribute,ExcludeFromCodeCoverageAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
+          <SkipAutoProps>true</SkipAutoProps>
+          <UseSourceLink>false</UseSourceLink>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

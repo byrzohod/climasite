@@ -373,7 +373,7 @@ jobs:
           dotnet build ClimaSite.NoE2E.slnf --no-restore
 
       - name: Backend coverage (NoE2E incl. integration via Testcontainers)
-        run: dotnet test ClimaSite.NoE2E.slnf --no-build --collect:"XPlat Code Coverage" --results-directory ./coverage
+        run: dotnet test ClimaSite.NoE2E.slnf --no-build --collect:"XPlat Code Coverage" --settings coverlet.runsettings --results-directory ./coverage
 
       - name: Aggregate backend coverage
         run: |
