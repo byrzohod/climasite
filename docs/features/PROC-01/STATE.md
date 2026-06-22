@@ -9,7 +9,7 @@ _template/ set via /feature-kickoff.
 
 # STATE — PROC-01: SDLC hardening (process overhaul)
 
-- **Current phase:** Implement (Wave 3 complete → Wave 4 next)
+- **Current phase:** Implement (Wave 4 of 7)
 - **plan_status:** approved (owner-approved 2026-06-21; canonical plan: `docs/project-plan/SDLC_HARDENING_PLAN.md`)
 - **Research + Plan:** `docs/project-plan/SDLC_HARDENING_PLAN.md` (8 gated phases, 7 waves, owner decisions §4)
 - **Last updated:** 2026-06-22
@@ -26,7 +26,7 @@ _template/ set via /feature-kickoff.
 | 3a — CI gates + baseline | lint+format (dotnet format/.editorconfig/ng lint), dependency-audit (.NET vulns + Trivy CRITICAL enforced; gitleaks→SEC-13 + npm-audit→SEC-12 informational), ADR gate, test-design lint — all enforced via test-summary; coverage **reporting** (non-enforcing) for the baseline | ✅ merged | #43 |
 | 3b — Coverage-raising sprint | 3 workflow batches (+750 backend unit tests; MockDbContext FindAsync/async-AsQueryable fix) → backend line 66.8%→**85.6%**, Core→81.25%, frontend ~72% | ✅ merged | #44/#45/#46/#47 |
 | 3c — Flip coverage gate hard | Coverage Gate job enforces backend line ≥80% / frontend line ≥70%; added to Test Summary required checks (owner-approved 2026-06-22) | 🚧 in progress | this PR |
-| 4 — Review hardening | PR template, CODEOWNERS, CI danger.js (no required GitHub approval — keep AI auto-merge) | ⏳ pending | — |
+| 4 — Review hardening | PR template + CODEOWNERS + `PR Checklist` CI gate (danger.js-equivalent: empty Summary/Testing or missing /security-review on sensitive paths → fail), wired into Test Summary; no required GitHub approval (AI auto-merge kept) | 🚧 in progress | this PR |
 | 5 — Visual + a11y + perf harness | ephemeral screenshots, screenshot/trace on E2E failure, deepened axe matrix, Lighthouse CI, E2E sharding | ⏳ pending | — |
 | 6 — Close coverage gaps | real Stripe card E2E (CI secrets) + webhook contract; GDPR export/delete; inventory; search facets; auth flows; address book; etc. | ⏳ pending | — |
 
@@ -40,6 +40,7 @@ _template/ set via /feature-kickoff.
 Wave 2 PreToolUse blocking hooks and the Wave 3 coverage gate.
 
 ## Log (newest first)
+- 2026-06-22 — Wave 4: review hardening — PR template + CODEOWNERS + a `PR Checklist` CI gate (danger.js-equivalent) wired into Test Summary. Self-gates to a no-op on push events.
 - 2026-06-22 — Wave 3c: flipped the Coverage Gate to ENFORCING (owner-approved) — backend line ≥80% / frontend line ≥70%, added to the Test Summary required checks. Dogfoods on its own PR (main is at 85.6%/~72%).
 - 2026-06-22 — Wave 3b complete: 3 workflow batches added 750 backend unit tests (Application + Core) + a MockDbContext FindAsync/async-AsQueryable fix. Backend line coverage 66.8%→71.3%→78.6%→**85.6%**; Core 73.7%→81.25%; frontend ~72%. Merged #45/#46/#47 (foundation #44). Also closed Wave-6 P0/P1 gaps for GDPR + Inventory at the unit level. Found integration tests just needed the postgres image pre-pulled (Mac Docker), not a code fix.
 - 2026-06-21 — Wave 3a: CI gates (lint+format with root .editorconfig, dependency-audit, ADR gate, test-design lint) enforced via test-summary; coverage reporting added for the baseline. Measured: frontend lines 72.1%/stmt 70.0%/func 63.6%/branch 51.4%; backend local run unreliable (Testcontainers timed out on Mac) — CI coverage job is the authoritative source. Found 8 npm vulns (Angular major upgrade → SEC-12); gitleaks informational → SEC-13.

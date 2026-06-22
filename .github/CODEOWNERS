@@ -1,0 +1,27 @@
+# CODEOWNERS (PROC-01 Wave 4). Note: with required-reviews = 0 (AI auto-merge kept), code-owner review
+# is NOT a merge blocker — `require_code_owner_reviews` is off in branch protection. This file documents
+# ownership and auto-requests review for visibility; the enforced review gate is the read-only reviewer/
+# verifier agents + the PR template + the CI PR-checklist.
+
+# Default owner for everything
+*                                   @byrzohod
+
+# Governance / process — change deliberately
+/.github/                           @byrzohod
+/.claude/                           @byrzohod
+/docs/features/                     @byrzohod
+/docs/project-plan/                 @byrzohod
+/docs/adr/                          @byrzohod
+/CLAUDE.md                          @byrzohod
+/coverlet.runsettings               @byrzohod
+/.editorconfig                      @byrzohod
+
+# High-risk surfaces (payment / auth / data) — flag for extra scrutiny
+/src/ClimaSite.Api/Controllers/PaymentsController.cs        @byrzohod
+/src/ClimaSite.Api/Controllers/WebhooksController.cs        @byrzohod
+/src/ClimaSite.Api/Controllers/AuthController.cs            @byrzohod
+/src/ClimaSite.Api/Controllers/GdprController.cs            @byrzohod
+/src/ClimaSite.Application/Features/Payments/              @byrzohod
+/src/ClimaSite.Application/Auth/                           @byrzohod
+/src/ClimaSite.Application/Features/Gdpr/                  @byrzohod
+/src/ClimaSite.Infrastructure/Migrations/                 @byrzohod
