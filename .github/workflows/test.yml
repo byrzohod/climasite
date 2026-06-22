@@ -355,10 +355,11 @@ jobs:
         run: bash scripts/ci/test-design-coverage.sh
 
   coverage:
-    name: Coverage Report
+    name: Coverage Gate
     runs-on: ubuntu-latest
-    # Reporting only for now (PROC-01 Wave 3a) — NOT a required check yet. Wave 3c flips it to an
-    # enforced 80% backend / 70% frontend gate once the coverage-raising sprint lands.
+    # ENFORCING (PROC-01 Wave 3c, owner-approved 2026-06-22): fails if backend line coverage < 80%
+    # or frontend line coverage < 70% (generated code excluded via coverlet.runsettings). Required via
+    # the Test Summary check. Gated on LINE coverage only (branch/function coverage is lower by design).
     steps:
       - uses: actions/checkout@v4
 
@@ -383,6 +384,14 @@ jobs:
           echo "### Backend coverage" >> "$GITHUB_STEP_SUMMARY"
           sed -n '1,20p' ./coverage-report/Summary.txt | tee -a "$GITHUB_STEP_SUMMARY" || true
 
+      - name: Enforce backend line coverage >= 80%
+        run: |
+          BE=$(grep -oE 'Line coverage: [0-9.]+%' ./coverage-report/Summary.txt | grep -oE '[0-9.]+' | head -1)
+          echo "Backend line coverage: ${BE:-unknown}%  (threshold 80%)"
+          if [ -z "$BE" ]; then echo "::error::could not parse backend coverage from Summary.txt"; exit 1; fi
+          awk -v c="$BE" 'BEGIN{ if (c+0 < 80) exit 1 }' || { echo "::error::Backend line coverage ${BE}% is below the 80% gate"; exit 1; }
+          echo "Backend coverage OK (${BE}% >= 80%)"
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -393,8 +402,17 @@ jobs:
       - name: Frontend coverage
         run: |
           npm ci
-          npm test -- --browsers=ChromeHeadless --watch=false --code-coverage
+          set -o pipefail
+          npm test -- --browsers=ChromeHeadless --watch=false --code-coverage 2>&1 | tee /tmp/fe-cov.log
         working-directory: src/ClimaSite.Web
+
+      - name: Enforce frontend line coverage >= 70%
+        run: |
+          FE=$(grep -oE 'Lines[[:space:]]*:[[:space:]]*[0-9.]+%' /tmp/fe-cov.log | grep -oE '[0-9.]+' | tail -1)
+          echo "Frontend line coverage: ${FE:-unknown}%  (threshold 70%)"
+          if [ -z "$FE" ]; then echo "::error::could not parse frontend coverage from test output"; exit 1; fi
+          awk -v c="$FE" 'BEGIN{ if (c+0 < 70) exit 1 }' || { echo "::error::Frontend line coverage ${FE}% is below the 70% gate"; exit 1; }
+          echo "Frontend coverage OK (${FE}% >= 70%)"
 
       - name: Upload coverage artifacts
         uses: actions/upload-artifact@v4
@@ -409,7 +427,7 @@ jobs:
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
-    needs: [unit-tests, integration-tests, frontend-tests, build, e2e-tests, lint-format, dependency-audit, adr-gate, test-design-lint]
+    needs: [unit-tests, integration-tests, frontend-tests, build, e2e-tests, lint-format, dependency-audit, adr-gate, test-design-lint, coverage]
     if: always()
 
     steps:
@@ -423,7 +441,8 @@ jobs:
              [ "${{ needs.lint-format.result }}" != "success" ] || \
              [ "${{ needs.dependency-audit.result }}" != "success" ] || \
              [ "${{ needs.adr-gate.result }}" != "success" ] || \
-             [ "${{ needs.test-design-lint.result }}" != "success" ]; then
+             [ "${{ needs.test-design-lint.result }}" != "success" ] || \
+             [ "${{ needs.coverage.result }}" != "success" ]; then
             echo "One or more required jobs failed"
             exit 1
           fi
