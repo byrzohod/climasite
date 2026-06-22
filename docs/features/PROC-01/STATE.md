@@ -28,9 +28,10 @@ _template/ set via /feature-kickoff.
 | 3c — Flip coverage gate hard | Coverage Gate job enforces backend line ≥80% / frontend line ≥70%; added to Test Summary required checks (owner-approved 2026-06-22) | 🚧 in progress | this PR |
 | 4 — Review hardening | PR template + CODEOWNERS + `PR Checklist` CI gate (danger.js-equivalent: empty Summary/Testing or missing /security-review on sensitive paths → fail), wired into Test Summary; no required GitHub approval (AI auto-merge kept) | 🚧 in progress | this PR |
 | 5a — Lighthouse perf budget | Lighthouse CI job (mobile, static-served prod build) + `lighthouserc.json`, reporting-only (warn) until stable | ✅ merged | #50 |
-| 5c — axe a11y matrix | `AxeAccessibilityMatrixTests` (Deque.AxeCore.Playwright) — 9 public pages × light/dark, reporting-first (`A11Y_ENFORCE=1` to gate). Baseline: 3 serious dark-theme contrast violations → UX-15 | 🚧 in progress | this PR |
-| 5b — Screenshot/trace on E2E failure | PlaywrightFixture tracing + on-failure capture; artifacts uploaded `if:failure()` (needs a per-test adopt pattern) | ⏳ pending | — |
-| 5d — Ephemeral visual capture + E2E sharding | {light,dark}×{en,bg,de} screenshots for review (no committed baselines); shard E2E to beat the 50-min timeout | ⏳ pending | — |
+| 5c — axe a11y matrix | `AxeAccessibilityMatrixTests` (Deque.AxeCore.Playwright) — 9 public pages × light/dark, reporting-first (`A11Y_ENFORCE=1` to gate). Baseline: 3 serious dark-theme contrast violations → UX-15 | ✅ merged | #51 |
+| 5d — Ephemeral visual capture | `VisualSnapshotTests` — key pages × light/dark (+ mobile home) full-page screenshots → 7-day E2E artifact, no committed baselines | 🚧 in progress | this PR |
+| 5b — Screenshot/trace on E2E failure | DEFERRED — needs a per-test adopt pattern (PlaywrightFixture is a shared collection fixture, no xUnit failure hook); the visual snapshots + .trx already aid debugging | ⏳ deferred | — |
+| 5e — E2E sharding | DEFERRED — split E2E (functional/visual/a11y/perf/payments) to beat the 50-min timeout; not yet needed | ⏳ deferred | — |
 | 6 — Close coverage gaps | real Stripe card E2E (CI secrets) + webhook contract; GDPR export/delete; inventory; search facets; auth flows; address book; etc. | ⏳ pending | — |
 
 ## Owner decisions in force (from SDLC_HARDENING_PLAN.md §4)
