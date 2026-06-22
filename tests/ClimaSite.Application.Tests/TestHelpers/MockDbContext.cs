@@ -211,15 +211,37 @@ public class MockDbContext : IApplicationDbContext
 
     private static DbSet<T> CreateMockDbSet<T>(List<T> data) where T : class
     {
-        var queryable = data.AsQueryable();
+        // Wrap the backing list in a TestAsyncEnumerable so that LINQ operators applied directly to
+        // the DbSet (including a redundant .AsQueryable()) keep flowing through the async-capable
+        // provider — handlers that do _context.X.AsQueryable()...CountAsync()/ToListAsync() rely on it.
+        IQueryable<T> queryable = new TestAsyncEnumerable<T>(data);
         var mockSet = new Mock<DbSet<T>>();
 
         mockSet.As<IQueryable<T>>().Setup(m => m.Provider).Returns(new TestAsyncQueryProvider<T>(queryable.Provider));
         mockSet.As<IQueryable<T>>().Setup(m => m.Expression).Returns(queryable.Expression);
         mockSet.As<IQueryable<T>>().Setup(m => m.ElementType).Returns(queryable.ElementType);
-        mockSet.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(() => queryable.GetEnumerator());
+        mockSet.As<IQueryable<T>>().Setup(m => m.GetEnumerator()).Returns(() => data.GetEnumerator());
         mockSet.As<IAsyncEnumerable<T>>().Setup(m => m.GetAsyncEnumerator(It.IsAny<CancellationToken>()))
-            .Returns(new TestAsyncEnumerator<T>(queryable.GetEnumerator()));
+            .Returns(() => new TestAsyncEnumerator<T>(data.GetEnumerator()));
+
+        // DbSet<T> exposes a VIRTUAL instance method AsQueryable(); it shadows the
+        // System.Linq.Queryable.AsQueryable extension at the call site, so handlers that do
+        // _context.X.AsQueryable()...CountAsync()/ToListAsync() hit this method, not the extension.
+        // Left unconfigured, Moq returns a plain non-async EnumerableQuery and EF Core's async
+        // operators throw "provider ... doesn't implement IAsyncQueryProvider". Returning the
+        // async-capable TestAsyncEnumerable keeps those chains working.
+        mockSet.Setup(m => m.AsQueryable()).Returns(() => new TestAsyncEnumerable<T>(data));
+
+        // FindAsync(id) — look the entity up by its Id in the backing list, the way EF Core would
+        // resolve a primary-key lookup. Supports both DbSet.FindAsync overloads:
+        //   FindAsync(object?[] keyValues, CancellationToken) and FindAsync(params object?[] keyValues).
+        // Returns default(T) (null) when no match, so production "not found" branches stay reachable.
+        mockSet.Setup(m => m.FindAsync(It.IsAny<object?[]>(), It.IsAny<CancellationToken>()))
+            .Returns((object?[] keyValues, CancellationToken _) =>
+                new ValueTask<T?>(FindById(data, keyValues)));
+
+        mockSet.Setup(m => m.FindAsync(It.IsAny<object?[]>()))
+            .Returns((object?[] keyValues) => new ValueTask<T?>(FindById(data, keyValues)));
 
         mockSet.Setup(m => m.AddAsync(It.IsAny<T>(), It.IsAny<CancellationToken>()))
             .Callback<T, CancellationToken>((entity, _) => data.Add(entity))
@@ -245,6 +267,28 @@ public class MockDbContext : IApplicationDbContext
             });
 
         return mockSet.Object;
+    }
+
+    /// <summary>
+    /// Resolves a single entity by its primary key from the backing list, mirroring how EF Core's
+    /// <c>FindAsync</c> matches on the "Id" key. Returns <c>null</c> when no entity matches (or the
+    /// key is empty), keeping production "not found" branches reachable in unit tests.
+    /// </summary>
+    private static T? FindById<T>(List<T> data, object?[]? keyValues) where T : class
+    {
+        if (keyValues is null || keyValues.Length == 0 || keyValues[0] is null)
+        {
+            return null;
+        }
+
+        var key = keyValues[0]!;
+        var idProperty = typeof(T).GetProperty("Id");
+        if (idProperty is null)
+        {
+            return null;
+        }
+
+        return data.FirstOrDefault(entity => Equals(idProperty.GetValue(entity), key));
     }
 }
 
