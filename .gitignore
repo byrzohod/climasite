@@ -147,3 +147,8 @@ appsettings.Local.json
 *.key
 *.pem
 secrets.json
+
+# E2E runtime output (screenshots, traces, .trx) — never committed
+test-results/
+TestResults/
+videos/

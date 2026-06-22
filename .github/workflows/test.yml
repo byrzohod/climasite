@@ -254,6 +254,15 @@ jobs:
           path: tests/ClimaSite.E2E/TestResults/
           retention-days: 7
 
+      - name: Upload visual snapshots (ephemeral — for review, no committed baselines)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-snapshots
+          path: tests/ClimaSite.E2E/test-results/visual/
+          retention-days: 7
+          if-no-files-found: ignore
+
   lint-format:
     name: Lint & Format
     runs-on: ubuntu-latest
