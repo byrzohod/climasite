@@ -569,6 +569,13 @@ Detail: `docs/project-plan/UI_UX_REVIEW.md` (work-list #1-23) and `_review/uiux.
 ### UX-14 — Offline/empty-state wiring (P3, Small)
 - **Closes:** item #23. **Affected:** `shared/components/empty-state` (unused `offline` variant). **Acceptance:** Global offline detection shows the variant with retry.
 
+### UX-15 — Dark-theme color-contrast violations (WCAG AA) (P2, Small)
+- **Status:** OPEN (surfaced 2026-06-22 by the Wave 5c axe matrix). 3 serious `color-contrast` violations in **dark** theme: `/promotions` (4 nodes), `/brands` (7 nodes), `/about` (1 node). Light theme + the other audited pages are clean.
+- **Description:** Fix the offending dark-mode foreground/background pairs to meet the WCAG AA contrast ratio (likely muted text or badge colors on dark surfaces in `_colors.scss`). Once clean, set `A11Y_ENFORCE=1` in the E2E job (or flip the test default) to make the axe matrix a **hard a11y gate**.
+- **Affected:** `src/ClimaSite.Web/src/styles/_colors.scss` (dark theme vars), the promotions/brands/about page styles.
+- **Acceptance:** `AxeAccessibilityMatrixTests` reports 0 serious/critical with `A11Y_ENFORCE=1`; then enforce in CI.
+- **Depends on:** none. Pairs with UX-07 (light-theme error color) and UX-13 (energy-label palette).
+
 ---
 
 ## 7. Architecture (ARCH)

@@ -27,9 +27,9 @@ _template/ set via /feature-kickoff.
 | 3b — Coverage-raising sprint | 3 workflow batches (+750 backend unit tests; MockDbContext FindAsync/async-AsQueryable fix) → backend line 66.8%→**85.6%**, Core→81.25%, frontend ~72% | ✅ merged | #44/#45/#46/#47 |
 | 3c — Flip coverage gate hard | Coverage Gate job enforces backend line ≥80% / frontend line ≥70%; added to Test Summary required checks (owner-approved 2026-06-22) | 🚧 in progress | this PR |
 | 4 — Review hardening | PR template + CODEOWNERS + `PR Checklist` CI gate (danger.js-equivalent: empty Summary/Testing or missing /security-review on sensitive paths → fail), wired into Test Summary; no required GitHub approval (AI auto-merge kept) | 🚧 in progress | this PR |
-| 5a — Lighthouse perf budget | Lighthouse CI job (mobile, static-served prod build) + `lighthouserc.json`, reporting-only (warn) until stable | 🚧 in progress | this PR |
-| 5b — Screenshot/trace on E2E failure | PlaywrightFixture tracing + on-failure capture; artifacts uploaded `if:failure()` | ⏳ pending | — |
-| 5c — axe a11y matrix | greenfield axe E2E across key pages × lang × theme (none exist today) | ⏳ pending | — |
+| 5a — Lighthouse perf budget | Lighthouse CI job (mobile, static-served prod build) + `lighthouserc.json`, reporting-only (warn) until stable | ✅ merged | #50 |
+| 5c — axe a11y matrix | `AxeAccessibilityMatrixTests` (Deque.AxeCore.Playwright) — 9 public pages × light/dark, reporting-first (`A11Y_ENFORCE=1` to gate). Baseline: 3 serious dark-theme contrast violations → UX-15 | 🚧 in progress | this PR |
+| 5b — Screenshot/trace on E2E failure | PlaywrightFixture tracing + on-failure capture; artifacts uploaded `if:failure()` (needs a per-test adopt pattern) | ⏳ pending | — |
 | 5d — Ephemeral visual capture + E2E sharding | {light,dark}×{en,bg,de} screenshots for review (no committed baselines); shard E2E to beat the 50-min timeout | ⏳ pending | — |
 | 6 — Close coverage gaps | real Stripe card E2E (CI secrets) + webhook contract; GDPR export/delete; inventory; search facets; auth flows; address book; etc. | ⏳ pending | — |
 
