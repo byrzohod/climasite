@@ -59,7 +59,7 @@ public class CheckoutPage : BasePage
         // Wait for the checkout page container to appear first
         try
         {
-            await Page.WaitForSelectorAsync("[data-testid='checkout-page']", new PageWaitForSelectorOptions { Timeout = 10000 });
+            await Page.WaitForSelectorAsync("[data-testid='checkout-page']", new PageWaitForSelectorOptions { Timeout = 30000 });
         }
         catch (TimeoutException)
         {
@@ -186,7 +186,7 @@ public class CheckoutPage : BasePage
     {
         await ClickAsync(NextStepButton);
         // Wait for payment section to appear instead of NetworkIdle
-        await Page.WaitForSelectorAsync("[data-testid='payment-section']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync("[data-testid='payment-section']", new PageWaitForSelectorOptions { Timeout = 30000 });
     }
 
     public async Task<bool> IsOnPaymentStepAsync()
@@ -208,7 +208,7 @@ public class CheckoutPage : BasePage
     {
         await ClickAsync(NextStepButton);
         // Wait for review section to appear instead of NetworkIdle
-        await Page.WaitForSelectorAsync("[data-testid='review-section'], [data-testid='place-order']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync("[data-testid='review-section'], [data-testid='place-order']", new PageWaitForSelectorOptions { Timeout = 30000 });
     }
 
     public async Task<decimal> GetOrderTotalAsync()

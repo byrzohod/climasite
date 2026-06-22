@@ -197,7 +197,7 @@ public class OrdersMobileTests : IAsyncLifetime
             try
             {
                 await _page.WaitForURLAsync(url => url.Contains("/account/orders") && !url.Contains(order.Id.ToString()),
-                    new PageWaitForURLOptions { Timeout = 10000 });
+                    new PageWaitForURLOptions { Timeout = 30000 });
             }
             catch
             {

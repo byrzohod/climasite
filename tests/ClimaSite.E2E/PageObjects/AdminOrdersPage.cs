@@ -40,11 +40,11 @@ public class AdminOrdersPage : BasePage
     public async Task OpenOrderAsync(string orderId)
     {
         var selector = $"[data-testid='view-order'][data-order-id='{orderId}']";
-        await Page.WaitForSelectorAsync(selector, new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync(selector, new PageWaitForSelectorOptions { Timeout = 30000 });
         await Page.ClickAsync(selector);
         await Page.WaitForSelectorAsync(
             "[data-testid='admin-order-detail']",
-            new PageWaitForSelectorOptions { Timeout = 10000 });
+            new PageWaitForSelectorOptions { Timeout = 30000 });
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }
 
@@ -54,18 +54,18 @@ public class AdminOrdersPage : BasePage
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await Page.WaitForSelectorAsync(
             "[data-testid='admin-order-detail']",
-            new PageWaitForSelectorOptions { Timeout = 10000 });
+            new PageWaitForSelectorOptions { Timeout = 30000 });
     }
 
     public async Task<string> GetStatusBadgeTextAsync()
     {
-        await Page.WaitForSelectorAsync("[data-testid='order-status-badge']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync("[data-testid='order-status-badge']", new PageWaitForSelectorOptions { Timeout = 30000 });
         return (await Page.Locator("[data-testid='order-status-badge']").InnerTextAsync()).Trim();
     }
 
     public async Task ChangeStatusAsync(string statusValue, string? note = null, bool notifyCustomer = false)
     {
-        await Page.WaitForSelectorAsync("[data-testid='status-select']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync("[data-testid='status-select']", new PageWaitForSelectorOptions { Timeout = 30000 });
         await Page.SelectOptionAsync("[data-testid='status-select']", new SelectOptionValue { Value = statusValue });
 
         if (!string.IsNullOrEmpty(note))
@@ -85,7 +85,7 @@ public class AdminOrdersPage : BasePage
 
     public async Task SetShippingAsync(string trackingNumber, string? shippingMethod = null, bool markAsShipped = true)
     {
-        await Page.WaitForSelectorAsync("[data-testid='tracking-input']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync("[data-testid='tracking-input']", new PageWaitForSelectorOptions { Timeout = 30000 });
         await Page.FillAsync("[data-testid='tracking-input']", trackingNumber);
 
         if (!string.IsNullOrEmpty(shippingMethod))
@@ -100,7 +100,7 @@ public class AdminOrdersPage : BasePage
 
     public async Task AddNoteAsync(string note)
     {
-        await Page.WaitForSelectorAsync("[data-testid='note-input']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync("[data-testid='note-input']", new PageWaitForSelectorOptions { Timeout = 30000 });
         await Page.FillAsync("[data-testid='note-input']", note);
         await Page.ClickAsync("[data-testid='add-note']");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -108,7 +108,7 @@ public class AdminOrdersPage : BasePage
 
     public async Task<string> GetTrackingNumberAsync()
     {
-        await Page.WaitForSelectorAsync("[data-testid='order-tracking-number']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync("[data-testid='order-tracking-number']", new PageWaitForSelectorOptions { Timeout = 30000 });
         return (await Page.Locator("[data-testid='order-tracking-number']").InnerTextAsync()).Trim();
     }
 

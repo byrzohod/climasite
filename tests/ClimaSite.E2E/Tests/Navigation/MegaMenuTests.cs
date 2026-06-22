@@ -1,7 +1,7 @@
-using ClimaSite.E2E.Infrastructure;
-using Microsoft.Playwright;
-using FluentAssertions;
 using System.Text.RegularExpressions;
+using ClimaSite.E2E.Infrastructure;
+using FluentAssertions;
+using Microsoft.Playwright;
 
 namespace ClimaSite.E2E.Tests.Navigation;
 

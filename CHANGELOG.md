@@ -31,6 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- E2E stability: raised the page-objects' tight 10s Playwright waits to the suite's 30s default (113 call sites) — slow CI runners were intermittently tripping them (e.g. order/overlay pages taking ~12s), causing flaky required-check failures that forced re-runs. Longer patience only; no test-logic change.
 - GDPR account deletion (Article 17 right-to-erasure) now works: `DeleteUserDataCommandHandler` ran a manual `BeginTransactionAsync` that threw under the `NpgsqlRetryingExecutionStrategy` (`EnableRetryOnFailure`), so logged-in users could not delete their account (silent 400). The deletion now runs inside `Database.CreateExecutionStrategy().ExecuteAsync(...)`. Found by the new Wave 6 integration tests (BUG-26).
 
 ### Changed

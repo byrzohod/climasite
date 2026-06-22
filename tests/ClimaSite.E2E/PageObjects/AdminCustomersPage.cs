@@ -52,16 +52,16 @@ public class AdminCustomersPage : BasePage
     public async Task OpenDetailAsync(string customerId)
     {
         var selector = $"[data-testid='view-customer'][data-customer-id='{customerId}']";
-        await Page.WaitForSelectorAsync(selector, new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync(selector, new PageWaitForSelectorOptions { Timeout = 30000 });
         await Page.ClickAsync(selector);
         await Page.WaitForSelectorAsync(
             "[data-testid='customer-detail']",
-            new PageWaitForSelectorOptions { Timeout = 10000 });
+            new PageWaitForSelectorOptions { Timeout = 30000 });
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         // The status badge only renders once the detail finishes loading without error.
         await Page.WaitForSelectorAsync(
             "[data-testid='customer-active-badge'], [data-testid='customer-detail-error']",
-            new PageWaitForSelectorOptions { Timeout = 10000 });
+            new PageWaitForSelectorOptions { Timeout = 30000 });
     }
 
     public ILocator DetailPanel => Page.Locator("[data-testid='customer-detail']");
@@ -70,7 +70,7 @@ public class AdminCustomersPage : BasePage
 
     public async Task<string> GetActiveBadgeTextAsync()
     {
-        await Page.WaitForSelectorAsync("[data-testid='customer-active-badge']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await Page.WaitForSelectorAsync("[data-testid='customer-active-badge']", new PageWaitForSelectorOptions { Timeout = 30000 });
         return (await Page.Locator("[data-testid='customer-active-badge']").InnerTextAsync()).Trim();
     }
 
@@ -81,7 +81,7 @@ public class AdminCustomersPage : BasePage
     {
         await Page.WaitForSelectorAsync(
             "[data-testid='toggle-customer-status']",
-            new PageWaitForSelectorOptions { Timeout = 10000 });
+            new PageWaitForSelectorOptions { Timeout = 30000 });
         await Page.ClickAsync("[data-testid='toggle-customer-status']");
         await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }

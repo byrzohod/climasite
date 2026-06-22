@@ -64,7 +64,7 @@ public class GuestCheckoutCompletionTests : IAsyncLifetime
         await productPage.AddToCartAsync();
 
         await Assertions.Expect(_page.Locator("[data-testid='cart-count']")).ToBeVisibleAsync(
-            new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
 
         // Act - proceed to checkout as a guest. GAP-07 removed the /checkout auth guard, so the buyer
         // reaches checkout without being bounced to login.

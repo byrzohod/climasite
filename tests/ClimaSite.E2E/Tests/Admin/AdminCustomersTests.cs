@@ -72,9 +72,9 @@ public class AdminCustomersTests : IAsyncLifetime
 
         // Assert — the detail panel is visible and shows the customer's email.
         await Assertions.Expect(customersPage.DetailPanel)
-            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
         await Assertions.Expect(customersPage.DetailPanel)
-            .ToContainTextAsync(customer.Email, new LocatorAssertionsToContainTextOptions { Timeout = 10000 });
+            .ToContainTextAsync(customer.Email, new LocatorAssertionsToContainTextOptions { Timeout = 30000 });
     }
 
     [Fact]
@@ -101,9 +101,9 @@ public class AdminCustomersTests : IAsyncLifetime
 
         // Assert — the status badge text changes after toggling, and the success banner appears.
         await Assertions.Expect(_page.Locator("[data-testid='customer-action-success']"))
-            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
         await Assertions.Expect(customersPage.ActiveBadge)
-            .Not.ToHaveTextAsync(before, new LocatorAssertionsToHaveTextOptions { Timeout = 10000 });
+            .Not.ToHaveTextAsync(before, new LocatorAssertionsToHaveTextOptions { Timeout = 30000 });
     }
 
     private async Task LoginAsAdminAsync(TestUser admin)

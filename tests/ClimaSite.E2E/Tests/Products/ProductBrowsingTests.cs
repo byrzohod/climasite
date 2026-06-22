@@ -43,7 +43,7 @@ public class ProductBrowsingTests : IAsyncLifetime
         await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         try
         {
-            await _page.WaitForSelectorAsync("[data-testid='product-card']", new PageWaitForSelectorOptions { Timeout = 10000 });
+            await _page.WaitForSelectorAsync("[data-testid='product-card']", new PageWaitForSelectorOptions { Timeout = 30000 });
         }
         catch
         {
@@ -88,7 +88,7 @@ public class ProductBrowsingTests : IAsyncLifetime
         await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Wait for search input to be ready
-        await _page.WaitForSelectorAsync("[data-testid='search-input']", new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        await _page.WaitForSelectorAsync("[data-testid='search-input']", new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible, Timeout = 30000 });
 
         // Act - Enter search query
         await _page.FillAsync("[data-testid='search-input']", uniqueName);
@@ -103,7 +103,7 @@ public class ProductBrowsingTests : IAsyncLifetime
         await _page.PressAsync("[data-testid='search-input']", "Enter");
 
         // Wait for navigation to products page with search param
-        await _page.WaitForURLAsync(url => url.Contains("/products") && url.Contains("search="), new PageWaitForURLOptions { Timeout = 10000 });
+        await _page.WaitForURLAsync(url => url.Contains("/products") && url.Contains("search="), new PageWaitForURLOptions { Timeout = 30000 });
         await searchResponse;
 
         // Assert - Verify we're on the search results page
@@ -115,11 +115,11 @@ public class ProductBrowsingTests : IAsyncLifetime
 
         // Verify search results title is visible
         var searchTitle = _page.Locator("[data-testid='search-results-title']");
-        await Assertions.Expect(searchTitle).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+        await Assertions.Expect(searchTitle).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
 
         // Verify the created product is displayed.
         await Assertions.Expect(_page.GetByText(uniqueName).First)
-            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
     }
 
     [Fact]

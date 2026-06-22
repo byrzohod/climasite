@@ -1,7 +1,7 @@
 using ClimaSite.E2E.Infrastructure;
 using ClimaSite.E2E.PageObjects;
-using Microsoft.Playwright;
 using FluentAssertions;
+using Microsoft.Playwright;
 
 namespace ClimaSite.E2E.Tests.Settings;
 
@@ -201,7 +201,7 @@ public class ThemeAndSettingsTests : IAsyncLifetime
         // Assert - Either 404 page or redirect to home/products
         var notFoundIndicator = _page.Locator("[data-testid='not-found'], .not-found, h1:has-text('404')");
         var is404 = await notFoundIndicator.IsVisibleAsync();
-        
+
         // Either shows 404 or redirects (both are valid behaviors)
         var url = _page.Url;
         (is404 || url.Contains("/") || url.Contains("/products")).Should().BeTrue();
@@ -250,7 +250,7 @@ public class ThemeAndSettingsTests : IAsyncLifetime
     {
         // This test simulates network issues
         // In real scenarios, we'd use route interception
-        
+
         // For now, verify the app handles slow responses
         await _page.GotoAsync("/products");
         await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
@@ -286,7 +286,7 @@ public class ThemeAndSettingsTests : IAsyncLifetime
     {
         // Create user and login
         var user = await _dataFactory.CreateUserAsync();
-        
+
         var loginPage = new LoginPage(_page);
         await loginPage.NavigateAsync();
         await loginPage.LoginAsync(user.Email, user.Password);
@@ -373,7 +373,7 @@ public class ThemeAndSettingsTests : IAsyncLifetime
         // Assert - Page renders without horizontal overflow
         var hasHorizontalScroll = await _page.EvaluateAsync<bool>(
             "() => document.documentElement.scrollWidth > document.documentElement.clientWidth");
-        
+
         // Minor horizontal scroll may be acceptable
         var content = await _page.ContentAsync();
         content.Should().NotBeNullOrEmpty();

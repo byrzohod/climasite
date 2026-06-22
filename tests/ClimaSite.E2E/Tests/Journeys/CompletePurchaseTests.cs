@@ -1,7 +1,7 @@
 using ClimaSite.E2E.Infrastructure;
 using ClimaSite.E2E.PageObjects;
-using Microsoft.Playwright;
 using FluentAssertions;
+using Microsoft.Playwright;
 
 namespace ClimaSite.E2E.Tests.Journeys;
 
@@ -176,10 +176,10 @@ public class CompletePurchaseTests : IAsyncLifetime
         await _page.GotoAsync(href!);
 
         // Assert - Products page with category filter
-        await _page.WaitForURLAsync(url => url.Contains("/products"), new PageWaitForURLOptions { Timeout = 10000 });
+        await _page.WaitForURLAsync(url => url.Contains("/products"), new PageWaitForURLOptions { Timeout = 30000 });
 
         // Step 2: Products are displayed
-        await Assertions.Expect(_page.Locator("[data-testid='product-card']").First).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+        await Assertions.Expect(_page.Locator("[data-testid='product-card']").First).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
 
         // Step 3: Select a product
         await _page.ClickAsync("[data-testid='product-card'] >> nth=0");
@@ -224,7 +224,7 @@ public class CompletePurchaseTests : IAsyncLifetime
 
         // Wait for the add-to-cart button to be available
         var addToCartButton = _page.Locator("[data-testid='add-to-cart']");
-        await Assertions.Expect(addToCartButton).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+        await Assertions.Expect(addToCartButton).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
 
         // Click add to cart
         await addToCartButton.ClickAsync();
@@ -234,7 +234,7 @@ public class CompletePurchaseTests : IAsyncLifetime
 
         // Get cart count with extended timeout (API needs to respond)
         await Assertions.Expect(_page.Locator("[data-testid='cart-count']")).ToBeVisibleAsync(
-            new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
         var countBefore = await _page.Locator("[data-testid='cart-count']").TextContentAsync();
         countBefore.Should().NotBeNullOrEmpty("Cart count should have a value after adding item");
 

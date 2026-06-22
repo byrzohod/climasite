@@ -47,7 +47,7 @@ public class MiniCartPurchaseTests : IAsyncLifetime
         await productPage.AddToCartAsync();
 
         await Assertions.Expect(_page.Locator("[data-testid='cart-count']")).ToBeVisibleAsync(
-            new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
 
         // Act - open the mini-cart drawer and start checkout from inside it (real, non-forced click).
         var drawer = new MiniCartDrawer(_page);

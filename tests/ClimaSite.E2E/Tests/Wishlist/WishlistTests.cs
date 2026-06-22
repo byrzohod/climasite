@@ -197,7 +197,7 @@ public class WishlistTests : IAsyncLifetime
         await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await _page.WaitForSelectorAsync(
             "[data-testid='wishlist-items'], [data-testid='wishlist-empty']",
-            new PageWaitForSelectorOptions { Timeout = 10000 });
+            new PageWaitForSelectorOptions { Timeout = 30000 });
     }
 
     private async Task ExpectWishlistProductAsync(TestProduct product)

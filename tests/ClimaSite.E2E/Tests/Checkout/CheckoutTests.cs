@@ -215,7 +215,7 @@ public class CheckoutTests : IAsyncLifetime
 
         // Wait for cart to reload after navigation
         await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-        await _page.WaitForSelectorAsync("[data-testid='cart-item']", new PageWaitForSelectorOptions { Timeout = 10000 });
+        await _page.WaitForSelectorAsync("[data-testid='cart-item']", new PageWaitForSelectorOptions { Timeout = 30000 });
 
         // Check cart has items before modifying
         var itemCount = await cartPage.GetItemCountAsync();

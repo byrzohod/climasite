@@ -71,7 +71,7 @@ public class MiniCartOverlayTests : IAsyncLifetime
         }
 
         await Assertions.Expect(cartCount).ToBeVisibleAsync(
-            new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
     }
 
     // THE test that would have caught the reported bug: checkout action is the topmost element and a
@@ -138,6 +138,6 @@ public class MiniCartOverlayTests : IAsyncLifetime
             new PageWaitForURLOptions { Timeout = 15000 });
         _page.Url.Should().Contain("/cart");
         await Assertions.Expect(_page.Locator("[data-testid='cart-item']").First).ToBeVisibleAsync(
-            new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
     }
 }

@@ -51,7 +51,7 @@ public class AdminPanelTests : IAsyncLifetime
 
         // Assert - Dashboard should be accessible
         await Assertions.Expect(_page.Locator("app-admin-dashboard h1"))
-            .ToContainTextAsync("Admin", new LocatorAssertionsToContainTextOptions { Timeout = 10000 });
+            .ToContainTextAsync("Admin", new LocatorAssertionsToContainTextOptions { Timeout = 30000 });
 
         // Should see admin navigation links
         var hasProductsLink = await _page.IsVisibleAsync("a[href*='products'], [routerlink*='products']");
@@ -100,7 +100,7 @@ public class AdminPanelTests : IAsyncLifetime
 
         // Assert - Products page should load
         await Assertions.Expect(_page.Locator("app-admin-products h1"))
-            .ToContainTextAsync("Product", new LocatorAssertionsToContainTextOptions { Timeout = 10000 });
+            .ToContainTextAsync("Product", new LocatorAssertionsToContainTextOptions { Timeout = 30000 });
     }
 
     [Fact]
@@ -180,7 +180,7 @@ public class AdminPanelTests : IAsyncLifetime
         // The created order's "View" link should be present
         await Assertions.Expect(_page.Locator(
             $"[data-testid='view-order'][data-order-id='{order.Id}']"))
-            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
     }
 
     [Fact]
@@ -199,7 +199,7 @@ public class AdminPanelTests : IAsyncLifetime
 
         // Assert - The order detail page shows the order with a status badge
         await Assertions.Expect(_page.Locator("[data-testid='admin-order-detail']"))
-            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
 
         var status = await ordersPage.GetStatusBadgeTextAsync();
         status.Should().NotBeNullOrWhiteSpace("the order detail should display the current status");
@@ -221,7 +221,7 @@ public class AdminPanelTests : IAsyncLifetime
 
         // Assert - The status badge reflects the new status after the page reloads the order
         await Assertions.Expect(_page.Locator("[data-testid='order-status-badge']"))
-            .ToContainTextAsync("Paid", new LocatorAssertionsToContainTextOptions { Timeout = 10000 });
+            .ToContainTextAsync("Paid", new LocatorAssertionsToContainTextOptions { Timeout = 30000 });
     }
 
     [Fact]
@@ -241,18 +241,18 @@ public class AdminPanelTests : IAsyncLifetime
         // Move Pending -> Paid -> Processing so the order can be shipped.
         await ordersPage.ChangeStatusAsync("Paid", notifyCustomer: false);
         await Assertions.Expect(_page.Locator("[data-testid='order-status-badge']"))
-            .ToContainTextAsync("Paid", new LocatorAssertionsToContainTextOptions { Timeout = 10000 });
+            .ToContainTextAsync("Paid", new LocatorAssertionsToContainTextOptions { Timeout = 30000 });
 
         await ordersPage.ChangeStatusAsync("Processing", notifyCustomer: false);
         await Assertions.Expect(_page.Locator("[data-testid='order-status-badge']"))
-            .ToContainTextAsync("Processing", new LocatorAssertionsToContainTextOptions { Timeout = 10000 });
+            .ToContainTextAsync("Processing", new LocatorAssertionsToContainTextOptions { Timeout = 30000 });
 
         // Set tracking number and mark as shipped.
         await ordersPage.SetShippingAsync(trackingNumber, shippingMethod: "express", markAsShipped: true);
 
         // Assert - The admin detail now shows the tracking number.
         await Assertions.Expect(_page.Locator("[data-testid='order-tracking-number']"))
-            .ToContainTextAsync(trackingNumber, new LocatorAssertionsToContainTextOptions { Timeout = 10000 });
+            .ToContainTextAsync(trackingNumber, new LocatorAssertionsToContainTextOptions { Timeout = 30000 });
 
         // Acceptance criterion - the customer sees the same tracking number on their order page.
         var customer = order.User;
@@ -293,7 +293,7 @@ public class AdminPanelTests : IAsyncLifetime
 
         // Assert - A success message is shown after adding the note.
         await Assertions.Expect(_page.Locator("[data-testid='order-action-success']"))
-            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 10000 });
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
     }
 
     #endregion
@@ -314,7 +314,7 @@ public class AdminPanelTests : IAsyncLifetime
 
         // Assert - Users page should load (even if placeholder)
         await Assertions.Expect(_page.Locator("app-admin-users h1"))
-            .ToContainTextAsync("User", new LocatorAssertionsToContainTextOptions { Timeout = 10000 });
+            .ToContainTextAsync("User", new LocatorAssertionsToContainTextOptions { Timeout = 30000 });
     }
 
     #endregion

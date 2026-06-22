@@ -68,7 +68,7 @@ public class CartPage : BasePage
 
         await ClickAsync(CheckoutButton);
         // Wait for navigation to complete
-        await Page.WaitForURLAsync(url => url.Contains("checkout") || url.Contains("login"), new PageWaitForURLOptions { Timeout = 10000 });
+        await Page.WaitForURLAsync(url => url.Contains("checkout") || url.Contains("login"), new PageWaitForURLOptions { Timeout = 30000 });
         await WaitForLoadAsync();
 
         // Wait for checkout page content to load
@@ -89,14 +89,14 @@ public class CartPage : BasePage
             // Wait for item count to decrease or for empty cart message
             if (itemCountBefore == 1)
             {
-                await Page.WaitForSelectorAsync(EmptyCartMessage, new PageWaitForSelectorOptions { Timeout = 10000 });
+                await Page.WaitForSelectorAsync(EmptyCartMessage, new PageWaitForSelectorOptions { Timeout = 30000 });
             }
             else
             {
                 // Wait for item to be removed
                 await Page.WaitForFunctionAsync(
                     $"document.querySelectorAll('[data-testid=\"cart-item\"]').length < {itemCountBefore}",
-                    new PageWaitForFunctionOptions { Timeout = 10000 }
+                    new PageWaitForFunctionOptions { Timeout = 30000 }
                 );
             }
         }
@@ -130,7 +130,7 @@ public class CartPage : BasePage
         // Wait for cart to load and the button to appear
         await Page.WaitForSelectorAsync(ContinueShoppingButton, new PageWaitForSelectorOptions { Timeout = 5000 });
         await ClickAsync(ContinueShoppingButton);
-        await Page.WaitForURLAsync(url => url.Contains("products"), new PageWaitForURLOptions { Timeout = 10000 });
+        await Page.WaitForURLAsync(url => url.Contains("products"), new PageWaitForURLOptions { Timeout = 30000 });
         await WaitForLoadAsync();
     }
 }

@@ -1,7 +1,7 @@
 using ClimaSite.E2E.Infrastructure;
 using ClimaSite.E2E.PageObjects;
-using Microsoft.Playwright;
 using FluentAssertions;
+using Microsoft.Playwright;
 
 namespace ClimaSite.E2E.Tests.Authentication;
 
