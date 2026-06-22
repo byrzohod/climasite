@@ -1,5 +1,5 @@
-using ClimaSite.Core.Entities;
 using ClimaSite.Application.Features.Products.DTOs;
+using ClimaSite.Core.Entities;
 
 namespace ClimaSite.Application.Features.Promotions.DTOs;
 

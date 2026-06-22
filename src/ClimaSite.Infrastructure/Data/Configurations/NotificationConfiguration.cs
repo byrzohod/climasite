@@ -1,7 +1,7 @@
+using System.Text.Json;
 using ClimaSite.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System.Text.Json;
 
 namespace ClimaSite.Infrastructure.Data.Configurations;
 

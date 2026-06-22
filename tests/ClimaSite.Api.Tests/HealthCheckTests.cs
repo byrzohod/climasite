@@ -37,7 +37,7 @@ public class HealthCheckTests : IClassFixture<TestWebApplicationFactory>
         // In test environment, database is connected via Testcontainers
         // Redis may not be available, so we accept Healthy or Degraded
         response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.ServiceUnavailable);
-        
+
         var content = await response.Content.ReadAsStringAsync();
         content.Should().BeOneOf("Healthy", "Degraded", "Unhealthy");
     }

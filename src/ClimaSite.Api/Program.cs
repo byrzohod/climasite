@@ -1,9 +1,10 @@
 using System.Text;
 using System.Threading.RateLimiting;
-using ClimaSite.Application;
-using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Api.BackgroundServices;
 using ClimaSite.Api.Configuration;
+using ClimaSite.Api.Middleware;
+using ClimaSite.Application;
+using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Infrastructure;
 using ClimaSite.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -11,7 +12,6 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
-using ClimaSite.Api.Middleware;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);

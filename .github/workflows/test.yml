@@ -254,10 +254,162 @@ jobs:
           path: tests/ClimaSite.E2E/TestResults/
           retention-days: 7
 
+  lint-format:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Verify C# formatting (dotnet format)
+        run: dotnet format ClimaSite.NoE2E.slnf --verify-no-changes --no-restore
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: src/ClimaSite.Web/package-lock.json
+
+      - name: Install Frontend dependencies
+        run: npm ci
+        working-directory: src/ClimaSite.Web
+
+      - name: ESLint (ng lint)
+        run: npm run lint
+        working-directory: src/ClimaSite.Web
+
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: .NET vulnerable packages (fail on any)
+        run: |
+          out="$(dotnet list ClimaSite.NoE2E.slnf package --vulnerable --include-transitive 2>&1)"
+          echo "$out"
+          if echo "$out" | grep -qiE 'has the following vulnerable|>\s*(Critical|High|Moderate|Low)\b'; then
+            echo "::error::Vulnerable .NET packages found — update them before merge."
+            exit 1
+          fi
+          echo "No vulnerable .NET packages."
+
+      - name: Secret scan (gitleaks — informational until allowlisted, SEC-13)
+        uses: gitleaks/gitleaks-action@v2
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Filesystem vulnerability scan (Trivy, CRITICAL)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln          # vuln-only; secrets are gitleaks' job (Trivy's secret scanner false-flagged the dummy appsettings Stripe key, SEC-07)
+          severity: CRITICAL
+          exit-code: '1'
+          ignore-unfixed: true
+
+      - name: npm audit (informational — high-sev Angular advisory tracked in SEC-12)
+        run: npm audit --omit=dev || true
+        working-directory: src/ClimaSite.Web
+
+  adr-gate:
+    name: ADR Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate ADR filenames + immutability
+        run: bash scripts/ci/adr-gate.sh
+
+  test-design-lint:
+    name: Test-Design Coverage Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Every automated scenario names an existing test
+        run: bash scripts/ci/test-design-coverage.sh
+
+  coverage:
+    name: Coverage Report
+    runs-on: ubuntu-latest
+    # Reporting only for now (PROC-01 Wave 3a) — NOT a required check yet. Wave 3c flips it to an
+    # enforced 80% backend / 70% frontend gate once the coverage-raising sprint lands.
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore + build
+        run: |
+          dotnet restore
+          dotnet build ClimaSite.NoE2E.slnf --no-restore
+
+      - name: Backend coverage (NoE2E incl. integration via Testcontainers)
+        run: dotnet test ClimaSite.NoE2E.slnf --no-build --collect:"XPlat Code Coverage" --results-directory ./coverage
+
+      - name: Aggregate backend coverage
+        run: |
+          dotnet tool install -g dotnet-reportgenerator-globaltool || true
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          reportgenerator -reports:'./coverage/**/coverage.cobertura.xml' -targetdir:./coverage-report -reporttypes:'TextSummary;MarkdownSummaryGithub' || true
+          echo "### Backend coverage" >> "$GITHUB_STEP_SUMMARY"
+          sed -n '1,20p' ./coverage-report/Summary.txt | tee -a "$GITHUB_STEP_SUMMARY" || true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: src/ClimaSite.Web/package-lock.json
+
+      - name: Frontend coverage
+        run: |
+          npm ci
+          npm test -- --browsers=ChromeHeadless --watch=false --code-coverage
+        working-directory: src/ClimaSite.Web
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: |
+            ./coverage-report/
+            src/ClimaSite.Web/coverage/
+          retention-days: 7
+
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
-    needs: [unit-tests, integration-tests, frontend-tests, build, e2e-tests]
+    needs: [unit-tests, integration-tests, frontend-tests, build, e2e-tests, lint-format, dependency-audit, adr-gate, test-design-lint]
     if: always()
 
     steps:
@@ -267,8 +419,12 @@ jobs:
              [ "${{ needs.integration-tests.result }}" != "success" ] || \
              [ "${{ needs.frontend-tests.result }}" != "success" ] || \
              [ "${{ needs.build.result }}" != "success" ] || \
-             [ "${{ needs.e2e-tests.result }}" != "success" ]; then
-            echo "One or more test jobs failed"
+             [ "${{ needs.e2e-tests.result }}" != "success" ] || \
+             [ "${{ needs.lint-format.result }}" != "success" ] || \
+             [ "${{ needs.dependency-audit.result }}" != "success" ] || \
+             [ "${{ needs.adr-gate.result }}" != "success" ] || \
+             [ "${{ needs.test-design-lint.result }}" != "success" ]; then
+            echo "One or more required jobs failed"
             exit 1
           fi
-          echo "All tests passed!"
+          echo "All required checks passed!"

@@ -112,6 +112,20 @@ Detail and evidence: `docs/project-plan/SECURITY_REVIEW.md` (SR-01..SR-20) and `
 - **Acceptance:** Shared-wishlist response contains no `userId`; test asserts absence.
 - **Depends on:** Best done as a rider on OPS-01 (the wishlist branch is uncommitted — cheapest moment is now).
 
+### SEC-12 — Resolve the high-severity Angular advisories (upgrade Angular 19 → current) (P1, Large)
+- **Status:** OPEN (surfaced 2026-06-21 by the Wave 3a dependency-audit). `npm audit` reports 8 vulns (7 high, 1 moderate), incl. `@angular/core <=19.2.25` (DOM-clobbering / response-cache-poisoning, GHSA-rgjc-h3x7-9mwg). The only fix is a major Angular upgrade (19 → 20/21/22), a breaking migration out of scope for the Wave 3 gates PR — so the CI `npm audit` step is **informational** until this lands.
+- **Description:** Plan and execute the Angular major upgrade (and the other 6 high-sev transitive deps it carries), via the gated per-feature pipeline (`/feature-kickoff SEC-12`). Re-run `npm audit`; once clean, flip the CI npm-audit step to blocking.
+- **Affected:** `src/ClimaSite.Web/package.json`, `package-lock.json`, Angular API surface across the app.
+- **Acceptance:** `npm audit --omit=dev` reports 0 high/critical; frontend builds + all specs/E2E green; CI npm-audit step enforced (non-informational).
+- **Depends on:** None, but large — own feature folder + plan + verify-plan.
+
+### SEC-13 — Allowlist + enforce the gitleaks secret-scan gate (P2, Small)
+- **Status:** OPEN (2026-06-21). The Wave 3a `dependency-audit` job runs gitleaks but `continue-on-error: true` (informational) to avoid false-positive blocks on the repo's dummy/test secrets (appsettings dummy keys, test JWT secrets) before an allowlist exists.
+- **Description:** Add a `.gitleaks.toml` allowlist for the known non-secret test/dummy values, confirm a clean run in CI, then remove `continue-on-error` so gitleaks is a hard gate.
+- **Affected:** `.gitleaks.toml` (new), `.github/workflows/test.yml` (dependency-audit job).
+- **Acceptance:** gitleaks passes clean on the repo; the step is blocking (no `continue-on-error`); a planted fake secret fails CI.
+- **Depends on:** Pairs with SEC-07 (remove dummy Stripe keys) — fewer allowlist entries needed once those are gone.
+
 ---
 
 ## 2. Bugs (BUG)

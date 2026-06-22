@@ -1,12 +1,12 @@
 #nullable enable
 
+using System.Text.Json;
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Products.DTOs;
 using ClimaSite.Application.Features.Products.Scoring;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 
 namespace ClimaSite.Application.Features.Products.Queries;
 

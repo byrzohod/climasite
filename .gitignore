@@ -100,6 +100,8 @@ bazel-out/
 .sass-cache/
 connect.lock
 coverage/
+coverage-measure/
+coverage-report/
 libpeerconnection.log
 testem.log
 typings/

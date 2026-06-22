@@ -1,10 +1,10 @@
-using ClimaSite.Application.Features.Products.Commands;
-using ClimaSite.Application.Features.Products.Queries;
 using ClimaSite.Application.Features.Admin.Products.Queries;
 using ClimaSite.Application.Features.Admin.RelatedProducts.Commands;
 using ClimaSite.Application.Features.Admin.RelatedProducts.Queries;
 using ClimaSite.Application.Features.Admin.Translations.Commands;
 using ClimaSite.Application.Features.Admin.Translations.Queries;
+using ClimaSite.Application.Features.Products.Commands;
+using ClimaSite.Application.Features.Products.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

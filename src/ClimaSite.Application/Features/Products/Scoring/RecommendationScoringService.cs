@@ -1,7 +1,7 @@
 #nullable enable
 
-using ClimaSite.Core.Entities;
 using System.Text.Json;
+using ClimaSite.Core.Entities;
 
 namespace ClimaSite.Application.Features.Products.Scoring;
 

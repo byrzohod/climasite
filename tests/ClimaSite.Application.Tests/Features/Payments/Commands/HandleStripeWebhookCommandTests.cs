@@ -378,9 +378,9 @@ public class HandleStripeWebhookCommandTests
         await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        order.Events.Should().Contain(e => 
-            e.Status == OrderStatus.PaymentFailed && 
-            e.Description != null && 
+        order.Events.Should().Contain(e =>
+            e.Status == OrderStatus.PaymentFailed &&
+            e.Description != null &&
             e.Description.Contains("Insufficient funds"));
     }
 

@@ -1,4 +1,4 @@
-﻿namespace ClimaSite.Api.Tests;
+namespace ClimaSite.Api.Tests;
 
 public class UnitTest1
 {
