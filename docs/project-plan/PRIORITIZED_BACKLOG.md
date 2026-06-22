@@ -126,6 +126,13 @@ Detail and evidence: `docs/project-plan/SECURITY_REVIEW.md` (SR-01..SR-20) and `
 - **Acceptance:** gitleaks passes clean on the repo; the step is blocking (no `continue-on-error`); a planted fake secret fails CI.
 - **Depends on:** Pairs with SEC-07 (remove dummy Stripe keys) — fewer allowlist entries needed once those are gone.
 
+### SEC-14 — GDPR erasure leaves Orders PII intact (Article 17 minimization) (P1, Medium)
+- **Status:** OPEN (surfaced 2026-06-22 by the Wave 6a `security`-agent review of the BUG-26 fix). `DeleteUserDataCommandHandler` scrubs the user row + child data but never touches `Orders`, which stores live `CustomerEmail`, `CustomerPhone`, `ShippingAddress`, `BillingAddress` (`Core/Entities/Order.cs`). The deletion confirmation email even *claims* order history is anonymized — but it is not.
+- **Description:** Decide the legal-basis-to-retain (tax/invoice records may be retained, but personal data within them should be minimized/pseudonymized) — **write an ADR** — then anonymize the order-level PII for a deleted user (or document the retention decision so the email copy matches reality). Also strengthen `GdprControllerTests` to assert `PasswordHash == null`, security-stamp rotation, and that child rows (addresses/notifications) are gone.
+- **Affected:** `src/ClimaSite.Application/Features/Gdpr/Commands/DeleteUserDataCommand.cs`, `src/ClimaSite.Core/Entities/Order.cs`, `docs/adr/`, `tests/ClimaSite.Api.Tests/Controllers/GdprControllerTests.cs`.
+- **Acceptance:** A deleted user's orders retain no readable email/phone/name/address (or an ADR records the lawful-basis exception); the confirmation email matches reality; tests assert it. Run `/security-review`.
+- **Depends on:** none. Through the gated pipeline (GDPR → ADR + security-review).
+
 ---
 
 ## 2. Bugs (BUG)
