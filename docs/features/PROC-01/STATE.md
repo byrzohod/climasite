@@ -9,7 +9,7 @@ _template/ set via /feature-kickoff.
 
 # STATE — PROC-01: SDLC hardening (process overhaul)
 
-- **Current phase:** Implement (Wave 4 of 7)
+- **Current phase:** Implement (Wave 5 of 7)
 - **plan_status:** approved (owner-approved 2026-06-21; canonical plan: `docs/project-plan/SDLC_HARDENING_PLAN.md`)
 - **Research + Plan:** `docs/project-plan/SDLC_HARDENING_PLAN.md` (8 gated phases, 7 waves, owner decisions §4)
 - **Last updated:** 2026-06-22
@@ -27,7 +27,10 @@ _template/ set via /feature-kickoff.
 | 3b — Coverage-raising sprint | 3 workflow batches (+750 backend unit tests; MockDbContext FindAsync/async-AsQueryable fix) → backend line 66.8%→**85.6%**, Core→81.25%, frontend ~72% | ✅ merged | #44/#45/#46/#47 |
 | 3c — Flip coverage gate hard | Coverage Gate job enforces backend line ≥80% / frontend line ≥70%; added to Test Summary required checks (owner-approved 2026-06-22) | 🚧 in progress | this PR |
 | 4 — Review hardening | PR template + CODEOWNERS + `PR Checklist` CI gate (danger.js-equivalent: empty Summary/Testing or missing /security-review on sensitive paths → fail), wired into Test Summary; no required GitHub approval (AI auto-merge kept) | 🚧 in progress | this PR |
-| 5 — Visual + a11y + perf harness | ephemeral screenshots, screenshot/trace on E2E failure, deepened axe matrix, Lighthouse CI, E2E sharding | ⏳ pending | — |
+| 5a — Lighthouse perf budget | Lighthouse CI job (mobile, static-served prod build) + `lighthouserc.json`, reporting-only (warn) until stable | 🚧 in progress | this PR |
+| 5b — Screenshot/trace on E2E failure | PlaywrightFixture tracing + on-failure capture; artifacts uploaded `if:failure()` | ⏳ pending | — |
+| 5c — axe a11y matrix | greenfield axe E2E across key pages × lang × theme (none exist today) | ⏳ pending | — |
+| 5d — Ephemeral visual capture + E2E sharding | {light,dark}×{en,bg,de} screenshots for review (no committed baselines); shard E2E to beat the 50-min timeout | ⏳ pending | — |
 | 6 — Close coverage gaps | real Stripe card E2E (CI secrets) + webhook contract; GDPR export/delete; inventory; search facets; auth flows; address book; etc. | ⏳ pending | — |
 
 ## Owner decisions in force (from SDLC_HARDENING_PLAN.md §4)

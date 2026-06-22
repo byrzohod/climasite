@@ -424,6 +424,44 @@ jobs:
             src/ClimaSite.Web/coverage/
           retention-days: 7
 
+  lighthouse:
+    name: Lighthouse (perf budget)
+    runs-on: ubuntu-latest
+    # Reporting-only (PROC-01 Wave 5) — NOT in Test Summary yet. CI Lighthouse perf is variable, so the
+    # lighthouserc assertions are "warn" and the run is `|| true`; this never blocks. Once the scores are
+    # stable, flip the assertions to "error", drop the `|| true`, and add `lighthouse` to Test Summary.
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: src/ClimaSite.Web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: src/ClimaSite.Web
+
+      - name: Production build
+        run: npm run build
+        working-directory: src/ClimaSite.Web
+
+      - name: Lighthouse CI (mobile perf budget)
+        run: |
+          npm install -g @lhci/cli@0.14.x
+          lhci autorun || true
+        working-directory: src/ClimaSite.Web
+
+      - name: Upload Lighthouse report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-report
+          path: src/ClimaSite.Web/.lighthouseci/
+          retention-days: 7
+
   pr-checklist:
     name: PR Checklist
     runs-on: ubuntu-latest
