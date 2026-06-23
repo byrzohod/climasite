@@ -5,6 +5,11 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  # Merge-queue support (adoption Phase B): when the trunk ruleset's merge queue is enabled, GitHub
+  # builds a temporary merge_group ref and re-runs the suite against future-main; "Test Summary" must
+  # report green on THAT run for the queue to merge. No-op until the queue is turned on in the ruleset.
+  merge_group:
+    types: [checks_requested]
 
 env:
   DOTNET_VERSION: '10.0.x'

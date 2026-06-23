@@ -1,0 +1,52 @@
+{
+  "_comment": "Trunk-based default-branch protection ruleset for climasite (adoption Phase B). SERVER-SIDE source of truth + the REAL merge gate. RECONCILED to climasite's CI: the required context is 'Test Summary' — the existing aggregator job that needs[] every gate (Unit/Integration/Frontend/Build/E2E/Lint&Format/Dependency-Audit/ADR/Test-Design/Coverage/PR-Checklist), so a green Test Summary on the merge_group run means all gates passed. (The vault template's integration/e2e/a11y/perf-budget contexts don't exist as standalone climasite jobs; a11y+Lighthouse are reporting-first, not gating.) Apply EVALUATE first, flip to active only after a green merge_group run: gh api --method POST repos/byrzohod/climasite/rulesets --input <(jq '.enforcement=\"evaluate\"' this-file). test.yml MUST keep 'merge_group: types:[checks_requested]' in on: or the queue stalls. 0 required approvals keeps AI auto-merge (PROC-01 decision). This supersedes the classic branch protection once active.",
+  "name": "trunk-default-branch-protection",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": ["~DEFAULT_BRANCH"],
+      "exclude": []
+    }
+  },
+  "rules": [
+    {
+      "type": "pull_request",
+      "parameters": {
+        "required_approving_review_count": 0,
+        "dismiss_stale_reviews_on_push": true,
+        "require_code_owner_review": false,
+        "require_last_push_approval": false,
+        "required_review_thread_resolution": true,
+        "automatic_copilot_code_review_enabled": false,
+        "allowed_merge_methods": ["squash"]
+      }
+    },
+    {
+      "type": "merge_queue",
+      "parameters": {
+        "check_response_timeout_minutes": 60,
+        "grouping_strategy": "ALLGREEN",
+        "max_entries_to_build": 5,
+        "max_entries_to_merge": 5,
+        "merge_method": "SQUASH",
+        "min_entries_to_merge": 1,
+        "min_entries_to_merge_wait_minutes": 5
+      }
+    },
+    {
+      "type": "required_status_checks",
+      "parameters": {
+        "strict_required_status_checks_policy": true,
+        "do_not_enforce_on_create": false,
+        "required_status_checks": [
+          { "context": "Test Summary" }
+        ]
+      }
+    },
+    { "type": "required_linear_history" },
+    { "type": "non_fast_forward" },
+    { "type": "deletion" }
+  ],
+  "bypass_actors": []
+}
