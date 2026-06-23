@@ -217,7 +217,34 @@ If you find yourself routinely overriding the budget, that's a signal to recalib
 
 ## Integration with other skills
 
-- **`/autoresearch`** -- when a budget is violated and the fix isn't obvious, autoresearch optimizes against the metric
+- **`/autoresearch`** -- when a budget is violated and the fix isn't obvious, autoresearch is the optimizer: it tweaks one file, re-runs the budget command, and keeps only changes that move the metric the right way. Seed `.autoresearch/program.md` with the violated budget -- the metric is the budget's metric, the runner is the command that measures it, the direction is `lower`. Keep two numbers **separate**: `MIN_IMPROVEMENT_TO_KEEP` is the small per-run noise floor (don't bank a sub-millisecond/sub-KB delta as a "keep"), while the **budget value is the *target*** the run is driving under -- a "done" condition (metric back under budget), NOT the keep threshold. Conflating them means the loop only ever keeps a change that single-handedly closes the whole gap, and discards the small real gains that add up. Add `CONSTRAINT_CMD` (the e2e/smoke suite proving nothing broke -- the anti-gaming gate against dropping needed code to shrink a bundle) and `HOLDOUT_CMD` (the metric measured on an **unseen** load profile / page set, validated on every kept candidate so the win isn't overfit to the train profile):
+
+  ```markdown
+  # .autoresearch/program.md
+  ## What we're optimizing
+  Bring <route/endpoint> back under its perf budget.
+  ## Files
+  - EDIT_FILE: <path/to/the/file/driving/the/metric>
+  - RUNNER_CMD: <the budget command, e.g. npx autocannon -c 10 -d 30 .../api/x  # or lhci collect, size-limit>
+  - CONSTRAINT_CMD: <the e2e/smoke suite, e.g. pnpm test:e2e>   # must pass every kept run -- proves nothing broke while shrinking the metric
+  - HOLDOUT_CMD: <same metric on an UNSEEN profile, e.g. npx autocannon ... --profile=holdout  # or lhci on a held-out page set>
+  - LOG_FILE: run.log
+  ## Metric
+  - METRIC_NAME: p95_ms            # or bundle_kb
+  - METRIC_PATTERN: ^p95_ms:       # match the runner's printed metric line
+  - DIRECTION: lower
+  - BUDGET_PER_RUN_SECONDS: 120
+  ## Constraints
+  - DO NOT modify: <tests, fixtures, the budget file itself>
+  - DO NOT install: any new packages
+  - Cost cap: local only, no cloud spend
+  ## Stop conditions
+  - MAX_RUNS: 50
+  - MIN_IMPROVEMENT_TO_KEEP: <small noise floor, e.g. 1.0 ms / 1 KB>   # smaller deltas = noise, discard
+  - TARGET: <the budget value, e.g. p95_ms < 300>   # the under-budget goal -- a stop/done condition, distinct from the keep threshold above
+  - WALL_CLOCK_LIMIT: 4h
+  ```
+
 - **`/verify-work`** -- a feature is not done if it pushes a metric over budget
 - **`/code-review`** -- the performance dimension explicitly checks for known anti-patterns (N+1 queries, unoptimized images, etc.)
 - **`/release`** -- pre-release verification includes a budget check

@@ -1,3 +1,8 @@
+---
+name: seo-review
+description: SEO audit checklist for public-facing web apps -- meta tags (title, description), Open Graph, canonical URLs, structured data (JSON-LD), sitemap.xml, robots.txt, redirects (301 not 302), URL structure, Core Web Vitals impact on ranking. Use this whenever the user mentions SEO, search engine optimization, organic traffic, Google ranking, meta description, Open Graph, schema markup, sitemap, or any public marketing/landing page review.
+---
+
 # /seo-review - SEO audit checklist
 
 ## When to use

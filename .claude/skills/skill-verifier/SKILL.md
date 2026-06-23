@@ -1,6 +1,6 @@
 ---
 name: skill-verifier
-description: Meta-skill that audits other skills' and agents' output claims to catch self-review optimism (workflow Section 5.7). Use this whenever a high-stakes skill just reported "done" on release-bound work -- specifically after /code-review (did it surface real findings or rubber-stamp?), /security-review (were all OWASP categories actually checked?), /verify-work (was the app actually launched?), /release (were all steps completed?), or /deploy-checklist (was each item actually verified?). Spawns the verifier agent to audit claims against artifacts.
+description: Meta-skill that audits other skills' and agents' output claims to catch self-review optimism (workflow Section 5.7). Use this whenever a high-stakes skill just reported "done" on release-bound work -- specifically after /code-review (did it surface real findings or rubber-stamp?), /security-review (were all OWASP categories actually checked?), /verify-work (was the app actually launched?), /release (were all steps completed?), or /deploy-checklist (was each item actually verified?). ALSO the gate that GRADES an AI-generated skill sitting in skills/_proposed/ BEFORE a human promotes it (Blueprint A14 / §K.4) -- checking it adds no MCP/network/unscoped-Bash, has valid frontmatter + a trigger-quality description, references no hallucinated tools/skills/paths, conforms to the house format, and actually does what it claims; called by /skill-eval after it drafts a skill. Spawns the verifier agent to audit claims (or a drafted skill) against artifacts.
 ---
 
 # /skill-verifier - Meta-skill: verify that other skills actually did what they claim
@@ -21,6 +21,9 @@ Recommended after:
 - **`/db-migrate`** -- migrations actually applied + rolled back successfully?
 - **`/perf-budget`** -- baseline actually measured, or copied from previous run?
 - **`/refactor`** -- tests actually still pass, or rationalized?
+
+**Mandatory for AI-generated skills (A14 promotion gate):**
+- **A skill drafted into `skills/_proposed/`** (by `/skill-eval` via the first-party `skill-creator`) -- this skill is the **promotion gate**. The draft is INERT until it clears verification AND a human moves it into `skills/`. Here the "claim under audit" isn't a report -- it's the generated skill itself ("this skill is in-scope, well-formed, honest, and does what it claims"). See the dedicated playbook in [Grading an AI-generated skill](#grading-an-ai-generated-skill-a14-promotion-gate) below.
 
 Skip for:
 - Trivial single-file changes
@@ -138,6 +141,79 @@ Confirm: version bumped in `package.json` (or equivalent), CHANGELOG.md has new 
 
 Confirm: env parity check ran, rollback procedure tested (not just documented), health check probed and returned 200, feature flags set correctly. Run the actual health check command, don't trust the claim.
 
+## Grading an AI-generated skill (A14 promotion gate)
+
+This is a distinct mode. Everywhere else this skill audits a **report** an agent wrote; here it audits an **artifact the system wrote about itself** -- a brand-new or substantially-rewritten skill that `/skill-eval` drafted (via the first-party `skill-creator`) into `skills/_proposed/`. That makes this the single highest-risk path in the whole self-evolution engine: a self-authoring system is exactly what the trusted-source-only posture (which removed the GSD/Caveman plugins) exists to contain. So the verifier is the gate that stands between a machine-written skill and the live catalog.
+
+**The contract (declared once in the LOCKED / SELF-EVOLUTION-BOUNDARY block and in `vault/AI/Agent Workflow.md`; this skill enforces it, it doesn't redefine it):** AI may only **DRAFT** into `skills/_proposed/` (INERT, enforced by the `skill-quarantine` hook); a generated skill may add **no** MCP server, **no** network call, and **no** unscoped Bash; it must pass this grading; and **only a human promotes** it into `skills/`. If the boundary doc and this playbook ever disagree, the boundary doc wins -- flag the drift rather than follow this skill.
+
+### Why grading is independent
+
+`/skill-eval` both *commissions* the draft and *would benefit* from it passing (it closes the cycle, ticks the velocity counter). That is the textbook self-review-optimism setup (workflow §5.7). So grading runs in a **separate verifier subagent** that did not author the draft and has no stake in its promotion -- same detect-vs-act split as everywhere else in this skill. The verifier's only job is to try to find a reason this skill should NOT ship.
+
+### The five grading dimensions
+
+Audit the drafted file at `skills/_proposed/<name>.md`. Treat each as a claim to confirm or dispute, with evidence cited (file + line). **Dimension 1 is a hard security gate: any finding there is an automatic BLOCK, no balancing against the others.**
+
+1. **Scope / blast radius (SECURITY GATE -- the rail that replaced GSD/Caveman).** The generated skill must add **no new attack surface**. Concretely, scan the draft (frontmatter `allowed-tools` *and* every command/example/instruction in the body) for:
+   - **MCP servers** -- any `mcp__*` tool reference, or instructions to add/configure an MCP server. *Not allowed.*
+   - **Network calls** -- `WebFetch`/`WebSearch`, `curl`/`wget`/`nc`, raw HTTP/SDK calls, `npx`/`uvx`/`pip install` from the network, or any instruction to reach off-box. *Not allowed.*
+   - **Unscoped Bash** -- a blanket `Bash` grant, or Bash patterns outside the existing project allowlist (compare against `templates/settings.json` / the project's `settings.json` permit list). Destructive verbs (`rm -rf`, `git push --force`, `chmod 777`, piping a remote script to a shell) are an immediate BLOCK.
+   - It must declare a **minimal, explicit `allowed-tools`** -- not absent, not a wildcard. If the task genuinely needs new MCP/network/Bash surface, that is a **human decision**: DISPUTE with "this task needs surface X, which is a propose-only/boundary change -- it cannot be granted by drafting." Do not let the skill grant itself the surface.
+
+2. **Frontmatter + trigger-description quality.** Confirm the house frontmatter contract: `name` present and **kebab-case matching the intended slash command**; `description` present and written in the "pushy", keyword-rich style that carries **both WHAT the skill does and WHEN to use it** (the user phrases/contexts that should fire it), per the `skill-creator` standard the template adopted. A terse procedure-doc description with no triggering keywords is a DISPUTE: it will under-trigger by construction (and would never collide-test cleanly against the catalog). Also flag a `description` whose triggers obviously **overlap an existing skill/agent** (the harness would pick unpredictably) -- name the colliding skill.
+
+3. **No hallucinated references.** Every tool, skill, agent, command, file path, and hook the draft names **must actually exist**. Resolve each: `Bash`/`Read`/`Edit`/`Grep`/`Glob`/`Task` etc. are real harness tools; `mcp__*` names must match a configured server (and per Dimension 1 generally shouldn't appear at all); `/<skill>` references must resolve to a file in `skills/` (or `skills/_proposed/`); agent names to `agents/*.md`; cited paths (`hooks/*.sh`, `templates/*`, `Knowledge/_schema.md`, etc.) must exist in the repo. A reference that doesn't resolve is a DISPUTE -- a generated skill that instructs the agent to call a non-existent tool or read a non-existent file is worse than useless, it derails the caller. (This is the same dead/hallucinated-link check the research playbook runs, applied to a skill.)
+
+4. **House-format conformance.** The draft must look like the other skills in `skills/`: YAML frontmatter, then `# /<name> - <one-line>`, then the usual shape (When to use · Why · Procedure with numbered steps · Output · When NOT to use · See also -- match the closest sibling skill, don't invent a new layout). It must **reference shared contracts rather than restate them** (the 13 review dimensions, the self-evolution boundary, the OWASP list live in single sources -- a draft that copy-pastes them is a DISPUTE; duplication rots). Atomic, single-responsibility scope; no dead `See also` links.
+
+5. **Does it do what it claims (the honesty check).** Read the body as if you were the agent that has to execute it. Do the steps, followed literally, actually achieve what the `description` promises? Look for: steps that reference outputs no earlier step produced; a procedure that stops short of the claimed outcome; success criteria that can't be checked; instructions that contradict the frontmatter (`allowed-tools` that don't cover the tools the body tells you to use). If the WHAT can't be reached by following the HOW, that's the most important DISPUTE of all -- a plausible-looking skill that quietly no-ops is exactly the self-review-optimism failure this whole subsystem exists to catch.
+
+### Verdict and routing (stricter than the report case)
+
+Report per dimension CONFIRMED / DISPUTED / UNVERIFIABLE, then a single gate verdict:
+
+- **Any Dimension 1 (scope) finding → BLOCK, full stop.** The draft stays in `_proposed/`; do not promote, do not "fix and wave through." A generated skill reaching for MCP/network/unscoped-Bash is a boundary event -- surface it to the human as such, not as a routine revise.
+- **Any other DISPUTED → not promotion-ready.** Route back to `/skill-eval` to revise the draft *in place in `_proposed/`* and re-grade. Drafts do not get promoted with open disputes.
+- **All CONFIRMED → promotion-READY, but still INERT.** The verifier does **not** move the file. It records "promotion-ready (skill-verifier: ALL CONFIRMED)"; a **human** moves it from `skills/_proposed/` into `skills/`. The `skill-quarantine` hook enforces this even if an agent tries to shortcut it; never instruct anyone to bypass the hook.
+- **UNVERIFIABLE** (e.g., can't confirm a referenced external precondition) → surface to the human; do not count it as a pass.
+
+The verdict is written back into the EVOLUTION row `/skill-eval` opened for the draft (status: "drafted -- INERT, awaiting human promotion; skill-verifier: <verdict>"), so the audit trail shows the gate ran. A draft that never went through this grading must not be promoted -- `/skill-health` treats a `_proposed/` skill promoted without a passing `skill-verifier` verdict + matching EVOLUTION row as a BLOCKER.
+
+### Example invocation (grading mode)
+
+```
+Task({
+  description: "Grade _proposed/flaky-test-triage.md before promotion (A14)",
+  subagent_type: "verifier",
+  prompt: """
+  /skill-eval drafted a new skill at
+  skills/_proposed/flaky-test-triage.md and claims it is promotion-ready.
+  GRADE it for promotion (do NOT promote -- it stays INERT in _proposed/).
+
+  Audit the five A14 dimensions, evidence cited (file:line):
+  1. SCOPE (hard gate): does it add ANY mcp__* tool, network call
+     (WebFetch/curl/npx/uvx/pip), or unscoped/destructive Bash? Is
+     `allowed-tools` minimal+explicit (not absent, not wildcard)?
+     Any finding here = BLOCK.
+  2. Frontmatter: kebab `name` matching the slash command; pushy
+     keyword-rich description carrying WHAT + WHEN; no trigger overlap
+     with an existing skill/agent.
+  3. Hallucinations: does every tool / /skill / agent / file path /
+     hook it names actually resolve in this repo?
+  4. House format: frontmatter -> `# /name - …` -> standard shape;
+     references shared contracts instead of restating them; no dead links.
+  5. Honesty: following the steps literally, do they achieve what the
+     description promises? Any step depending on an output no earlier
+     step produced? Any allowed-tools/body mismatch?
+
+  Verdict per dimension CONFIRMED / DISPUTED / UNVERIFIABLE, then a single
+  gate verdict (BLOCK / not-ready-revise / promotion-ready-but-INERT).
+  Report in under 450 words.
+  """
+})
+```
+
 ## Output
 
 The verifier's output should be added to the same PR / planning doc that the upstream skill wrote to. Format:
@@ -175,6 +251,9 @@ The goal is targeted verification, not blanket verification. Blanket adds latenc
 
 ## See also
 
-- `agents/verifier.md` -- The agent definition this skill invokes
-- `vault/AI/Agent Workflow.md` -- Section 5.7 (anti-patterns), Section 6 (Code Review), Section 10 (Subagents)
+- `agents/verifier.md` -- The agent definition this skill invokes (its research playbook's dead/hallucinated-link check is the model for Dimension 3 of the A14 grading)
+- `vault/AI/Agent Workflow.md` -- Section 5.7 (anti-patterns), Section 6 (Code Review), Section 10 (Subagents), and the **Self-Evolution** section (the boundary the A14 grading enforces)
 - `skills/code-review.md`, `skills/security-review.md`, `skills/verify-work.md` -- The skills you most often verify
+- `skills/skill-eval.md` -- the ACT side of self-evolution; **Step 4 drafts a skill into `_proposed/` and calls this skill to grade it** before a human promotes it (A14)
+- `skills/skill-health.md` -- the detect side; flags a `_proposed/` skill promoted without a passing grade here + an EVOLUTION row as a **BLOCKER**
+- `hooks/skill-quarantine.sh` / `templates/settings.json` -- the `skill-quarantine` hook that keeps drafted skills INERT in `_proposed/` until a human promotes (the enforcement this grading sits in front of)

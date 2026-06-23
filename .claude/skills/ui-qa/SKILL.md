@@ -1,3 +1,8 @@
+---
+name: ui-qa
+description: Comprehensive UI QA checklist (12 categories, ~100 items) with Playwright automation snippets -- console errors, network errors, axe-core accessibility, raw translation keys, horizontal scroll, CLS measurement, alt text, broken links, placeholder content, visual regression, multi-viewport testing. Use this whenever the user mentions UI QA, UI testing, visual testing, browser testing, frontend QA, Playwright, screenshot testing, accessibility check, after every UI change, or before merging UI work.
+---
+
 # /ui-qa - Comprehensive UI QA via Playwright automation
 
 ## When to use

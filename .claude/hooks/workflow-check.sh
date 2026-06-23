@@ -5,10 +5,10 @@
 
 WARNINGS=""
 
-# 1. Check if there are uncommitted changes (tracked files only)
-CHANGES=$(git diff --name-only 2>/dev/null; git diff --cached --name-only 2>/dev/null)
+# 1. Check if there are uncommitted changes (tracked + new untracked files)
+CHANGES=$(git diff --name-only 2>/dev/null; git diff --cached --name-only 2>/dev/null; git ls-files --others --exclude-standard 2>/dev/null)
 if [ -z "$CHANGES" ]; then
-  exit 0  # No tracked changes, nothing to check -- stay silent
+  exit 0  # Nothing changed, nothing to check -- stay silent
 fi
 
 # 2. Check for secrets in staged changes
@@ -26,7 +26,7 @@ fi
 # 4. Check if on main/master branch
 BRANCH=$(git branch --show-current 2>/dev/null)
 if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "master" ]; then
-  WARNINGS="$WARNINGS\n- Working directly on $BRANCH. Create a feature branch."
+  WARNINGS="$WARNINGS\n- Working directly on $BRANCH. Trunk mode still uses a short-lived branch + merge queue -- create one."
 fi
 
 # 5. Check if SOURCE CODE files were changed (not just docs/config) and suggest tests
@@ -39,6 +39,30 @@ fi
 SOURCE_COUNT=$(echo "$CHANGES" | grep -ciE '\.(ts|tsx|js|jsx|cs|py|go|rs|java|rb|swift|kt|vue|svelte)$')
 if [ "$SOURCE_COUNT" -gt 3 ] 2>/dev/null; then
   WARNINGS="$WARNINGS\n- $SOURCE_COUNT source files changed. Consider running /code-review before PR."
+fi
+
+# 7. Knowledge graph: code changed but Knowledge/ not touched this session
+KNOWLEDGE_TOUCHED=$(echo "$CHANGES" | grep -iE '(^|/)Knowledge/')
+if [ -n "$SOURCE_CHANGED" ] && [ -z "$KNOWLEDGE_TOUCHED" ]; then
+  WARNINGS="$WARNINGS\n- Code changed but Knowledge/ untouched. If any decision/component/question/risk changed, run /kb-capture (Workflow §9.5)."
+fi
+
+# 8. Tests changed -- remind about the break-the-code reality check
+TESTS_CHANGED=$(echo "$CHANGES" | grep -iE '(\.test\.|\.spec\.|_test\.|/tests?/|/__tests__/)' | head -1)
+if [ -n "$TESTS_CHANGED" ]; then
+  WARNINGS="$WARNINGS\n- Tests changed. Did you run the break-the-code check (inject a bug, confirm the test FAILS) + mutation? (Workflow §4.5)"
+fi
+
+# 9. High-stakes unit touched -> SUGGEST a cross-vendor council (PRINT ONLY; never launches one)
+HIGH_STAKES=$(echo "$CHANGES" | grep -iE '(auth|login|session|oauth|token|password|crypto|payment|billing|checkout|stripe|migration|/migrations?/|schema)')
+if [ -n "$HIGH_STAKES" ]; then
+  WARNINGS="$WARNINGS\n- High-stakes unit (auth/payments/migration) touched. Consider /council for a cross-vendor (Codex, read-only advisor) pass. Note: Codex egresses code to OpenAI."
+fi
+
+# 10. Resume contract: code changed but .planning/STATE.md not refreshed this session
+STATE_TOUCHED=$(echo "$CHANGES" | grep -iE '(^|/)\.planning/STATE\.md$')
+if [ -n "$SOURCE_CHANGED" ] && [ -z "$STATE_TOUCHED" ]; then
+  WARNINGS="$WARNINGS\n- Code changed but .planning/STATE.md not updated. Run /checkpoint so a /clear or auto-compact self-heals (the SessionStart hook re-injects STATE.md)."
 fi
 
 # Output only if there are warnings
