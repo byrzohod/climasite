@@ -4,6 +4,25 @@
 
 ClimaSite is a production-grade online shop specializing in air conditioners, heating systems, cooling equipment, and related HVAC (Heating, Ventilation, and Air Conditioning) products. The platform supports multi-language (EN, BG, DE), multi-theme (light/dark), and provides a complete e-commerce experience.
 
+## AI Workflow & Knowledge (vault)
+
+This repo **adopted the latest vault AI workflow** (`/project-adopt`, 2026-06-23) on top of the
+existing PROC-01 SDLC-hardening install. The two coexist; consolidate to one planning system for new
+work (see `.planning/STATE.md`).
+
+- **Knowledge graph (source of truth for decisions/architecture):**
+  `/Users/sarkisharalampiev/Projects/vault/vault/Knowledge/climasite/` — components, risks, open
+  questions, ADRs as frontmatter-`[[wikilink]]` nodes. **Read it before planning** (`/plan-tree`,
+  `/research-loop`); **update it after each unit/phase** (`/kb-capture`).
+- **Planning root:** `.planning/` — `STATE.md` (resume contract, auto-injected at session start),
+  `design/DESIGN.md` (reconstructed — ratify via `/design-doc`), `phases/→waves/→units/`.
+- **Two-level planning:** `/design-doc` (whole-system, ratified) → `/plan-tree` (phases→waves→units;
+  each unit needs an approved `unit-plan.md` — the `no-spec-no-code` hook blocks `src/**` until it
+  exists; escape `ALLOW_EXPLORATORY=1`). Delivery is trunk-based via `/trunk-merge`.
+- **Enabled domain skills:** threat-model, data-classify (payments + PII/GDPR), db-migrate, ui-qa,
+  seo-review, accessibility-audit, perf-budget (public UI). Present-but-inactive (no AI features):
+  ai-eval, cost-check, ai-specialist.
+
 ## Current Project Status
 
 | Feature | Status | Notes |

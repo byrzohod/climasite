@@ -1,6 +1,6 @@
 ---
 name: verify-work
-description: Manual feature verification across 6 layers -- build/boot, API smoke test, UI smoke test, full user flow walkthrough, state persistence check, cross-cutting regression check. Use this whenever the user mentions verifying a feature, manual testing, smoke test, sanity check, "does it work", before opening a PR, after implementing any feature to confirm it actually behaves correctly (tests passing != feature working), or before marking work done.
+description: Manual feature verification across 7 layers -- build/boot, API smoke test, UI smoke test, full user flow walkthrough (asserting the path has NO mocks), state persistence read back through the real app/UI against the real DB, cross-cutting regression check, and a break-the-code confirmation (inject a bug, confirm targeted tests fail, revert, attach evidence). Use this whenever the user mentions verifying a feature, manual testing, smoke test, sanity check, "does it work", before opening a PR, after implementing any feature to confirm it actually behaves correctly (tests passing != feature working), or before marking work done.
 ---
 
 # /verify-work - Manual verification of features
@@ -76,6 +76,7 @@ Walk through the full user journey for the feature, as a real user would:
 - [ ] **Verify the result** -- did the action persist? Is it visible after a page refresh?
 - [ ] **Try the unhappy paths** -- network failure, validation error, permission denial
 - [ ] **Log out** and verify the feature is appropriately gated
+- [ ] **Confirm the asserted path contains NO mocks** -- the flow you just exercised hit the real app, real handlers, and real dependencies end to end. No mock server, no stubbed client, no `MSW`/`nock`/`WireMock`/`responses` interceptor, no in-memory fake DB, no feature-flag bypass, no hard-coded fixture standing in for a live call. If any link in the chain is faked, say so explicitly -- a green flow through a mock proves nothing about the real feature.
 
 If you cannot describe what a user would do without saying "I'll use the API to set up state" -- you're not testing the feature, you're testing the API. Go through the UI.
 
@@ -87,6 +88,7 @@ After everything above:
 - [ ] **Restart the database container** and verify the schema and data survive
 - [ ] **Clear browser cache** and verify the feature still works for a fresh session
 - [ ] **Check database state directly** (via psql, `docker exec`, or equivalent) -- the data shape matches expectations
+- [ ] **Assert real persistence by reading it back THROUGH the real app/UI against the real DB** -- after writing the data via the feature, read it back the way a user would: reload the page (or call the real read endpoint) so the value is fetched *from the real database through the real app code*, and confirm it matches what you wrote. The write and the read-back must both traverse the real stack against the real DB -- not an in-memory store, not a cached client-side copy, not a fixture. A value that only shows up because it is still in browser/component state, or only appears in a direct DB row but never surfaces back through the app, is NOT verified persistence.
 
 ### Layer 6: Cross-Cutting Verification
 
@@ -94,6 +96,18 @@ After everything above:
 - [ ] **No regression** in adjacent features -- click around in features the change *shouldn't* have affected, verify they still work
 - [ ] **Logs are clean** -- INFO/DEBUG only, no unexpected WARN/ERROR
 - [ ] **Performance acceptable** -- the feature responds within reasonable time (no 5-second freezes, no infinite spinners)
+
+### Layer 7: Break-the-Code Confirmation
+
+Green tests only prove something if they can also go red. A test that passes whether or not the feature works is worthless -- and far more common than you'd think (assertion on the wrong value, mocked-away under test, tautological `expect(true)`, test never actually reaching the code path). Before trusting the suite, prove the tests are wired to the behavior they claim to cover:
+
+- [ ] **Identify the targeted tests** -- the specific test(s) that are supposed to guard this feature's core behavior
+- [ ] **Inject a representative bug** into the production code those tests cover -- a real, plausible defect that breaks the behavior under test (e.g., flip a comparison, return early, drop the persistence write, off-by-one a boundary, skip the validation). Not a syntax error or a `throw` -- a defect a careless edit could actually introduce
+- [ ] **Re-run the targeted tests and confirm they FAIL** -- and fail for the right reason (the assertion on the broken behavior, not an unrelated crash). If the tests still pass with the bug in place, the tests do not actually guard the feature -- fix the tests before trusting them
+- [ ] **Revert the injected bug** -- restore the code exactly (`git diff` must be empty / `git checkout` the file), then re-run and confirm the tests are GREEN again
+- [ ] **Attach evidence** -- in the report, record what bug was injected, which tests went red (with the failing assertion), and confirmation that revert restored green. Paste the relevant failing-then-passing test output
+
+This is the cheapest insurance against a falsely-green suite. Do it for the feature's critical-path tests at minimum; for high-risk changes, do it for each meaningful behavior.
 
 ## Reporting
 
@@ -105,9 +119,15 @@ Verification report for <feature name>:
 Layer 1 (Build & Boot): ✓ all green
 Layer 2 (API Smoke): ✓ 4 endpoints verified
 Layer 3 (UI Smoke): ✓ 3 pages, 0 console errors, screenshots saved
-Layer 4 (User Flow): ✓ signup -> create item -> edit -> delete -> verify gone
-Layer 5 (Persistence): ✓ data survives server restart
+Layer 4 (User Flow): ✓ signup -> create item -> edit -> delete -> verify gone; asserted path has NO mocks (real handlers + real DB)
+Layer 5 (Persistence): ✓ data survives server restart; read back through real UI -> real DB and matched
 Layer 6 (Cross-cutting): ✓ existing tests pass, adjacent features unaffected
+Layer 7 (Break-the-code): ✓ injected <bug> into <file> -> <test(s)> went RED on <assertion>; reverted -> GREEN again
+
+Break-the-code evidence:
+- Injected: [the representative bug, e.g. "dropped the INSERT in createItem()"]
+- Tests that failed: [test name(s)] -- failing assertion: [paste]
+- After revert: [clean git diff confirmed] -- tests GREEN
 
 Issues found and fixed during verification:
 - [issue and fix]

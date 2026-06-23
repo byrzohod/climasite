@@ -1,61 +1,61 @@
 {
   "permissions": {
-    "allow": ["*"],
+    "allow": [
+      "*"
+    ],
     "defaultMode": "bypassPermissions"
   },
   "hooks": {
     "SessionStart": [
       {
-        "matcher": "",
         "hooks": [
           {
             "type": "command",
             "command": ".claude/hooks/session-phase.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/state-prime.sh",
+            "statusMessage": "Restoring session state..."
           }
-        ]
+        ],
+        "matcher": ""
       }
     ],
     "Stop": [
       {
-        "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/workflow-check.sh"
+            "command": ".claude/hooks/phase-stop-check.sh"
           },
           {
             "type": "command",
-            "command": ".claude/hooks/phase-stop-check.sh"
+            "command": ".claude/hooks/workflow-check.sh"
           }
-        ]
+        ],
+        "matcher": ""
       }
     ],
     "PostToolUse": [
       {
-        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
             "command": ".claude/hooks/test-ran-marker.sh"
           }
-        ]
+        ],
+        "matcher": "Bash"
       }
     ],
     "PreToolUse": [
       {
-        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "if": "Bash(git *)",
-            "command": "bash -c 'CMD=$(jq -r .tool_input.command); if echo \"$CMD\" | grep -qE \"git\\s+(reset\\s+--hard|push\\s+(-f|--force)|checkout\\s+--\\s+\\.|clean\\s+-f|branch\\s+-D|stash\\s+(drop|clear))\"; then echo \"BLOCKED: Destructive git operation. If truly needed, ask the user for explicit approval.\" >&2; exit 2; fi'",
-            "statusMessage": "Checking git safety..."
-          },
-          {
-            "type": "command",
-            "if": "Bash(git push*)",
-            "command": "bash -c 'CMD=$(jq -r .tool_input.command); if echo \"$CMD\" | grep -qE \"git\\s+push\\s+.*\\b(main|master)\\b\"; then echo \"BLOCKED: Cannot push directly to main/master. Use a feature branch and PR.\" >&2; exit 2; fi'",
-            "statusMessage": "Checking push target..."
+            "if": "Bash(git commit*)",
+            "command": ".claude/hooks/require-tests-on-commit.sh",
+            "statusMessage": "PROC-01: tests-with-feature gate..."
           },
           {
             "type": "command",
@@ -71,6 +71,12 @@
           },
           {
             "type": "command",
+            "if": "Bash(git *)",
+            "command": "bash -c 'CMD=$(jq -r .tool_input.command); BRANCH=$(echo \"$CMD\" | sed -nE \"s/.*(checkout -b|switch -c)[[:space:]]+([^[:space:]]+).*/\\2/p\"); if [ -n \"$BRANCH\" ] && ! echo \"$BRANCH\" | grep -qE \"^(feature|fix|hotfix|release|chore)/[a-z0-9._-]+$\"; then echo \"NOTE (trunk mode): short-lived branches are fine; the (feature|fix|chore)/desc convention is advisory. Got: $BRANCH — not blocking.\" >&2; fi; exit 0'",
+            "statusMessage": "Branch name (advisory)..."
+          },
+          {
+            "type": "command",
             "if": "Bash(git commit*)",
             "command": "bash -c 'CMD=$(jq -r .tool_input.command); MSG=\"\"; if echo \"$CMD\" | grep -qP \"\\-m\\s\"; then MSG=$(echo \"$CMD\" | grep -oP \"(?<=-m\\s[\\x27\\\"]).*?(?=[\\x27\\\"])\"); elif echo \"$CMD\" | grep -q \"cat <<\"; then MSG=$(echo \"$CMD\" | sed -n \"s/.*cat <<[\\x27]*EOF[\\x27]*//p\" | head -1 | sed \"s/^[[:space:]]*//\"); fi; if [ -n \"$MSG\" ] && ! echo \"$MSG\" | grep -qE \"^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\\(.+\\))?(!)?:\\s\"; then echo \"BLOCKED: Commit message must use conventional format (e.g., feat: add login). Got: $MSG\" >&2; exit 2; fi'",
             "statusMessage": "Checking commit format..."
@@ -78,23 +84,56 @@
           {
             "type": "command",
             "if": "Bash(git commit*)",
-            "command": ".claude/hooks/require-tests-on-commit.sh",
-            "statusMessage": "PROC-01: tests-with-feature gate..."
+            "command": "bash -c 'CMD=$(jq -r .tool_input.command); MSG=$(echo \"$CMD\" | sed -nE \"s/.*-m[[:space:]]+\\\"([^\\\"]*)\\\".*/\\1/p\"); if [ -n \"$MSG\" ] && ! echo \"$MSG\" | grep -qE \"^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\\(.+\\))?(!)?:[[:space:]]\"; then echo \"BLOCKED: Commit message must use conventional format (e.g., feat: add login). Got: $MSG\" >&2; exit 2; fi'",
+            "statusMessage": "Checking commit format..."
+          },
+          {
+            "type": "command",
+            "if": "Bash(git *)",
+            "command": "bash -c 'CMD=$(jq -r .tool_input.command); if echo \"$CMD\" | grep -qE \"git\\s+(reset\\s+--hard|push\\s+(-f|--force)|checkout\\s+--\\s+\\.|clean\\s+-f|branch\\s+-D|stash\\s+(drop|clear))\"; then echo \"BLOCKED: Destructive git operation. If truly needed, ask the user for explicit approval.\" >&2; exit 2; fi'",
+            "statusMessage": "Checking git safety..."
+          },
+          {
+            "type": "command",
+            "if": "Bash(git push*)",
+            "command": "bash -c 'CMD=$(jq -r .tool_input.command); if echo \"$CMD\" | grep -qE \"git\\s+push\\s+.*\\b(main|master)\\b\"; then echo \"BLOCKED: Cannot push directly to main/master. Use a feature branch and PR.\" >&2; exit 2; fi'",
+            "statusMessage": "Checking push target..."
           }
-        ]
+        ],
+        "matcher": "Bash"
       },
       {
-        "matcher": "Write|Edit",
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'FILE=$(jq -r \".tool_input.file_path\"); if echo \"$FILE\" | grep -qiE \"\\.(env|pem|key|p12|pfx)$|credentials\\.json|secrets\\.(yml|yaml|json)\"; then echo \"BLOCKED: Cannot write to sensitive file: $FILE. Use .env.example for documentation, keep actual secrets out of the repo.\" >&2; exit 2; fi'",
-            "statusMessage": "Checking file safety..."
+            "command": ".claude/hooks/no-spec-no-code.sh",
+            "statusMessage": "Checking a unit plan exists..."
           },
           {
             "type": "command",
             "command": ".claude/hooks/require-approved-plan.sh",
             "statusMessage": "PROC-01: approved-plan gate..."
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/skill-quarantine.sh",
+            "statusMessage": "Checking skill quarantine..."
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'FILE=$(jq -r \".tool_input.file_path\"); if echo \"$FILE\" | grep -qiE \"\\.(env|pem|key|p12|pfx)$|credentials\\.json|secrets\\.(yml|yaml|json)\"; then echo \"BLOCKED: Cannot write to sensitive file: $FILE. Use .env.example for documentation, keep actual secrets out of the repo.\" >&2; exit 2; fi'",
+            "statusMessage": "Checking file safety..."
+          }
+        ],
+        "matcher": "Write|Edit"
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/pre-compact-checkpoint.sh"
           }
         ]
       }

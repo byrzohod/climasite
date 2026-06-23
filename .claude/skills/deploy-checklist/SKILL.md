@@ -1,84 +1,142 @@
 ---
 name: deploy-checklist
-description: Pre-deploy and post-deploy checklist covering rollback, migrations, feature flags, health checks, observability, and graceful shutdown. Use before any production deploy or when the user asks to deploy or ship to prod.
+description: Pre-deployment verification checklist -- environment parity, container hardening (multi-stage, distroless, non-root, Trivy scan), health checks (liveness/readiness/startup), graceful shutdown (SIGTERM, connection draining), feature flags, rollback procedure tested. Use this whenever the user mentions deploying, shipping to production, going live, release prep, deploy gate, prod readiness, or before any prod deploy.
 ---
 
-# /deploy-checklist
+# /deploy-checklist - Pre-deployment verification
 
-Implements sections 17, 28, 29 of the Agent Workflow.
+## When to use
 
-## Pre-Deploy
+Invoke this skill:
+- **Before every deployment** (staging or production)
+- **Before every release**
+- **When setting up a new environment**
 
-### Reversibility
-- [ ] **Every deploy must be reversible in under 5 minutes**
-- [ ] Previous version's artifacts are still available (image tag, NuGet, dist bundle)
-- [ ] Rollback procedure tested at least once on staging this quarter
+## Environment Parity Check
 
-### Database
-- [ ] Migrations follow expand-contract pattern (no destructive changes to columns still in use by old code)
-- [ ] Every `up` migration has a tested `down`
-- [ ] Migration tested against production-like data volume
-- [ ] No long-running locks on hot tables
+Before deploying, verify dev/staging/prod parity:
 
-### Feature Flags
-- [ ] New features ship behind a flag, default off
-- [ ] Kill-switch for any new behavior that can be toggled without redeploy
-- [ ] Stale flags (>30 days post-rollout) cleaned up
+- [ ] Local development mirrors production (Docker Compose or equivalent)
+- [ ] Staging uses same database engine and version as production
+- [ ] Staging uses same configuration shape as production (same env var structure)
+- [ ] Configuration via environment variables, with `.env.example` documented
+- [ ] All environment variables validated at application startup (fail fast)
+- [ ] Infrastructure as Code used for cloud resources (Terraform, Pulumi, etc.)
 
-### Health Checks
-- [ ] **Liveness probe**: lightweight, no external deps
-- [ ] **Readiness probe**: checks DB, Redis, critical deps; returns 503 when not ready
-- [ ] **Startup probe**: covers slow init (cache warming, EF migrations)
+## Containerization Check
+
+If using Docker (which most projects should):
+
+- [ ] **Multi-stage builds** used -- no build tools shipped in runtime image
+- [ ] **Minimal base images** (slim or distroless variants)
+- [ ] **Non-root user** -- `USER` directive set, never runs as root in production
+- [ ] **`.dockerignore`** excludes `.git`, `node_modules`, `.env`, test files, docs
+- [ ] **Base image versions pinned** -- no `:latest` tag in production Dockerfiles
+- [ ] **Dockerfile linting** runs in CI (e.g., Hadolint)
+- [ ] **Container vulnerability scanning** in CI (Trivy, Snyk, Grype, or equivalent)
+
+## Health Checks & Probes
+
+For containerized or cloud-deployed apps:
+
+- [ ] **Liveness probe** implemented -- lightweight check, "is the process alive?" (do NOT check external dependencies)
+- [ ] **Readiness probe** implemented -- "can this instance handle traffic?" (checks DB, cache, critical dependencies)
+- [ ] **Startup probe** implemented if app has slow startup (cache warming, migrations)
 - [ ] `/health` endpoint returns structured status
+- [ ] Load balancer configured to use health checks for routing decisions
+- [ ] Kubernetes probes configured correctly (if using K8s)
 
-### Graceful Shutdown
-- [ ] App handles SIGTERM: stop accepting new requests, drain in-flight, exit
-- [ ] Shutdown timeout configured (~30s)
-- [ ] Open DB transactions committed/rolled back, not abandoned
-- [ ] (K8s) preStop hook delays shutdown long enough for LB deregistration
+## Graceful Shutdown
 
-### Observability
-- [ ] Logs are structured (JSON), include trace/correlation ID
-- [ ] No sensitive data in logs (passwords, tokens, PII)
-- [ ] RED metrics exposed (Rate, Errors, Duration) for new endpoints
-- [ ] Distributed tracing instrumented for new code paths
-- [ ] Error tracker (Sentry / equivalent) wired up
-- [ ] Dashboard exists for the service: health, latency, error rate, throughput
+In-flight requests must complete cleanly during deploys:
 
-### Alerts
-- [ ] Alerts defined on symptoms (user-visible failures), not causes (CPU%)
-- [ ] Every alert is actionable
-- [ ] On-call runbook updated for any new failure modes (`docs/runbooks/`)
+- [ ] App listens for **SIGTERM** and stops accepting new requests
+- [ ] In-flight work finishes before exit
+- [ ] **Shutdown timeout** set (e.g., 30 seconds max)
+- [ ] **Connection draining** implemented for WebSockets, long-polling, streaming responses
+- [ ] Database transactions committed or rolled back cleanly
+- [ ] **Kubernetes preStop hook** adds delay for load balancer deregistration (if using K8s)
 
-### Performance & Security
-- [ ] Performance budget still met (LCP < 2.5s, FID < 100ms, CLS < 0.1, API p95 within target)
-- [ ] `/security-review` clean
-- [ ] Dependency audit clean (`dotnet list package --vulnerable`, `npm audit`)
-- [ ] Container image vulnerability scan clean (Trivy / equivalent)
+Without graceful shutdown, zero-downtime deployments are impossible regardless of deployment strategy.
 
-### Tests
-- [ ] All unit, integration, E2E, and UI tests green
-- [ ] Smoke test plan ready for post-deploy verification
+## Rollback Plan
 
-### Configuration
-- [ ] All required env vars set in target environment, validated at startup
-- [ ] No new secrets in code; all in env / secret manager
-- [ ] `.env.example` updated for any new vars
+Every deploy must be reversible:
 
-## Post-Deploy
+- [ ] **Tested rollback procedure** -- can you roll back in under 5 minutes?
+- [ ] **Database migrations reversible** -- every `up` has a `down` script
+- [ ] **Previous version artifacts available** for quick revert
+- [ ] **Rollback runbook** documented (step-by-step, not "rollback the deploy")
+- [ ] Team knows who can trigger a rollback
 
-- [ ] Run smoke tests against the deployed environment
-- [ ] Watch error tracker for ≥ 30 min
-- [ ] Watch dashboards: error rate, latency, throughput
-- [ ] Verify health check returns 200
-- [ ] Verify a real user flow end-to-end (login → core action)
-- [ ] If any anomaly: roll back first, debug second
-- [ ] Update auto-memory and project CLAUDE.md with anything learned
+## Feature Flags
 
-## climasite-specific notes
+Decouple deploy from release:
 
-- Backend: ASP.NET Core (.NET 10) — listen for SIGTERM via `IHostApplicationLifetime.ApplicationStopping`
-- Frontend: Angular 19 — verify production build serves correctly with brotli/gzip
-- DB: PostgreSQL 16 with EF Core migrations — always test rollback on a copy
-- Cache: Redis 7 — verify connection pool sizing and reconnection
-- Stripe webhooks: verify signing secret matches the deployed environment
+- [ ] New features deploy behind a feature flag, disabled by default
+- [ ] Feature flag can be toggled without redeploy (kill switch)
+- [ ] Flag rollout plan documented (% rollout, user targeting, etc.)
+- [ ] Flag cleanup tracked -- stale flags become tech debt
+- [ ] Implementation appropriate to complexity (env var, DB toggle, or service like LaunchDarkly)
+
+## Progressive Delivery (when applicable)
+
+For high-traffic production services:
+
+- [ ] Canary deployment plan (route small % of traffic to new version)
+- [ ] Blue-green deployment plan (instant switch, keep old version ready)
+- [ ] Rollback trigger defined (error rate threshold, latency threshold)
+- [ ] Monitoring in place to detect issues during rollout
+
+Not needed for every project -- use judgment based on traffic and risk.
+
+## CI/CD Pipeline Verification
+
+- [ ] All tests pass (unit, integration, e2e, UI, performance, accessibility)
+- [ ] Security scan passes (dependency audit, container scan)
+- [ ] Build artifacts generated and stored
+- [ ] Deployment runs in the correct order (DB migrations BEFORE app deployment)
+- [ ] Smoke tests run after deployment
+
+## Pre-Deploy Final Verification
+
+Just before hitting deploy:
+
+- [ ] CI pipeline is green
+- [ ] All PR comments and review feedback addressed
+- [ ] Release notes written (see `/release`)
+- [ ] Team notified (if applicable)
+- [ ] Monitoring dashboards open and ready
+- [ ] Rollback plan fresh in memory
+- [ ] Database backup taken (for any deploy touching the DB)
+
+## Post-Deploy Verification
+
+Immediately after the deploy:
+
+- [ ] Health checks passing on all instances
+- [ ] No error rate spike in monitoring
+- [ ] Critical user flows smoke-tested
+- [ ] Logs show the new version running
+- [ ] Version endpoint returns the expected version
+- [ ] Performance metrics stable
+- [ ] Error tracking shows no new issues
+
+## If Something Goes Wrong
+
+Don't try to fix forward under pressure. Rollback first, investigate later:
+1. Execute rollback procedure (`/rollback` -- revert-first; or `/feature-flag` kill-switch if the change is flagged)
+2. Verify the rollback succeeded -- metrics stable, errors gone (`/verify-work`)
+3. Communicate to users if there was impact (status page)
+4. Run **`/incident-response`** -- it owns the full loop (triage -> mitigate -> communicate -> resolve/verify -> schedule the postmortem), wired to [[../Agent Workflow]] §19; the blameless postmortem (§19.2) is its last step
+
+## Production-Specific Checks
+
+Before deploying to production (not needed for staging):
+
+- [ ] Deploying during a low-traffic window (if applicable)
+- [ ] On-call person is aware and available
+- [ ] Status page ready to update if needed
+- [ ] Rollback procedure verified in staging first
+- [ ] All secrets configured in production secrets manager
+- [ ] Monitoring alerts configured for new endpoints/features
