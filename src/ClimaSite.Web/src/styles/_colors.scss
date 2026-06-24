@@ -265,6 +265,13 @@ $color-info-950: #082f49;
   --color-primary-light: #{$color-primary-50};
   --color-primary-dark: #{$color-primary-800};
 
+  // Primary used as a FILL behind light/white text (buttons, badges, CTAs).
+  // Kept separate from --color-primary (which also serves as link/icon TEXT on the page
+  // background, a role with the opposite contrast requirement in dark mode). On white text
+  // primary-700 = 5.93:1 (AA pass for normal text). UX-15.
+  --color-primary-surface: #{$color-primary-700};
+  --color-primary-surface-hover: #{$color-primary-800};
+
   --color-secondary: #{$color-secondary-500};
   --color-secondary-hover: #{$color-secondary-600};
   --color-secondary-active: #{$color-secondary-700};
@@ -445,6 +452,13 @@ $color-info-950: #082f49;
   --color-primary-active: #{$color-primary-500};
   --color-primary-light: rgba(14, 165, 233, 0.15);
   --color-primary-dark: #{$color-primary-600};
+
+  // Primary fill behind white text. In dark mode --color-primary is a LIGHT blue (primary-400,
+  // only 2.14:1 vs white) because it doubles as link/icon text on dark surfaces; that is far too
+  // light to sit *behind* white text. The surface token stays dark so white-on-fill clears AA:
+  // primary-700 = 5.93:1, hover primary-800 = 7.56:1. UX-15.
+  --color-primary-surface: #{$color-primary-700};
+  --color-primary-surface-hover: #{$color-primary-800};
 
   --color-accent: #{$color-accent-400};
   --color-accent-hover: #{$color-accent-300};

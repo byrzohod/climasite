@@ -73,12 +73,17 @@ public class PlaywrightFixture : IAsyncLifetime
         }
     }
 
-    public async Task<IPage> CreatePageAsync(bool seedCookieConsent = true)
+    public async Task<IPage> CreatePageAsync(bool seedCookieConsent = true, bool reducedMotion = false)
     {
         var context = await Browser.NewContextAsync(new BrowserNewContextOptions
         {
             BaseURL = _baseUrl,
             ViewportSize = new ViewportSize { Width = 1920, Height = 1080 },
+            // a11y scans pass reducedMotion:true so the app takes its prefers-reduced-motion path
+            // (RevealDirective short-circuits the appReveal opacity 0→1 fade). Otherwise axe samples a
+            // mid-transition opacity and reports false-positive color-contrast on text that meets AA at
+            // rest (e.g. a 7.58:1 token caught at ~0.15 opacity). This makes the a11y scans deterministic.
+            ReducedMotion = reducedMotion ? Microsoft.Playwright.ReducedMotion.Reduce : null,
             RecordVideoDir = Environment.GetEnvironmentVariable("E2E_RECORD_VIDEO") == "true"
                 ? "videos/" : null
         });

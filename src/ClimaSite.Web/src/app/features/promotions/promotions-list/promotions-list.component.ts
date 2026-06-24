@@ -230,14 +230,14 @@ import { PromotionBrief, PromotionType } from '../../../core/models/promotion.mo
       .btn-shop {
         display: inline-block;
         padding: 0.75rem 1.5rem;
-        background: var(--color-primary);
+        background: var(--color-primary-surface);
         color: white;
         border-radius: 8px;
         font-weight: 600;
         transition: background-color 0.2s;
 
         .promotion-card:hover & {
-          background: var(--color-primary-dark);
+          background: var(--color-primary-surface-hover);
         }
       }
     }

@@ -244,6 +244,9 @@ jobs:
         env:
           E2E_BASE_URL: http://localhost:4200
           E2E_API_URL: http://localhost:5029
+          # UX-15: both axe suites are now clean — real CTA contrast fixed (--color-primary-surface) and
+          # scans run under reduced-motion (no appReveal mid-fade false-positives) — so a11y is a hard gate.
+          A11Y_ENFORCE: "1"
           PLAYWRIGHT_BROWSERS_PATH: 0
           CI: true
           TEST_ADMIN_SECRET: "test-admin-secret"

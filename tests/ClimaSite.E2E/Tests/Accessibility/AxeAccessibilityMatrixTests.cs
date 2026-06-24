@@ -50,7 +50,8 @@ public class AxeAccessibilityMatrixTests
     [MemberData(nameof(Matrix))]
     public async Task PublicPage_AxeAudit(string route, string theme)
     {
-        var page = await _fixture.CreatePageAsync();
+        // reducedMotion: skip the appReveal opacity fade so axe scans the final rendered state. See UX-15.
+        var page = await _fixture.CreatePageAsync(reducedMotion: true);
         try
         {
             // Apply the theme before the app boots (ThemeService reads this on init).
