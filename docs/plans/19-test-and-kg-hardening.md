@@ -1,9 +1,19 @@
 # Plan 19 — Test hardening (E2E + UI) + Knowledge-graph enrichment
 
-**Status:** in progress (2026-06-24) · **Method:** diagnosed by a parallel Explore fan-out, then
-**council-reviewed cross-vendor** (Codex `gpt-5.5` xhigh + a blind Claude leg) — both legs independently
-confirmed the diagnosis and converged on the strategy below. Every claim here is verified against the
-working tree.
+**Method:** diagnosed by a parallel Explore fan-out, then **council-reviewed cross-vendor** (Codex
+`gpt-5.5` xhigh + a blind Claude leg) — both legs independently confirmed the diagnosis and converged on
+the strategy below.
+
+**STATUS (2026-06-24):**
+- ✅ **A1** NetworkIdle purge + `SettleAsync` — **PR #58**
+- ✅ **A3** trace/screenshot-on-failure — **PR #58**
+- ✅ **A4** guarded `[RetryFact]` (timeout-only, max-1, loud) — **PR #59**; applied to the 3 flaky journey/order classes + the 12 `AccessibilityTests` (PR #60)
+- ✅ **B1** specs for the 4 untested services — **PR #58**
+- ✅ **C2 / UX-15** contrast fixed (`--color-primary-surface`) + reduced-motion scans + **`A11Y_ENFORCE=1` enforced** — **PR #60**
+- ✅ **D** Knowledge graph enriched (vault)
+- ⏳ **B2/B3** specs for the ~27 untested components + replace ~27 placeholder `should create` specs
+- ⏳ **A2** finish the no-wait-read / hard-sleep cleanup (`QuerySelectorAsync`/`IsVisibleAsync`/`Task.Delay`)
+- ⏳ **C1** `@defer` e2e-build mitigation (low priority — NetworkIdle gone) · **C3** dev rate-limit exemption · sharding (deferred)
 
 ## 1. Validated diagnosis
 

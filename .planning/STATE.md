@@ -1,35 +1,42 @@
 # STATE — resume contract for climasite
 
-> The single durable handoff the **SessionStart hook** (`hooks/state-prime.sh`) auto-injects after any `/clear`, compaction, or `--resume`. Read **Next action** first, then open the linked plan/Knowledge as needed. Kept fresh via **`/checkpoint`** at every unit/phase boundary. Keep it LEAN — pointers, not prose.
+> Auto-injected by the **SessionStart hook** (`hooks/state-prime.sh`) after any `/clear`, compaction, or
+> `--resume`. Read **Next action** first. Kept fresh via `/checkpoint` at each unit/phase boundary.
+> LEAN — pointers, not prose. **This is the single entry point; everything else is linked below.**
 
-- **Last checkpoint**: 2026-06-23 18:10 · `/checkpoint` after each unit/phase
+- **Last checkpoint**: 2026-06-24 (after Plan 19 test-hardening + a11y enforcement)
 
 ## Goal
-Production-grade multi-language (EN/BG/DE), multi-theme HVAC e-commerce platform (catalog, cart, checkout/Stripe, orders, admin, reviews, wishlist, GDPR) — finish to production-readiness.
+Production-grade multi-language (EN/BG/DE), multi-theme HVAC e-commerce platform — finish to production readiness with a hardened SDLC.
 
 ## Current position
-- **Phase**: Phase 0 — adopted existing codebase (latest AI workflow installed over a mature PROC-01 install) · **Wave**: — · **Unit**: none yet (—)
+- **Phase**: maintenance / incremental hardening. No feature in-flight. Three big initiatives DONE (below); a tracked backlog remains.
 
-## Approved plan
-- none yet  <!-- .planning/units/<unit>/unit-plan.md — the path no-spec-no-code reads; must exist + be approved before that unit's code -->
-- **Design target**: `.planning/design/DESIGN.md` (status: **reconstructed** — reverse-engineered, not yet ratified; ratify via `/design-doc`)
-
-## Last completed
-`/project-adopt` — latest vault workflow installed (23 agents, 43 skills, 6 orchestration scripts, vault hooks merged); codebase mapped into `Knowledge/climasite/` (9 components, 8 risks, 6 questions); planning scaffold seeded. The repo already carried a full PROC-01 SDLC-hardening install (gated pipeline, CI gates, 80/70 coverage, branch protection) — both coexist (see CLAUDE.md).
+## ✅ Done (all merged to `main`)
+1. **PROC-01 SDLC hardening** — all 7 waves, 18 PRs. Gated pipeline, CI gates, 80/70 coverage, branch protection, 163 integration tests, real-card Stripe E2E. Tracker: `docs/features/PROC-01/STATE.md`.
+2. **Workflow adoption** (`/project-adopt`, PRs #55–57) — latest vault agents/skills/hooks, vault **Knowledge graph** at `…/vault/Knowledge/climasite/` (18 components, 3 ADR decisions, 3 milestones, 8 risks, 6 questions), `.planning/` scaffold. `no-spec-no-code` now gates `src/**` (escape `ALLOW_EXPLORATORY=1`).
+3. **Plan 19 — test + KG hardening** (`docs/plans/19-test-and-kg-hardening.md`, council-validated):
+   - E2E: **195 NetworkIdle waits purged** → locator auto-waiting + `SettleAsync`; trace/screenshot-on-failure; **`[RetryFact]` guarded retry** (PRs #58, #59).
+   - UI: **57 specs for the 4 untested services** (PR #58).
+   - **UX-15 a11y: fixed + ENFORCED** — `--color-primary-surface` token + reduced-motion scans; `A11Y_ENFORCE=1` live in CI; both axe suites are hard gates (PR #60).
+   - KG enriched (vault).
 
 ## ▶ Next action
-Triage the seeded Risks/Questions in `Knowledge/climasite/`, then `/research-loop` (if needed) → ratify `.planning/design/DESIGN.md` via `/design-doc` → `/plan-tree` for the next unit. (Two questions are VERIFY-first: Q-003 stock-reservation, Q-006 SalePrice mapping — confirm against current code before treating as bugs.)
+No active unit. Pick the next item from **Remaining** below. For any `src/**` change, first write a `.planning/units/<unit>/unit-plan.md` (the `no-spec-no-code` gate) — see `.planning/units/UX-15-contrast/unit-plan.md` as the worked example.
 
-## Blockers
-- **Merge queue DEFERRED (plan-blocked, OPS-11)**: GitHub's `merge_queue` rule + `evaluate`-mode rulesets need a paid plan (Team/Enterprise); this Free-plan personal public repo returned 422. The existing **classic branch protection** is the gate (6 checks incl. Test Summary, admins-included, no force-push/delete, PR-required); the `merge_group` trigger + ruleset artifact are ready for when the plan supports it. See `docs/runbooks/merge-queue.md`.
-- Dual planning systems pending consolidation: PROC-01 (`docs/features/<ID>/plan.md` + `require-approved-plan` warn hook) and the vault standard (`.planning/**/unit-plan.md` + `no-spec-no-code` block hook). Pick one as authoritative for new work.
+## Remaining (tracked — none blocking; full detail in `docs/project-plan/PRIORITIZED_BACKLOG.md`)
+- **Plan 19 B2/B3** — specs for the ~27 untested Angular components (cart, product-list, register first) + replace ~27 placeholder `should create` specs. (tests/ — ungated)
+- **SEC-12** Angular 19→major upgrade (7 high npm advisories); **SEC-13** gitleaks allowlist→enforce; **SEC-14** GDPR Orders-PII anonymization (needs an ADR; KG: R-002 / Q-005).
+- **OPS-11** enable the trunk merge queue — **plan-blocked** (needs a paid GitHub plan); ruleset + `merge_group` trigger are staged. See `docs/runbooks/merge-queue.md`.
+- **Plan 19 C1** (`@defer` e2e-build mitigation — low priority now NetworkIdle is gone) · **C3** (dev-env rate-limit exemption, local-only convenience).
+- **KG open items** — R-001 observability (=OPS-05), R-006/R-007/R-008; **VERIFY-first**: Q-003 stock-reservation, Q-006 SalePrice mapping (confirm vs current code before treating as bugs).
+- **Process debt** — two planning systems coexist (PROC-01 `docs/features/<ID>/plan.md` + vault `.planning/**/unit-plan.md`); pick one authoritative for new work.
 
-## Key decisions & pointers
-- **Knowledge graph**: `Knowledge/climasite/` in the vault (ADRs, components, open questions, risks — Dataview over frontmatter `[[wikilink]]` edges)
-- **Planning root**: `.planning/` — `design/`, `phases/→waves/→units/`, `research/REPORT.md`
-- **Currency** = EUR with transitional dual EUR/BGN display (peg 1.95583) — DECIDED, not open.
-- **PROC-01** SDLC-hardening initiative complete (all 7 waves, 18 PRs); canonical plan `docs/project-plan/SDLC_HARDENING_PLAN.md`, tracker `docs/features/PROC-01/STATE.md`.
+## Key pointers
+- **Plan ahead + tracking**: this file (resume) · `docs/plans/19-test-and-kg-hardening.md` (test/KG plan) · `docs/project-plan/PRIORITIZED_BACKLOG.md` (full backlog) · `docs/features/PROC-01/STATE.md` (SDLC waves) · vault `Knowledge/climasite/` (graph).
+- Currency = EUR + dual EUR/BGN display (peg 1.95583) — DECIDED. Nothing deployed yet (OPS-08).
 - Reversible pre-adopt checkpoint: `pre-adopt-backup-20260623-180552`.
+- Gotchas (memory): NEVER reintroduce `LoadState.NetworkIdle` in E2E; CRLF endings; classic branch protection is the gate.
 
 ## Open loops / checkpoints
-- none. Adoption complete (Phases A–D; merge queue deferred to OPS-11 as plan-blocked).
+- none. main is clean (0 open PRs); all CI gates green.
