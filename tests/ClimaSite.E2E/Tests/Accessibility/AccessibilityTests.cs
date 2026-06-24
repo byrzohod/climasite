@@ -29,7 +29,9 @@ public class AccessibilityTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        _page = await _fixture.CreatePageAsync();
+        // reducedMotion: skip the appReveal opacity fade so axe scans the final rendered state (no
+        // false-positive color-contrast from sampling a mid-transition opacity). See UX-15.
+        _page = await _fixture.CreatePageAsync(reducedMotion: true);
         _dataFactory = _fixture.CreateDataFactory();
     }
 
