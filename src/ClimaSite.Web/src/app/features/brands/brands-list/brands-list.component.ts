@@ -260,7 +260,7 @@ import { BrandBrief } from '../../../core/models/brand.model';
       top: 1rem;
       right: 1rem;
       padding: 0.25rem 0.75rem;
-      background: var(--color-primary);
+      background: var(--color-primary-surface);
       color: white;
       font-size: 0.75rem;
       font-weight: 600;

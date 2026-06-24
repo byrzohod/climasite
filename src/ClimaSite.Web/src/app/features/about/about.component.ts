@@ -298,7 +298,7 @@ import { TranslateModule } from '@ngx-translate/core';
 
     .cta-button {
       display: inline-block;
-      background: var(--color-primary);
+      background: var(--color-primary-surface);
       color: white;
       padding: 1rem 2rem;
       border-radius: 8px;
@@ -307,7 +307,7 @@ import { TranslateModule } from '@ngx-translate/core';
       transition: background-color 0.2s;
 
       &:hover {
-        background: var(--color-primary-dark);
+        background: var(--color-primary-surface-hover);
       }
     }
 
