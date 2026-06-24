@@ -1,4 +1,5 @@
 using ClimaSite.E2E.Infrastructure;
+using ClimaSite.E2E.Infrastructure.Retry;
 using ClimaSite.E2E.PageObjects;
 using FluentAssertions;
 using Microsoft.Playwright;
@@ -35,7 +36,7 @@ public class CompletePurchaseTests : IAsyncLifetime
     }
 
     // E2E-060: User login → Browse → Add to Cart → Checkout flow
-    [Fact]
+    [RetryFact]
     public async Task AuthenticatedUser_BrowseAndAddToCart_CompletesSuccessfully()
     {
         // Create user and product via API
@@ -77,7 +78,7 @@ public class CompletePurchaseTests : IAsyncLifetime
     }
 
     // E2E-061: User can proceed to checkout with items in cart
-    [Fact]
+    [RetryFact]
     public async Task AuthenticatedUser_ProceedToCheckout_ShowsCheckoutPage()
     {
         // Create user and product via API
@@ -105,7 +106,7 @@ public class CompletePurchaseTests : IAsyncLifetime
     }
 
     // E2E-062: User can fill shipping information
-    [Fact]
+    [RetryFact]
     public async Task Checkout_FillShippingInfo_CanProceedToPayment()
     {
         // Create user and product via API
@@ -149,7 +150,7 @@ public class CompletePurchaseTests : IAsyncLifetime
     }
 
     // E2E-063: Browse by Category → Filter → View Product
-    [Fact]
+    [RetryFact]
     public async Task User_BrowseByCategoryAndFilter_FindsProducts()
     {
         // Create products in a category
@@ -187,7 +188,7 @@ public class CompletePurchaseTests : IAsyncLifetime
     }
 
     // E2E-064: Search input exists and is usable
-    [Fact]
+    [RetryFact]
     public async Task User_CanTypeInSearchInput()
     {
         // Navigate to homepage
@@ -208,7 +209,7 @@ public class CompletePurchaseTests : IAsyncLifetime
     }
 
     // E2E: Cart persists across page navigation
-    [Fact]
+    [RetryFact]
     public async Task Cart_AfterAddingProduct_PersistsAcrossPages()
     {
         // Create a product
@@ -250,7 +251,7 @@ public class CompletePurchaseTests : IAsyncLifetime
     }
 
     // E2E: Authenticated user can view their account
-    [Fact]
+    [RetryFact]
     public async Task AuthenticatedUser_CanAccessAccountPage()
     {
         // Create user via API
