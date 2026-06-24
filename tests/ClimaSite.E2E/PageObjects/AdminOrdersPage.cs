@@ -12,7 +12,6 @@ public class AdminOrdersPage : BasePage
     public async Task NavigateToListAsync()
     {
         await Page.GotoAsync("/admin/orders");
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await Page.WaitForSelectorAsync(
             "[data-testid='order-row'], [data-testid='orders-empty'], [data-testid='orders-error']",
             new PageWaitForSelectorOptions { Timeout = 15000 });
@@ -27,14 +26,19 @@ public class AdminOrdersPage : BasePage
     public async Task FilterByStatusAsync(string statusValue)
     {
         await Page.SelectOptionAsync("[data-testid='status-filter']", new SelectOptionValue { Value = statusValue });
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        // Settle on the re-rendered orders list (or empty/error state) rather than NetworkIdle.
+        await Page.WaitForSelectorAsync(
+            "[data-testid='order-row'], [data-testid='orders-empty'], [data-testid='orders-error']",
+            new PageWaitForSelectorOptions { Timeout = 15000 });
     }
 
     public async Task SearchAsync(string query)
     {
         await Page.FillAsync("[data-testid='order-search']", query);
         await Page.Keyboard.PressAsync("Enter");
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await Page.WaitForSelectorAsync(
+            "[data-testid='order-row'], [data-testid='orders-empty'], [data-testid='orders-error']",
+            new PageWaitForSelectorOptions { Timeout = 15000 });
     }
 
     public async Task OpenOrderAsync(string orderId)
@@ -45,13 +49,11 @@ public class AdminOrdersPage : BasePage
         await Page.WaitForSelectorAsync(
             "[data-testid='admin-order-detail']",
             new PageWaitForSelectorOptions { Timeout = 30000 });
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }
 
     public async Task OpenOrderDirectAsync(string orderId)
     {
         await Page.GotoAsync($"/admin/orders/{orderId}");
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await Page.WaitForSelectorAsync(
             "[data-testid='admin-order-detail']",
             new PageWaitForSelectorOptions { Timeout = 30000 });
@@ -80,7 +82,7 @@ public class AdminOrdersPage : BasePage
         }
 
         await Page.ClickAsync("[data-testid='apply-status']");
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        // No NetworkIdle: callers assert the updated status badge via web-first Expect(...).
     }
 
     public async Task SetShippingAsync(string trackingNumber, string? shippingMethod = null, bool markAsShipped = true)
@@ -95,7 +97,7 @@ public class AdminOrdersPage : BasePage
 
         await Page.SetCheckedAsync("[data-testid='mark-shipped']", markAsShipped);
         await Page.ClickAsync("[data-testid='save-shipping']");
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        // No NetworkIdle: callers assert the tracking number via web-first Expect(...).
     }
 
     public async Task AddNoteAsync(string note)
@@ -103,7 +105,7 @@ public class AdminOrdersPage : BasePage
         await Page.WaitForSelectorAsync("[data-testid='note-input']", new PageWaitForSelectorOptions { Timeout = 30000 });
         await Page.FillAsync("[data-testid='note-input']", note);
         await Page.ClickAsync("[data-testid='add-note']");
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        // No NetworkIdle: callers assert the success message via web-first Expect(...).
     }
 
     public async Task<string> GetTrackingNumberAsync()

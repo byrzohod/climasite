@@ -15,14 +15,12 @@ public class OrdersPage : BasePage
     public async Task NavigateAsync()
     {
         await Page.GotoAsync("/account/orders");
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await Page.WaitForSelectorAsync(OrderListSettledSelector, new PageWaitForSelectorOptions { Timeout = 30000 });
     }
 
     public async Task NavigateToOrderDetailsAsync(string orderId)
     {
         await Page.GotoAsync($"/account/orders/{orderId}");
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await Page.WaitForSelectorAsync(
             "[data-testid='order-number'], [data-testid='error-message']",
             new PageWaitForSelectorOptions { Timeout = 30000 });
@@ -87,8 +85,10 @@ public class OrdersPage : BasePage
             }
             catch
             {
-                // Fallback to network idle
-                await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                // Fallback: settle on a stable detail-page anchor instead of NetworkIdle.
+                await Page.WaitForSelectorAsync(
+                    "[data-testid='order-number'], [data-testid='error-message']",
+                    new PageWaitForSelectorOptions { Timeout = 30000 });
             }
         }
     }
@@ -96,20 +96,21 @@ public class OrdersPage : BasePage
     public async Task FilterByStatusAsync(string status)
     {
         await Page.SelectOptionAsync("[data-testid='orders-status-filter']", new SelectOptionValue { Label = status });
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        // Settle on the re-rendered orders list (or an empty state) rather than NetworkIdle.
+        await Page.WaitForSelectorAsync(OrderListSettledSelector, new PageWaitForSelectorOptions { Timeout = 30000 });
     }
 
     public async Task SearchOrdersAsync(string query)
     {
         await Page.FillAsync("[data-testid='orders-search']", query);
         await Page.Keyboard.PressAsync("Enter");
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await Page.WaitForSelectorAsync(OrderListSettledSelector, new PageWaitForSelectorOptions { Timeout = 30000 });
     }
 
     public async Task SortByAsync(string sortOption)
     {
         await Page.SelectOptionAsync("[data-testid='orders-sort-by']", new SelectOptionValue { Label = sortOption });
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await Page.WaitForSelectorAsync(OrderListSettledSelector, new PageWaitForSelectorOptions { Timeout = 30000 });
     }
 
     // Order Details Methods
@@ -209,7 +210,6 @@ public class OrdersPage : BasePage
 
         // Confirm cancellation
         await Page.ClickAsync("[data-testid='confirm-cancel-btn']");
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Wait for the status to update (modal closes and status changes)
         await Page.WaitForSelectorAsync("[data-testid='cancel-modal']", new PageWaitForSelectorOptions { State = WaitForSelectorState.Hidden, Timeout = 5000 });
@@ -222,7 +222,6 @@ public class OrdersPage : BasePage
     {
         await Page.WaitForSelectorAsync("[data-testid='reorder-btn']", new PageWaitForSelectorOptions { Timeout = 30000 });
         await Page.ClickAsync("[data-testid='reorder-btn']");
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Wait for either navigation to cart or an error/success message to appear
         // The component redirects after 1500ms on success
@@ -293,12 +292,13 @@ public class OrdersPage : BasePage
     public async Task GoToNextPageAsync()
     {
         await Page.ClickAsync("[data-testid='pagination-next']");
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        // Settle on the re-rendered orders list rather than NetworkIdle.
+        await Page.WaitForSelectorAsync(OrderListSettledSelector, new PageWaitForSelectorOptions { Timeout = 30000 });
     }
 
     public async Task GoToPreviousPageAsync()
     {
         await Page.ClickAsync("[data-testid='pagination-prev']");
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await Page.WaitForSelectorAsync(OrderListSettledSelector, new PageWaitForSelectorOptions { Timeout = 30000 });
     }
 }

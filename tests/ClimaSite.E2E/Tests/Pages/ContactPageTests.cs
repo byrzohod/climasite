@@ -28,7 +28,7 @@ public class ContactPageTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _dataFactory.CleanupAsync();
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     [Fact]
@@ -36,7 +36,8 @@ public class ContactPageTests : IAsyncLifetime
     {
         // Arrange & Act
         await _page.GotoAsync("/contact");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.Locator("[data-testid='contact-page']").First
+            .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 30000 });
 
         // Assert - Page is visible
         await Assertions.Expect(_page.Locator("[data-testid='contact-page']")).ToBeVisibleAsync();
@@ -47,7 +48,8 @@ public class ContactPageTests : IAsyncLifetime
     {
         // Arrange
         await _page.GotoAsync("/contact");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.Locator("[data-testid='contact-page']").First
+            .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 30000 });
 
         // Assert - Form fields are visible
         await Assertions.Expect(_page.Locator("[data-testid='contact-form']")).ToBeVisibleAsync();
@@ -63,7 +65,8 @@ public class ContactPageTests : IAsyncLifetime
     {
         // Arrange
         await _page.GotoAsync("/contact");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.Locator("[data-testid='contact-page']").First
+            .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 30000 });
 
         // Assert - Map section is visible
         await Assertions.Expect(_page.Locator("[data-testid='contact-map']")).ToBeVisibleAsync();
@@ -82,7 +85,8 @@ public class ContactPageTests : IAsyncLifetime
     {
         // Arrange
         await _page.GotoAsync("/contact");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.Locator("[data-testid='contact-page']").First
+            .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 30000 });
 
         // Assert - Submit button is disabled when form is empty (invalid)
         var submitButton = _page.Locator("[data-testid='contact-submit']");
@@ -104,7 +108,8 @@ public class ContactPageTests : IAsyncLifetime
     {
         // Arrange
         await _page.GotoAsync("/contact");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.Locator("[data-testid='contact-page']").First
+            .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 30000 });
 
         // Act - Fill out the form
         await _page.FillAsync("[data-testid='contact-name']", "Test User");
@@ -125,7 +130,8 @@ public class ContactPageTests : IAsyncLifetime
     {
         // Arrange
         await _page.GotoAsync("/contact");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.Locator("[data-testid='contact-page']").First
+            .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 30000 });
 
         // Act - Fill email with invalid format
         await _page.FillAsync("[data-testid='contact-email']", "invalid-email");
@@ -141,7 +147,8 @@ public class ContactPageTests : IAsyncLifetime
     {
         // Arrange
         await _page.GotoAsync("/contact");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.Locator("[data-testid='contact-page']").First
+            .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 30000 });
 
         // Assert - Contact info items are visible
         var infoItems = _page.Locator(".info-item");
@@ -154,7 +161,8 @@ public class ContactPageTests : IAsyncLifetime
     {
         // Arrange
         await _page.GotoAsync("/contact");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.Locator("[data-testid='contact-page']").First
+            .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 30000 });
 
         // Assert - Map link has target="_blank"
         var mapLink = _page.Locator("[data-testid='contact-map'] a.map-link");

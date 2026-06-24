@@ -13,7 +13,6 @@ public class AdminProductsPage : BasePage
     public async Task NavigateToListAsync()
     {
         await Page.GotoAsync("/admin/products");
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         // Wait for the list, the empty state, or the error state to settle.
         await Page.WaitForSelectorAsync(
             "[data-testid='product-row'], [data-testid='products-empty'], [data-testid='products-error']",
@@ -30,7 +29,6 @@ public class AdminProductsPage : BasePage
     {
         await Page.FillAsync("[data-testid='product-search']", query);
         await Page.Keyboard.PressAsync("Enter");
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         // Allow the filtered list (or empty/error state) to re-render.
         await Page.WaitForSelectorAsync(
             "[data-testid='product-row'], [data-testid='products-empty'], [data-testid='products-error']",
@@ -98,11 +96,11 @@ public class AdminProductsPage : BasePage
     public async Task SubmitFormAsync()
     {
         await Page.ClickAsync("[data-testid='save-product']");
-        // On success the panel closes and the list reloads.
+        // On success the panel closes and the list reloads. The detached-panel wait confirms
+        // the save committed; the reloaded list is auto-waited by the caller's next read.
         await Page.WaitForSelectorAsync(
             "[data-testid='product-form']",
             new PageWaitForSelectorOptions { State = WaitForSelectorState.Detached, Timeout = 15000 });
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }
 
     /// <summary>
@@ -114,7 +112,8 @@ public class AdminProductsPage : BasePage
         var selector = $"[data-testid='deactivate-product'][data-product-id='{productId}']";
         await Page.WaitForSelectorAsync(selector, new PageWaitForSelectorOptions { Timeout = 30000 });
         await Page.ClickAsync(selector);
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        // No NetworkIdle: callers assert the resulting status badge / activate action via
+        // web-first Expect(...), which auto-waits for the row to re-render.
     }
 
     public ILocator StatusBadge(string productId) =>

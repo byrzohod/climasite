@@ -19,26 +19,29 @@ public class HomePage : BasePage
     public async Task NavigateAsync()
     {
         await Page.GotoAsync("/");
-        await WaitForLoadAsync();
+        // home-v3-hero renders eagerly (above any @defer block) — a reliable home settle anchor.
+        await SettleAsync("[data-testid='home-v3-hero']");
     }
 
     public async Task SearchAsync(string query)
     {
         await FillAsync(SearchInput, query);
         await ClickAsync(SearchButton);
-        await WaitForLoadAsync();
+        // Settle on the search route rather than NetworkIdle.
+        await Page.WaitForURLAsync(url => url.Contains("search") || url.Contains("products"),
+            new PageWaitForURLOptions { Timeout = 30000 });
     }
 
     public async Task GoToLoginAsync()
     {
         await ClickAsync(LoginButton);
-        await WaitForLoadAsync();
+        await SettleAsync("[data-testid='login-email']");
     }
 
     public async Task GoToCartAsync()
     {
         await ClickAsync(CartIcon);
-        await WaitForLoadAsync();
+        await Page.WaitForURLAsync(url => url.Contains("/cart"), new PageWaitForURLOptions { Timeout = 30000 });
     }
 
     public async Task<int> GetCartCountAsync()
@@ -66,7 +69,12 @@ public class HomePage : BasePage
         await Page.WaitForSelectorAsync("[data-testid='language-dropdown']", new PageWaitForSelectorOptions { Timeout = 5000 });
         // Click on the specific language option
         await Page.ClickAsync($"[data-testid='language-{languageCode}']");
-        await WaitForLoadAsync();
+        // Language switch re-renders translations in place (no navigation). Settle PAGE-AGNOSTICALLY on
+        // the dropdown closing — the language selector lives in the global header, so this method is
+        // called from any page (e.g. a product page mid-journey); do NOT wait on the home-only
+        // home-v3-hero (that times out off the home page). Callers assert the translated result.
+        await Page.Locator("[data-testid='language-dropdown']").WaitForAsync(
+            new LocatorWaitForOptions { State = WaitForSelectorState.Hidden, Timeout = 10000 });
     }
 
     public async Task ToggleThemeAsync()

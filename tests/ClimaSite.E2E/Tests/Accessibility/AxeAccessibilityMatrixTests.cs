@@ -89,7 +89,7 @@ public class AxeAccessibilityMatrixTests
         }
         finally
         {
-            await page.Context.CloseAsync();
+            await _fixture.CloseTracedContextAsync(page);
         }
     }
 }

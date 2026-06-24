@@ -590,12 +590,12 @@ Detail: `docs/project-plan/UI_UX_REVIEW.md` (work-list #1-23) and `_review/uiux.
 ### UX-14 — Offline/empty-state wiring (P3, Small)
 - **Closes:** item #23. **Affected:** `shared/components/empty-state` (unused `offline` variant). **Acceptance:** Global offline detection shows the variant with retry.
 
-### UX-15 — Dark-theme color-contrast violations (WCAG AA) (P2, Small)
-- **Status:** OPEN (surfaced 2026-06-22 by the Wave 5c axe matrix). 3 serious `color-contrast` violations in **dark** theme: `/promotions` (4 nodes), `/brands` (7 nodes), `/about` (1 node). Light theme + the other audited pages are clean.
-- **Description:** Fix the offending dark-mode foreground/background pairs to meet the WCAG AA contrast ratio (likely muted text or badge colors on dark surfaces in `_colors.scss`). Once clean, set `A11Y_ENFORCE=1` in the E2E job (or flip the test default) to make the axe matrix a **hard a11y gate**.
-- **Affected:** `src/ClimaSite.Web/src/styles/_colors.scss` (dark theme vars), the promotions/brands/about page styles.
-- **Acceptance:** `AxeAccessibilityMatrixTests` reports 0 serious/critical with `A11Y_ENFORCE=1`; then enforce in CI.
-- **Depends on:** none. Pairs with UX-07 (light-theme error color) and UX-13 (energy-label palette).
+### UX-15 — Color-contrast violations (WCAG AA), light + dark theme (P2, Small→Medium)
+- **Status:** OPEN, **scope widened 2026-06-24**. Originally 3 serious dark-theme violations from the Wave 5c axe matrix (`/promotions` 4 nodes, `/brands` 7, `/about` 1). The Plan-19 E2E NetworkIdle purge then made the **enforcing** `AccessibilityTests.cs` axe scans deterministic and surfaced **additional real LIGHT-theme `color-contrast` violations** on `/products` (list), product **detail**, and **cart** pages — muted grays on white, e.g. `#7f848e`→3.75:1 and `#9da5af`→2.48:1 (need 4.5:1). These were present on `main` too but masked by the old flaky NetworkIdle scan timing (false-negative green). Both a11y test files (`AxeAccessibilityMatrixTests` + `AccessibilityTests`) are now **reporting-first** (gated by `A11Y_ENFORCE=1`) so they surface, not block.
+- **Description:** Fix the offending light + dark foreground/background pairs to meet WCAG AA (muted-text/badge tokens in `_colors.scss`). Then set `A11Y_ENFORCE=1` in the E2E job (Plan 19 C2) to make **both** axe suites hard gates.
+- **Affected:** `src/ClimaSite.Web/src/styles/_colors.scss` (muted-text tokens, light + dark), product-list/detail/cart + promotions/brands/about styles.
+- **Acceptance:** both `AxeAccessibilityMatrixTests` and `AccessibilityTests` report 0 serious/critical with `A11Y_ENFORCE=1`; then enforce in CI.
+- **Depends on:** none. Gated `src/` change → via `/plan-tree` unit-plan. Pairs with UX-07 (light-theme error color) and UX-13 (energy-label palette).
 
 ---
 

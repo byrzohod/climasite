@@ -35,7 +35,7 @@ public class CheckoutPage : BasePage
     public async Task NavigateAsync()
     {
         await Page.GotoAsync("/checkout");
-        await WaitForLoadAsync();
+        await SettleAsync("[data-testid='checkout-page']", 30000);
     }
 
     public async Task FillShippingAddressAsync(
@@ -69,9 +69,6 @@ public class CheckoutPage : BasePage
             var pageTitle = await Page.TitleAsync();
             throw new InvalidOperationException($"Checkout page container not found. URL: {currentUrl}, Title: {pageTitle}, Has app-root: {hasAngularApp}");
         }
-
-        // Wait for network to be idle (cart data might still be loading)
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Wait for checkout page to be fully rendered
         // Check both possible states: shipping form (has cart items) or empty cart message
@@ -133,13 +130,14 @@ public class CheckoutPage : BasePage
     public async Task GoToNextStepAsync()
     {
         await ClickAsync(NextStepButton);
-        await WaitForLoadAsync();
+        // Settle on the checkout shell rather than NetworkIdle; callers assert the specific step.
+        await SettleAsync("[data-testid='checkout-steps']", 30000);
     }
 
     public async Task GoToPreviousStepAsync()
     {
         await ClickAsync(PreviousStepButton);
-        await WaitForLoadAsync();
+        await SettleAsync("[data-testid='checkout-steps']", 30000);
     }
 
     public async Task PlaceOrderAsync()
@@ -254,6 +252,7 @@ public class CheckoutPage : BasePage
     public async Task GoBackToCartAsync()
     {
         await Page.ClickAsync("[data-testid='back-to-cart']");
-        await WaitForLoadAsync();
+        // Settle on the cart route rather than NetworkIdle.
+        await Page.WaitForURLAsync(url => url.Contains("/cart"), new PageWaitForURLOptions { Timeout = 30000 });
     }
 }

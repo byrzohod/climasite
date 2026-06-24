@@ -14,7 +14,6 @@ public class AdminCustomersPage : BasePage
     public async Task NavigateToListAsync()
     {
         await Page.GotoAsync("/admin/users");
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await Page.WaitForSelectorAsync(
             "[data-testid='customer-row'], [data-testid='customers-empty'], [data-testid='customers-error']",
             new PageWaitForSelectorOptions { Timeout = 15000 });
@@ -30,7 +29,6 @@ public class AdminCustomersPage : BasePage
     {
         await Page.FillAsync("[data-testid='customer-search']", query);
         await Page.Keyboard.PressAsync("Enter");
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await Page.WaitForSelectorAsync(
             "[data-testid='customer-row'], [data-testid='customers-empty'], [data-testid='customers-error']",
             new PageWaitForSelectorOptions { Timeout = 15000 });
@@ -57,7 +55,6 @@ public class AdminCustomersPage : BasePage
         await Page.WaitForSelectorAsync(
             "[data-testid='customer-detail']",
             new PageWaitForSelectorOptions { Timeout = 30000 });
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         // The status badge only renders once the detail finishes loading without error.
         await Page.WaitForSelectorAsync(
             "[data-testid='customer-active-badge'], [data-testid='customer-detail-error']",
@@ -83,6 +80,9 @@ public class AdminCustomersPage : BasePage
             "[data-testid='toggle-customer-status']",
             new PageWaitForSelectorOptions { Timeout = 30000 });
         await Page.ClickAsync("[data-testid='toggle-customer-status']");
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        // Settle on the re-rendered status badge rather than NetworkIdle; callers assert its text.
+        await Page.WaitForSelectorAsync(
+            "[data-testid='customer-active-badge']",
+            new PageWaitForSelectorOptions { Timeout = 30000 });
     }
 }

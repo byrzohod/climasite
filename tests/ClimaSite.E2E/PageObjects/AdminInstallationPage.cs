@@ -14,7 +14,6 @@ public class AdminInstallationPage : BasePage
     public async Task NavigateToListAsync()
     {
         await Page.GotoAsync("/admin/installation-requests");
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await Page.WaitForSelectorAsync(
             "[data-testid='installation-row'], [data-testid='installation-empty'], [data-testid='installation-error']",
             new PageWaitForSelectorOptions { Timeout = 15000 });
@@ -56,7 +55,8 @@ public class AdminInstallationPage : BasePage
         var applySelector =
             $"[data-testid='apply-installation-status'][data-request-id='{requestId}']";
         await Page.ClickAsync(applySelector);
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        // No NetworkIdle: callers assert ActionSuccess / the status badge via web-first
+        // Expect(...), which auto-waits for the row to re-render.
     }
 
     public ILocator ActionSuccess => Page.Locator("[data-testid='installation-action-success']");

@@ -30,7 +30,7 @@ public class MegaMenuTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _dataFactory.CleanupAsync();
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     // E2E-010: Main navigation links work correctly
@@ -39,7 +39,8 @@ public class MegaMenuTests : IAsyncLifetime
     {
         // Arrange
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.Locator("[data-testid='home-v3-hero']").First
+            .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
 
         // Test Home link
         await ClickNavLinkAndExpectUrlAsync("nav-home", new Regex(@"/$"));
@@ -69,7 +70,8 @@ public class MegaMenuTests : IAsyncLifetime
     {
         // Arrange
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.Locator("[data-testid='home-v3-hero']").First
+            .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
 
         // Act - Hover over Products trigger
         await _page.HoverAsync("[data-testid='mega-menu-trigger']");
@@ -191,7 +193,8 @@ public class MegaMenuTests : IAsyncLifetime
     {
         // Arrange
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.Locator("[data-testid='home-v3-hero']").First
+            .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
 
         // Open mega menu
         await _page.HoverAsync("[data-testid='mega-menu-trigger']");
@@ -234,7 +237,8 @@ public class MegaMenuTests : IAsyncLifetime
         // Arrange - Set mobile viewport
         await _page.SetViewportSizeAsync(375, 812);
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.Locator("[data-testid='home-v3-hero']").First
+            .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
 
         // Act - Click mobile menu toggle
         await _page.ClickAsync("[data-testid='mobile-menu-toggle']");
@@ -257,7 +261,8 @@ public class MegaMenuTests : IAsyncLifetime
         // Arrange - Set mobile viewport
         await _page.SetViewportSizeAsync(375, 812);
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.Locator("[data-testid='home-v3-hero']").First
+            .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
 
         // Open mobile menu
         await _page.ClickAsync("[data-testid='mobile-menu-toggle']");

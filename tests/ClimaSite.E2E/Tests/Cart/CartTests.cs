@@ -25,7 +25,7 @@ public class CartTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _dataFactory.CleanupAsync();
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     [Fact]
@@ -210,15 +210,11 @@ public class CartTests : IAsyncLifetime
         var cartPage = new CartPage(_page);
         await cartPage.NavigateAsync();
 
-        // Wait for cart to load and show items
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
         // Verify item is in cart before refresh
         var initialCount = await cartPage.GetItemCountAsync();
 
         // Act - Refresh page
         await _page.ReloadAsync();
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Wait for cart items to render after refresh
         try
@@ -248,7 +244,6 @@ public class CartTests : IAsyncLifetime
 
         var cartPage = new CartPage(_page);
         await cartPage.NavigateAsync();
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // The guest cart must contain the item before we log in
         (await cartPage.IsEmptyAsync())
@@ -261,11 +256,9 @@ public class CartTests : IAsyncLifetime
         var loginPage = new LoginPage(_page);
         await loginPage.NavigateAsync();
         await loginPage.LoginAsync(user.Email, user.Password);
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Assert - the merged item survives into the authenticated cart
         await cartPage.NavigateAsync();
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         try
         {
             await _page.WaitForSelectorAsync(

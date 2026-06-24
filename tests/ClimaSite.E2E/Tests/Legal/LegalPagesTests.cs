@@ -26,7 +26,7 @@ public class LegalPagesTests : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     [Theory]
@@ -80,7 +80,7 @@ public class LegalPagesTests : IAsyncLifetime
         }
         finally
         {
-            await page.Context.CloseAsync();
+            await _fixture.CloseTracedContextAsync(page);
         }
     }
 }

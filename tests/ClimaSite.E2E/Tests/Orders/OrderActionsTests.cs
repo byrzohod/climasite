@@ -28,7 +28,7 @@ public class OrderActionsTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _dataFactory.CleanupAsync();
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     // Cancel Order Tests
@@ -96,7 +96,6 @@ public class OrderActionsTests : IAsyncLifetime
 
         // Refresh page to see updated state
         await _page.ReloadAsync();
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await _page.WaitForSelectorAsync("[data-testid='order-number'], [data-testid='error-message']",
             new PageWaitForSelectorOptions { Timeout = 30000 });
 

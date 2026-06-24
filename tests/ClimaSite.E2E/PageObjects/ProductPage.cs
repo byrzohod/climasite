@@ -17,7 +17,6 @@ public class ProductPage : BasePage
     public async Task NavigateAsync(string slug)
     {
         await Page.GotoAsync($"/products/{slug}");
-        await WaitForLoadAsync();
         await Page.WaitForSelectorAsync(
             $"{ProductTitle}, [data-testid='error']",
             new PageWaitForSelectorOptions { Timeout = 30000 });
@@ -26,7 +25,6 @@ public class ProductPage : BasePage
     public async Task NavigateByIdAsync(Guid productId)
     {
         await Page.GotoAsync($"/products/{productId}");
-        await WaitForLoadAsync();
         await Page.WaitForSelectorAsync(
             $"{ProductTitle}, [data-testid='error']",
             new PageWaitForSelectorOptions { Timeout = 30000 });
@@ -35,7 +33,6 @@ public class ProductPage : BasePage
     public async Task NavigateToListAsync()
     {
         await Page.GotoAsync("/products");
-        await WaitForLoadAsync();
         // Wait for product cards to appear or empty state
         try
         {

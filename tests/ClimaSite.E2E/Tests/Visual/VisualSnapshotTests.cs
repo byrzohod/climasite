@@ -67,7 +67,7 @@ public class VisualSnapshotTests
         }
         finally
         {
-            await page.Context.CloseAsync();
+            await _fixture.CloseTracedContextAsync(page);
         }
     }
 }

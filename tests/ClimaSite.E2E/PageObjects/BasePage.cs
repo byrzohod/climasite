@@ -11,9 +11,24 @@ public abstract class BasePage
         Page = page;
     }
 
-    public async Task WaitForLoadAsync()
+    /// <summary>
+    /// Waits for the page to be ready by anchoring on a stable, page-specific element rather than
+    /// <see cref="LoadState.NetworkIdle"/>. NetworkIdle is unreliable in this app: the main layout
+    /// lazy-loads the header/footer via <c>@defer (on timer(3200ms))</c>, so every page fires
+    /// lazy-chunk fetches ~3.2s after navigation that reset NetworkIdle's quiet window
+    /// nondeterministically (Plan 19 / A1). Locator auto-waiting + web-first assertions are the
+    /// recommended pattern. Do NOT reintroduce NetworkIdle.
+    /// </summary>
+    /// <param name="anchorSelector">A stable selector (ideally a <c>data-testid</c>) known to be
+    /// visible once the page is interactable.</param>
+    /// <param name="timeoutMs">How long to wait for the anchor to become visible.</param>
+    protected async Task SettleAsync(string anchorSelector, int timeoutMs = 15000)
     {
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await Page.Locator(anchorSelector).First.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = timeoutMs
+        });
     }
 
     protected async Task ClickAsync(string selector)

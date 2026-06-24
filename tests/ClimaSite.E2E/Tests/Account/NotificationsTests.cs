@@ -32,7 +32,7 @@ public class NotificationsTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _dataFactory.CleanupAsync();
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     [Fact]
@@ -77,9 +77,12 @@ public class NotificationsTests : IAsyncLifetime
         user.Token.Should().NotBeNullOrWhiteSpace("test users must include a real access token");
 
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.Locator("[data-testid='home-v3-hero']").First
+            .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
         await _page.EvaluateAsync("token => window.localStorage.setItem('climasite_token', token)", user.Token);
         await _page.ReloadAsync();
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        // Settle on the re-bootstrapped app shell rather than NetworkIdle before navigating.
+        await _page.Locator("[data-testid='home-v3-hero']").First
+            .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
     }
 }
