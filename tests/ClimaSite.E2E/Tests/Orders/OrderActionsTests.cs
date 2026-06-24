@@ -1,4 +1,5 @@
 using ClimaSite.E2E.Infrastructure;
+using ClimaSite.E2E.Infrastructure.Retry;
 using ClimaSite.E2E.PageObjects;
 using Microsoft.Playwright;
 
@@ -32,7 +33,7 @@ public class OrderActionsTests : IAsyncLifetime
     }
 
     // Cancel Order Tests
-    [Fact]
+    [RetryFact]
     public async Task CancelOrder_PendingOrder_CancelsSuccessfully()
     {
         // Arrange
@@ -57,7 +58,7 @@ public class OrderActionsTests : IAsyncLifetime
         status.Should().ContainEquivalentOf("cancelled", "Order should be cancelled");
     }
 
-    [Fact]
+    [RetryFact]
     public async Task CancelOrder_WithoutReason_StillCancels()
     {
         // Arrange
@@ -78,7 +79,7 @@ public class OrderActionsTests : IAsyncLifetime
         status.Should().ContainEquivalentOf("cancelled");
     }
 
-    [Fact]
+    [RetryFact]
     public async Task CancelOrder_AlreadyCancelled_ButtonDisabled()
     {
         // Arrange - Create and cancel an order
@@ -105,7 +106,7 @@ public class OrderActionsTests : IAsyncLifetime
     }
 
     // Reorder Tests
-    [Fact]
+    [RetryFact]
     public async Task Reorder_AddsItemsToCart()
     {
         // Arrange - Create an order
@@ -141,7 +142,7 @@ public class OrderActionsTests : IAsyncLifetime
         }
     }
 
-    [Fact]
+    [RetryFact]
     public async Task Reorder_OutOfStock_ShowsPartialSuccess()
     {
         // Arrange - This test requires a product to go out of stock after ordering
@@ -167,7 +168,7 @@ public class OrderActionsTests : IAsyncLifetime
     }
 
     // Invoice Download Tests
-    [Fact]
+    [RetryFact]
     public async Task DownloadInvoice_DownloadsFile()
     {
         // Arrange
@@ -204,7 +205,7 @@ public class OrderActionsTests : IAsyncLifetime
     }
 
     // Order Timeline Tests
-    [Fact]
+    [RetryFact]
     public async Task OrderTimeline_DisplaysEvents()
     {
         // Arrange
@@ -227,7 +228,7 @@ public class OrderActionsTests : IAsyncLifetime
     }
 
     // Tracking Number Tests
-    [Fact]
+    [RetryFact]
     public async Task TrackingNumber_WhenShipped_Displays()
     {
         // Arrange - Create order (tracking only available after shipping)

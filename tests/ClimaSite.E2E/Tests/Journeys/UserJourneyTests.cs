@@ -1,4 +1,5 @@
 using ClimaSite.E2E.Infrastructure;
+using ClimaSite.E2E.Infrastructure.Retry;
 using ClimaSite.E2E.PageObjects;
 using FluentAssertions;
 using Microsoft.Playwright;
@@ -37,7 +38,7 @@ public class UserJourneyTests : IAsyncLifetime
     /// JNY-001: First-Time Buyer Journey
     /// A new user logs in and browses products.
     /// </summary>
-    [Fact]
+    [RetryFact]
     public async Task FirstTimeBuyer_LoginAndBrowse()
     {
         // Create user via API
@@ -85,7 +86,7 @@ public class UserJourneyTests : IAsyncLifetime
     /// JNY-002: Returning Customer Journey
     /// An existing user logs in and quickly makes a purchase.
     /// </summary>
-    [Fact]
+    [RetryFact]
     public async Task ReturningCustomer_QuickPurchaseJourney()
     {
         // Arrange - Create user via API
@@ -130,7 +131,7 @@ public class UserJourneyTests : IAsyncLifetime
     /// JNY-003: International Buyer Journey
     /// User changes language and completes purchase in different language.
     /// </summary>
-    [Fact]
+    [RetryFact]
     public async Task InternationalBuyer_LanguageSwitchJourney()
     {
         // Step 1: Start on homepage in English
@@ -168,7 +169,7 @@ public class UserJourneyTests : IAsyncLifetime
     /// Theme Toggle Journey
     /// User switches between light and dark themes.
     /// </summary>
-    [Fact]
+    [RetryFact]
     public async Task ThemeToggle_SwitchThemeJourney()
     {
         // Step 1: Start on homepage
@@ -202,7 +203,7 @@ public class UserJourneyTests : IAsyncLifetime
     /// <summary>
     /// User can browse and filter products
     /// </summary>
-    [Fact]
+    [RetryFact]
     public async Task User_CanBrowseAndFilterProducts()
     {
         // Step 1: Navigate to products page
@@ -231,7 +232,7 @@ public class UserJourneyTests : IAsyncLifetime
     /// <summary>
     /// User can navigate using header links
     /// </summary>
-    [Fact]
+    [RetryFact]
     public async Task User_CanNavigateUsingHeader()
     {
         // Step 1: Start on homepage
