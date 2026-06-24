@@ -1,5 +1,13 @@
 # Runbook — Trunk merge queue + ruleset (adoption Phase B)
 
+> **STATUS: DEFERRED — plan-blocked (2026-06-24).** The GitHub **merge queue** rule and **`evaluate`**
+> (dry-run) ruleset enforcement both require a **paid plan** (merge queue → Team/Enterprise; evaluate →
+> Enterprise). `byrzohod/climasite` is a personal **public repo on the Free plan**, so both are rejected
+> with HTTP 422. **Current gate = the existing classic branch protection** (6 required checks incl.
+> `Test Summary`, admins-included, no force-push/delete, PR-required). The `merge_group` trigger in
+> `test.yml` is in place but **inert** until a queue exists. Apply the steps below **only after** the
+> repo is on a supporting plan. Tracked as **OPS-11** in `docs/project-plan/PRIORITIZED_BACKLOG.md`.
+
 ClimaSite adopted the vault's trunk-based delivery model. The **GitHub merge queue** is the real merge
 gate: nothing lands on `main` except through the queue, which re-runs the full suite against
 *future-main* and merges only on green.

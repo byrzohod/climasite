@@ -21,7 +21,7 @@ Production-grade multi-language (EN/BG/DE), multi-theme HVAC e-commerce platform
 Triage the seeded Risks/Questions in `Knowledge/climasite/`, then `/research-loop` (if needed) → ratify `.planning/design/DESIGN.md` via `/design-doc` → `/plan-tree` for the next unit. (Two questions are VERIFY-first: Q-003 stock-reservation, Q-006 SalePrice mapping — confirm against current code before treating as bugs.)
 
 ## Blockers
-- **Phase B of adoption not finished**: CI merge-queue restructure + `trunk-default-branch-protection` ruleset not yet applied (current gate = classic branch protection + PROC-01 Test Summary). Apply in `evaluate` first, flip to `active` only after a green `merge_group` run.
+- **Merge queue DEFERRED (plan-blocked, OPS-11)**: GitHub's `merge_queue` rule + `evaluate`-mode rulesets need a paid plan (Team/Enterprise); this Free-plan personal public repo returned 422. The existing **classic branch protection** is the gate (6 checks incl. Test Summary, admins-included, no force-push/delete, PR-required); the `merge_group` trigger + ruleset artifact are ready for when the plan supports it. See `docs/runbooks/merge-queue.md`.
 - Dual planning systems pending consolidation: PROC-01 (`docs/features/<ID>/plan.md` + `require-approved-plan` warn hook) and the vault standard (`.planning/**/unit-plan.md` + `no-spec-no-code` block hook). Pick one as authoritative for new work.
 
 ## Key decisions & pointers
@@ -32,4 +32,4 @@ Triage the seeded Risks/Questions in `Knowledge/climasite/`, then `/research-loo
 - Reversible pre-adopt checkpoint: `pre-adopt-backup-20260623-180552`.
 
 ## Open loops / checkpoints
-- none idle. (Adoption Phase B — CI merge-queue + ruleset — is the next adoption step.)
+- none. Adoption complete (Phases A–D; merge queue deferred to OPS-11 as plan-blocked).

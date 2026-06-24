@@ -440,6 +440,13 @@ Detail: `_review/devops.md`, `DEV_WORKFLOW.md`. The devops launch-blocker list (
 - **Acceptance:** Fresh clone + documented steps yields a running app without editing config; compose file removed or its purpose documented.
 - **Depends on:** **O-6** (owner); DOC-03 captures the result.
 
+### OPS-11 — Enable the trunk merge queue (needs a paid GitHub plan) (P3, Small)
+- **Status:** DEFERRED / plan-blocked (2026-06-24). Surfaced during the `/project-adopt` Phase B. GitHub's `merge_queue` ruleset rule **and** `evaluate`-mode rulesets both require a paid plan (merge queue → Team/Enterprise; evaluate → Enterprise); `byrzohod/climasite` is a personal **public repo on Free**, so the apply returns HTTP 422.
+- **Description:** The trunk merge queue is fully prepared but not applied: `test.yml` already has the `merge_group: types: [checks_requested]` trigger (inert) and `.github/rulesets/trunk-default-branch-protection.json` is the ready-to-apply spec (reconciled to require the `Test Summary` aggregator). Current gate = the existing **classic branch protection** (OPS-02). When the repo moves to a supporting plan, apply per `docs/runbooks/merge-queue.md` (evaluate → validate a green `merge_group` run → flip to active), then remove the classic protection to avoid double-gating.
+- **Affected:** `.github/rulesets/trunk-default-branch-protection.json`, repo plan, `docs/runbooks/merge-queue.md`.
+- **Acceptance:** A queued PR merges via `merge_group` with `Test Summary` green; classic protection retired; runbook updated to "active".
+- **Depends on:** a GitHub Team/Enterprise plan for `byrzohod/climasite` (owner). Low priority on a solo repo — the queue mainly serializes concurrent merges.
+
 ---
 
 ## 5. Testing (TS)
