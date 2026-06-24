@@ -1,5 +1,5 @@
 {
-  "_comment": "Trunk-based default-branch protection ruleset for climasite (adoption Phase B). SERVER-SIDE source of truth + the REAL merge gate. RECONCILED to climasite's CI: the required context is 'Test Summary' — the existing aggregator job that needs[] every gate (Unit/Integration/Frontend/Build/E2E/Lint&Format/Dependency-Audit/ADR/Test-Design/Coverage/PR-Checklist), so a green Test Summary on the merge_group run means all gates passed. (The vault template's integration/e2e/a11y/perf-budget contexts don't exist as standalone climasite jobs; a11y+Lighthouse are reporting-first, not gating.) Apply EVALUATE first, flip to active only after a green merge_group run: gh api --method POST repos/byrzohod/climasite/rulesets --input <(jq '.enforcement=\"evaluate\"' this-file). test.yml MUST keep 'merge_group: types:[checks_requested]' in on: or the queue stalls. 0 required approvals keeps AI auto-merge (PROC-01 decision). This supersedes the classic branch protection once active.",
+  "_comment": "DEFERRED / NOT APPLIED (2026-06-24): this is the ready-to-apply trunk ruleset for climasite, kept as an artifact for when the repo is on a GitHub plan that supports it. On the current Free plan for this personal public repo, BOTH the `merge_queue` rule AND `evaluate` enforcement are rejected (422 — merge queue needs Team/Enterprise; evaluate needs Enterprise). Until then the EXISTING classic branch protection is the gate (6 required checks incl. Test Summary, admins-included, no force-push/delete, PR-required) and the `merge_group` trigger in test.yml sits inert-but-ready. RECONCILED to climasite's CI: the required context is 'Test Summary' — the aggregator that needs[] every gate. To apply once on a supporting plan: gh api --method POST repos/byrzohod/climasite/rulesets --input <(jq 'del(._comment)|.enforcement=\"evaluate\"' this-file), validate a real merge_group run reports Test Summary green, then flip enforcement to active. See docs/runbooks/merge-queue.md.",
   "name": "trunk-default-branch-protection",
   "target": "branch",
   "enforcement": "active",
@@ -18,7 +18,6 @@
         "require_code_owner_review": false,
         "require_last_push_approval": false,
         "required_review_thread_resolution": true,
-        "automatic_copilot_code_review_enabled": false,
         "allowed_merge_methods": ["squash"]
       }
     },
