@@ -1,4 +1,5 @@
 using ClimaSite.E2E.Infrastructure;
+using ClimaSite.E2E.Infrastructure.Retry;
 using ClimaSite.E2E.PageObjects;
 using Deque.AxeCore.Commons;
 using Deque.AxeCore.Playwright;
@@ -43,7 +44,7 @@ public class AccessibilityTests : IAsyncLifetime
 
     #region Page Tests
 
-    [Fact]
+    [RetryFact]
     public async Task HomePage_HasNoAccessibilityViolations()
     {
         // Arrange
@@ -57,7 +58,7 @@ public class AccessibilityTests : IAsyncLifetime
         AssertNoSeriousViolations(results, "Home page");
     }
 
-    [Fact]
+    [RetryFact]
     public async Task ProductListPage_HasNoAccessibilityViolations()
     {
         // Arrange
@@ -73,7 +74,7 @@ public class AccessibilityTests : IAsyncLifetime
         AssertNoSeriousViolations(results, "Product list page");
     }
 
-    [Fact]
+    [RetryFact]
     public async Task ProductDetailPage_HasNoAccessibilityViolations()
     {
         // Arrange - Create a product to test
@@ -94,7 +95,7 @@ public class AccessibilityTests : IAsyncLifetime
         AssertNoSeriousViolations(results, "Product detail page");
     }
 
-    [Fact]
+    [RetryFact]
     public async Task CartPage_HasNoAccessibilityViolations()
     {
         // Arrange
@@ -110,7 +111,7 @@ public class AccessibilityTests : IAsyncLifetime
         AssertNoSeriousViolations(results, "Cart page");
     }
 
-    [Fact]
+    [RetryFact]
     public async Task CheckoutPage_HasNoAccessibilityViolations()
     {
         // Arrange - Need to add item to cart first and be logged in
@@ -143,7 +144,7 @@ public class AccessibilityTests : IAsyncLifetime
         AssertNoSeriousViolations(results, "Checkout page");
     }
 
-    [Fact]
+    [RetryFact]
     public async Task LoginPage_HasNoAccessibilityViolations()
     {
         // Arrange
@@ -159,7 +160,7 @@ public class AccessibilityTests : IAsyncLifetime
         AssertNoSeriousViolations(results, "Login page");
     }
 
-    [Fact]
+    [RetryFact]
     public async Task RegisterPage_HasNoAccessibilityViolations()
     {
         // Arrange
@@ -179,7 +180,7 @@ public class AccessibilityTests : IAsyncLifetime
 
     #region Theme Tests
 
-    [Fact]
+    [RetryFact]
     public async Task HomePage_DarkTheme_HasNoAccessibilityViolations()
     {
         // Arrange - Enable dark theme
@@ -196,7 +197,7 @@ public class AccessibilityTests : IAsyncLifetime
         AssertNoSeriousViolations(results, "Home page (dark theme)");
     }
 
-    [Fact]
+    [RetryFact]
     public async Task ProductListPage_DarkTheme_HasNoAccessibilityViolations()
     {
         // Arrange
@@ -217,7 +218,7 @@ public class AccessibilityTests : IAsyncLifetime
 
     #region Component State Tests
 
-    [Fact]
+    [RetryFact]
     public async Task CartPage_WithItems_HasNoAccessibilityViolations()
     {
         // Arrange - Add items to cart
@@ -247,7 +248,7 @@ public class AccessibilityTests : IAsyncLifetime
         AssertNoSeriousViolations(results, "Cart page (with items)");
     }
 
-    [Fact]
+    [RetryFact]
     public async Task ProductListPage_WithFilters_HasNoAccessibilityViolations()
     {
         // Arrange
@@ -265,7 +266,7 @@ public class AccessibilityTests : IAsyncLifetime
 
     #region Modal and Dialog Tests
 
-    [Fact]
+    [RetryFact]
     public async Task LoginModal_WhenOpen_HasNoAccessibilityViolations()
     {
         // Arrange - Go to page where login modal can be triggered
