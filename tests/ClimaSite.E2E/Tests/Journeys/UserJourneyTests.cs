@@ -30,7 +30,7 @@ public class UserJourneyTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _dataFactory.CleanupAsync();
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     /// <summary>
@@ -75,7 +75,6 @@ public class UserJourneyTests : IAsyncLifetime
 
         // Step 5: Add product to cart
         await productPage.AddToCartAsync();
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Verify cart updated
         var cartCount = await homePage.GetCartCountAsync();
@@ -145,9 +144,6 @@ public class UserJourneyTests : IAsyncLifetime
         // Step 2: Switch to Bulgarian
         await homePage.SelectLanguageAsync("bg");
 
-        // Wait for page to update
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
         // Step 3: Browse products
         var productPage = new ProductPage(_page);
         await productPage.NavigateToListAsync();
@@ -158,7 +154,6 @@ public class UserJourneyTests : IAsyncLifetime
 
         // Step 5: Switch to German
         await homePage.SelectLanguageAsync("de");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Step 6: View cart in German
         var cartPage = new CartPage(_page);
@@ -212,9 +207,8 @@ public class UserJourneyTests : IAsyncLifetime
     {
         // Step 1: Navigate to products page
         await _page.GotoAsync("/products");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-        // Step 2: Verify products are displayed
+        // Step 2: Verify products are displayed (web-first assertion auto-waits)
         await Assertions.Expect(_page.Locator("[data-testid='product-card']").First).ToBeVisibleAsync();
 
         // Step 3: Try to use filters if available
@@ -242,7 +236,8 @@ public class UserJourneyTests : IAsyncLifetime
     {
         // Step 1: Start on homepage
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.Locator("[data-testid='home-v3-hero']").First
+            .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
 
         // Step 2: Click on cart icon
         await _page.ClickAsync("[data-testid='cart-icon']");

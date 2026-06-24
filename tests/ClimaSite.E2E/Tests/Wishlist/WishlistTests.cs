@@ -30,7 +30,7 @@ public class WishlistTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _dataFactory.CleanupAsync();
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     [Fact]
@@ -126,14 +126,13 @@ public class WishlistTests : IAsyncLifetime
         try
         {
             await anonymousPage.GotoAsync(shareUrl);
-            await anonymousPage.WaitForLoadStateAsync(LoadState.NetworkIdle);
             await anonymousPage.Locator("[data-testid='wishlist-item']").First.WaitForAsync();
             (await anonymousPage.ContentAsync()).Should().Contain(product.Name);
             (await anonymousPage.Locator("[data-testid='remove-from-wishlist']").CountAsync()).Should().Be(0);
         }
         finally
         {
-            await anonymousPage.Context.CloseAsync();
+            await _fixture.CloseTracedContextAsync(anonymousPage);
         }
     }
 
@@ -145,7 +144,6 @@ public class WishlistTests : IAsyncLifetime
 
         var productPage = new ProductPage(_page);
         await productPage.NavigateAsync(product.Slug);
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         var wishlistButton = _page.Locator("[data-testid='add-to-wishlist']");
         await wishlistButton.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
@@ -168,7 +166,6 @@ public class WishlistTests : IAsyncLifetime
         var loginPage = new LoginPage(_page);
         await loginPage.NavigateAsync();
         await loginPage.LoginAsync(user.Email, user.Password);
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         (await loginPage.IsLoggedInAsync()).Should().BeTrue();
         return user;
     }
@@ -177,7 +174,6 @@ public class WishlistTests : IAsyncLifetime
     {
         var productPage = new ProductPage(_page);
         await productPage.NavigateAsync(product.Slug);
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         var wishlistButton = _page.Locator("[data-testid='add-to-wishlist']");
         await wishlistButton.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
@@ -194,7 +190,6 @@ public class WishlistTests : IAsyncLifetime
     private async Task NavigateToWishlistAsync()
     {
         await _page.GotoAsync("/wishlist");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await _page.WaitForSelectorAsync(
             "[data-testid='wishlist-items'], [data-testid='wishlist-empty']",
             new PageWaitForSelectorOptions { Timeout = 30000 });

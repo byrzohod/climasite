@@ -201,8 +201,10 @@ public class OrdersMobileTests : IAsyncLifetime
             }
             catch
             {
-                await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-                await Task.Delay(500);
+                // Fallback: settle on the orders list (cards / empty) instead of NetworkIdle.
+                await _page.WaitForSelectorAsync(
+                    "[data-testid='order-card'], [data-testid='orders-empty'], [data-testid='orders-empty-filtered']",
+                    new PageWaitForSelectorOptions { Timeout = 30000 });
             }
 
             // Assert
@@ -214,7 +216,10 @@ public class OrdersMobileTests : IAsyncLifetime
         {
             // Use browser back
             await _page.GoBackAsync();
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            // Settle on the orders list (cards / empty) instead of NetworkIdle.
+            await _page.WaitForSelectorAsync(
+                "[data-testid='order-card'], [data-testid='orders-empty'], [data-testid='orders-empty-filtered']",
+                new PageWaitForSelectorOptions { Timeout = 30000 });
 
             var currentUrl = _page.Url;
             currentUrl.Should().Contain("/account/orders");

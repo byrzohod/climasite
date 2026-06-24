@@ -25,7 +25,7 @@ public class ProductBrowsingTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _dataFactory.CleanupAsync();
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     [Fact]
@@ -40,7 +40,6 @@ public class ProductBrowsingTests : IAsyncLifetime
         await productPage.NavigateToListAsync();
 
         // Wait for products to load
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         try
         {
             await _page.WaitForSelectorAsync("[data-testid='product-card']", new PageWaitForSelectorOptions { Timeout = 30000 });
@@ -85,7 +84,6 @@ public class ProductBrowsingTests : IAsyncLifetime
 
         // Navigate to homepage
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Wait for search input to be ready
         await _page.WaitForSelectorAsync("[data-testid='search-input']", new PageWaitForSelectorOptions { State = WaitForSelectorState.Visible, Timeout = 30000 });
@@ -110,10 +108,7 @@ public class ProductBrowsingTests : IAsyncLifetime
         _page.Url.Should().Contain("/products");
         _page.Url.Should().Contain("search=");
 
-        // Wait for products to load
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-        // Verify search results title is visible
+        // Verify search results title is visible (web-first assertion auto-waits)
         var searchTitle = _page.Locator("[data-testid='search-results-title']");
         await Assertions.Expect(searchTitle).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
 

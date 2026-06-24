@@ -17,6 +17,20 @@ public class ThemeAndSettingsTests : IAsyncLifetime
     private IPage _page = default!;
     private TestDataFactory _dataFactory = default!;
 
+    // Eager, above-the-fold anchors used to settle navigations instead of NetworkIdle (Plan 19 A1).
+    private const string HomeHero = "[data-testid='home-v3-hero']";
+    private const string ProductListResolved =
+        "[data-testid='product-card'], [data-testid='products-empty'], [data-testid='product-list-error']";
+
+    // Settle the home page on its eager hero section (renders before any @defer block).
+    private Task SettleHomeAsync() =>
+        _page.Locator(HomeHero).First.WaitForAsync(
+            new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
+
+    // Settle the products list on its resolved state (cards / empty / error).
+    private Task SettleProductListAsync() =>
+        _page.WaitForSelectorAsync(ProductListResolved, new PageWaitForSelectorOptions { Timeout = 30000 });
+
     public ThemeAndSettingsTests(PlaywrightFixture fixture)
     {
         _fixture = fixture;
@@ -31,7 +45,7 @@ public class ThemeAndSettingsTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _dataFactory.CleanupAsync();
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     // E2E-070: Theme toggle switches between light and dark
@@ -40,7 +54,7 @@ public class ThemeAndSettingsTests : IAsyncLifetime
     {
         // Arrange
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await SettleHomeAsync();
 
         // Get initial theme state
         var initialIsDark = await _page.EvaluateAsync<bool>(
@@ -66,7 +80,7 @@ public class ThemeAndSettingsTests : IAsyncLifetime
     {
         // Arrange - Set dark mode
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await SettleHomeAsync();
 
         var themeToggle = _page.Locator("[data-testid='theme-toggle']");
         if (await themeToggle.IsVisibleAsync())
@@ -82,7 +96,7 @@ public class ThemeAndSettingsTests : IAsyncLifetime
 
             // Act - Navigate to different page
             await _page.GotoAsync("/products");
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await SettleProductListAsync();
 
             // Assert - Theme persists
             var stillDark = await _page.EvaluateAsync<bool>(
@@ -97,7 +111,7 @@ public class ThemeAndSettingsTests : IAsyncLifetime
     {
         // Arrange
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await SettleHomeAsync();
 
         var themeToggle = _page.Locator("[data-testid='theme-toggle']");
         if (await themeToggle.IsVisibleAsync())
@@ -111,7 +125,7 @@ public class ThemeAndSettingsTests : IAsyncLifetime
 
             // Act - Refresh page
             await _page.ReloadAsync();
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await SettleHomeAsync();
 
             // Assert - Theme persists
             var themeAfterRefresh = await _page.EvaluateAsync<bool>(
@@ -126,7 +140,7 @@ public class ThemeAndSettingsTests : IAsyncLifetime
     {
         // Arrange
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await SettleHomeAsync();
 
         // Act - Hover on the language selector to open dropdown (uses mouseenter event)
         var langSelector = _page.Locator("[data-testid='language-selector']");
@@ -150,7 +164,7 @@ public class ThemeAndSettingsTests : IAsyncLifetime
     {
         // Arrange
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await SettleHomeAsync();
 
         // Get initial text
         var initialContent = await _page.ContentAsync();
@@ -164,7 +178,8 @@ public class ThemeAndSettingsTests : IAsyncLifetime
             if (await bgOption.IsVisibleAsync())
             {
                 await bgOption.ClickAsync();
-                await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                // Language switch re-renders translations in place; settle on the eager hero.
+                await SettleHomeAsync();
 
                 // Assert - Content changed
                 var newContent = await _page.ContentAsync();
@@ -179,11 +194,11 @@ public class ThemeAndSettingsTests : IAsyncLifetime
     {
         // This test verifies language preference is maintained
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await SettleHomeAsync();
 
         // Navigate to products
         await _page.GotoAsync("/products");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await SettleProductListAsync();
 
         // Assert - Page loads successfully
         var content = await _page.ContentAsync();
@@ -196,7 +211,8 @@ public class ThemeAndSettingsTests : IAsyncLifetime
     {
         // Act - Navigate to non-existent page
         await _page.GotoAsync("/nonexistent-page-xyz123");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        // No stable testid for the 404/redirect outcome; the assertions below auto-wait.
+        await _page.WaitForLoadStateAsync(LoadState.Load);
 
         // Assert - Either 404 page or redirect to home/products
         var notFoundIndicator = _page.Locator("[data-testid='not-found'], .not-found, h1:has-text('404')");
@@ -213,7 +229,7 @@ public class ThemeAndSettingsTests : IAsyncLifetime
     {
         // Act
         await _page.GotoAsync("/this-page-does-not-exist");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.WaitForLoadStateAsync(LoadState.Load);
 
         // Assert - Can navigate away using specific selectors
         var homeLink = _page.Locator("[data-testid='go-home']");
@@ -226,7 +242,7 @@ public class ThemeAndSettingsTests : IAsyncLifetime
         if (await homeLink.First.IsVisibleAsync())
         {
             await homeLink.First.ClickAsync();
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await SettleHomeAsync();
             _page.Url.Should().Contain("/");
         }
     }
@@ -237,7 +253,7 @@ public class ThemeAndSettingsTests : IAsyncLifetime
     {
         // Act
         await _page.GotoAsync("/products/invalid-product-slug-xyz123");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.WaitForLoadStateAsync(LoadState.Load);
 
         // Assert - Shows error or redirects
         var content = await _page.ContentAsync();
@@ -253,7 +269,7 @@ public class ThemeAndSettingsTests : IAsyncLifetime
 
         // For now, verify the app handles slow responses
         await _page.GotoAsync("/products");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await SettleProductListAsync();
 
         // Assert - Page loads or shows loading state
         var content = await _page.ContentAsync();
@@ -266,7 +282,8 @@ public class ThemeAndSettingsTests : IAsyncLifetime
     {
         // Navigate to login page
         await _page.GotoAsync("/login");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.Locator("[data-testid='login-email']").First
+            .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
 
         // Try to submit empty form - use specific login submit button
         var submitButton = _page.Locator("[data-testid='login-submit']");
@@ -293,14 +310,14 @@ public class ThemeAndSettingsTests : IAsyncLifetime
 
         // Navigate to protected page
         await _page.GotoAsync("/account");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.WaitForLoadStateAsync(LoadState.Load);
 
         // Clear storage to simulate timeout
         await _page.EvaluateAsync("() => { localStorage.clear(); sessionStorage.clear(); }");
 
         // Try to access another protected page
         await _page.GotoAsync("/orders");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.WaitForLoadStateAsync(LoadState.Load);
 
         // Assert - Should redirect to login or show login prompt
         var url = _page.Url;
@@ -314,14 +331,14 @@ public class ThemeAndSettingsTests : IAsyncLifetime
     {
         // This tests that the app doesn't completely crash
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await SettleHomeAsync();
 
         // Navigate through the app
         await _page.GotoAsync("/products");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await SettleProductListAsync();
 
         await _page.GotoAsync("/cart");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.WaitForLoadStateAsync(LoadState.Load);
 
         // Assert - App remains functional
         var content = await _page.ContentAsync();
@@ -336,7 +353,7 @@ public class ThemeAndSettingsTests : IAsyncLifetime
         await _page.Context.ClearCookiesAsync();
 
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await SettleHomeAsync();
 
         // Look for cookie consent
         var cookieBanner = _page.Locator("[data-testid='cookie-consent'], .cookie-banner, .cookie-consent");
@@ -348,7 +365,7 @@ public class ThemeAndSettingsTests : IAsyncLifetime
     public async Task Accessibility_KeyboardNavigation()
     {
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await SettleHomeAsync();
 
         // Tab through focusable elements
         await _page.Keyboard.PressAsync("Tab");
@@ -368,7 +385,7 @@ public class ThemeAndSettingsTests : IAsyncLifetime
         await _page.SetViewportSizeAsync(375, 812);
 
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await SettleHomeAsync();
 
         // Assert - Page renders without horizontal overflow
         var hasHorizontalScroll = await _page.EvaluateAsync<bool>(
@@ -387,7 +404,7 @@ public class ThemeAndSettingsTests : IAsyncLifetime
         await _page.SetViewportSizeAsync(768, 1024);
 
         await _page.GotoAsync("/products");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await SettleProductListAsync();
 
         // Assert - Products display
         var content = await _page.ContentAsync();

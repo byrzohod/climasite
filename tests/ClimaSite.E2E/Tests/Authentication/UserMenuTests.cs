@@ -30,7 +30,7 @@ public class UserMenuTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _dataFactory.CleanupAsync();
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     private async Task LoginAsUserAsync(TestUser user)
@@ -109,7 +109,6 @@ public class UserMenuTests : IAsyncLifetime
         await _page.ClickAsync("[data-testid='logout-button']");
 
         // Assert - User is logged out, login button visible
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await Assertions.Expect(_page.Locator("[data-testid='login-button']")).ToBeVisibleAsync();
     }
 
@@ -119,7 +118,6 @@ public class UserMenuTests : IAsyncLifetime
     {
         // Arrange & Act - Navigate to home page without logging in
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Assert - Login button visible, user menu not visible
         await Assertions.Expect(_page.Locator("[data-testid='login-button']")).ToBeVisibleAsync();

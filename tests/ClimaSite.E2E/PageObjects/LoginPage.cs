@@ -15,7 +15,7 @@ public class LoginPage : BasePage
     public async Task NavigateAsync()
     {
         await Page.GotoAsync("/login");
-        await WaitForLoadAsync();
+        await SettleAsync("[data-testid='login-email']");
     }
 
     public async Task LoginAsync(string email, string password)
@@ -24,24 +24,23 @@ public class LoginPage : BasePage
         await FillAsync(PasswordInput, password);
         await ClickAsync(SubmitButton);
 
-        // Wait for either navigation (success) or error message (failure)
+        // Wait for either navigation (success) or error message (failure). The post-login page
+        // settles via locator auto-waiting in the caller; do not wait on NetworkIdle here.
         try
         {
             await Page.WaitForURLAsync(url => !url.Contains("/login"), new PageWaitForURLOptions { Timeout = 5000 });
-            // Additional wait for any pending requests to complete
-            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         }
         catch (TimeoutException)
         {
-            // No navigation means login failed or validation error - wait for error to appear
+            // No navigation means login failed or validation error - wait for error to appear.
+            // Tolerated if neither appears; callers assert the resulting state themselves.
             try
             {
                 await Page.WaitForSelectorAsync($"{ErrorMessage}, [data-testid='validation-error']", new PageWaitForSelectorOptions { Timeout = 3000 });
             }
             catch
             {
-                // If no error appears either, just wait for network to settle
-                await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                // Tolerated — no navigation and no visible error surfaced.
             }
         }
     }
@@ -71,6 +70,6 @@ public class LoginPage : BasePage
     public async Task GoToRegisterAsync()
     {
         await ClickAsync(RegisterLink);
-        await WaitForLoadAsync();
+        await SettleAsync("[data-testid='register-email']");
     }
 }

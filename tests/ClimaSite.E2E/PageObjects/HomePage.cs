@@ -19,26 +19,29 @@ public class HomePage : BasePage
     public async Task NavigateAsync()
     {
         await Page.GotoAsync("/");
-        await WaitForLoadAsync();
+        // home-v3-hero renders eagerly (above any @defer block) — a reliable home settle anchor.
+        await SettleAsync("[data-testid='home-v3-hero']");
     }
 
     public async Task SearchAsync(string query)
     {
         await FillAsync(SearchInput, query);
         await ClickAsync(SearchButton);
-        await WaitForLoadAsync();
+        // Settle on the search route rather than NetworkIdle.
+        await Page.WaitForURLAsync(url => url.Contains("search") || url.Contains("products"),
+            new PageWaitForURLOptions { Timeout = 30000 });
     }
 
     public async Task GoToLoginAsync()
     {
         await ClickAsync(LoginButton);
-        await WaitForLoadAsync();
+        await SettleAsync("[data-testid='login-email']");
     }
 
     public async Task GoToCartAsync()
     {
         await ClickAsync(CartIcon);
-        await WaitForLoadAsync();
+        await Page.WaitForURLAsync(url => url.Contains("/cart"), new PageWaitForURLOptions { Timeout = 30000 });
     }
 
     public async Task<int> GetCartCountAsync()
@@ -66,7 +69,8 @@ public class HomePage : BasePage
         await Page.WaitForSelectorAsync("[data-testid='language-dropdown']", new PageWaitForSelectorOptions { Timeout = 5000 });
         // Click on the specific language option
         await Page.ClickAsync($"[data-testid='language-{languageCode}']");
-        await WaitForLoadAsync();
+        // Language switch re-renders translations in place (no navigation); settle on the hero.
+        await SettleAsync("[data-testid='home-v3-hero']");
     }
 
     public async Task ToggleThemeAsync()

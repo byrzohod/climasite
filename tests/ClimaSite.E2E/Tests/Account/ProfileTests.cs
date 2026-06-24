@@ -30,7 +30,7 @@ public class ProfileTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _dataFactory.CleanupAsync();
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     private async Task LoginAndNavigateToProfile()
@@ -40,11 +40,11 @@ public class ProfileTests : IAsyncLifetime
         var loginPage = new LoginPage(_page);
         await loginPage.NavigateAsync();
         await loginPage.LoginAsync(user.Email, user.Password);
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-        // Navigate to profile page
+        // Navigate to profile page and settle on the profile shell rather than NetworkIdle.
         await _page.GotoAsync("/account/profile");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.Locator("[data-testid='profile-page']").First
+            .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 30000 });
     }
 
     [Fact]
@@ -64,9 +64,9 @@ public class ProfileTests : IAsyncLifetime
     {
         // Arrange & Act - Try to access profile without logging in
         await _page.GotoAsync("/account/profile");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-        // Assert - Redirected to login
+        // Assert - the auth guard redirects to login; wait for that route then confirm.
+        await _page.WaitForURLAsync(url => url.Contains("/login"), new PageWaitForURLOptions { Timeout = 30000 });
         _page.Url.Should().Contain("/login");
     }
 
@@ -137,13 +137,10 @@ public class ProfileTests : IAsyncLifetime
         await _page.SelectOptionAsync("[data-testid='profile-language']", "bg");
         await _page.ClickAsync("[data-testid='preferences-submit']");
 
-        // Wait for save
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-        // Assert - Language was saved (page should reload with Bulgarian)
-        // Verify the dropdown still has Bulgarian selected
-        var selectedValue = await _page.Locator("[data-testid='profile-language']").InputValueAsync();
-        selectedValue.Should().Be("bg");
+        // Assert - Language was saved; the dropdown retains Bulgarian. Web-first assertion
+        // auto-waits for the save to settle instead of NetworkIdle.
+        await Assertions.Expect(_page.Locator("[data-testid='profile-language']"))
+            .ToHaveValueAsync("bg", new LocatorAssertionsToHaveValueOptions { Timeout = 30000 });
     }
 
     [Fact]

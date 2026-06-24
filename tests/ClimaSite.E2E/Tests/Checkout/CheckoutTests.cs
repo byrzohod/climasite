@@ -29,7 +29,7 @@ public class CheckoutTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _dataFactory.CleanupAsync();
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     [Fact]
@@ -214,7 +214,6 @@ public class CheckoutTests : IAsyncLifetime
         url.Should().Contain("cart", "Should be back on cart page");
 
         // Wait for cart to reload after navigation
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await _page.WaitForSelectorAsync("[data-testid='cart-item']", new PageWaitForSelectorOptions { Timeout = 30000 });
 
         // Check cart has items before modifying
@@ -266,9 +265,8 @@ public class CheckoutTests : IAsyncLifetime
 
         // Go to addresses page and create a saved address
         await _page.GotoAsync($"{_fixture.BaseUrl}/account/addresses");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
-        // Click add address button
+        // Click add address button (auto-waits for the element to be actionable)
         await _page.ClickAsync("[data-testid='add-address-btn']");
         await _page.WaitForSelectorAsync("[data-testid='address-modal']");
 

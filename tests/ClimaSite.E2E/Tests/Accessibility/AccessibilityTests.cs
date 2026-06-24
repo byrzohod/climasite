@@ -36,7 +36,7 @@ public class AccessibilityTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _dataFactory.CleanupAsync();
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     #region Page Tests
@@ -46,7 +46,7 @@ public class AccessibilityTests : IAsyncLifetime
     {
         // Arrange
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await SettleHomeAsync();
 
         // Act
         var results = await RunAccessibilityScan();
@@ -60,7 +60,6 @@ public class AccessibilityTests : IAsyncLifetime
     {
         // Arrange
         await _page.GotoAsync("/products");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Wait for products to load
         await WaitForContentToLoad("[data-testid='product-card'], [data-testid='no-products']");
@@ -82,7 +81,6 @@ public class AccessibilityTests : IAsyncLifetime
         );
 
         await _page.GotoAsync($"/products/{product.Slug}");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Wait for product details to load
         await WaitForContentToLoad("[data-testid='product-name'], [data-testid='product-price']");
@@ -99,7 +97,6 @@ public class AccessibilityTests : IAsyncLifetime
     {
         // Arrange
         await _page.GotoAsync("/cart");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Wait for cart content to load
         await WaitForContentToLoad("[data-testid='cart-items'], [data-testid='empty-cart']");
@@ -133,7 +130,6 @@ public class AccessibilityTests : IAsyncLifetime
 
         // Navigate to checkout
         await _page.GotoAsync("/checkout");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Wait for checkout form to load
         await WaitForContentToLoad("[data-testid='checkout-form'], [data-testid='checkout-summary']");
@@ -150,7 +146,6 @@ public class AccessibilityTests : IAsyncLifetime
     {
         // Arrange
         await _page.GotoAsync("/auth/login");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Wait for login form to load
         await WaitForContentToLoad("[data-testid='login-form'], [data-testid='email-input']");
@@ -167,7 +162,6 @@ public class AccessibilityTests : IAsyncLifetime
     {
         // Arrange
         await _page.GotoAsync("/auth/register");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Wait for register form to load
         await WaitForContentToLoad("[data-testid='register-form'], [data-testid='email-input']");
@@ -188,7 +182,7 @@ public class AccessibilityTests : IAsyncLifetime
     {
         // Arrange - Enable dark theme
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await SettleHomeAsync();
 
         // Toggle to dark theme if not already
         await EnableDarkTheme();
@@ -205,7 +199,6 @@ public class AccessibilityTests : IAsyncLifetime
     {
         // Arrange
         await _page.GotoAsync("/products");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await WaitForContentToLoad("[data-testid='product-card'], [data-testid='no-products']");
 
         // Enable dark theme
@@ -241,10 +234,9 @@ public class AccessibilityTests : IAsyncLifetime
         await productPage.NavigateAsync(product.Slug);
         await productPage.AddToCartAsync();
 
-        // Navigate to cart
+        // Navigate to cart (CartPage.NavigateAsync already settles on the cart content).
         var cartPage = new CartPage(_page);
         await cartPage.NavigateAsync();
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Act
         var results = await RunAccessibilityScan();
@@ -258,7 +250,6 @@ public class AccessibilityTests : IAsyncLifetime
     {
         // Arrange
         await _page.GotoAsync("/products?category=air-conditioners");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await WaitForContentToLoad("[data-testid='product-card'], [data-testid='no-products']");
 
         // Act
@@ -277,20 +268,20 @@ public class AccessibilityTests : IAsyncLifetime
     {
         // Arrange - Go to page where login modal can be triggered
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await SettleHomeAsync();
 
         // Try to open login modal via header login button
         var loginButton = _page.Locator("[data-testid='header-login-button'], [data-testid='login-link']");
         if (await loginButton.IsVisibleAsync())
         {
             await loginButton.ClickAsync();
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await _page.WaitForLoadStateAsync(LoadState.Load);
         }
         else
         {
             // Navigate directly to login page
             await _page.GotoAsync("/auth/login");
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await _page.WaitForLoadStateAsync(LoadState.Load);
         }
 
         // Act
@@ -363,6 +354,14 @@ public class AccessibilityTests : IAsyncLifetime
             }
         }
     }
+
+    /// <summary>
+    /// Settles the home page on its eager hero section (renders before any @defer block) instead of
+    /// NetworkIdle, which is unreliable here (the layout lazy-loads header/footer via a timer).
+    /// </summary>
+    private Task SettleHomeAsync() =>
+        _page.Locator("[data-testid='home-v3-hero']").First.WaitForAsync(
+            new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
 
     /// <summary>
     /// Waits for content to load on the page.

@@ -71,7 +71,7 @@ public class CardPaymentE2ETests : IClassFixture<CardPaymentDataFixture>, IAsync
     {
         // Per-test data is cleaned up once at the fixture level (shared correlation id). Only the
         // page/context is torn down per test here.
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     [Fact]

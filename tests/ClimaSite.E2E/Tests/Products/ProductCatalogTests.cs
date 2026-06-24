@@ -17,6 +17,11 @@ public class ProductCatalogTests : IAsyncLifetime
     private IPage _page = default!;
     private TestDataFactory _dataFactory = default!;
 
+    // The product-list page resolves to one of these states (cards / empty / error). Settling on it
+    // replaces NetworkIdle: it proves the list finished loading without depending on a quiet network.
+    private const string ProductListResolved =
+        "[data-testid='product-card'], [data-testid='products-empty'], [data-testid='product-list-error']";
+
     public ProductCatalogTests(PlaywrightFixture fixture)
     {
         _fixture = fixture;
@@ -31,7 +36,7 @@ public class ProductCatalogTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _dataFactory.CleanupAsync();
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     #region Product List Display Tests
@@ -51,10 +56,7 @@ public class ProductCatalogTests : IAsyncLifetime
         var productPage = new ProductPage(_page);
         await productPage.NavigateToListAsync();
 
-        // Wait for products to load
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-        // Assert - Product list should display
+        // Assert - Product list should display (web-first assertion auto-waits for load)
         var productCards = _page.Locator("[data-testid='product-card']");
         await Assertions.Expect(productCards.First).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
 
@@ -71,7 +73,10 @@ public class ProductCatalogTests : IAsyncLifetime
     {
         // Act - Navigate to products with a non-existent search term
         await _page.GotoAsync("/products?search=xyznonexistentproduct99999");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        // Settle on the resolved list state (cards / empty / error) rather than NetworkIdle.
+        await _page.WaitForSelectorAsync(
+            "[data-testid='product-card'], [data-testid='products-empty'], [data-testid='product-list-error']",
+            new PageWaitForSelectorOptions { Timeout = 30000 });
 
         // Assert - Either empty state message or no product cards
         var productCards = _page.Locator("[data-testid='product-card']");
@@ -108,7 +113,8 @@ public class ProductCatalogTests : IAsyncLifetime
         var product = await _dataFactory.CreateProductAsync(name: "Category Filter Test AC", price: 1599.99m);
 
         await _page.GotoAsync("/products");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.WaitForSelectorAsync(ProductListResolved,
+            new PageWaitForSelectorOptions { Timeout = 30000 });
 
         // Act - Look for category filter and apply it
         var categoryFilter = _page.Locator("[data-testid='category-filter'], [data-testid='filter-category'], .category-filter");
@@ -120,7 +126,8 @@ public class ProductCatalogTests : IAsyncLifetime
             if (await categoryItem.IsVisibleAsync())
             {
                 await categoryItem.ClickAsync();
-                await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                await _page.WaitForSelectorAsync(ProductListResolved,
+                    new PageWaitForSelectorOptions { Timeout = 30000 });
             }
         }
         else
@@ -130,7 +137,8 @@ public class ProductCatalogTests : IAsyncLifetime
             if (categoryId != Guid.Empty)
             {
                 await _page.GotoAsync($"/products?category={categoryId}");
-                await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                await _page.WaitForSelectorAsync(ProductListResolved,
+                    new PageWaitForSelectorOptions { Timeout = 30000 });
             }
         }
 
@@ -157,7 +165,8 @@ public class ProductCatalogTests : IAsyncLifetime
 
         // Act - Navigate with price filter via URL
         await _page.GotoAsync("/products?minPrice=500&maxPrice=1000");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.WaitForSelectorAsync(ProductListResolved,
+            new PageWaitForSelectorOptions { Timeout = 30000 });
 
         // Assert - URL contains price filter parameters
         _page.Url.Should().Contain("minPrice=500");
@@ -191,7 +200,8 @@ public class ProductCatalogTests : IAsyncLifetime
         await _dataFactory.CreateProductAsync(name: "Brand Filter Test AC", price: 1199.99m);
 
         await _page.GotoAsync("/products");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.WaitForSelectorAsync(ProductListResolved,
+            new PageWaitForSelectorOptions { Timeout = 30000 });
 
         // Act - Look for brand filter
         var brandFilter = _page.Locator("[data-testid='brand-filter'], [data-testid='filter-brand'], .brand-filter");
@@ -203,7 +213,8 @@ public class ProductCatalogTests : IAsyncLifetime
             if (await brandItem.IsVisibleAsync())
             {
                 await brandItem.ClickAsync();
-                await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                await _page.WaitForSelectorAsync(ProductListResolved,
+                    new PageWaitForSelectorOptions { Timeout = 30000 });
 
                 // URL should contain brand parameter
                 _page.Url.Should().Contain("brand", "URL should contain brand filter");
@@ -213,7 +224,8 @@ public class ProductCatalogTests : IAsyncLifetime
         {
             // Brand filter may not be implemented - test via URL if parameter is supported
             await _page.GotoAsync("/products?brand=TestBrand");
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await _page.WaitForSelectorAsync(ProductListResolved,
+                new PageWaitForSelectorOptions { Timeout = 30000 });
         }
 
         // Assert - Page loads successfully
@@ -238,7 +250,8 @@ public class ProductCatalogTests : IAsyncLifetime
 
         // Act - Navigate with sort parameter
         await _page.GotoAsync("/products?sort=price-asc");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.WaitForSelectorAsync(ProductListResolved,
+            new PageWaitForSelectorOptions { Timeout = 30000 });
 
         // Assert - URL contains sort parameter
         _page.Url.Should().Contain("sort=price-asc", "URL should contain ascending price sort");
@@ -266,7 +279,8 @@ public class ProductCatalogTests : IAsyncLifetime
 
         // Act - Navigate with sort parameter
         await _page.GotoAsync("/products?sort=price-desc");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.WaitForSelectorAsync(ProductListResolved,
+            new PageWaitForSelectorOptions { Timeout = 30000 });
 
         // Assert - URL contains sort parameter
         _page.Url.Should().Contain("sort=price-desc", "URL should contain descending price sort");
@@ -290,7 +304,8 @@ public class ProductCatalogTests : IAsyncLifetime
 
         // Act - Navigate with name sort parameter
         await _page.GotoAsync("/products?sort=name-asc");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.WaitForSelectorAsync(ProductListResolved,
+            new PageWaitForSelectorOptions { Timeout = 30000 });
 
         // Assert - URL contains sort parameter
         _page.Url.Should().Contain("sort=name", "URL should contain name sort");
@@ -301,7 +316,8 @@ public class ProductCatalogTests : IAsyncLifetime
         {
             // Change sort via dropdown
             await sortDropdown.SelectOptionAsync(new SelectOptionValue { Value = "name-asc" });
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await _page.WaitForSelectorAsync(ProductListResolved,
+                new PageWaitForSelectorOptions { Timeout = 30000 });
         }
 
         // Verify page loads
@@ -328,7 +344,8 @@ public class ProductCatalogTests : IAsyncLifetime
 
         // Act - Navigate to products page
         await _page.GotoAsync("/products");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.WaitForSelectorAsync(ProductListResolved,
+            new PageWaitForSelectorOptions { Timeout = 30000 });
 
         // Look for pagination controls
         var paginationControls = _page.Locator("[data-testid='pagination'], .pagination, nav[aria-label*='pagination']");
@@ -340,7 +357,9 @@ public class ProductCatalogTests : IAsyncLifetime
             if (await nextButton.IsVisibleAsync() && await nextButton.IsEnabledAsync())
             {
                 await nextButton.ClickAsync();
-                await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+                // The list re-renders for page 2; wait for the resolved state then assert the URL.
+                await _page.WaitForURLAsync(url => url.Contains("page=2"),
+                    new PageWaitForURLOptions { Timeout = 30000 });
 
                 // URL should contain page parameter
                 _page.Url.Should().Contain("page=2", "URL should indicate page 2 after clicking next");
@@ -350,7 +369,8 @@ public class ProductCatalogTests : IAsyncLifetime
         {
             // Navigate directly via URL to test pagination support
             await _page.GotoAsync("/products?page=2");
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await _page.WaitForSelectorAsync(ProductListResolved,
+                new PageWaitForSelectorOptions { Timeout = 30000 });
 
             // Verify page parameter is in URL
             _page.Url.Should().Contain("page=2", "URL should support page parameter");
@@ -472,7 +492,6 @@ public class ProductCatalogTests : IAsyncLifetime
             if (await variantOption.IsVisibleAsync())
             {
                 await variantOption.ClickAsync();
-                await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
                 // Assert - Variant selection should work (price may update, URL may change)
                 await Assertions.Expect(variantOption).ToBeVisibleAsync();
@@ -521,7 +540,6 @@ public class ProductCatalogTests : IAsyncLifetime
     {
         // Arrange
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Act - Open mega menu
         var megaMenuTrigger = _page.Locator("[data-testid='mega-menu-trigger']");
@@ -548,7 +566,8 @@ public class ProductCatalogTests : IAsyncLifetime
 
         // Navigate to the category page directly (more reliable than clicking on hover menu)
         await _page.GotoAsync(href!);
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.WaitForURLAsync(url => url.Contains("/products"),
+            new PageWaitForURLOptions { Timeout = 30000 });
 
         // Assert - Should be on products page with category filter
         _page.Url.Should().Contain("/products", "Should navigate to products page");
@@ -571,7 +590,8 @@ public class ProductCatalogTests : IAsyncLifetime
 
         // Act - Apply multiple filters via URL
         await _page.GotoAsync("/products?minPrice=500&maxPrice=1500&sort=price-asc");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.WaitForSelectorAsync(ProductListResolved,
+            new PageWaitForSelectorOptions { Timeout = 30000 });
 
         // Assert - All filter parameters present in URL
         _page.Url.Should().Contain("minPrice=500");
@@ -592,7 +612,8 @@ public class ProductCatalogTests : IAsyncLifetime
     {
         // Arrange - Navigate with filters
         await _page.GotoAsync("/products?minPrice=1000&maxPrice=2000&sort=price-desc");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.WaitForSelectorAsync(ProductListResolved,
+            new PageWaitForSelectorOptions { Timeout = 30000 });
 
         // Act - Look for clear filters button
         var clearButton = _page.Locator("[data-testid='clear-filters'], [data-testid='reset-filters'], .clear-filters");
@@ -600,7 +621,8 @@ public class ProductCatalogTests : IAsyncLifetime
         if (await clearButton.IsVisibleAsync())
         {
             await clearButton.ClickAsync();
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await _page.WaitForSelectorAsync(ProductListResolved,
+                new PageWaitForSelectorOptions { Timeout = 30000 });
 
             // URL should not contain filter parameters (or be base products URL)
             _page.Url.Should().NotContain("minPrice=1000", "Filters should be cleared");
@@ -609,7 +631,8 @@ public class ProductCatalogTests : IAsyncLifetime
         {
             // Clear by navigating to base URL
             await _page.GotoAsync("/products");
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await _page.WaitForSelectorAsync(ProductListResolved,
+                new PageWaitForSelectorOptions { Timeout = 30000 });
         }
 
         // Assert - Base products page loads
@@ -631,7 +654,8 @@ public class ProductCatalogTests : IAsyncLifetime
         await _page.SetViewportSizeAsync(375, 812);
 
         await _page.GotoAsync("/products");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.WaitForSelectorAsync(ProductListResolved,
+            new PageWaitForSelectorOptions { Timeout = 30000 });
 
         // Act - Look for mobile filter toggle
         var filterToggle = _page.Locator("[data-testid='mobile-filter-toggle'], [data-testid='filter-toggle'], .filter-toggle");

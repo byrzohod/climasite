@@ -32,7 +32,7 @@ public class GuestCheckoutCompletionTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _dataFactory.CleanupAsync();
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     [Fact]
@@ -127,7 +127,6 @@ public class GuestCheckoutCompletionTests : IAsyncLifetime
             freshPage.SetDefaultTimeout(30000);
 
             await freshPage.GotoAsync(confirmationUrl);
-            await freshPage.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
             // Assert - the order details load for the anonymous visitor (no login redirect, no error).
             await Assertions.Expect(freshPage.Locator("[data-testid='order-confirmation-page']")).ToBeVisibleAsync(

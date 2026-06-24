@@ -29,7 +29,7 @@ public class ReviewsQATests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _dataFactory.CleanupAsync();
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     private async Task OpenReviewsTabAsync()
@@ -166,9 +166,8 @@ public class ReviewsQATests : IAsyncLifetime
         var submitBtn = _page.Locator("[data-testid='submit-review-btn']");
         await submitBtn.ClickAsync();
 
-        // Wait for submission (form should close or success message appears)
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
+        // Wait for submission (form should close or success message appears) — the polling loop
+        // below settles on the form closing or an error surfacing, so no NetworkIdle is needed.
         var formError = _page.Locator(".form-error");
         var deadline = DateTime.UtcNow.AddSeconds(10);
         while (DateTime.UtcNow < deadline &&
@@ -266,12 +265,9 @@ public class ReviewsQATests : IAsyncLifetime
         // Select rating high sort option
         await sortDropdown.SelectOptionAsync("rating_high");
 
-        // Wait for potential reload
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
-        // Verify the selection persisted
-        var selectedValue = await sortDropdown.InputValueAsync();
-        selectedValue.Should().Be("rating_high", "Rating high option should be selected");
+        // Verify the selection persisted (web-first assertion auto-waits for any reload).
+        await Assertions.Expect(sortDropdown)
+            .ToHaveValueAsync("rating_high", new LocatorAssertionsToHaveValueOptions { Timeout = 30000 });
     }
 
     #endregion
@@ -334,9 +330,6 @@ public class ReviewsQATests : IAsyncLifetime
         var submitBtn = _page.Locator("[data-testid='submit-question-btn']");
         await submitBtn.ClickAsync();
 
-        // Wait for submission
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
-
         // Question form should close or show success message
         // Questions go through moderation, so we just verify the submission was accepted
         await Task.Delay(1000); // Brief wait for UI update
@@ -398,9 +391,6 @@ public class ReviewsQATests : IAsyncLifetime
         // Submit the answer
         var submitBtn = _page.Locator("[data-testid='submit-answer-btn']");
         await submitBtn.ClickAsync();
-
-        // Wait for submission
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Answer form should close after submission (answers go through moderation)
         await Assertions.Expect(answerForm).Not.ToBeVisibleAsync(

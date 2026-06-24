@@ -36,7 +36,7 @@ public class MiniCartOverlayTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _dataFactory.CleanupAsync();
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     /// <summary>Creates a product and adds it to the (guest) cart through the real product-detail UI.</summary>

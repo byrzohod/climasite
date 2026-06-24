@@ -17,7 +17,6 @@ public class CartPage : BasePage
     public async Task NavigateAsync()
     {
         await Page.GotoAsync("/cart");
-        await WaitForLoadAsync();
         // Wait for cart page to fully load (either empty message or cart items)
         try
         {
@@ -67,12 +66,8 @@ public class CartPage : BasePage
         await Page.WaitForSelectorAsync(CheckoutButton, new PageWaitForSelectorOptions { Timeout = 5000 });
 
         await ClickAsync(CheckoutButton);
-        // Wait for navigation to complete
+        // Wait for navigation to complete; the destination page's own waits handle readiness.
         await Page.WaitForURLAsync(url => url.Contains("checkout") || url.Contains("login"), new PageWaitForURLOptions { Timeout = 30000 });
-        await WaitForLoadAsync();
-
-        // Wait for checkout page content to load
-        await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }
 
     public async Task RemoveItemAsync(int index = 0)
@@ -115,8 +110,9 @@ public class CartPage : BasePage
             await input.DispatchEventAsync("change", new { });
             await input.DispatchEventAsync("blur", new { });
 
-            // Wait for network to settle after the update
-            await Page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            // Settle on the cart total being present rather than NetworkIdle; the recalculated
+            // value is auto-waited for by the caller's GetTotalAsync read.
+            await Page.WaitForSelectorAsync(CartTotal, new PageWaitForSelectorOptions { Timeout = 30000 });
         }
     }
 
@@ -131,6 +127,5 @@ public class CartPage : BasePage
         await Page.WaitForSelectorAsync(ContinueShoppingButton, new PageWaitForSelectorOptions { Timeout = 5000 });
         await ClickAsync(ContinueShoppingButton);
         await Page.WaitForURLAsync(url => url.Contains("products"), new PageWaitForURLOptions { Timeout = 30000 });
-        await WaitForLoadAsync();
     }
 }

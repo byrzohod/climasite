@@ -25,7 +25,7 @@ public class HomeV3Tests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _dataFactory.CleanupAsync();
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     [Fact]
@@ -87,7 +87,8 @@ public class HomeV3Tests : IAsyncLifetime
     public async Task HomeV3_PrimaryInteractionsSupportKeyboardAndRouting()
     {
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.Locator("[data-testid='home-v3-hero']").First
+            .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
 
         var slider = _page.Locator("[data-testid='home-v3-area-slider']");
         await slider.FocusAsync();
@@ -128,7 +129,8 @@ public class HomeV3Tests : IAsyncLifetime
         page.SetDefaultNavigationTimeout(30000);
 
         await page.GotoAsync("/");
-        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await page.Locator("[data-testid='home-v3-hero']").First
+            .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
 
         var reducedMotion = await page.EvaluateAsync<bool>(
             "() => window.matchMedia('(prefers-reduced-motion: reduce)').matches");

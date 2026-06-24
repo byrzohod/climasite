@@ -31,7 +31,7 @@ public class CompletePurchaseTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _dataFactory.CleanupAsync();
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     // E2E-060: User login → Browse → Add to Cart → Checkout flow
@@ -53,7 +53,6 @@ public class CompletePurchaseTests : IAsyncLifetime
 
         // Step 2: Browse products
         await _page.GotoAsync("/products");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await Assertions.Expect(_page.Locator("[data-testid='product-card']").First).ToBeVisibleAsync();
 
         // Step 3: View product detail
@@ -62,7 +61,6 @@ public class CompletePurchaseTests : IAsyncLifetime
 
         // Step 4: Add to cart
         await _page.ClickAsync("[data-testid='add-to-cart']");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Verify cart badge updated
         await Assertions.Expect(_page.Locator("[data-testid='cart-count']")).ToBeVisibleAsync();
@@ -159,7 +157,6 @@ public class CompletePurchaseTests : IAsyncLifetime
 
         // Step 1: Open mega menu and hover on a category to show subcategories
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         await _page.HoverAsync("[data-testid='mega-menu-trigger']");
         await _page.WaitForSelectorAsync("[data-testid='mega-menu-dropdown']");
 
@@ -195,7 +192,6 @@ public class CompletePurchaseTests : IAsyncLifetime
     {
         // Navigate to homepage
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Verify search input exists and can be typed into
         var searchInput = _page.Locator("[data-testid='search-input']");
@@ -220,7 +216,6 @@ public class CompletePurchaseTests : IAsyncLifetime
 
         // Navigate to the specific product page to ensure we add the right product
         await _page.GotoAsync($"/products/{product.Slug}");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Wait for the add-to-cart button to be available
         var addToCartButton = _page.Locator("[data-testid='add-to-cart']");
@@ -228,9 +223,6 @@ public class CompletePurchaseTests : IAsyncLifetime
 
         // Click add to cart
         await addToCartButton.ClickAsync();
-
-        // Wait for the cart API call to complete and cart count to update
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Get cart count with extended timeout (API needs to respond)
         await Assertions.Expect(_page.Locator("[data-testid='cart-count']")).ToBeVisibleAsync(
@@ -240,7 +232,6 @@ public class CompletePurchaseTests : IAsyncLifetime
 
         // Navigate to different pages
         await _page.GotoAsync("/about");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Assert - Cart count persists (with timeout for header to render)
         await Assertions.Expect(_page.Locator("[data-testid='cart-count']")).ToBeVisibleAsync(
@@ -250,7 +241,6 @@ public class CompletePurchaseTests : IAsyncLifetime
 
         // Navigate to home
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Assert - Cart count still persists
         await Assertions.Expect(_page.Locator("[data-testid='cart-count']")).ToBeVisibleAsync(

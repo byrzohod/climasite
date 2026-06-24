@@ -25,7 +25,7 @@ public class LanguageTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _dataFactory.CleanupAsync();
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     [Fact]
@@ -34,7 +34,6 @@ public class LanguageTests : IAsyncLifetime
         // Act
         var homePage = new HomePage(_page);
         await homePage.NavigateAsync();
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Assert - Page should load without errors
         var title = await _page.TitleAsync();
@@ -53,7 +52,6 @@ public class LanguageTests : IAsyncLifetime
         // Act - Navigate to product with default language
         var productPage = new ProductPage(_page);
         await productPage.NavigateAsync(product.Slug);
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Assert - Product should load with its name
         var productTitle = await productPage.GetProductTitleAsync();
@@ -70,7 +68,6 @@ public class LanguageTests : IAsyncLifetime
         // Act
         var productPage = new ProductPage(_page);
         await productPage.NavigateToListAsync();
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Assert - Product list should render
         var pageContent = await _page.ContentAsync();
@@ -92,7 +89,6 @@ public class LanguageTests : IAsyncLifetime
         // Act - Load product page
         var productPage = new ProductPage(_page);
         await productPage.NavigateAsync(product.Slug);
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Assert
         var title = await productPage.GetProductTitleAsync();
@@ -112,7 +108,8 @@ public class LanguageTests : IAsyncLifetime
 
         // Act - Navigate with lang parameter in URL
         await _page.GotoAsync($"{_fixture.BaseUrl}/products/{product.Slug}");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.WaitForSelectorAsync("[data-testid='product-title'], [data-testid='error']",
+            new PageWaitForSelectorOptions { Timeout = 30000 });
 
         // Assert - Page should load without errors
         var response = await _page.ContentAsync();
@@ -129,7 +126,6 @@ public class LanguageTests : IAsyncLifetime
         // Act - Navigate to product list
         var productPage = new ProductPage(_page);
         await productPage.NavigateToListAsync();
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Assert - Page loads without errors
         var content = await _page.ContentAsync();

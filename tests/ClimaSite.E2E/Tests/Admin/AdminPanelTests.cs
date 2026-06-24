@@ -30,7 +30,7 @@ public class AdminPanelTests : IAsyncLifetime
     public async Task DisposeAsync()
     {
         await _dataFactory.CleanupAsync();
-        await _page.Context.CloseAsync();
+        await _fixture.CloseTracedContextAsync(_page);
     }
 
     #region Admin Login & Dashboard Tests
@@ -47,7 +47,6 @@ public class AdminPanelTests : IAsyncLifetime
         await loginPage.LoginAsync(admin.Email, admin.Password);
 
         await _page.GotoAsync("/admin");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Assert - Dashboard should be accessible
         await Assertions.Expect(_page.Locator("app-admin-dashboard h1"))
@@ -72,7 +71,8 @@ public class AdminPanelTests : IAsyncLifetime
         await loginPage.LoginAsync(user.Email, user.Password);
 
         await _page.GotoAsync("/admin");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        // The guard redirects synchronously; the assertions below auto-wait for the resolved state.
+        await _page.WaitForLoadStateAsync(LoadState.Load);
 
         // Assert - Should be redirected away from admin or see access denied
         var currentUrl = _page.Url;
@@ -96,7 +96,6 @@ public class AdminPanelTests : IAsyncLifetime
         // Act - Login and navigate to products
         await LoginAsAdminAsync(admin);
         await _page.GotoAsync("/admin/products");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Assert - Products page should load
         await Assertions.Expect(_page.Locator("app-admin-products h1"))
@@ -259,11 +258,14 @@ public class AdminPanelTests : IAsyncLifetime
         if (!string.IsNullOrEmpty(customer.Token))
         {
             await _page.GotoAsync("/");
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            await _page.Locator("[data-testid='home-v3-hero']").First
+                .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
             await _page.EvaluateAsync(
                 "token => window.localStorage.setItem('climasite_token', token)", customer.Token);
             await _page.ReloadAsync();
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+            // Settle on the re-bootstrapped app shell rather than NetworkIdle before navigating.
+            await _page.Locator("[data-testid='home-v3-hero']").First
+                .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
 
             var customerOrdersPage = new OrdersPage(_page);
             await customerOrdersPage.NavigateToOrderDetailsAsync(order.Id.ToString());
@@ -310,7 +312,6 @@ public class AdminPanelTests : IAsyncLifetime
         // Act - Navigate to users page
         await LoginAsAdminAsync(admin);
         await _page.GotoAsync("/admin/users");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
         // Assert - Users page should load (even if placeholder)
         await Assertions.Expect(_page.Locator("app-admin-users h1"))
@@ -341,14 +342,15 @@ public class AdminPanelTests : IAsyncLifetime
         // Act - Navigate to moderation page
         await LoginAsAdminAsync(admin);
         await _page.GotoAsync("/admin/moderation");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        // Settle on the moderation page shell before probing for the reviews tab.
+        await Assertions.Expect(_page.Locator("app-admin-moderation h1"))
+            .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
 
         // Click on reviews tab
         var reviewsTab = await _page.QuerySelectorAsync("[data-testid='reviews-tab']");
         if (reviewsTab != null)
         {
             await reviewsTab.ClickAsync();
-            await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
         }
 
         // Assert - Moderation page should load
@@ -391,10 +393,13 @@ public class AdminPanelTests : IAsyncLifetime
         admin.Token.Should().NotBeNullOrWhiteSpace("admin test users must include a real access token");
 
         await _page.GotoAsync("/");
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await _page.Locator("[data-testid='home-v3-hero']").First
+            .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
         await _page.EvaluateAsync("token => window.localStorage.setItem('climasite_token', token)", admin.Token);
         await _page.ReloadAsync();
-        await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        // Settle on the re-bootstrapped app shell rather than NetworkIdle before navigating to admin.
+        await _page.Locator("[data-testid='home-v3-hero']").First
+            .WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
     }
 
     private async Task<bool> CreateProductViaApiAsync(TestUser admin, string name)
