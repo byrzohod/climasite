@@ -69,8 +69,12 @@ public class HomePage : BasePage
         await Page.WaitForSelectorAsync("[data-testid='language-dropdown']", new PageWaitForSelectorOptions { Timeout = 5000 });
         // Click on the specific language option
         await Page.ClickAsync($"[data-testid='language-{languageCode}']");
-        // Language switch re-renders translations in place (no navigation); settle on the hero.
-        await SettleAsync("[data-testid='home-v3-hero']");
+        // Language switch re-renders translations in place (no navigation). Settle PAGE-AGNOSTICALLY on
+        // the dropdown closing — the language selector lives in the global header, so this method is
+        // called from any page (e.g. a product page mid-journey); do NOT wait on the home-only
+        // home-v3-hero (that times out off the home page). Callers assert the translated result.
+        await Page.Locator("[data-testid='language-dropdown']").WaitForAsync(
+            new LocatorWaitForOptions { State = WaitForSelectorState.Hidden, Timeout = 10000 });
     }
 
     public async Task ToggleThemeAsync()
