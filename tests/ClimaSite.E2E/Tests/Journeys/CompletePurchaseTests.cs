@@ -261,13 +261,17 @@ public class CompletePurchaseTests : IAsyncLifetime
         await loginPage.NavigateAsync();
         await loginPage.LoginAsync(user.Email, user.Password);
 
-        // Navigate to account via user menu
+        // Open the user menu and go to the account page. Web-first throughout — NO WaitForURL-until-Load
+        // here: SPA routing is client-side, so a Load-navigation wait can hang ~30s (this was the lone
+        // residual flake after the NetworkIdle purge). Auto-waiting on each locator covers the post-login
+        // settle, the dropdown opening, and the route rendering.
+        await Assertions.Expect(_page.Locator("[data-testid='user-menu-trigger']")).ToBeVisibleAsync();
         await _page.ClickAsync("[data-testid='user-menu-trigger']");
-        await _page.WaitForSelectorAsync("[data-testid='user-dropdown']");
+        await Assertions.Expect(_page.Locator("[data-testid='account-link']")).ToBeVisibleAsync();
         await _page.ClickAsync("[data-testid='account-link']");
 
-        // Verify account page
-        await _page.WaitForURLAsync(url => url.Contains("/account"));
-        await Assertions.Expect(_page.Locator("[data-testid='account-page']")).ToBeVisibleAsync();
+        // Verify account page (web-first; auto-waits for the client-side route to render).
+        await Assertions.Expect(_page.Locator("[data-testid='account-page']")).ToBeVisibleAsync(
+            new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
     }
 }
