@@ -1,6 +1,6 @@
 # ADR 002 — Home v3 stack, assets, and build order
 
-**Status:** Superseded by [ADR 0003](./0003-home-v3-rendering-canvas2d.md) (renderer sub-decision only) — 2026-06-25
+**Status:** Accepted
 **Date:** 2026-04-08
 **Deciders:** sarkisharalampiev
 **Depends on:** [ADR 001 — Home page v3 concept (Configurator-First)](./001-home-page-concept.md)
