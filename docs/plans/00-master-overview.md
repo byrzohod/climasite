@@ -1,3 +1,8 @@
+> **SUPERSEDED (2026-06-25): stale snapshot. Canonical status → docs/project-plan/PROJECT_STATUS.md + .planning/STATE.md; backlog → docs/project-plan/PRIORITIZED_BACKLOG.md. Kept for history.**
+>
+> This is the original inception plan; its "100% complete" claims and feature-status index no longer
+> reflect reality (see docs/project-plan/_review/docs.md, finding on `00-master-overview.md`).
+
 # ClimaSite - Master Implementation Plan
 
 ## 1. Project Vision
@@ -169,21 +174,21 @@ climasite/
 
 | # | Feature | Plan File | Task ID Prefix | Priority | Status |
 |---|---------|-----------|----------------|----------|--------|
-| 1 | Design System & Theming | [01-design-system-theming.md](./01-design-system-theming.md) | DST- | High | Complete |
-| 2 | Internationalization | [02-internationalization-i18n.md](./02-internationalization-i18n.md) | I18N- | High | Complete |
-| 3 | Authentication & Users | [03-authentication-user-management.md](./03-authentication-user-management.md) | AUTH- | High | Complete |
-| 4 | Product Catalog | [04-product-catalog.md](./04-product-catalog.md) | CAT- | High | Complete |
-| 5 | Shopping Cart | [05-shopping-cart.md](./05-shopping-cart.md) | CART- | High | Complete |
-| 6 | Checkout & Orders | [06-checkout-orders.md](./06-checkout-orders.md) | CHK- | High | Complete |
-| 7 | Admin Panel | [07-admin-panel.md](./07-admin-panel.md) | ADM- | High | Complete |
-| 8 | Testing Infrastructure | [08-testing-infrastructure.md](./08-testing-infrastructure.md) | TEST- | High | Complete |
-| 9 | Inventory Management | [09-inventory-management.md](./09-inventory-management.md) | INV- | Medium | Complete |
-| 10 | Search & Navigation | [10-search-navigation.md](./10-search-navigation.md) | SRCH- | Medium | Complete |
-| 11 | Reviews & Ratings | [11-reviews-ratings.md](./11-reviews-ratings.md) | REV- | Medium | Complete |
+| 1 | Design System & Theming | [01-design-system-theming.md](./archive/01-design-system-theming.md) | DST- | High | Complete |
+| 2 | Internationalization | [02-internationalization-i18n.md](./archive/02-internationalization-i18n.md) | I18N- | High | Complete |
+| 3 | Authentication & Users | [03-authentication-user-management.md](./archive/03-authentication-user-management.md) | AUTH- | High | Complete |
+| 4 | Product Catalog | [04-product-catalog.md](./archive/04-product-catalog.md) | CAT- | High | Complete |
+| 5 | Shopping Cart | [05-shopping-cart.md](./archive/05-shopping-cart.md) | CART- | High | Complete |
+| 6 | Checkout & Orders | [06-checkout-orders.md](./archive/06-checkout-orders.md) | CHK- | High | Complete |
+| 7 | Admin Panel | [07-admin-panel.md](./archive/07-admin-panel.md) | ADM- | High | Complete |
+| 8 | Testing Infrastructure | [08-testing-infrastructure.md](./archive/08-testing-infrastructure.md) | TEST- | High | Complete |
+| 9 | Inventory Management | [09-inventory-management.md](./archive/09-inventory-management.md) | INV- | Medium | Complete |
+| 10 | Search & Navigation | [10-search-navigation.md](./archive/10-search-navigation.md) | SRCH- | Medium | Complete |
+| 11 | Reviews & Ratings | [11-reviews-ratings.md](./archive/11-reviews-ratings.md) | REV- | Medium | Complete |
 | 12 | Notifications System | [12-notifications-system.md](./12-notifications-system.md) | NOT- | Medium | Complete |
 | 13 | Wishlist | [archive/13-wishlist.md](./archive/13-wishlist.md) | WISH- | Low | Complete |
-| 15 | UI/UX Enhancements Phase 2 | [15-ui-ux-enhancements-phase2.md](./15-ui-ux-enhancements-phase2.md) | UX2- | High | Complete |
-| 16 | E2E Testing Reference | [16-e2e-testing-comprehensive.md](./16-e2e-testing-comprehensive.md) | E2E- | High | Reference |
+| 15 | UI/UX Enhancements Phase 2 | _(plan file never created)_ | UX2- | High | Complete |
+| 16 | E2E Testing Reference | _(plan file never created)_ | E2E- | High | Reference |
 | 17 | Future Enhancements | [17-future-enhancements.md](./17-future-enhancements.md) | FUT- | Low | Backlog |
 
 ### Task ID Convention

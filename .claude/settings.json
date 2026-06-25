@@ -11,10 +11,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/session-phase.sh"
-          },
-          {
-            "type": "command",
             "command": ".claude/hooks/state-prime.sh",
             "statusMessage": "Restoring session state..."
           }
@@ -72,7 +68,7 @@
           {
             "type": "command",
             "if": "Bash(git *)",
-            "command": "bash -c 'CMD=$(jq -r .tool_input.command); BRANCH=$(echo \"$CMD\" | sed -nE \"s/.*(checkout -b|switch -c)[[:space:]]+([^[:space:]]+).*/\\2/p\"); if [ -n \"$BRANCH\" ] && ! echo \"$BRANCH\" | grep -qE \"^(feature|fix|hotfix|release|chore)/[a-z0-9._-]+$\"; then echo \"NOTE (trunk mode): short-lived branches are fine; the (feature|fix|chore)/desc convention is advisory. Got: $BRANCH — not blocking.\" >&2; fi; exit 0'",
+            "command": "bash -c 'CMD=$(jq -r .tool_input.command); BRANCH=$(echo \"$CMD\" | sed -nE \"s/.*(checkout -b|switch -c)[[:space:]]+([^[:space:]]+).*/\\2/p\"); if [ -n \"$BRANCH\" ] && ! echo \"$BRANCH\" | grep -qE \"^(feature|fix|hotfix|release|chore)/[a-z0-9._-]+$\"; then echo \"NOTE (trunk mode): short-lived branches are fine; the (feature|fix|chore)/desc convention is advisory. Got: $BRANCH \u2014 not blocking.\" >&2; fi; exit 0'",
             "statusMessage": "Branch name (advisory)..."
           },
           {
@@ -108,11 +104,6 @@
             "type": "command",
             "command": ".claude/hooks/no-spec-no-code.sh",
             "statusMessage": "Checking a unit plan exists..."
-          },
-          {
-            "type": "command",
-            "command": ".claude/hooks/require-approved-plan.sh",
-            "statusMessage": "PROC-01: approved-plan gate..."
           },
           {
             "type": "command",

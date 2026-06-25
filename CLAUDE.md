@@ -6,9 +6,10 @@ ClimaSite is a production-grade online shop specializing in air conditioners, he
 
 ## AI Workflow & Knowledge (vault)
 
-This repo **adopted the latest vault AI workflow** (`/project-adopt`, 2026-06-23) on top of the
-existing PROC-01 SDLC-hardening install. The two coexist; consolidate to one planning system for new
-work (see `.planning/STATE.md`).
+This repo runs the **vault AI workflow** (adopted `/project-adopt`, 2026-06-23) as its **single
+planning system** (the earlier bespoke PROC-01 `docs/features/` pipeline + its duplicate hooks/skills
+were consolidated away on 2026-06-25 — PROC-01 itself is complete + archived as a reference). Resume
+from `.planning/STATE.md`; map of all docs in `docs/README.md`.
 
 - **Knowledge graph (source of truth for decisions/architecture):**
   `/Users/sarkisharalampiev/Projects/vault/vault/Knowledge/climasite/` — components, risks, open
@@ -23,57 +24,20 @@ work (see `.planning/STATE.md`).
   seo-review, accessibility-audit, perf-budget (public UI). Present-but-inactive (no AI features):
   ai-eval, cost-check, ai-specialist.
 
-## Current Project Status
+## Project status & history (single-sourced — do NOT keep a status table here)
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Design System & Theming | Complete | Light/dark themes, CSS variables |
-| Internationalization | Complete | EN, BG, DE with ngx-translate |
-| Authentication | Complete | JWT with refresh tokens, Argon2 |
-| Product Catalog | Complete | Products, categories, variants |
-| Shopping Cart | Complete | Guest cart, cart merging |
-| Checkout & Orders | Complete | Stripe integration |
-| Admin Panel | Complete | CRUD, dashboard |
-| Reviews & Ratings | Complete | Q&A, verified purchases |
-| Search & Navigation | Complete | Full-text search, facets, filters |
-| Inventory Management | Complete | Stock tracking, reservations |
-| Notifications System | Complete | Transactional emails via the outbox (GAP-03) + in-app notifications: order-status producers, header bell/dropdown (GAP-09) |
-| Wishlist | Complete | Backend DTO sync, public sharing, guest login merge, EN/BG/DE i18n, unit/API/E2E coverage |
-| Motion/Animation System | Complete | AnimationService, flying cart, confetti, parallax |
-| Performance Optimizations | Complete | Core Web Vitals, lazy loading, preconnect hints |
-| Home page (v3 — Configurator-First) | Complete | Plan 18 Phase 1 done; real recommendations endpoint, tests, E2E, visual QA, a11y, and Lighthouse verified |
-| Project completion plan (Plan 18) | In progress | Phase 0/1 done; M2 + optional GAPs complete: ARCH-05 outbox, GAP-02 admin, GAP-03 emails, GAP-04 legal, GAP-05 contact, GAP-06 payment methods, GAP-07 guest checkout, GAP-08 installation requests, GAP-09 notifications. Animation Audit 21F remains |
+| Looking for | Canonical source |
+|---|---|
+| **Current state + the one next action** | `.planning/STATE.md` — the resume contract, auto-injected each session |
+| **Detailed planning hub** (status, roadmap M1–M4, decisions, reviews, prod-readiness) | `docs/project-plan/` (see `docs/README.md` for the map) |
+| **Work queue / backlog** | `docs/project-plan/PRIORITIZED_BACKLOG.md` |
+| **Change history** (what shipped, per PR) | `CHANGELOG.md` |
+| **Knowledge graph** (components/risks/questions/decisions/milestones) | `vault/Knowledge/climasite/` |
 
-### Recently Completed
-
-| Feature | Status | Description |
-|---------|--------|-------------|
-| Motion/Animation System | Complete | AnimationService, reduced motion support, GPU-accelerated animations |
-| Flying Cart Animation | Complete | Product image flies to cart icon with arc trajectory |
-| Confetti Celebration | Complete | Canvas-based confetti on order confirmation |
-| Toast Notifications | Complete | Progress bar, hover pause, type-specific icons |
-| Route Transitions | Complete | Fade/slide page transitions |
-| Product Gallery | Complete | Lightbox, crossfade, zoom, slide animations |
-| Performance Audit | Complete | Core Web Vitals optimizations, preconnect hints |
-| Circular Dependency Fix | Complete | Auth interceptor refactored to fix circular imports |
-| UI Improvement Plan | Complete | 45+ issues fixed across 6 phases |
-| Shared Components | Complete | Alert, Modal, Toast, Breadcrumb components created |
-| Accessibility (WCAG) | Complete | Focus traps, ARIA roles, keyboard navigation, screen reader support |
-| Animation Audit (21F) | Mostly complete | Phases 1-4 + 6 done: removed FloatingDirective/TiltEffectDirective/ParallaxDirective; simplified RevealDirective to fade/fade-up/fade-down; refined flying cart, confetti, button/card hovers, modals, toasts; reduced-motion contract verified; `docs/animation-style-guide.md` published. Phase 5 (full Lighthouse + device profiling) deferred — needs a live stack |
-| Home v3 Completion | Complete | Configurator-first homepage, real product recommendations, translation coverage, deferred below-fold content, browser QA, and Lighthouse mobile 0.97 / desktop 1.00 |
-| Wishlist Completion | Complete | Hydrated wishlist API, public share links, guest-to-login merge, concurrent add protection, translations, and full local test coverage |
-| Email Outbox (ARCH-05) | Complete | Durable Postgres `outbox_messages` + `BackgroundService` worker with retry/backoff; `IEmailOutbox`/`OutboxProcessor`; ADR 0001 |
-| Transactional Emails (GAP-03) | Complete | Order confirmation (transactional), order-shipped, welcome, password-reset, and admin notify-customer (BUG-16) all delivered via the outbox |
-| Admin Panel CRUD (GAP-02) | Complete | Real admin products list/create/edit/deactivate + translation & related-products editors (BUG-14), customers list/detail/status, dashboard KPIs; EN/BG/DE + tests + E2E |
-| Contact Endpoint (GAP-05) | Complete | `POST /api/contact` persists a `ContactMessage` + queues a business notification via the outbox; form wired to a real request with success/error states |
-| Guest Checkout (GAP-07) | Complete | Opaque `GuestAccessToken` + anonymous token-gated confirmation lookup (SEC-02 intact), anonymous create-intent (server-computed amount), `/checkout` guard dropped, TS-13 fixed |
-| Legal Pages + Cookie Consent (GAP-04) | Complete | terms/privacy/cookies/returns/shipping/FAQ + German Impressum, consent banner (`ConsentService`), footer 404s closed; EN/BG/DE + specs + E2E |
-| Installation Requests (GAP-08) | Complete | Business email per request (outbox) + admin list/manage (`GET/PUT /api/admin/installation-requests`) + dashboard tile; EN/BG/DE + tests + E2E |
-| Payment Methods (GAP-06) | Complete | Removed fake PayPal; real bank transfer (persisted method, Pending, IBAN/reference instructions on confirmation + outbox email); validator card\|bank |
-| In-App Notifications (GAP-09) | Complete | Producers on order-status changes (authenticated) + header bell/dropdown + `NotificationService`; EN/BG/DE + specs + E2E |
-| Live-bug sweep (overlay/reviews) | Complete | Found by driving the running app: fixed the duplicate z-index scale that made the mini-cart drawer unclickable (BUG-19, `_tokens.scss` now the single `--z-*` source), cookie-banner/bottom-nav stacking (BUG-20/21), reviews auto-approve + output-cache freshness so a submitted review appears immediately (BUG-22/24), `/auth/login`→`/login` 404 (BUG-23), clearer card-unavailable checkout message (BUG-25); added complete-workflow E2E (mini-cart overlay click-through, guest-checkout completion, mini-cart purchase, review-appears-immediately). PRs #35/#36; see `docs/project-plan/BUGS_AND_TECH_DEBT.md` §8 |
-
----
+> ⚠️ Treat `.planning/STATE.md` + `CHANGELOG.md` + the **code** as ground truth. Older docs carry
+> per-feature "Complete" claims that drifted across 2026-01 → 2026-06 in BOTH directions
+> (`PROJECT_STATUS.md` is as-of 2026-06-11 and predates the later GAP/PROC-01/adoption/Plan-19 work; the
+> old per-feature tables overclaim). A verified per-feature status refresh is tracked as **DOC-02**.
 
 ## Tech Stack
 
@@ -216,31 +180,22 @@ X-Correlation-Id: <guid>           # Request tracking
 
 ---
 
-## MANDATORY: Per-Feature Pipeline (PROC-01)
+## Per-feature workflow — ONE planning system
 
-Every non-trivial feature or fix flows through **eight gated phases**, each producing an artifact in
-`docs/features/<FEAT-ID>/`. The canonical lifecycle doc is **`docs/features/README.md`** (the full
-phase table + how to start). The testing and post-implementation sections below are Phases 6 and 8 of
-this same pipeline. The four **front phases** (before any code) are non-negotiable:
+New non-trivial work flows through the **vault planning system** (the bespoke PROC-01 `docs/features/`
+pipeline is **complete + archived as a reference** — do not start new work there):
 
-1. **Research** → `research.md`. **No plan without research.** Fill it from the real working tree
-   (grep every affected-file path), list the constraints (payment/auth/GDPR/i18n/theme/a11y/migration),
-   and write ≥1 happy + ≥1 edge + ≥1 error user journey.
-2. **Plan** → `plan.md` with `plan_status: draft`. Must have a non-empty **exit-criteria table** and a
-   **test matrix** naming the concrete E2E/visual/a11y cases; flag an ADR if it touches
-   payment/auth/GDPR/migration.
-3. **Verify-Plan** → run **`/verify-plan <FEAT-ID>`**. An independent, **read-only `verifier` agent**
-   re-checks the plan against the working tree; the skill records the verdict in `plan-verification.md`
-   and flips `plan_status: approved` only if it holds up.
-   **Do not edit `src/` until `plan_status: approved`**, and **never hand-edit `plan_status` to
-   approved** — the verifier is read-only precisely so a plan can't be self-laundered. (Wave 2 hooks
-   will enforce this; until then it is a hard discipline rule.)
-4. **Track** → backlog row (full anatomy in `PRIORITIZED_BACKLOG.md`) + `test-design.md` mapping every
-   journey to a stable Scenario ID (`automated`|`manual`); write the ADR if Phase 2 flagged one.
+1. **Design** (whole-system / major phase) → `/design-doc` ratifies `.planning/design/DESIGN.md`.
+2. **Plan** → `/plan-tree` decomposes into phases→waves→units; **each unit needs an approved
+   `.planning/units/<unit>/unit-plan.md`** (test plan + acceptance) BEFORE its code. The
+   **`no-spec-no-code` hook BLOCKS edits to `src/**`** until that unit-plan exists (escape for a
+   throwaway spike: `ALLOW_EXPLORATORY=1`). See `.planning/units/UX-15-contrast/` as the worked example.
+3. **Build + ship** → tests ship WITH the code (enforced by the commit-time tests-with-code gate + the
+   Stop gate); deliver via short-lived branch → PR → green CI → squash-merge.
+4. **Capture** → read `vault/Knowledge/climasite/` before planning; update it via `/kb-capture` after
+   each unit/phase (decisions→ADRs, new components/risks/questions).
 
-**Start a feature with `/feature-kickoff <FEAT-ID> "<title>"`** — it scaffolds the folder from
-`docs/features/_template/` and registers the backlog row. Tiny doc/config tweaks that never touch
-`src/` may skip the folder; anything touching `src/` needs an approved `plan.md`.
+Resume contract: `.planning/STATE.md` (auto-injected). Map of all docs: `docs/README.md`.
 
 ---
 
@@ -326,7 +281,7 @@ After EVERY change, you MUST:
 
 3. **Open a PR to `main`.** CI runs six required checks — **Unit Tests, Integration Tests, Frontend Unit Tests, Build Verification, E2E Tests, Test Summary**. **CI (not a local test run) is the evidence of record.**
 
-4. **Merge only when all six checks are green.** Use conventional-commit messages. When a feature lands or a convention changes, update the status table in this file (and `docs/project-plan/PROJECT_STATUS.md` / `PRIORITIZED_BACKLOG.md`).
+4. **Merge only when all six checks are green.** Use conventional-commit messages. When a feature lands or a convention changes, update the canonical docs per the doc-update table in `docs/project-plan/DEV_WORKFLOW.md` — typically `CHANGELOG.md`, `docs/project-plan/PRIORITIZED_BACKLOG.md`, `.planning/STATE.md`, and the relevant `docs/project-plan/` doc (status is NOT tracked in this file — see "Project status & history" above).
 
 **This workflow is NON-NEGOTIABLE. Never push to `main`; never merge on red CI.**
 

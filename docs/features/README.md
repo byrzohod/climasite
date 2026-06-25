@@ -1,3 +1,12 @@
+> **COMPLETE & SUPERSEDED for NEW work (2026-06-25).** The PROC-01 8-phase per-feature pipeline below
+> shipped (all 7 build waves — see [`PROC-01/STATE.md`](PROC-01/STATE.md)) and is **kept as a reference
+> case study**. New features no longer use this `docs/features/<ID>/` flow: the authoritative planning
+> system for new `src/**` work is the vault `.planning/units/<unit>/unit-plan.md` + `/plan-tree` flow,
+> gated by the `no-spec-no-code` hook. Start at [`.planning/STATE.md`](../../.planning/STATE.md) (resume
+> contract); the worked example is `.planning/units/UX-15-contrast/unit-plan.md`, and the migration is
+> tracked as "Process debt" in STATE.md and as plan [19](../plans/19-test-and-kg-hardening.md).
+> Do not delete this folder or `PROC-01/STATE.md` — they are the archive of how the pipeline was built.
+
 # Per-feature pipeline (PROC-01)
 
 Every non-trivial feature or fix flows through **eight gated phases**. Each phase produces an
