@@ -30,7 +30,10 @@ No active unit. Pick the next item from **Remaining** below. For any `src/**` ch
 - **OPS-11** enable the trunk merge queue — **plan-blocked** (needs a paid GitHub plan); ruleset + `merge_group` trigger are staged. See `docs/runbooks/merge-queue.md`.
 - **Plan 19 C1** (`@defer` e2e-build mitigation — low priority now NetworkIdle is gone) · **C3** (dev-env rate-limit exemption, local-only convenience).
 - **KG open items** — R-001 observability (=OPS-05), R-006/R-007/R-008; **VERIFY-first**: Q-003 stock-reservation, Q-006 SalePrice mapping (confirm vs current code before treating as bugs).
-- **Process debt** — two planning systems coexist (PROC-01 `docs/features/<ID>/plan.md` + vault `.planning/**/unit-plan.md`); pick one authoritative for new work.
+- **DOC-02** — verified per-feature status refresh: reconcile the drifted status docs against the code (both `PROJECT_STATUS.md` @2026-06-11 and the old CLAUDE.md tables were stale in opposite directions) and re-point to one source.
+
+## Recently done (2026-06-25)
+- **Docs consolidated to ONE planning system** (`/hygiene-sweep`-style pass): retired the bespoke PROC-01 `docs/features/` pipeline + its duplicate hooks (`require-approved-plan`, `session-phase`) + skills (`feature-kickoff`, `verify-plan`) — the vault `.planning/units` + `/plan-tree` + `no-spec-no-code` flow is now the single system; added `docs/README.md` map; bannered ~20 stale legacy trackers; ADR-002 immutability fixed via superseding **ADR-0003**; leaned CLAUDE.md (status tables + pipeline → pointers). No protection lost (`no-spec-no-code` + test-ship + git/secret guards intact).
 
 ## Key pointers
 - **Plan ahead + tracking**: this file (resume) · `docs/plans/19-test-and-kg-hardening.md` (test/KG plan) · `docs/project-plan/PRIORITIZED_BACKLOG.md` (full backlog) · `docs/features/PROC-01/STATE.md` (SDLC waves) · vault `Knowledge/climasite/` (graph).

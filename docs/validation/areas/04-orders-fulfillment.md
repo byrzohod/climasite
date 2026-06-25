@@ -1,4 +1,8 @@
 # Orders & Fulfillment - Validation Report
+> **SUPERSEDED (2026-06-25): stale snapshot. Canonical status → docs/project-plan/PROJECT_STATUS.md + .planning/STATE.md; backlog → docs/project-plan/PRIORITIZED_BACKLOG.md. Kept for history.**
+>
+> Frozen 2026-01-24 validation snapshot; several findings are now resolved. See docs/audit/2026-04-08-gap-report.md for a more current view.
+
 
 > Generated: 2026-01-24
 

@@ -1,3 +1,9 @@
+> **SUPERSEDED (2026-06-25): stale snapshot. Canonical status → docs/project-plan/PROJECT_STATUS.md + .planning/STATE.md; backlog → docs/project-plan/PRIORITIZED_BACKLOG.md. Kept for history.**
+>
+> This 2026-01-24 validation snapshot (this summary + the 18 `areas/` docs) is frozen; several key
+> findings are now false (partially marked with FIXED strikethroughs). The more current status snapshot
+> is docs/audit/2026-04-08-gap-report.md. Kept for history.
+
 # ClimaSite Validation Summary
 
 > **Generated:** 2026-01-24

@@ -1,3 +1,9 @@
+> **SUPERSEDED (2026-06-25): stale snapshot. Canonical status → docs/project-plan/PROJECT_STATUS.md + .planning/STATE.md; backlog → docs/project-plan/PRIORITIZED_BACKLOG.md. Kept for history.**
+>
+> Frozen 2026-01-24 Wave-1 audit registry. Its dashboard ("129 open / 0 fixed") is false today — many
+> listed items have since been fixed, and some target deleted code. Surviving open items were folded
+> into the prioritized backlog. Do not trust the counts here.
+
 # ClimaSite Issue Registry
 
 > **Master tracking document for all issues found during the quality audit.**

@@ -16,7 +16,9 @@
 | # | Title | Status | Date | Notes |
 |---|---|---|---|---|
 | [001](../adr/001-home-page-concept.md) | Home page v3 concept (Configurator-First) | Accepted | 2026-04-08 | Chose Concept B over Kinetic Showroom (A) and Comfort Lab (C); supersedes home plans 19, 21A, 23, 24, 25. |
-| [002](../adr/002-home-v3-stack-and-assets.md) | Home v3 stack, assets, and build order | Accepted | 2026-04-08 | Three.js + procedural geometry + rules-based recommendation scoring + backend-first build order. **Process violation:** an "Implementation note — 2026-06-07" was edited into the accepted body recording that production ships Canvas 2D instead of Three.js (`three` is absent from `src/ClimaSite.Web/package.json`). Per `docs/adr/README.md` this should have been a superseding ADR — see D-014 below and Open Decision O-5. |
+| [002](../adr/002-home-v3-stack-and-assets.md) | Home v3 stack, assets, and build order | Superseded by ADR 0003 (renderer) | 2026-04-08 | Three.js + procedural geometry + rules-based recommendation scoring + backend-first build order. The renderer sub-decision was superseded by [ADR 0003](../adr/0003-home-v3-rendering-canvas2d.md) — production ships Canvas 2D (`three` is absent from `src/ClimaSite.Web/package.json`); scoring + build-order sub-decisions still stand. The earlier in-place "Implementation note — 2026-06-07" violated immutability and is now properly recorded as a superseding ADR (see D-014). |
+| [0001](../adr/0001-background-jobs-db-outbox.md) | Background jobs via `BackgroundService` + a DB email outbox | Accepted | 2026-06-16 | Ratifies O-1 / D-001 below; transactional Postgres outbox drained by an in-process `BackgroundService`. |
+| [0003](../adr/0003-home-v3-rendering-canvas2d.md) | Home v3 configurator preview renders with Canvas 2D | Accepted | 2026-06-25 | Supersedes ADR 002's renderer sub-decision; ratifies D-014. Three.js deferred (not banned) for future 3D. |
 
 Only 2 ADRs exist despite Plan 18 (`docs/plans/18-project-completion.md`) mandating an ADR per non-obvious decision and targeting ≥8. The backfill below closes that gap on paper; ratifying the "Needs confirmation" entries closes it for real.
 
@@ -148,7 +150,7 @@ Each entry uses a compact ADR shape: Context / Decision / Alternatives considere
 
 ### D-014 — Home v3 ships Canvas 2D rendering; Three.js deferred
 
-- **Status:** **Needs confirmation by owner** — implemented and shipped, but recorded only as an in-place edit to accepted ADR 002, violating `docs/adr/README.md`'s immutability rule
+- **Status:** **Promoted to [ADR 0003](../adr/0003-home-v3-rendering-canvas2d.md)** (Accepted 2026-06-25) — supersedes ADR 002's renderer sub-decision; ADR 002's Status line was updated to point at 0003 (the allowed immutability-preserving edit), restoring process integrity
 - **Date:** 2026-06-07 (implementation note in ADR 002)
 - **Context:** ADR 002 chose Three.js + procedural geometry for the configurator's room preview. During Plan 18 Phase 1 the preview shipped as Canvas 2D axonometric rendering instead; `three` was never added to `package.json`. Verified outcomes: Lighthouse mobile 0.97 / desktop 1.00, 213/213 E2E passing.
 - **Decision (de-facto):** Canvas 2D is the production renderer for the home configurator preview; Three.js remains the accepted stack for future product-detail 3D when interaction justifies the bundle cost.
@@ -195,7 +197,7 @@ These are choices the review identified as **blocking or shaping upcoming work**
 | O-2 | **API error contract** — adopt RFC 7807 ProblemDetails everywhere, or ratify the current custom `{status,message,detail}` middleware shape | Three incompatible error shapes exist today; CLAUDE.md falsely claims ProblemDetails (`Program.cs:108` TODO API-012 admits it). Must be one coordinated backend+frontend change. | `_review/architecture.md` finding 6 |
 | O-3 | **Query caching** — register `CachingBehavior` + build invalidation, or delete it and the 14 inert `ICacheableQuery` markers | Redis caching is silently inactive despite "Performance: Complete"; enabling blindly would serve stale product/stock data. Do not leave half-wired. | `_review/architecture.md` finding 3 |
 | O-4 | **Observability vendor** — error tracker (Sentry suggested as lowest-effort) + OpenTelemetry scope + alerting | Production launch blocker class; correlation-ID middleware should land with it. | `_review/devops.md` finding 5; Plan 18 PROD-103 |
-| O-5 | **ADR 003 (Canvas 2D)** and **ADR for wishlist share tokens** — formalize D-014 and D-015 | Restores ADR process integrity after the 002 in-place amendment; wishlist branch should not merge a security-relevant token design unrecorded. | `_review/docs.md` finding 10 |
+| O-5 | ~~ADR 003 (Canvas 2D)~~ **DONE — [ADR 0003](../adr/0003-home-v3-rendering-canvas2d.md)** formalizes D-014. Still open: an **ADR for wishlist share tokens** (D-015). | Canvas-2D half restores ADR process integrity after the 002 in-place amendment; the wishlist token design (D-015) still needs recording. | `_review/docs.md` finding 10 |
 | O-6 | **Shared-infra vs project-local compose** — formalize or kill D-016's contradiction | Onboarding friction every session until decided. | `_review/devops.md` finding 8 |
 | O-7 | **Railway topology confirmation** — which services, which config files, auto-deploy status, backups | Determines whether the P0 seeding defect is already live and unblocks the deploy workflow. | `_review/devops.md` open questions 1–4 |
 
