@@ -32,7 +32,7 @@ Repo `byrzohod/climasite` is **public**; **nothing is deployed yet (OPS-08)**.
 | Product catalog (PLP/PDP, variants, gallery) | ✅ Complete | Variants/images/translations/specs. |
 | Search & navigation | 🟡 Partial | Works, but **multi-term ILIKE substring** (no tsvector/pg_trgm/Meilisearch). Fine for MVP; **P2 scale gap**. |
 | Cart (guest + merge-on-login) | ✅ Complete | BUG-03 **fixed** — FE posts `/merge?guestSessionId=` (query) matching `[FromQuery]` (`cart.service.ts:236`). |
-| Checkout (address/shipping/payment/review) | 🟡 Partial | Flow complete; gaps: **BUG-11** checkout `\| currency` defaults to **USD** (cards use `:'EUR'`) + no field-level validation errors. |
+| Checkout (address/shipping/payment/review) | 🟡 Partial | Flow complete; **currency now consistent EUR (BUG-11 fixed)** + shipping labels match the server; remaining gap: no field-level validation errors (UX). |
 | Payments (Stripe) | ✅ Complete | **Money path fixed** (BUG-01/02/18): server-side EUR amount, verified-intent-before-persist, atomic stock decrement w/ `stock>=qty` guard, idempotent (unique `payment_intent_id`), webhook reconcile, orphan-charge refund. |
 | Orders (create/track/cancel/invoice/reorder, guest token) | ✅ Complete | Guest token-gated confirmation lookup (SEC-02). |
 | Inventory | 🟡 Partial | Stock tracked + atomic decrement guard exists; **"reservations" are NOT implemented** (no reserve/hold) — known gap. |
@@ -56,10 +56,10 @@ Repo `byrzohod/climasite` is **public**; **nothing is deployed yet (OPS-08)**.
 ## 3. Disputed claims — resolved by this verification
 - **Admin panel** = real CRUD (NOT 12-line stubs). **Notifications** = real producers + frontend bell (NOT "zero"). **Contact/Legal/Installation/GDPR-delete/Payments** = all verified complete. These were built in the M2 GAP work + later, *after* the 2026-06-11 snapshot.
 - **Corrected verifier errors** (hand-checked): **BUG-03 cart-merge is FIXED**; **wishlist guest-merge EXISTS**. (Two agents claimed otherwise; the code says fixed/present.)
-- **Confirmed still-open**: BUG-11 (checkout shows USD), search-is-ILIKE, inventory-has-no-reservations, Lighthouse-reporting-only, SEC-14 (GDPR Orders-PII), SEC-08 (security headers).
+- **Confirmed still-open**: search-is-ILIKE, inventory-has-no-reservations, Lighthouse-reporting-only, SEC-14 (GDPR Orders-PII), SEC-08 (security headers). *(BUG-11 checkout-USD — now **FIXED**, single EUR + shipping labels match the server.)*
 
 ## 4. Real remaining gaps (all already in `PRIORITIZED_BACKLOG.md`)
-- **BUG-11** checkout/cart `| currency` defaults to USD — set `DEFAULT_CURRENCY_CODE`/`:'EUR'`, kill bare pipes (ties to DEC-CURRENCY).
+- ~~BUG-11 checkout/cart USD~~ ✅ **FIXED 2026-06-26** (single EUR + shipping labels match the server). Remaining currency work: **UX-16** dual EUR/BGN transitional display (P3, pre-BG-launch) + **DEC-SHIPPING** owner question (standard free vs €5.99).
 - **Inventory reservations** don't exist (oversell window narrowed by the atomic guard, but no hold/reserve).
 - **Search** ILIKE → FTS/Meilisearch (P2 scale).
 - **SEC-14** GDPR Orders-PII anonymization (ADR + handler scrub). **SEC-08** security headers. **SEC-12/13** Angular advisories / gitleaks-enforce.
@@ -68,7 +68,7 @@ Repo `byrzohod/climasite` is **public**; **nothing is deployed yet (OPS-08)**.
 
 ## 5. Launch blockers (must clear before production)
 1. **OPS-08** deploy + **OPS-05** observability (currently nothing is live).
-2. **BUG-11 / DEC-CURRENCY** — one consistent display currency end-to-end.
+2. **DEC-CURRENCY** — single EUR display is now consistent end-to-end (BUG-11 fixed); dual EUR/BGN (UX-16) only needed for a BG launch.
 3. **SEC-14** GDPR Orders-PII (compliance) + **SEC-08** security headers + **SEC-12** advisories.
 4. **SEC-11** pre-launch pen-test pass + **PRODUCTION_READINESS_CHECKLIST.md** green.
 

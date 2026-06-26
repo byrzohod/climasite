@@ -70,10 +70,10 @@ import { EmptyStateComponent } from '../../shared/components/empty-state';
 
                 <div class="item-price" data-testid="cart-item-price">
                   @if (item.salePrice && item.salePrice > item.unitPrice) {
-                    <span class="sale-price">{{ item.unitPrice | currency }}</span>
-                    <span class="original-price">{{ item.salePrice | currency }}</span>
+                    <span class="sale-price">{{ item.unitPrice | currency:'EUR' }}</span>
+                    <span class="original-price">{{ item.salePrice | currency:'EUR' }}</span>
                   } @else {
-                    <span>{{ item.unitPrice | currency }}</span>
+                    <span>{{ item.unitPrice | currency:'EUR' }}</span>
                   }
                 </div>
 
@@ -113,7 +113,7 @@ import { EmptyStateComponent } from '../../shared/components/empty-state';
                 }
 
                 <div class="item-subtotal" data-testid="cart-item-subtotal">
-                  {{ item.subtotal | currency }}
+                  {{ item.subtotal | currency:'EUR' }}
                 </div>
 
                 <button
@@ -133,7 +133,7 @@ import { EmptyStateComponent } from '../../shared/components/empty-state';
 
             <div class="summary-row">
               <span>{{ 'cart.summary.subtotal' | translate }}</span>
-              <span data-testid="cart-subtotal">{{ cartService.subtotal() | currency }}</span>
+              <span data-testid="cart-subtotal">{{ cartService.subtotal() | currency:'EUR' }}</span>
             </div>
 
             <div class="summary-row">
@@ -142,19 +142,19 @@ import { EmptyStateComponent } from '../../shared/components/empty-state';
                 @if (cartService.cart()?.shipping === 0) {
                   {{ 'cart.summary.freeShipping' | translate }}
                 } @else {
-                  {{ cartService.cart()?.shipping | currency }}
+                  {{ cartService.cart()?.shipping | currency:'EUR' }}
                 }
               </span>
             </div>
 
             <div class="summary-row">
               <span>{{ 'cart.summary.tax' | translate }}</span>
-              <span data-testid="cart-tax">{{ cartService.cart()?.tax | currency }}</span>
+              <span data-testid="cart-tax">{{ cartService.cart()?.tax | currency:'EUR' }}</span>
             </div>
 
             <div class="summary-row total">
               <span>{{ 'cart.summary.total' | translate }}</span>
-              <span data-testid="cart-total">{{ cartService.total() | currency }}</span>
+              <span data-testid="cart-total">{{ cartService.total() | currency:'EUR' }}</span>
             </div>
 
             <a routerLink="/checkout" class="checkout-btn" data-testid="proceed-to-checkout">

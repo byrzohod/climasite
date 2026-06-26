@@ -17,6 +17,7 @@ Per the owner's standing convention, these are **owner decisions**, recorded as 
 |---|---|---|
 | DEC-CURRENCY | **Store currency: EUR or BGN?** Code currently mixes EUR (orders/display), BGN (Stripe charge), USD (cart/checkout pipes). Single most blocking decision in the repo (`_review/bugs.md` open question 1). | BUG-01, BUG-02, BUG-11, BUG-13 |
 | DEC-GUEST | Guest checkout in scope for v1? Backend half-supports it; route guard blocks it; docs claim it works. | GAP-07, TS-13 |
+| DEC-SHIPPING | Should **standard shipping be FREE**, or the €5.99 the server currently charges (`CheckoutPricing.cs`)? BUG-11 made the UI match the server (€5.99) so displayed==charged; if free is intended, change the backend tier to 0. | BUG-11 |
 | O-1 | Background-job mechanism (BackgroundService + DB outbox vs Hangfire vs RabbitMQ from shared-infra) | ARCH-05, GAP-09, GAP-03 (reliability) |
 | O-2 | API error contract: RFC 7807 ProblemDetails vs ratify current `{status,message,detail}` | ARCH-04 |
 | O-3 | Query-caching owner: register `CachingBehavior` + invalidation vs delete it; vs OutputCache named policies | PERF-01 |
@@ -216,6 +217,7 @@ IDs match `docs/project-plan/BUGS_AND_TECH_DEBT.md` exactly; full evidence there
 - **Depends on:** Wishlist part cheapest before OPS-01 merge.
 
 ### BUG-11 — One display currency: `DEFAULT_CURRENCY_CODE` + no bare `| currency` pipes (P2, Small)
+- **Status:** ✅ DONE (2026-06-26). Set `DEFAULT_CURRENCY_CODE='EUR'` in `app.config.ts`; converted all 18 bare `| currency` → `| currency:'EUR'` (checkout/cart/mini-cart×2); replaced the wrong/`$` shipping-option labels with a `shippingCost` map (standard €5.99 / express €15.99 / overnight €19.99) mirroring `CheckoutPricing.cs`, rendered via `:'EUR'` — so displayed shipping == charged. Added a checkout spec that fails if the map drifts from the server. Grep acceptance: 0 bare pipes, 0 `$` literals; 1246 frontend tests green. **Surfaced:** standard showed "free" but the server charges €5.99 — UI now matches the server; **see new question DEC-SHIPPING** (should standard be free?). Dual EUR/BGN transitional display = follow-up **UX-16** below.
 - **Description:** Product pages show EUR, cart/checkout show USD (bare pipe defaults), Stripe charges BGN, and checkout hardcodes `$9.99`/`$19.99` shipping labels that don't match the backend's tiers. Provide `{ provide: DEFAULT_CURRENCY_CODE, useValue: <store currency> }`, fix all bare pipes (incl. `mini-cart-item.component.ts`, `mini-cart-drawer.component.html`), source shipping labels from the model via the pipe, and align tier names with backend cases.
 - **Closes:** `_review/bugs.md` #11; `_review/uiux.md` #1 (P1 confirmed); UI_UX_REVIEW work item #1; display slice of `_review/product.md` #3.
 - **Affected:** `app.config.ts`, `checkout.component.ts`, `cart.component.ts`, mini-cart components.
@@ -596,6 +598,13 @@ Detail: `docs/project-plan/UI_UX_REVIEW.md` (work-list #1-23) and `_review/uiux.
 - **Affected:** `src/ClimaSite.Web/src/styles/_colors.scss` (muted-text tokens, light + dark), product-list/detail/cart + promotions/brands/about styles.
 - **Acceptance:** both `AxeAccessibilityMatrixTests` and `AccessibilityTests` report 0 serious/critical with `A11Y_ENFORCE=1`; then enforce in CI.
 - **Depends on:** none. Gated `src/` change → via `/plan-tree` unit-plan. Pairs with UX-07 (light-theme error color) and UX-13 (energy-label palette).
+
+### UX-16 — Transitional dual EUR/BGN price display (DEC-CURRENCY) (P3, Medium)
+- **Status:** OPEN (split out of BUG-11, 2026-06-26). BUG-11 made all prices render single **EUR**; DEC-CURRENCY's fuller intent is the legally-transitional **dual EUR/BGN** display (peg **1.95583**) during BG's euro adoption.
+- **Description:** Introduce a shared `PricePipe`/`DualPriceComponent` that renders `€X.XX / Y.YY лв` from a single EUR amount + a peg constant, and replace the ~36 `| currency:'EUR'` renders with it (single source for price formatting). Decide placement/format (inline vs tooltip) — a small UX-design call.
+- **Affected:** new shared pipe/component + all price renders across `src/ClimaSite.Web`.
+- **Acceptance:** every price shows EUR + BGN at the 1.95583 peg; one shared formatter (no scattered `currency:'EUR'`); pipe unit-tested.
+- **Depends on:** none (gated `src/` → unit-plan). Only needed before a BG launch (OPS-08).
 
 ---
 
