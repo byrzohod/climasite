@@ -34,10 +34,9 @@ from `.planning/STATE.md`; map of all docs in `docs/README.md`.
 | **Change history** (what shipped, per PR) | `CHANGELOG.md` |
 | **Knowledge graph** (components/risks/questions/decisions/milestones) | `vault/Knowledge/climasite/` |
 
-> ⚠️ Treat `.planning/STATE.md` + `CHANGELOG.md` + the **code** as ground truth. Older docs carry
-> per-feature "Complete" claims that drifted across 2026-01 → 2026-06 in BOTH directions
-> (`PROJECT_STATUS.md` is as-of 2026-06-11 and predates the later GAP/PROC-01/adoption/Plan-19 work; the
-> old per-feature tables overclaim). A verified per-feature status refresh is tracked as **DOC-02**.
+> ✅ `docs/project-plan/PROJECT_STATUS.md` was **verified against the code on 2026-06-26** (DOC-02) and
+> is the current per-feature source of truth; `.planning/STATE.md` + `CHANGELOG.md` are the resume +
+> history. Keep PROJECT_STATUS refreshed as features land (per the DEV_WORKFLOW doc-update table).
 
 ## Tech Stack
 
