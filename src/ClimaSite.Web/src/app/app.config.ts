@@ -1,4 +1,4 @@
-import { ApplicationConfig, importProvidersFrom, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom, provideZoneChangeDetection, DEFAULT_CURRENCY_CODE } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors, HttpClient } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
@@ -24,6 +24,9 @@ export function createTranslateLoader(http: HttpClient) {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
+    // DEC-CURRENCY: the store charges in EUR — make the default `| currency` pipe render € (not the
+    // framework default USD $). Prefer explicit `| currency:'EUR'`; this is the safety net.
+    { provide: DEFAULT_CURRENCY_CODE, useValue: 'EUR' },
     provideRouter(routes),
     provideAnimationsAsync(),
     provideHttpClient(withInterceptors([authInterceptor])),

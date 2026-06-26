@@ -177,19 +177,19 @@ import { apiErrorToTranslationKey, toTranslationKey } from '../../core/utils/tra
                   <label class="payment-option" [class.selected]="checkoutService.shippingMethod() === 'standard'">
                     <input type="radio" name="shippingMethod" value="standard" [checked]="checkoutService.shippingMethod() === 'standard'" (change)="selectShippingMethod('standard')" data-testid="shipping-standard" />
                     <span class="payment-icon"><app-icon name="package" size="lg" /></span>
-                    <span>{{ 'checkout.shipping.standard' | translate }} ({{ 'checkout.shipping.standardTime' | translate }}) - {{ 'checkout.shipping.free' | translate }}</span>
+                    <span>{{ 'checkout.shipping.standard' | translate }} ({{ 'checkout.shipping.standardTime' | translate }}) - {{ shippingCost.standard | currency:'EUR' }}</span>
                   </label>
 
                   <label class="payment-option" [class.selected]="checkoutService.shippingMethod() === 'express'">
                     <input type="radio" name="shippingMethod" value="express" [checked]="checkoutService.shippingMethod() === 'express'" (change)="selectShippingMethod('express')" data-testid="shipping-express" />
                     <span class="payment-icon"><app-icon name="truck" size="lg" /></span>
-                    <span>{{ 'checkout.shipping.express' | translate }} ({{ 'checkout.shipping.expressTime' | translate }}) - $9.99</span>
+                    <span>{{ 'checkout.shipping.express' | translate }} ({{ 'checkout.shipping.expressTime' | translate }}) - {{ shippingCost.express | currency:'EUR' }}</span>
                   </label>
 
                   <label class="payment-option" [class.selected]="checkoutService.shippingMethod() === 'overnight'">
                     <input type="radio" name="shippingMethod" value="overnight" [checked]="checkoutService.shippingMethod() === 'overnight'" (change)="selectShippingMethod('overnight')" data-testid="shipping-overnight" />
                     <span class="payment-icon"><app-icon name="zap" size="lg" /></span>
-                    <span>{{ 'checkout.shipping.overnight' | translate }} ({{ 'checkout.shipping.overnightTime' | translate }}) - $19.99</span>
+                    <span>{{ 'checkout.shipping.overnight' | translate }} ({{ 'checkout.shipping.overnightTime' | translate }}) - {{ shippingCost.overnight | currency:'EUR' }}</span>
                   </label>
                 </div>
 
@@ -307,7 +307,7 @@ import { apiErrorToTranslationKey, toTranslationKey } from '../../core/utils/tra
                       <div class="order-item">
                         <span class="item-qty">{{ item.quantity }}x</span>
                         <span class="item-name">{{ item.productName }}</span>
-                        <span class="item-price">{{ item.subtotal | currency }}</span>
+                        <span class="item-price">{{ item.subtotal | currency:'EUR' }}</span>
                       </div>
                     }
                   </div>
@@ -339,7 +339,7 @@ import { apiErrorToTranslationKey, toTranslationKey } from '../../core/utils/tra
                 @for (item of cartService.items(); track item.id) {
                   <div class="summary-item">
                     <span class="item-info">{{ item.productName }} × {{ item.quantity }}</span>
-                    <span class="item-price">{{ item.subtotal | currency }}</span>
+                    <span class="item-price">{{ item.subtotal | currency:'EUR' }}</span>
                   </div>
                 }
               </div>
@@ -347,7 +347,7 @@ import { apiErrorToTranslationKey, toTranslationKey } from '../../core/utils/tra
               <div class="summary-totals">
                 <div class="summary-row">
                   <span>{{ 'cart.summary.subtotal' | translate }}</span>
-                  <span>{{ cartService.subtotal() | currency }}</span>
+                  <span>{{ cartService.subtotal() | currency:'EUR' }}</span>
                 </div>
                 <div class="summary-row">
                   <span>{{ 'cart.summary.shipping' | translate }}</span>
@@ -355,17 +355,17 @@ import { apiErrorToTranslationKey, toTranslationKey } from '../../core/utils/tra
                     @if ((cartService.cart()?.shipping ?? 0) === 0) {
                       {{ 'cart.summary.freeShipping' | translate }}
                     } @else {
-                      {{ cartService.cart()?.shipping | currency }}
+                      {{ cartService.cart()?.shipping | currency:'EUR' }}
                     }
                   </span>
                 </div>
                 <div class="summary-row">
                   <span>{{ 'cart.summary.tax' | translate }}</span>
-                  <span>{{ cartService.cart()?.tax | currency }}</span>
+                  <span>{{ cartService.cart()?.tax | currency:'EUR' }}</span>
                 </div>
                 <div class="summary-row total">
                   <span>{{ 'cart.summary.total' | translate }}</span>
-                  <span data-testid="order-total">{{ cartService.total() | currency }}</span>
+                  <span data-testid="order-total">{{ cartService.total() | currency:'EUR' }}</span>
                 </div>
               </div>
 
@@ -1209,6 +1209,12 @@ ngOnInit(): void {
       this.paymentService.loadConfig();
     }
   }
+
+  // Per-tier shipping costs shown in the option labels, in EUR. MUST mirror the server's
+  // CheckoutPricing.cs (standard 5.99 / express 15.99 / overnight 19.99) so the displayed option
+  // amount == the cart-summary shipping line == the actual Stripe charge. Keep in sync with
+  // src/ClimaSite.Application/Common/Pricing/CheckoutPricing.cs.
+  readonly shippingCost = { standard: 5.99, express: 15.99, overnight: 19.99 };
 
   selectShippingMethod(method: string): void {
     this.checkoutService.setShippingMethod(method);

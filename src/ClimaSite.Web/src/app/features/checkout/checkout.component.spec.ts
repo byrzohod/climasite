@@ -80,6 +80,13 @@ describe('CheckoutComponent - double-submit guard', () => {
     void component.placeOrder();
     expect(component.placingOrder()).toBeTrue();
   });
+
+  // BUG-11 / DEC-CURRENCY: the shipping-option labels must mirror the server's CheckoutPricing.cs in EUR
+  // (standard 5.99 / express 15.99 / overnight 19.99) so displayed shipping == charged shipping. If the
+  // server tiers change, this test fails to force the FE map back in sync.
+  it('shows shipping costs that match the server (CheckoutPricing) in EUR', () => {
+    expect(component.shippingCost).toEqual({ standard: 5.99, express: 15.99, overnight: 19.99 });
+  });
 });
 
 /**
