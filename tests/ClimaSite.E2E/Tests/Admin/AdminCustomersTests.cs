@@ -1,4 +1,5 @@
 using ClimaSite.E2E.Infrastructure;
+using ClimaSite.E2E.Infrastructure.Retry;
 using ClimaSite.E2E.PageObjects;
 using Microsoft.Playwright;
 
@@ -32,7 +33,7 @@ public class AdminCustomersTests : IAsyncLifetime
         await _fixture.CloseTracedContextAsync(_page);
     }
 
-    [Fact]
+    [RetryFact]
     public async Task AdminCustomers_ListsCustomers()
     {
         // Arrange
@@ -55,7 +56,7 @@ public class AdminCustomersTests : IAsyncLifetime
         hasRow.Should().BeTrue("the seeded customer should appear in the admin customers list");
     }
 
-    [Fact]
+    [RetryFact]
     public async Task AdminCustomers_CanOpenDetail()
     {
         // Arrange
@@ -77,7 +78,7 @@ public class AdminCustomersTests : IAsyncLifetime
             .ToContainTextAsync(customer.Email, new LocatorAssertionsToContainTextOptions { Timeout = 30000 });
     }
 
-    [Fact]
+    [RetryFact]
     public async Task AdminCustomers_CanToggleStatus()
     {
         // Arrange

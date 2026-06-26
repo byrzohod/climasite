@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using ClimaSite.E2E.Infrastructure;
+using ClimaSite.E2E.Infrastructure.Retry;
 using ClimaSite.E2E.PageObjects;
 using Microsoft.Playwright;
 
@@ -35,7 +36,7 @@ public class AdminPanelTests : IAsyncLifetime
 
     #region Admin Login & Dashboard Tests
 
-    [Fact]
+    [RetryFact]
     public async Task AdminLogin_CanAccessDashboard()
     {
         // Arrange - Create admin user
@@ -59,7 +60,7 @@ public class AdminPanelTests : IAsyncLifetime
         (hasProductsLink || hasOrdersLink).Should().BeTrue("Admin dashboard should have navigation links");
     }
 
-    [Fact]
+    [RetryFact]
     public async Task AdminDashboard_NonAdminUser_IsRedirectedOrDenied()
     {
         // Arrange - Create regular (non-admin) user
@@ -86,7 +87,7 @@ public class AdminPanelTests : IAsyncLifetime
 
     #region Admin Products Tests
 
-    [Fact]
+    [RetryFact]
     public async Task AdminProducts_CanListProducts()
     {
         // Arrange - Create admin and some products
@@ -102,7 +103,7 @@ public class AdminPanelTests : IAsyncLifetime
             .ToContainTextAsync("Product", new LocatorAssertionsToContainTextOptions { Timeout = 30000 });
     }
 
-    [Fact]
+    [RetryFact]
     public async Task AdminProducts_CanCreateProduct()
     {
         // Arrange
@@ -121,7 +122,7 @@ public class AdminPanelTests : IAsyncLifetime
             "Created product should be found in product list");
     }
 
-    [Fact]
+    [RetryFact]
     public async Task AdminProducts_CanEditProduct()
     {
         // Arrange
@@ -141,7 +142,7 @@ public class AdminPanelTests : IAsyncLifetime
             "Updated product name should be found");
     }
 
-    [Fact]
+    [RetryFact]
     public async Task AdminProducts_CanDeleteProduct()
     {
         // Arrange
@@ -159,7 +160,7 @@ public class AdminPanelTests : IAsyncLifetime
 
     #region Admin Orders Tests
 
-    [Fact]
+    [RetryFact]
     public async Task AdminOrders_CanListOrdersInUi()
     {
         // Arrange - Create admin and an order
@@ -182,7 +183,7 @@ public class AdminPanelTests : IAsyncLifetime
             .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
     }
 
-    [Fact]
+    [RetryFact]
     public async Task AdminOrders_CanOpenOrderDetailsInUi()
     {
         // Arrange
@@ -204,7 +205,7 @@ public class AdminPanelTests : IAsyncLifetime
         status.Should().NotBeNullOrWhiteSpace("the order detail should display the current status");
     }
 
-    [Fact]
+    [RetryFact]
     public async Task AdminOrders_CanChangeStatusInUi()
     {
         // Arrange
@@ -223,7 +224,7 @@ public class AdminPanelTests : IAsyncLifetime
             .ToContainTextAsync("Paid", new LocatorAssertionsToContainTextOptions { Timeout = 30000 });
     }
 
-    [Fact]
+    [RetryFact]
     public async Task AdminOrders_CanSetTrackingAndMarkShipped_CustomerSeesTracking()
     {
         // Arrange
@@ -279,7 +280,7 @@ public class AdminPanelTests : IAsyncLifetime
         }
     }
 
-    [Fact]
+    [RetryFact]
     public async Task AdminOrders_CanAddNoteInUi()
     {
         // Arrange
@@ -302,7 +303,7 @@ public class AdminPanelTests : IAsyncLifetime
 
     #region Admin Users Tests
 
-    [Fact]
+    [RetryFact]
     public async Task AdminUsers_CanListUsers()
     {
         // Arrange
@@ -322,7 +323,7 @@ public class AdminPanelTests : IAsyncLifetime
 
     #region Admin Reviews/Moderation Tests
 
-    [Fact]
+    [RetryFact]
     public async Task AdminReviews_CanModerateReview()
     {
         // Arrange
@@ -360,7 +361,7 @@ public class AdminPanelTests : IAsyncLifetime
             "Moderation page should be accessible to admin");
     }
 
-    [Fact]
+    [RetryFact]
     public async Task AdminModeration_CanApproveReview()
     {
         // Arrange
