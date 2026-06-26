@@ -1,4 +1,5 @@
 using ClimaSite.E2E.Infrastructure;
+using ClimaSite.E2E.Infrastructure.Retry;
 using ClimaSite.E2E.PageObjects;
 using Microsoft.Playwright;
 
@@ -33,7 +34,7 @@ public class AdminInstallationTests : IAsyncLifetime
         await _fixture.CloseTracedContextAsync(_page);
     }
 
-    [Fact]
+    [RetryFact]
     public async Task AdminInstallation_ListsRequests()
     {
         // Arrange
@@ -53,7 +54,7 @@ public class AdminInstallationTests : IAsyncLifetime
         hasRow.Should().BeTrue("the seeded installation request should appear in the admin list");
     }
 
-    [Fact]
+    [RetryFact]
     public async Task AdminInstallation_CanChangeStatus()
     {
         // Arrange

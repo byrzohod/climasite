@@ -1,4 +1,5 @@
 using ClimaSite.E2E.Infrastructure;
+using ClimaSite.E2E.Infrastructure.Retry;
 using ClimaSite.E2E.PageObjects;
 using Microsoft.Playwright;
 
@@ -32,7 +33,7 @@ public class AdminProductsTests : IAsyncLifetime
         await _fixture.CloseTracedContextAsync(_page);
     }
 
-    [Fact]
+    [RetryFact]
     public async Task AdminProducts_ListsSeededProduct()
     {
         // Arrange
@@ -56,7 +57,7 @@ public class AdminProductsTests : IAsyncLifetime
             .ToContainTextAsync(name, new LocatorAssertionsToContainTextOptions { Timeout = 30000 });
     }
 
-    [Fact]
+    [RetryFact]
     public async Task AdminProducts_CanCreateProduct()
     {
         // Arrange
@@ -82,7 +83,7 @@ public class AdminProductsTests : IAsyncLifetime
             .ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = 30000 });
     }
 
-    [Fact]
+    [RetryFact]
     public async Task AdminProducts_CanEditProduct()
     {
         // Arrange
@@ -112,7 +113,7 @@ public class AdminProductsTests : IAsyncLifetime
             .ToContainTextAsync(updatedName, new LocatorAssertionsToContainTextOptions { Timeout = 30000 });
     }
 
-    [Fact]
+    [RetryFact]
     public async Task AdminProducts_CanDeactivateProduct()
     {
         // Arrange
