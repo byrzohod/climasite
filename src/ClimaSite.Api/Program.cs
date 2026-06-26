@@ -281,6 +281,10 @@ void ConfigurePipeline(WebApplication app)
     // Without this, every request behind the proxy shares one IP and one rate-limit bucket. (SEC-03)
     app.UseForwardedHeaders();
 
+    // Defensive response security headers on every response (SEC-08). Early + unconditional so they
+    // apply to error responses too and in all environments.
+    app.UseSecurityHeaders();
+
     // Custom exception handling middleware (handles NotFoundException, ValidationException, etc.)
     app.UseExceptionHandling();
 
