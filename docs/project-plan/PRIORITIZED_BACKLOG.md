@@ -93,6 +93,7 @@ Detail and evidence: `docs/project-plan/SECURITY_REVIEW.md` (SR-01..SR-20) and `
 - **Depends on:** None.
 
 ### SEC-08 — Security headers middleware + CORS/HSTS/AllowedHosts tightening (P2, Medium)
+- **Status:** 🚧 HEADERS DONE (2026-06-26). Added `SecurityHeadersMiddleware` (unconditional, early in the pipeline): `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `X-XSS-Protection: 0`, `Permissions-Policy`, and a strict `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'` for the JSON API (skipped for `/swagger`). Integration-tested (`SecurityHeadersTests`, 2/2). Note: the API does NOT serve the SPA, so its CSP is safely strict. **Remaining (deploy-time, OPS-08):** the Stripe-compatible **frontend** CSP (where the SPA is served), the CORS header allowlist (`AllowAnyHeader` → explicit, SEC-103), and `AllowedHosts` tightening — these depend on the deploy topology.
 - **Description:** No security-headers middleware exists; CORS uses `.AllowAnyHeader()`; `AllowedHosts="*"`. Implement Plan 18 **SEC-101** (CSP compatible with Stripe, X-Frame-Options DENY, nosniff, Referrer-Policy, Permissions-Policy + integration test) and **SEC-103** (explicit CORS allowlist); set explicit AllowedHosts and tune HSTS.
 - **Closes:** SR-12; Plan 18 SEC-101/SEC-103.
 - **Affected:** `src/ClimaSite.Api/Program.cs`, new middleware.

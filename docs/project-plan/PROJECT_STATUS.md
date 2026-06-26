@@ -49,7 +49,7 @@ Repo `byrzohod/climasite` is **public**; **nothing is deployed yet (OPS-08)**.
 | Home v3 (configurator + recommendations) | ✅ Complete | Real recommendations endpoint. |
 | Accessibility (axe) | ✅ Complete | **`A11Y_ENFORCE=1` live in CI** (hard gate); UX-15 contrast fixed; scans under reduced-motion. |
 | Performance / Lighthouse | 🟡 Partial | Lighthouse runs every PR but **reporting-only** (warn + `\|\| true`), not enforced; some images lack `loading=lazy`. "Verified" was overstated. |
-| Security posture | 🟡 Partial | JWT/lockout/rate-limiter/forwarded-headers done; **SEC-08** response security headers (CSP/X-Frame/etc.) thin; SEC-12/13 open. |
+| Security posture | 🟡 Partial | JWT/lockout/rate-limiter/forwarded-headers + **response security headers done** (SEC-08: nosniff/X-Frame DENY/Referrer-Policy/Permissions-Policy/strict API CSP, integration-tested); remaining: deploy-time CORS allowlist + AllowedHosts + frontend Stripe-CSP (OPS-08), SEC-12/13/14. |
 | Testing / CI | ✅ Complete | 6 required checks, 80/70 coverage enforced, Plan-19 E2E hardening (NetworkIdle purge + trace + guarded retry). |
 | Deployment / ops | ❌ Absent | **OPS-08** nothing deployed; OPS-05 observability + OPS-11 merge queue (plan-blocked) outstanding. |
 
