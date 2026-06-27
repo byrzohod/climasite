@@ -54,7 +54,7 @@ reference case study; `features/PROC-01/STATE.md` is the archived execution trac
 | Area | What it is |
 |---|---|
 | [`animation-style-guide.md`](animation-style-guide.md) | The "Nordic Tech" motion guide: when-to-animate, duration/easing tables, directive reference, reduced-motion contract. Current. |
-| [`runbooks/`](runbooks/) | Operational runbooks (e.g. merge-queue). |
+| [`runbooks/`](runbooks/) | Operational runbooks: [`deploy.md`](runbooks/deploy.md) (canonical Railway deploy runbook — topology, env-var matrix, procedure, rollback, owner checklist; OPS-08), `merge-queue.md`. |
 | [`audit/2026-04-08-gap-report.md`](audit/2026-04-08-gap-report.md) | Date-stamped gap snapshot that drove Plan 18; the most accurate of the older status docs. |
 | [`concepts/home-v3/`](concepts/home-v3/) | Decision inputs for Home v3 (3 concepts, chosen mock, screenshots); referenced by ADR 001/002. |
 | [`performance/performance-audit.md`](performance/performance-audit.md) | Core Web Vitals audit. |
