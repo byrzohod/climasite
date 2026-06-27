@@ -21,15 +21,30 @@ Production-grade multi-language (EN/BG/DE), multi-theme HVAC e-commerce platform
    - **UX-15 a11y: fixed + ENFORCED** — `--color-primary-surface` token + reduced-motion scans; `A11Y_ENFORCE=1` live in CI; both axe suites are hard gates (PR #60).
    - KG enriched (vault).
 
-## ▶ Next action
-No active unit. Pick the next item from **Remaining** below. For any `src/**` change, first write a `.planning/units/<unit>/unit-plan.md` (the `no-spec-no-code` gate) — see `.planning/units/UX-15-contrast/unit-plan.md` as the worked example.
+## ▶ Next action — DEC-SHIPPING (owner DECIDED 2026-06-27: free standard shipping over €50)
+Implement **free standard shipping over a €50 subtotal, €5.99 below** (express €15.99 / overnight €19.99
+unchanged). HVAC is big-ticket so most real orders ship free; margin-protected on small orders.
+- **Server (source of truth):** `src/ClimaSite.Application/Common/Pricing/CheckoutPricing.cs` — make the
+  standard tier `subtotal >= 50 ? 0 : 5.99` (keep express/overnight). This is the **money path** — add
+  unit tests for the threshold boundary (49.99 → 5.99, 50.00 → 0) and keep displayed==charged.
+- **UI:** `checkout.component.ts` `shippingCost` map is currently static — make standard reflect the
+  threshold (compute from the cart subtotal, or show "Free over €50, else €5.99"). Mirror the server.
+- Gated `src/**` → write `.planning/units/DEC-SHIPPING-free-over-50/unit-plan.md` first (no-spec-no-code).
+- Then **OPS-08 deploy-readiness** (owner-decided = Railway): prepare Dockerfile/railway config review +
+  env-var matrix + a deploy runbook; the actual deploy needs the owner's Railway account + secrets.
 
 ## Remaining (tracked — none blocking; full detail in `docs/project-plan/PRIORITIZED_BACKLOG.md`)
-- **Plan 19 B2/B3** — specs for the ~27 untested Angular components (cart, product-list, register first) + replace ~27 placeholder `should create` specs. (tests/ — ungated)
-- **SEC-12** Angular 19→major upgrade (7 high npm advisories); **SEC-13** gitleaks allowlist→enforce; **SEC-14** GDPR Orders-PII anonymization (needs an ADR; KG: R-002 / Q-005).
-- **OPS-11** enable the trunk merge queue — **plan-blocked** (needs a paid GitHub plan); ruleset + `merge_group` trigger are staged. See `docs/runbooks/merge-queue.md`.
-- **Plan 19 C1** (`@defer` e2e-build mitigation — low priority now NetworkIdle is gone) · **C3** (dev-env rate-limit exemption, local-only convenience).
-- **KG open items** — R-001 observability (=OPS-05), R-006/R-007/R-008; **VERIFY-first**: Q-003 stock-reservation, Q-006 SalePrice mapping (confirm vs current code before treating as bugs).
+- **DEC-SHIPPING** (next, above) · **OPS-08 deploy-readiness prep** (Railway; owner adds account+secrets).
+- **UX-16** transitional dual EUR/BGN display (peg 1.95583) — only needed pre-BG-launch.
+- **SEC-14 residual follow-ups** (council round-3, non-blocking): `ExportUserDataQuery` should also cover
+  same-email guest orders (Art-15/20 consistency with the new deletion scope); outbox-worker send-race
+  (a row already being dispatched can't be unsent — needs worker-level suppression for absolute guarantee).
+- **Plan 19 B2/B3** — ~24 more untested components + replace ~27 placeholder `should create` specs (tests/).
+- **SEC-12** Angular 19→major upgrade (7 high npm advisories); **SEC-13** gitleaks allowlist→enforce.
+- **Lighthouse** flip warn→enforce (needs a stable baseline first — currently a non-required, variance-prone job).
+- **OPS-11** trunk merge queue — plan-blocked (paid GitHub plan); ruleset + `merge_group` staged.
+- **Inventory reservations** (no reserve/hold; oversell window) · **Search** ILIKE→FTS/Meilisearch.
+- **KG open items** — R-006/R-007/R-008; **VERIFY-first**: Q-003 stock-reservation, Q-006 SalePrice (confirm vs code first).
 
 ## Recently done (2026-06-26)
 - **DOC-02 verified per-feature status pass** — code-read across 4 clusters (+ hand spot-checks) → refreshed `docs/project-plan/PROJECT_STATUS.md` to a dated, evidence-backed SSOT. REFUTED the stale "broken/stub" claims (admin CRUD, notifications, contact, legal, installation, GDPR-delete, payments all verified complete); corrected 2 verifier errors (BUG-03 cart-merge IS fixed; wishlist guest-merge EXISTS); confirmed the real open gaps (search-ILIKE, inventory-no-reservations, Lighthouse-reporting-only, SEC-08/14, OPS-08). CLAUDE.md caveat updated → PROJECT_STATUS is current.
@@ -38,7 +53,7 @@ No active unit. Pick the next item from **Remaining** below. For any `src/**` ch
 - **E2E retry net extended** to the 4 auth-heavy admin classes (recurring AdminPanelTests redirect flake) — same guardrail (timeout-only).
 - **OPS-05 observability floor** — `CorrelationIdMiddleware` (X-Correlation-Id generate/echo + Serilog LogContext), `traceId` in error responses, `Log.CloseAndFlush` on shutdown; integration-tested (3/3). Remaining (deploy-time / O-4): error tracker (Sentry), OTel, JSON-console-prod, uptime alerts.
 - **Plan-19 B2 (partial)** — specs for the 3 highest-value untested components: product-list (32) + cart (18) + register (15) = +65, suite 1246→1311 green. ~24 lower-value components + B3 (placeholder-spec replacement) remain.
-- **SEC-14 GDPR Orders-PII (DONE, ADR-0004)** — owner decision = anonymize order PII on deletion, retain the invoice record (Art. 17(3)(b)); `Order.AnonymizePersonalData()` + handler + 10/10 GDPR tests. KG R-002 mitigated / Q-005 resolved.
+- **SEC-14 GDPR Orders-PII (DONE, ADR-0004, PR #69)** — owner decision = anonymize order PII on deletion, retain the accounting record (Art. 17(3)(b)). `Order.AnonymizePersonalData()` scrubs email/phone/addresses/**Notes/CancellationReason/GuestAccessToken**; handler erases account **+ same-email guest** orders (case-insensitive) and deletes the matching **outbox** rows (case-insensitive, pre-anonymize) to stop post-erasure sends. **Cross-vendor council (Codex) ran 3 rounds** — found real High gaps each round (free-text PII, outbox, guest orders, case mismatch); all fixed; round-3 = no High/Medium blocker. 10/10 GDPR tests. KG R-002 mitigated / Q-005 resolved. Residuals tracked above.
 - **Owner decisions made (2026-06-27, "best for a real company"):** SEC-14 = anonymize-but-retain (done) · DEC-SHIPPING = free standard shipping over €50 (next) · OPS-08 deploy = prepare Railway-readiness artifacts, owner adds account+secrets (next).
 
 ## Recently done (2026-06-25)
