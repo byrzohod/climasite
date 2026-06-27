@@ -51,6 +51,7 @@ public class SecurityHeadersTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Theory]
+    [InlineData("/swagger")]
     [InlineData("/swagger/index.html")]
     [InlineData("/swagger/v1/swagger.json")]
     public async Task Swagger_IsNotServedOutsideDevelopment(string path)
