@@ -36,6 +36,9 @@ await SeedDatabaseAsync(app);
 // Configure the HTTP request pipeline
 ConfigurePipeline(app);
 
+// Flush buffered logs on graceful shutdown (OPS-05).
+app.Lifetime.ApplicationStopped.Register(Log.CloseAndFlush);
+
 app.Run();
 
 async Task SeedDatabaseAsync(WebApplication app)
@@ -284,6 +287,10 @@ void ConfigurePipeline(WebApplication app)
     // Defensive response security headers on every response (SEC-08). Early + unconditional so they
     // apply to error responses too and in all environments.
     app.UseSecurityHeaders();
+
+    // Correlation IDs (OPS-05): assign/echo X-Correlation-Id + push it to the Serilog LogContext.
+    // Before the exception handler + request logging so both carry the id.
+    app.UseCorrelationId();
 
     // Custom exception handling middleware (handles NotFoundException, ValidationException, etc.)
     app.UseExceptionHandling();
