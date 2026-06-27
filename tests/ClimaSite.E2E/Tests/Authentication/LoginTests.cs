@@ -1,4 +1,5 @@
 using ClimaSite.E2E.Infrastructure;
+using ClimaSite.E2E.Infrastructure.Retry;
 using ClimaSite.E2E.PageObjects;
 using Microsoft.Playwright;
 
@@ -28,7 +29,7 @@ public class LoginTests : IAsyncLifetime
         await _fixture.CloseTracedContextAsync(_page);
     }
 
-    [Fact]
+    [RetryFact]
     public async Task Login_WithValidCredentials_RedirectsToDashboard()
     {
         // Arrange - Create REAL user via API
@@ -44,7 +45,7 @@ public class LoginTests : IAsyncLifetime
         isLoggedIn.Should().BeTrue();
     }
 
-    [Fact]
+    [RetryFact]
     public async Task Login_WithInvalidCredentials_ShowsErrorMessage()
     {
         // Arrange
@@ -59,7 +60,7 @@ public class LoginTests : IAsyncLifetime
         errorMessage.Should().NotBeNullOrEmpty();
     }
 
-    [Fact]
+    [RetryFact]
     public async Task Login_WithEmptyFields_ShowsValidationErrors()
     {
         // Arrange

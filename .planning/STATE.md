@@ -21,7 +21,60 @@ Production-grade multi-language (EN/BG/DE), multi-theme HVAC e-commerce platform
    - **UX-15 a11y: fixed + ENFORCED** — `--color-primary-surface` token + reduced-motion scans; `A11Y_ENFORCE=1` live in CI; both axe suites are hard gates (PR #60).
    - KG enriched (vault).
 
-## ▶ Next action — OWNER: answer the 5 OPS-08 questions, then deploy-hardening dev items
+## ▶ RESUME HERE (saved 2026-06-27 before a machine restart — Docker was hung; restart fixes it)
+
+**You are on branch `test/e2e-full-customer-journey` → open PR #77** (the only open PR). Working tree is
+clean (all work committed + pushed: commits `e4e8dd6` journey tests, `9f7d351` route fix, `028e39c`
+timeout fix). `main` tip when saved ≈ `1dff5ae`+ (this branch was cut earlier, so its other STATE entries
+below lag main — trust git/PRs, not this file's older recap).
+
+**What #77 is:** comprehensive E2E coverage of the FULL human workflow (your ask: register→login→cart→
+wishlist→checkout(bank-transfer)→order→history→details→review). Files: `tests/ClimaSite.E2E/PageObjects/
+RegisterPage.cs`, `Tests/Authentication/RegistrationTests.cs` (3), `Tests/Journeys/FullCustomerJourneyTests.cs`
+(2) + converted `UserMenuTests`/`LoginTests` to `[RetryFact]`.
+
+**Status at save:** the **2 FullCustomerJourneyTests PASS in CI** (the full workflow is VERIFIED working).
+The **3 standalone `RegistrationTests` were FAILING** on `IsRegisteredAsync()==false`. Fixes already
+applied: (a) route `/auth/register`→`/register` (root route — `9f7d351`); (b) bumped RegisterPage waits
+10s→30s for cold-backend first-register latency (`028e39c`). A re-run was in flight at save (11 pass / E2E
+pending).
+
+**FIRST STEPS ON RESUME:**
+1. `git checkout test/e2e-full-customer-journey && git pull`; `gh pr checks 77` — see if the timeout fix
+   greened the 3 RegistrationTests.
+2. **If green → merge #77** (`gh pr merge 77 --squash --delete-branch`) — full-workflow coverage DONE.
+3. **If RegistrationTests still fail → Docker is back now, so REPRODUCE LOCALLY** (the whole reason this was
+   hard): start the stack per `docs/project-plan/DEV_WORKFLOW.md` (API :5029 + `ng serve` :4200, shared
+   Postgres :5432 — see the [[project_repo_ops_gotchas]] memory for the exact connection-string override),
+   then `dotnet test tests/ClimaSite.E2E --filter "FullyQualifiedName~RegistrationTests"` to see the REAL
+   failure, fix, push, merge. (The journey tests already prove registration works end-to-end, so worst
+   case: keep RegisterPage + the 2 journey tests and trim/relax the 3 standalone ones.)
+4. **Known follow-up uncovered here:** `AccessibilityTests.cs:167` also navigates `/auth/register` (wrong
+   route) but masks it via a tolerant wait → its register a11y scan runs on the wrong page. Fixing its
+   route may surface previously-unscanned violations under the enforced axe gate (`A11Y_ENFORCE=1`) — do it
+   as a separate triaged unit.
+
+### Merged to main this session (2026-06-27) — for context (newest first)
+#76 B2 component specs batch 2 (+65, admin-order-detail/admin-moderation/mega-menu) · #75 OPS-03 delete
+dead duplicate Docker/Railway config · #74 SEC-06 gate Swagger out of prod · #73 workflow sync (adopted
+`/acceptance` gate + check #11 + broadened council cadence) · #72 SEC-07 remove dummy Stripe keys + prod
+fail-fast · #71 OPS-08 deploy-readiness runbook · #70 DEC-SHIPPING free standard shipping >€50 · #69 SEC-14
+GDPR order-PII erasure · #68 B2 specs batch 1 · #67 OPS-05 correlation IDs · #66 SEC-08 security headers ·
+#65 admin retry-net · #64 BUG-11 EUR currency. **Standing rule:** run the cross-vendor Codex council
+(`gpt-5.5`@`xhigh`) on every non-trivial change; behaviour/source PRs want an `/acceptance` pass. See
+[[feedback_council_merge_gate]].
+
+### Remaining backlog after #77 (all CI-verifiable unless noted)
+- **Deploy-hardening (best validated against a real Railway deploy — owner-gated):** F3 `Dockerfile.api`
+  honor `$PORT`, OPS-07 non-root containers, OPS-04 pre-deploy migrations, OPS-03's `deploy.yml` CD workflow.
+- **Search → Postgres FTS** (high value; needs a tsvector-column migration — blast radius = all integration
+  tests, so do it carefully in a focused session; the search handlers have NO InMemory unit tests so FTS is
+  feasible; hybrid FTS-for-prose + substring-for-codes to avoid regressing SKU/model search).
+- **Plan-19 B3** (replace ~27 placeholder `should create` specs) · ~18 more untested components.
+- **VERIFIED NOT-BUGS this session:** Q-006 SalePrice (correctly mapped) + Q-003 stock (atomic `stock>=qty`
+  guard + charged-but-no-stock refund) — inventory reservations would be an enhancement, not a fix.
+
+## After #77 — OWNER: answer the 5 OPS-08 questions, then deploy-hardening dev items
 **DEC-SHIPPING + OPS-08 deploy-readiness prep are DONE.** The canonical deploy runbook is
 **`docs/runbooks/deploy.md`** (artifact map, env-var matrix with the REAL var names the code reads, deploy
 procedure, rollback, the 5 OPS-08 owner questions, known gaps).

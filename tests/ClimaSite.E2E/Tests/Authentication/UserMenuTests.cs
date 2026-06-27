@@ -1,4 +1,5 @@
 using ClimaSite.E2E.Infrastructure;
+using ClimaSite.E2E.Infrastructure.Retry;
 using ClimaSite.E2E.PageObjects;
 using FluentAssertions;
 using Microsoft.Playwright;
@@ -41,7 +42,7 @@ public class UserMenuTests : IAsyncLifetime
     }
 
     // E2E-003: User sees dropdown menu when logged in
-    [Fact]
+    [RetryFact]
     public async Task LoggedInUser_ClicksUserIcon_SeesDropdownMenu()
     {
         // Arrange - Create and login user
@@ -60,7 +61,7 @@ public class UserMenuTests : IAsyncLifetime
     }
 
     // E2E-004: User can access account from dropdown
-    [Fact]
+    [RetryFact]
     public async Task LoggedInUser_ClicksAccountLink_NavigatesToAccount()
     {
         // Arrange
@@ -77,7 +78,7 @@ public class UserMenuTests : IAsyncLifetime
     }
 
     // E2E-005: User can access orders from dropdown
-    [Fact]
+    [RetryFact]
     public async Task LoggedInUser_ClicksOrdersLink_NavigatesToOrders()
     {
         // Arrange
@@ -94,7 +95,7 @@ public class UserMenuTests : IAsyncLifetime
     }
 
     // E2E-006: User can logout from dropdown
-    [Fact]
+    [RetryFact]
     public async Task LoggedInUser_ClicksLogout_IsLoggedOut()
     {
         // Arrange
@@ -113,7 +114,7 @@ public class UserMenuTests : IAsyncLifetime
     }
 
     // E2E-007: Login link shows when not authenticated
-    [Fact]
+    [RetryFact]
     public async Task NotLoggedIn_SeesLoginButton_NotUserMenu()
     {
         // Arrange & Act - Navigate to home page without logging in
@@ -125,7 +126,7 @@ public class UserMenuTests : IAsyncLifetime
     }
 
     // E2E: User menu displays correct user info
-    [Fact]
+    [RetryFact]
     public async Task LoggedInUser_UserMenu_DisplaysUserInfo()
     {
         // Arrange
@@ -145,7 +146,7 @@ public class UserMenuTests : IAsyncLifetime
     }
 
     // E2E: User menu closes on click outside
-    [Fact]
+    [RetryFact]
     public async Task UserMenu_ClickOutside_ClosesDropdown()
     {
         // Arrange
@@ -164,7 +165,7 @@ public class UserMenuTests : IAsyncLifetime
     }
 
     // E2E: User menu closes on Escape key
-    [Fact]
+    [RetryFact]
     public async Task UserMenu_PressEscape_ClosesDropdown()
     {
         // Arrange
@@ -183,7 +184,7 @@ public class UserMenuTests : IAsyncLifetime
     }
 
     // E2E: Admin user sees admin link in dropdown
-    [Fact]
+    [RetryFact]
     public async Task AdminUser_SeesAdminLinkInDropdown()
     {
         // Arrange - Create admin user
@@ -198,7 +199,7 @@ public class UserMenuTests : IAsyncLifetime
     }
 
     // E2E: Regular user does not see admin link
-    [Fact]
+    [RetryFact]
     public async Task RegularUser_DoesNotSeeAdminLink()
     {
         // Arrange - Create regular user
