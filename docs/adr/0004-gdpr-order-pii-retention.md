@@ -21,18 +21,32 @@ Two obligations are in tension:
 
 ## Decision
 
-On account deletion we **anonymize** the directly-identifying personal data on the user's orders while
-**retaining** the order/invoice record itself:
+On account deletion we **erase the personal data** on the user's orders while **retaining the accounting
+order record** itself:
 
 - **Scrubbed** (`Order.AnonymizePersonalData()`): `CustomerEmail` → `anonymized@deleted.local`,
   `CustomerPhone` → null, `ShippingAddress` → `{ anonymized: true }` (this dict also held the customer
-  name), `BillingAddress` → null.
+  name), `BillingAddress` → null, and the free-text `Notes` + `CancellationReason` → null (they may hold
+  names/phones/delivery instructions).
+- **Outbox cleared** (`DeleteUserDataCommandHandler`): the user's `OutboxMessages` (email-queue) rows are
+  deleted — they carry the recipient address + order payloads, and a still-`Pending` row would otherwise
+  send a post-erasure email to the original address.
 - **Retained** for the statutory accounting-retention period: the order id/number, line items
-  (product, SKU, quantity, price), monetary totals, currency, status, and timestamps — none of which
-  identify the data subject once the contact/address fields are scrubbed.
+  (product, SKU, quantity, price), monetary totals, currency, status, timestamps, and the payment-processor
+  join key (`PaymentIntentId`) — none of which identify the data subject once the fields above are scrubbed.
+- **`Order.UserId` is intentionally kept** as an internal retention/audit key (it now points to an
+  already-anonymized user row). Because the order row therefore still *correlates* to that internal id,
+  this is honestly **pseudonymization-grade erasure of the personal data**, not full anonymization — but no
+  directly-identifying personal data remains readable on the order.
 
-Orders are matched by `Order.UserId`. (Guest orders placed without an account are out of scope of an
-account deletion and are addressed by the separate retention-sweep, future work.)
+Orders are matched by `Order.UserId`. (Guest orders placed without an account — including a logged-in
+user's *prior* guest checkouts under the same email — are **out of scope** of an account deletion here and
+are addressed by the separate retention-sweep, future work.)
+
+> **Invoice note:** these are the live order's *source* fields. A *new* invoice generated for a deleted
+> user (`GenerateInvoiceQuery`) will therefore show anonymized buyer data — intended (GDPR-erasure-first).
+> If local tax law requires the *already-issued* invoice document to retain buyer name/address, that
+> document must be archived separately at issue time; it is not the live order record this ADR governs.
 
 ## Alternatives considered
 

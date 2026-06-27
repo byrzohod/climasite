@@ -130,6 +130,14 @@ public class DeleteUserDataCommandHandler : IRequestHandler<DeleteUserDataComman
                     .ToListAsync(cancellationToken);
                 _context.ReviewVotes.RemoveRange(reviewVotes);
 
+                // Delete the user's outbox (email-queue) rows (SEC-14): they carry the recipient address
+                // + order payloads (PII), and any still-Pending row would otherwise SEND a post-erasure
+                // email to the original address. user.Email is still the original here (anonymized below).
+                var outboxRows = await _context.OutboxMessages
+                    .Where(o => o.ToEmail == user.Email)
+                    .ToListAsync(cancellationToken);
+                _context.OutboxMessages.RemoveRange(outboxRows);
+
                 // 2. Anonymize data that has legal retention requirements
 
                 // Anonymize reviews (keep for product integrity but remove personal info)

@@ -6,6 +6,7 @@ using ClimaSite.Core.Entities;
 using ClimaSite.Infrastructure.Data;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ClimaSite.Api.Tests.Controllers;
@@ -214,7 +215,7 @@ public class GdprControllerTests : IntegrationTestBase
         await AuthenticateAsync(email, password);
         var userId = await GetUserIdAsync(email);
 
-        // Seed a real order owned by this user, with PII.
+        // Seed a real order owned by this user, with PII in every personal field, plus a queued email row.
         Guid orderId;
         using (var scope = Factory.Services.CreateScope())
         {
@@ -225,10 +226,15 @@ public class GdprControllerTests : IntegrationTestBase
             order.SetShippingAddress(new Dictionary<string, object>
             {
                 ["fullName"] = "Real Customer",
-                ["street"] = "1 Real St",
-                ["city"] = "Sofia"
+                ["addressLine1"] = "1 Real St",
+                ["city"] = "Sofia",
+                ["postalCode"] = "1000"
             });
+            order.SetBillingAddress(new Dictionary<string, object> { ["fullName"] = "Real Customer" });
+            order.SetNotes("Call Real Customer on +359888123456 before delivery");
+            order.SetCancellationReason("Customer Real Customer changed their mind");
             db.Orders.Add(order);
+            db.OutboxMessages.Add(OutboxMessage.ForOrderConfirmation(email, order.Id));
             await db.SaveChangesAsync();
             orderId = order.Id;
         }
@@ -241,13 +247,19 @@ public class GdprControllerTests : IntegrationTestBase
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var order = await db.Orders.FindAsync(orderId);
 
-            order.Should().NotBeNull("the invoice record is retained for legal/tax compliance");
+            order.Should().NotBeNull("the accounting order record is retained for legal/tax compliance");
             order!.CustomerEmail.Should().Be("anonymized@deleted.local");
             order.CustomerPhone.Should().BeNull();
             order.ShippingAddress.Should().NotContainKey("fullName");
             order.ShippingAddress.Values.Select(v => v?.ToString())
                 .Should().NotContain("Real Customer", "the customer name must be scrubbed");
             order.BillingAddress.Should().BeNull();
+            order.Notes.Should().BeNull("free-text notes can hold PII");
+            order.CancellationReason.Should().BeNull("free-text cancellation reason can hold PII");
+
+            // The queued email row (recipient address + order payload) must be gone — no post-erasure send.
+            var outboxLeft = await db.OutboxMessages.CountAsync(o => o.ToEmail == email);
+            outboxLeft.Should().Be(0, "the user's email-queue rows are deleted on erasure");
         }
     }
 
