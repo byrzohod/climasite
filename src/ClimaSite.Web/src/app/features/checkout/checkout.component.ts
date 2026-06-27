@@ -4,6 +4,7 @@ import { RouterLink, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 
+import { shippingCostFor as computeShippingCost } from '../../core/pricing/shipping';
 import { CartService } from '../../core/services/cart.service';
 import { CheckoutService, CheckoutStep } from '../../core/services/checkout.service';
 import { AddressService } from '../../core/services/address.service';
@@ -1216,39 +1217,20 @@ ngOnInit(): void {
     }
   }
 
-  // DEC-SHIPPING — single source of truth for per-method shipping cost in the UI. MUST mirror the
-  // server's CheckoutPricing.GetShippingCost(method, subtotal) so the displayed option amount ==
-  // the cart-summary shipping line == the actual Stripe charge (displayed == charged). Standard is
-  // FREE when the cart subtotal is at/above the €50 threshold, otherwise €5.99; express €15.99 /
-  // overnight €19.99 are flat. Keep in sync with
-  // src/ClimaSite.Application/Common/Pricing/CheckoutPricing.cs (BUG-11 / DEC-CURRENCY / DEC-SHIPPING).
-  static readonly FREE_SHIPPING_THRESHOLD = 50;
-  private static readonly STANDARD_SHIPPING = 5.99;
-  private static readonly EXPRESS_SHIPPING = 15.99;
-  private static readonly OVERNIGHT_SHIPPING = 19.99;
-
   /** Current cart subtotal as the server computes it (sum of line totals). */
   private cartSubtotal(): number {
     return this.cartService.subtotal?.() ?? 0;
   }
 
   /**
-   * Threshold-aware shipping cost for a single method, mirroring the server. This is the ONE place
-   * the per-method cost is derived; both the option labels and the order summary read through it so
-   * there is never a second divergent formula.
+   * DEC-SHIPPING — threshold-aware shipping cost for a single method. Delegates to the shared client
+   * helper (`core/pricing/shipping.ts`), which mirrors the server's
+   * CheckoutPricing.GetShippingCost(method, subtotal), so the displayed option amount == the
+   * order-summary shipping line == the cart page == the actual Stripe charge (displayed == charged).
+   * Both the option labels and the order summary read through this — never a second divergent formula.
    */
   shippingCostFor(method: string): number {
-    switch (method?.toLowerCase()) {
-      case 'express':
-        return CheckoutComponent.EXPRESS_SHIPPING;
-      case 'overnight':
-        return CheckoutComponent.OVERNIGHT_SHIPPING;
-      case 'standard':
-      default:
-        return this.cartSubtotal() >= CheckoutComponent.FREE_SHIPPING_THRESHOLD
-          ? 0
-          : CheckoutComponent.STANDARD_SHIPPING;
-    }
+    return computeShippingCost(method, this.cartSubtotal());
   }
 
   /** Per-tier shipping costs shown in the option labels (standard is threshold-aware). */
