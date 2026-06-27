@@ -205,6 +205,7 @@ public class Order : BaseEntity
         BillingAddress = null;
         Notes = null;
         CancellationReason = null;
+        GuestAccessToken = null; // revoke the shareable guest-order link
         SetUpdatedAt();
     }
 

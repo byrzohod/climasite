@@ -26,8 +26,8 @@ order record** itself:
 
 - **Scrubbed** (`Order.AnonymizePersonalData()`): `CustomerEmail` → `anonymized@deleted.local`,
   `CustomerPhone` → null, `ShippingAddress` → `{ anonymized: true }` (this dict also held the customer
-  name), `BillingAddress` → null, and the free-text `Notes` + `CancellationReason` → null (they may hold
-  names/phones/delivery instructions).
+  name), `BillingAddress` → null, the free-text `Notes` + `CancellationReason` → null (they may hold
+  names/phones/delivery instructions), and the shareable `GuestAccessToken` → null (revoke the guest link).
 - **Outbox cleared** (`DeleteUserDataCommandHandler`): the user's `OutboxMessages` (email-queue) rows are
   deleted — they carry the recipient address + order payloads, and a still-`Pending` row would otherwise
   send a post-erasure email to the original address.
@@ -39,9 +39,11 @@ order record** itself:
   this is honestly **pseudonymization-grade erasure of the personal data**, not full anonymization — but no
   directly-identifying personal data remains readable on the order.
 
-Orders are matched by `Order.UserId`. (Guest orders placed without an account — including a logged-in
-user's *prior* guest checkouts under the same email — are **out of scope** of an account deletion here and
-are addressed by the separate retention-sweep, future work.)
+Orders are matched by `Order.UserId` **and** by the data subject's own prior **guest** checkouts (UserId
+null) under the **same email** — matched case-insensitively, since order emails are stored lower-cased.
+The matching outbox (email-queue) rows for all those emails are deleted first (case-insensitively) so no
+post-erasure email is sent. Guest orders placed under a *different* email cannot be linked to this data
+subject and remain out of scope (a future retention-sweep handles age-based purging).
 
 > **Invoice note:** these are the live order's *source* fields. A *new* invoice generated for a deleted
 > user (`GenerateInvoiceQuery`) will therefore show anonymized buyer data — intended (GDPR-erasure-first).

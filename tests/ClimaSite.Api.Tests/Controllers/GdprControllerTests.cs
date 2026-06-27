@@ -215,8 +215,10 @@ public class GdprControllerTests : IntegrationTestBase
         await AuthenticateAsync(email, password);
         var userId = await GetUserIdAsync(email);
 
-        // Seed a real order owned by this user, with PII in every personal field, plus a queued email row.
-        Guid orderId;
+        // Seed: (1) an account order with PII in every field; (2) a same-email GUEST order (UserId null)
+        // with a guest token; (3) an outbox row whose ToEmail is UPPER-CASE (order emails are lower-cased,
+        // so this proves case-insensitive cleanup).
+        Guid orderId, guestOrderId;
         using (var scope = Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -234,9 +236,16 @@ public class GdprControllerTests : IntegrationTestBase
             order.SetNotes("Call Real Customer on +359888123456 before delivery");
             order.SetCancellationReason("Customer Real Customer changed their mind");
             db.Orders.Add(order);
-            db.OutboxMessages.Add(OutboxMessage.ForOrderConfirmation(email, order.Id));
+
+            var guestOrder = new Order($"TEST-GUEST-{Guid.NewGuid():N}", email); // UserId stays null
+            guestOrder.SetCustomerPhone("+359888999999");
+            guestOrder.SetGuestAccessToken(Guid.NewGuid().ToString("N"));
+            db.Orders.Add(guestOrder);
+
+            db.OutboxMessages.Add(OutboxMessage.ForOrderConfirmation(email.ToUpperInvariant(), order.Id));
             await db.SaveChangesAsync();
             orderId = order.Id;
+            guestOrderId = guestOrder.Id;
         }
 
         var response = await SendDeleteAsync(new { password, confirmDeletion = true });
@@ -257,9 +266,16 @@ public class GdprControllerTests : IntegrationTestBase
             order.Notes.Should().BeNull("free-text notes can hold PII");
             order.CancellationReason.Should().BeNull("free-text cancellation reason can hold PII");
 
-            // The queued email row (recipient address + order payload) must be gone — no post-erasure send.
-            var outboxLeft = await db.OutboxMessages.CountAsync(o => o.ToEmail == email);
-            outboxLeft.Should().Be(0, "the user's email-queue rows are deleted on erasure");
+            // The same-email GUEST order is erased too, and its shareable link revoked.
+            var guestOrder = await db.Orders.FindAsync(guestOrderId);
+            guestOrder.Should().NotBeNull();
+            guestOrder!.CustomerEmail.Should().Be("anonymized@deleted.local");
+            guestOrder.CustomerPhone.Should().BeNull();
+            guestOrder.GuestAccessToken.Should().BeNull("the guest access link must be revoked");
+
+            // The queued email row must be gone despite the case difference — no post-erasure send.
+            var outboxLeft = await db.OutboxMessages.CountAsync(o => o.ToEmail.ToLower() == email.ToLower());
+            outboxLeft.Should().Be(0, "the user's email-queue rows are deleted on erasure (case-insensitive)");
         }
     }
 

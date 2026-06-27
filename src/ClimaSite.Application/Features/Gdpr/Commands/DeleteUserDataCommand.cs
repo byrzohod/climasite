@@ -130,14 +130,6 @@ public class DeleteUserDataCommandHandler : IRequestHandler<DeleteUserDataComman
                     .ToListAsync(cancellationToken);
                 _context.ReviewVotes.RemoveRange(reviewVotes);
 
-                // Delete the user's outbox (email-queue) rows (SEC-14): they carry the recipient address
-                // + order payloads (PII), and any still-Pending row would otherwise SEND a post-erasure
-                // email to the original address. user.Email is still the original here (anonymized below).
-                var outboxRows = await _context.OutboxMessages
-                    .Where(o => o.ToEmail == user.Email)
-                    .ToListAsync(cancellationToken);
-                _context.OutboxMessages.RemoveRange(outboxRows);
-
                 // 2. Anonymize data that has legal retention requirements
 
                 // Anonymize reviews (keep for product integrity but remove personal info)
@@ -151,13 +143,27 @@ public class DeleteUserDataCommandHandler : IRequestHandler<DeleteUserDataComman
                     review.SetVerifiedPurchase(false, null);
                 }
 
-                // Anonymize the user's orders (SEC-14): scrub PII (email/phone/addresses incl. the name in
-                // the address dict) but RETAIN the order/invoice record for the legally-required accounting
-                // retention period — GDPR Art. 17(3)(b). Makes the confirmation email's "order history
-                // (anonymized)" claim true. See ADR-0004.
+                // Anonymize this data subject's orders (SEC-14): scrub PII (email/phone/addresses incl. the
+                // name in the address dict, free-text notes, and the guest link) but RETAIN the accounting
+                // order record for the legally-required retention period — GDPR Art. 17(3)(b). Covers both
+                // account orders (by UserId) AND the user's prior GUEST checkouts under the same email
+                // (UserId null) — order emails are stored lower-cased, so match case-insensitively.
+                var emailLower = user.Email.ToLowerInvariant();
                 var orders = await _context.Orders
-                    .Where(o => o.UserId == userId.Value)
+                    .Where(o => o.UserId == userId.Value
+                                || (o.UserId == null && o.CustomerEmail.ToLower() == emailLower))
                     .ToListAsync(cancellationToken);
+
+                // Delete the matching outbox (email-queue) rows BEFORE anonymizing: they carry the recipient
+                // address + order payloads (PII), and a still-Pending row would otherwise SEND a
+                // post-erasure email. Match the account email + every order email, case-insensitively.
+                var recipientEmails = new List<string> { emailLower };
+                recipientEmails.AddRange(orders.Select(o => o.CustomerEmail.ToLower()));
+                var outboxRows = await _context.OutboxMessages
+                    .Where(o => recipientEmails.Contains(o.ToEmail.ToLower()))
+                    .ToListAsync(cancellationToken);
+                _context.OutboxMessages.RemoveRange(outboxRows);
+
                 foreach (var order in orders)
                 {
                     order.AnonymizePersonalData();
