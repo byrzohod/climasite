@@ -3,7 +3,8 @@ using Microsoft.Playwright;
 namespace ClimaSite.E2E.PageObjects;
 
 /// <summary>
-/// Page Object for the customer registration page (route <c>/auth/register</c>).
+/// Page Object for the customer registration page (route <c>/register</c> — registered at the app root,
+/// like <c>/login</c>; NOT <c>/auth/register</c> despite the component's folder path).
 ///
 /// IMPORTANT behavioural note (see register.component.ts): registration does NOT auto-login. On
 /// success the form shows a <c>register-success</c> banner and the SPA router redirects to
@@ -32,8 +33,10 @@ public class RegisterPage : BasePage
 
     public async Task NavigateAsync()
     {
-        await Page.GotoAsync("/auth/register");
-        await SettleAsync("[data-testid='register-email']");
+        await Page.GotoAsync("/register");
+        // Settle on the inner native <input> (the data-testid sits on the app-input host; the inner
+        // input is the reliably-visible element, same as LoginPage).
+        await SettleAsync("[data-testid='register-firstname'] input");
     }
 
     /// <summary>
