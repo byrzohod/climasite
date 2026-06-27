@@ -13,9 +13,10 @@ namespace ClimaSite.E2E.Tests.Checkout;
 /// Self-skipping: if the running stack does not expose a REAL Stripe publishable key
 /// (GET /api/payments/config → publishableKey starts with "pk_" AND does not contain the
 /// placeholder marker "Dummy"), both tests log "SKIP: Stripe not configured" and return early
-/// instead of failing. This keeps the file safe in CI environments whose appsettings ships a dummy
-/// "pk_test_...Dummy..." key, while still exercising a genuine end-to-end charge whenever a real
-/// Stripe key is wired up (locally now; in CI once real STRIPE_* secrets are added).
+/// instead of failing. Since SEC-07, appsettings ships NO Stripe key and CI falls back to a non-Stripe
+/// sentinel (no "pk_" prefix), so the default config is not "real" and these self-skip — while still
+/// exercising a genuine end-to-end charge whenever a real Stripe key is wired up (locally now; in CI once
+/// real STRIPE_* secrets are added).
 ///
 /// The Stripe combined CardElement renders inside a same-origin-bridged iframe whose name
 /// starts with "__privateStripeFrame". Inside that frame the four fields are named
@@ -147,12 +148,12 @@ public class CardPaymentE2ETests : IClassFixture<CardPaymentDataFixture>, IAsync
     /// <summary>
     /// Returns true only when the running stack exposes a REAL Stripe publishable key.
     ///
-    /// The gate is deliberately strict: appsettings.json ships a DUMMY placeholder key
-    /// ("pk_test_51DummyKeyForTestingPurposesOnly000000000000") that also starts with "pk_", so a
-    /// naive prefix check would let the test run with a fake key and fail the required E2E gate in CI.
-    /// We therefore require the key to start with "pk_" AND not contain "Dummy" (case-insensitive).
-    /// This skips in CI (dummy key → SKIP), runs locally against the real pk_test key, and will run
-    /// in the owner's CI once real STRIPE_* secrets are provided.
+    /// Since SEC-07, appsettings.json ships NO Stripe key (empty), and CI falls back to a non-Stripe
+    /// sentinel ("e2e-fallback-not-a-real-publishable-key") with no "pk_" prefix — so the default config
+    /// is not "real" and this test self-skips. The gate requires the key to start with "pk_" AND not
+    /// contain "Dummy"/placeholder markers (defensive). It skips in CI without secrets (empty/sentinel →
+    /// SKIP), runs locally against a real pk_test key, and runs in the owner's CI once real STRIPE_*
+    /// secrets are provided.
     /// </summary>
     private async Task<bool> IsStripeConfiguredAsync()
     {
