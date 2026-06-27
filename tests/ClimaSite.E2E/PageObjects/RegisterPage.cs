@@ -168,11 +168,14 @@ public class RegisterPage : BasePage
 
     /// <summary>
     /// True if the submit button is currently enabled (form valid + terms ticked). The disabled
-    /// state lives on the inner native <c>&lt;button&gt;</c> (app-button binds it there), so we read
-    /// that element rather than the app-button host.
+    /// state lives on the inner native <c>&lt;button&gt;</c> (app-button binds <c>[disabled]</c>
+    /// there — see button.component.ts), so we MUST read that element. The literal
+    /// <c>data-testid='register-submit'</c> sits on the <c>&lt;app-button&gt;</c> HOST (a custom
+    /// element), which Playwright always reports as "enabled" — so we scope to the descendant
+    /// <c>button</c> only, never the host.
     /// </summary>
     public async Task<bool> IsSubmitEnabledAsync()
     {
-        return await Page.Locator($"{SubmitButton} button, {SubmitButton}").First.IsEnabledAsync();
+        return await Page.Locator($"{SubmitButton} button").First.IsEnabledAsync();
     }
 }

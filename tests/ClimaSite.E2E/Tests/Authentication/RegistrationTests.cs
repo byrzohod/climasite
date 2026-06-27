@@ -7,9 +7,10 @@ using Microsoft.Playwright;
 namespace ClimaSite.E2E.Tests.Authentication;
 
 /// <summary>
-/// E2E coverage for the customer registration UI (route <c>/auth/register</c>).
+/// E2E coverage for the customer registration UI (route <c>/register</c> — registered at the app
+/// root like <c>/login</c>, NOT <c>/auth/register</c>; see <see cref="RegisterPage"/>).
 /// NO MOCKING — registration hits the real /api/auth/register endpoint and real database.
-/// Each test uses a correlation-id-derived unique email so runs are self-contained.
+/// Each test uses a fresh unique email so runs are self-contained.
 ///
 /// Behavioural note: registration does NOT auto-login (it shows a success banner then redirects to
 /// /login after ~3s — see register.component.ts), so the happy-path test asserts on the success
@@ -39,9 +40,15 @@ public class RegistrationTests : IAsyncLifetime
         await _fixture.CloseTracedContextAsync(_page);
     }
 
-    // A unique, correlation-scoped email so the test owns its data and never collides with reruns.
+    // A fresh, unique email per call so the test owns its data and never collides with reruns.
+    // CRITICAL: Angular's Validators.email enforces a 64-char local-part (regex lookahead
+    // `(?=.{1,64}@)`), so the part before '@' MUST stay short. A single 32-char GUID keeps it at
+    // ~36 chars ("{tag}_" + 32) — safely under the limit — AND is regenerated on every call, so a
+    // RetryFact retry of an already-succeeded registration gets a NEW email rather than colliding
+    // on a duplicate. (Two GUIDs here previously produced a 69-char local-part → email control
+    // invalid → form never submits → the whole registration silently no-ops.)
     private string UniqueEmail(string tag = "reg") =>
-        $"{tag}_{_dataFactory.CorrelationId:N}_{Guid.NewGuid():N}@test.com".ToLowerInvariant();
+        $"{tag}_{Guid.NewGuid():N}@test.com".ToLowerInvariant();
 
     /// <summary>
     /// Happy path: a brand-new customer fills the registration form and is accepted — the success
