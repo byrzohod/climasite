@@ -40,10 +40,10 @@ actually carry `dockerfilePath`) is:
   Railway's `$PORT`) and **no `/api/` proxy**. The build actually uses `nginx.conf.template`
   (see §2). **Stale copy — never copied into the image.**
 
-> **Recommendation (tracked as OPS-03):** keep the root `Dockerfile.api` / `Dockerfile.web` +
-> `railway.toml` / `railway.api.toml` as canonical; delete the four dead/stale files above so there is
-> exactly **one Dockerfile + one Railway config per service**. This runbook does NOT delete them (review
-> only); do it under OPS-03 with a CD workflow.
+> **✅ DONE (OPS-03, 2026-06-27):** the four dead/stale files above were **deleted** — the root
+> `Dockerfile.api` / `Dockerfile.web` + `railway.toml` / `railway.api.toml` are now the **single canonical
+> set** (one Dockerfile + one Railway config per service). The `.github/workflows/deploy.yml` CD workflow
+> is still TODO under OPS-03 (owner-gated — needs the Railway project + a `RAILWAY_TOKEN` secret).
 
 ### Config-review findings (flag list)
 
