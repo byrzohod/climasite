@@ -23,7 +23,7 @@ Invoke this skill:
 
 ## When NOT to use
 
-- **Before the unit is proven.** A unit enters this loop only **after** `/mutation-check` and `/verify-work` pass. This skill does not write code, tests, or verify behavior -- it ships an already-green, already-verified unit. Red suite or missing break-the-code evidence -> stop, finish that first.
+- **Before the unit is proven.** A unit enters this loop only **after** `/mutation-check`, `/verify-work`, **and `/acceptance`** pass against the **committed branch HEAD**. This skill does not write code, tests, verify behavior, or run the app -- it ships an already-green, already-verified, already-accepted unit. Red suite, missing break-the-code evidence, or a missing/FAIL/stale committed `.planning/acceptance/<id>.md` (for a behavior/source change) -> stop, finish that first. Note `/acceptance` is a **manual exploratory** gate: it **cannot be a merge-queue-required CI check** (the queue can't compute a manual test), so this skill enforces it **procedurally** in **Step 3** -- by parsing and validating the committed report against the branch HEAD, not by the queue.
 - **To revert a bad merge on `main`.** That is `/rollback` -- **revert-first beats hotfix** on trunk (Blueprint §J.5 / §C-1). Do not open a "fix-forward" branch for a regression you can revert in one click.
 - **To run the review.** The review *content* (correctness/security/perf/arch/best-practices/a11y/SEO angles, the <=2-round cap) is `/review-orchestrate`. This skill *calls* it and gates on its verdict.
 - **To author the migration or the flag.** Migrations -> `/db-migrate` (expand/contract mandatory, never a destructive schema change in the same PR as the code using it, §J.5 / §C-2). Flags -> `/feature-flag`. This skill only *checks* that they were done right before queueing.
@@ -32,19 +32,24 @@ Invoke this skill:
 ## The loop at a glance
 
 ```
-clean tree, unit proven (mutation-check + verify-work green)
+clean tree, unit code-complete + mutation-check passed
    |
 [1] preflight gate (rebased on main? flag? migration? secrets? <24h scope?)
    |
 [2] cut short-lived branch  (feature|fix|chore/<slug>, advisory naming)
    |
-[3] commit (conventional) + push -> set upstream
+[3] commit code (conventional) -> branch HEAD now exists
    |
-[4] open PR  (gh pr create; title=conventional, body=plan link + DoD + flag + break-the-code evidence)
+[3a] run gates AGAINST the committed HEAD: /verify-work + /acceptance (drive real surface) -> write+COMMIT .planning/acceptance/<id>.md
+   |
+[3b] VALIDATE the report: verdict==PASS AND commit==`git rev-parse HEAD` AND zero open blocker/major   --> else BLOCK: /acceptance + fix loop
+   |
+[4] push -> set upstream; open PR  (gh pr create; title=conventional, body=plan link + DoD + flag + break-the-code + acceptance @sha)
    |
 [5] FAST PR stage runs (lint/typecheck/unit+patch-cov/assertion-density/diff-mutation/secret/SAST/chromium smoke, <10min)  --> gates the BUTTON
    |
 [6] /review-orchestrate  (multi-angle; resolve; re-review <=2 rounds; then HUMAN decides)  <-- can't stall forever
+   |       (ANY fix commit here advances HEAD -> report is stale -> RE-RUN /acceptance + re-validate before queueing)
    |
 [7] enter merge queue   (gh pr merge --auto --squash)  --> queue re-runs FULL suite (merge_group) against future-main
    |
@@ -57,11 +62,13 @@ clean tree, unit proven (mutation-check + verify-work green)
 
 ## Process
 
+> **Sequencing (LOCKED — the order is the gate's correctness).** Branch **first** → **commit the code** → run automated gates + `/verify-work` + **`/acceptance`** against that **committed branch HEAD** → **validate** the acceptance report → **then** push/PR/queue. `/acceptance` runs *after* the commit exists so its report represents the **final** diff being merged (running it before the commit can't pin to the real tip). **Any later commit that advances HEAD — including a review fix in Step 6 — makes the report stale → re-run `/acceptance` and re-validate before queueing.**
+
 ### Step 1 - Preflight gate (do not skip; this is what keeps the queue green)
 
-Before cutting the branch, confirm **all** of these. Each one is a thing that, skipped, ejects you from the queue or breaks `main` for everyone:
+Before cutting the branch, confirm **all** of these. Each one is a thing that, skipped, ejects you from the queue or breaks `main` for everyone. **Note the sequencing fix:** the acceptance gate is validated in **Step 3 (after the code is committed)**, NOT here — it can only represent the final diff once that diff is committed (see Step 3 + the "Sequencing" box below).
 
-- [ ] **Unit is proven, not just written:** `/mutation-check` PASS (>=75% killed on changed files + break-the-code evidence recorded) AND `/verify-work` PASS (real behavior through real DB/UI, no mocks in the asserted path). Evidence is in hand to paste into the PR body.
+- [ ] **Unit is proven, not just written:** `/mutation-check` PASS (>=75% killed on changed files + break-the-code evidence recorded). `/verify-work` and `/acceptance` run in Step 3 against the **committed** branch HEAD (they need the real diff committed first). Evidence will be pasted into the PR body.
 - [ ] **Working tree is clean and current main is fetched:** `git fetch origin && git status` clean. You will branch from up-to-date `origin/main` (linear history is required by the ruleset; start fresh, not from a stale local main).
 - [ ] **Scope fits <24h.** If this unit cannot realistically merge within a day, **split it** (one unit per branch) or plan to **merge the done part behind a default-off flag** and continue the rest on a new branch. Do not plan to hold a branch open.
 - [ ] **Incomplete work is flag-gated.** If any part of this unit is not finished/safe to be live, it is behind a **default-off** flag (`/feature-flag`), the flag has a **creation date + expiry + `temp-` prefix**, and its **removal is a DoD item**. Half-finished code merges **dark**, never live.
@@ -81,17 +88,46 @@ git switch -c <type>/<slug> origin/main     # type in feature|fix|hotfix|chore
 
 Naming (`feature|fix|chore/<short-slug>`) is **advisory on trunk-mode, not blocking** -- `settings.json`'s branch-name hook only *suggests* it (it was softened from a hard block in the trunk flip; Blueprint §E). Keep the slug short and tied to the unit. The branch exists to carry **this one unit's PR through the queue and then die.**
 
-### Step 3 - Commit and push
+### Step 3 - Commit the code, then run + VALIDATE the runtime gates against the committed HEAD
 
-Commit with a **conventional-commit** message (the `settings.json` commit-msg hook enforces the format; the type drives `/release` semver later):
+**First commit** with a **conventional-commit** message (the `settings.json` commit-msg hook enforces the format; the type drives `/release` semver later) — so a real branch HEAD exists for the gates to pin to:
 
 ```bash
 git add <changed files>          # the unit's src + tests; nothing stray
 git commit -m "feat(<scope>): <imperative summary>"   # or fix/chore/refactor/perf/docs/test
-git push -u origin <type>/<slug>
 ```
 
 One unit -> ideally one focused PR. Keep the diff reviewable -- a smaller PR clears the queue faster and is safer to revert.
+
+**Then run the runtime gates against the committed HEAD** (this is the corrected sequencing — they need the diff committed first):
+
+1. **`/verify-work`** — confirm real behavior through real DB/UI, no mocks in the asserted path. Record the break-the-code evidence.
+2. **`/acceptance`** — drive the **real surface** (`ui | api | cli | library | static`) like a demanding user + adversarial QA against a real backend (real DB if the product has persistent state), no mocks. Write **and commit** the redacted report to `.planning/acceptance/<id>.md` (binary evidence stays in the ignored `.planning/acceptance/evidence/`). This is the runtime, exploratory, real-usage gate — the complement to `/verify-work` (spec-confirmation) and `/code-review` (static), **not** a replacement for either or for the test suite.
+
+**Then VALIDATE the acceptance report before going further (do NOT loose-grep for "PASS").** For any **behavior/source change**, parse the report's frontmatter and require **all three**:
+
+```bash
+REPORT=.planning/acceptance/<id>.md
+TIP=$(git rev-parse HEAD)                                   # FULL sha of the branch tip
+V=$(sed -n 's/^verdict:[[:space:]]*//p' "$REPORT" | head -1)
+C=$(sed -n 's/^commit:[[:space:]]*//p'  "$REPORT" | head -1)
+# require: verdict PASS  AND  commit == full HEAD  AND  zero open blocker/major rows
+test "$V" = "PASS" && test "$C" = "$TIP" \
+  && ! grep -Eq '^\|[^|]*\|[[:space:]]*(blocker|major)[[:space:]]*\|' "$REPORT" \
+  && echo "acceptance VALID @ $TIP" || echo "acceptance INVALID -> BLOCK"
+```
+
+- **`verdict: PASS`** — and **zero open `blocker`/`major`** issue rows in the report's issues table (blockers/majors never have a waiver path).
+- **`commit:` == `git rev-parse HEAD`** (the **full** sha of the branch tip) — proves the report tested *this* diff, not an older one.
+- **If any check fails — missing report / `verdict: FAIL` / stale `commit:` / an open blocker/major — BLOCK.** Run `/acceptance` (or its **fix loop**: fix properly, no hacks; re-run the full relevant scenario set until clean PASS; escalate to the human after 3 unresolved/recurring rounds), commit the fixes, regenerate the report at the new HEAD, and re-validate. Do **not** push/PR/queue until the report is VALID at the current tip.
+- **PASS semantics (mirror `/acceptance`):** blocker/major always block; the agent may self-waive `nit`s (logged as Knowledge Questions via `/kb-capture`); off-critical-path `minor`s may be logged as tracked follow-ups; only **borderline minors** need an explicit **human** waiver. PASS is therefore reachable **autonomously** for the common case.
+- **Exemption:** **docs-only / config-only changes** (no behavior to exercise) skip the acceptance gate — but a **backend-only / library / static** repo is **not** exempt (run it against its surface).
+
+**Then push** the branch (code + committed acceptance report together):
+
+```bash
+git push -u origin <type>/<slug>
+```
 
 ### Step 4 - Open the PR
 
@@ -104,7 +140,8 @@ gh pr create \
 
 The PR body is the unit's evidence packet -- it is what the human approver and your future self read. Include:
 - **Link to the `unit-plan.md`** (the approved plan this implements; the `no-spec-no-code` hook required it before code).
-- **Definition of Done checklist** satisfied (tests, patch coverage, mutation, verify-work) -- mirror `Agent Workflow.md` §9.4.
+- **Definition of Done checklist** satisfied (tests, patch coverage, mutation, verify-work, **acceptance**) -- mirror `Agent Workflow.md` §9.4.
+- **Acceptance evidence:** `verdict: PASS` at `.planning/acceptance/<id>.md` whose `commit:` == this PR's tip sha (Step 3), and the `rounds` count. *(Optional, non-blocking: mirror it as an `acceptance` commit status on the PR head via `gh api repos/<slug>/statuses/<full-sha> -f state=success -f context=acceptance` for visibility — this is **NOT** a merge-queue-required check.)*
 - **Break-the-code evidence** (which bug was injected per core guarantee, which test went red) -- the Stop hook warns if tests were added without it; reviewers and the queue trust this.
 - **Flag note:** which flag gates this unit, its default state (must be **off** if incomplete), and its expiry/removal-DoD line.
 - **Migration note:** expand/contract phase, and confirmation no destructive change rides with the code using it.
@@ -125,8 +162,9 @@ Run `/review-orchestrate` on the **short branch** (cheap in-session multi-angle 
 - **Hard cap: <=2 rounds, then a HUMAN decides** (Blueprint §J.3 / §A-2). This is the termination guarantee -- "zero open comments" can never stall a unit forever, and an over-eager reviewer cannot loop indefinitely. After the second round, the open items go to the human approver as a go/no-go, not back into another bot round.
 - **High-stakes units only:** escalate to cloud `/ultrareview` + cross-vendor Codex (Blueprint §J.3, M-10). Do **not** run cloud review on every merge -- it burns velocity and spend; reserve it for auth, payments, migrations, security-sensitive surfaces.
 - The ruleset's **required PR approval** is satisfied by the human decision, not by the bot rounds.
+- **Re-run `/acceptance` after ANY post-review fix commit (HARD).** Every fix you push to resolve a review finding **advances HEAD**, which makes the Step 3 acceptance report **stale** (`commit:` != tip). Before queueing, **re-run `/acceptance` against the new tip, re-commit the report, and re-validate** (verdict PASS, `commit:` == `git rev-parse HEAD`, zero open blocker/major). A later commit — even a one-line review fix — can break what was previously green; the report must match the **final** tip that enters the queue.
 
-Do not enter the queue until review has terminated (resolved, or human-approved with the open items accepted).
+Do not enter the queue until review has terminated (resolved, or human-approved with the open items accepted) **and** the acceptance report is VALID at the current tip.
 
 ### Step 7 - Enter the merge queue (the real gate)
 
@@ -168,9 +206,12 @@ After driving the loop, report explicitly:
 ```
 Trunk merge report for <unit name>:
 
-Preflight:   mutation-check PASS · verify-work PASS · rebased on origin/main · tree clean
+Preflight:   mutation-check PASS · rebased on origin/main · tree clean · <24h scope · flag/migration/secrets OK
 Branch:      feature/<slug>  (opened <ts>, merged <ts> -> lifespan <Xh>m, <24h ✓)
-PR:          #<n>  "<conventional title>"  (plan + DoD + break-the-code evidence + flag note attached)
+Gates @ committed HEAD <full sha>:  verify-work PASS · /acceptance VALIDATED PASS (.planning/acceptance/<id>.md, commit==tip, 0 blocker/major, rounds <n>)
+             | or "/acceptance n/a — docs/config-only change"
+             | (re-validated after review fix @ <new sha> if Step 6 advanced HEAD)
+PR:          #<n>  "<conventional title>"  (plan + DoD + break-the-code + acceptance@sha + flag note attached)
 Flag:        <name> default OFF, expiry <date> (removal = DoD)   | or "n/a — unit complete, no flag"
 Migration:   expand/contract, no destructive change with calling code   | or "n/a — no schema change"
 
@@ -184,14 +225,14 @@ Cleanup:     branch deleted (local+remote) · main fast-forwarded · /kb-capture
 Verdict: MERGED — unit on main behind <flag/none>, branch gone, knowledge recorded. Next unit: <...>
 ```
 
-If the verdict is **NOT MERGED**, name exactly where it stopped (red FAST stage / review round-2 human hold / queue ejection on `<check>`) and the next action. **Never report MERGED on the strength of a green FAST stage alone** -- the queue's full suite is the gate, and merge is confirmed only when GitHub has merged server-side.
+If the verdict is **NOT MERGED**, name exactly where it stopped (missing/FAIL/stale/unvalidated `/acceptance` report / open blocker-major / red FAST stage / review round-2 human hold / queue ejection on `<check>`) and the next action. **Never report MERGED on the strength of a green FAST stage alone** -- the queue's full suite is the gate, and merge is confirmed only when GitHub has merged server-side. **Never report MERGED for a behavior/source change without a VALIDATED `/acceptance` PASS (verdict PASS, `commit:` == full merged-tip sha, zero open blocker/major) — re-validated if any review fix advanced HEAD.**
 
 ## Iteration & STOP
 
 - This is a **bounded per-unit runner**, not an open loop. The only internal iteration is: review **<=2 rounds then human** (Step 6), and **fix-and-re-queue** on a queue ejection (Step 8). Neither loops indefinitely -- the review cap is hard, and a repeatedly-ejecting PR means the unit is wrong (back to `/mutation-check`/`/verify-work` or split it), not that you re-queue forever.
 - **STOP (success)** when: the PR is **merged server-side by the queue**, the branch is **deleted local+remote**, `main` is fast-forwarded, and `/kb-capture` has recorded the unit's decisions. Branch lifespan **<24h**.
-- **STOP (escalate)** when: the queue ejects the **same** entry **twice** for the same real-infra reason (the unit has a defect the unit-level checks missed -- reopen `/test-plan`/`/verify-work`, do not brute-force re-queue), or a bad change reached `main` (-> `/rollback`, then a postmortem), or review hits round 2 with unresolved high-severity findings (-> human go/no-go, do not auto-proceed).
-- **Do NOT** bypass the queue, admin-merge, disable the ruleset, hold a branch open past a day, or merge incomplete work **live** (it goes behind a default-off flag or not at all). The gate and the <24h rule are not the variables.
+- **STOP (escalate)** when: `/acceptance` cannot reach PASS within **3 fix-loop rounds** (the design/plan is likely wrong -- re-plan / re-design / accept-with-tickets, do not brute-force re-run), or the queue ejects the **same** entry **twice** for the same real-infra reason (the unit has a defect the unit-level checks missed -- reopen `/test-plan`/`/verify-work`, do not brute-force re-queue), or a bad change reached `main` (-> `/rollback`, then a postmortem), or review hits round 2 with unresolved high-severity findings (-> human go/no-go, do not auto-proceed).
+- **Do NOT** bypass the queue, admin-merge, disable the ruleset, hold a branch open past a day, merge a behavior/source change **without a VALIDATED `/acceptance` PASS at the committed tip** (verdict PASS, `commit:` == full HEAD, zero open blocker/major — re-validated after any review fix), try to make `/acceptance` a merge-queue-required check (it's a manual gate, enforced procedurally), or merge incomplete work **live** (it goes behind a default-off flag or not at all). The acceptance gate, the queue gate, and the <24h rule are not the variables.
 
 ## See also
 
@@ -199,7 +240,7 @@ If the verdict is **NOT MERGED**, name exactly where it stopped (red FAST stage 
 - `/feature-flag` — Step 1/4; how incomplete units merge **dark** (default-off, dated, expiry, removal=DoD). `/flag-cleanup` removes stale flags (AST-based, review-gated) in `/hygiene-sweep`.
 - `/rollback` — Step 8; **revert-first beats hotfix** when a bad change reaches `main`; wired to the §19 incident/postmortem flow. The counterpart to this skill's "merge", not a fix-forward branch.
 - `/db-migrate` — Step 1; expand/contract is mandatory on trunk, and a destructive schema change must never ride in the same PR as the code using it (§C-2).
-- `/mutation-check`, `/verify-work` — the two gates a unit must pass **before** entering this loop (>=75% killed + break-the-code; real behavior through real DB/UI). This skill ships an already-proven unit.
+- `/mutation-check`, `/verify-work`, `/acceptance` — the gates a unit must pass before merge (>=75% killed + break-the-code; real behavior through real DB/UI; runtime exploratory/adversarial real-usage PASS). `/mutation-check` runs before the loop; `/verify-work` + `/acceptance` run in **Step 3 against the committed branch HEAD** (corrected sequencing — the diff must be committed first). `/acceptance` is a **manual exploratory gate**, so it **cannot be a merge-queue-required CI check** — it's enforced **procedurally**: Step 3 **parses and validates** the committed `.planning/acceptance/<id>.md` (verdict PASS · `commit:` == full `git rev-parse HEAD` · zero open blocker/major), re-validated after any review fix that advances HEAD (stale => re-run). This skill ships an already-proven, already-accepted unit.
 - `/plan-tree` — the per-unit loop this skill closes: plan -> code -> tests -> mutation-check -> verify-work -> **trunk-merge** -> kb-capture -> next unit.
 - `/release` — after merge: trunk release / tag-from-main / changelog from the conventional commits this loop produced (§C-4).
 - `/project-setup` — applies `templates/ruleset.json` via `gh api` (fails loudly if it can't); this skill assumes the ruleset + merge queue it installs.

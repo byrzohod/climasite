@@ -149,6 +149,15 @@ Some environments make full verification impossible (no dev server access, no Pl
 
 The principle: the agent's report must reflect what *actually* happened, not what the agent intended to happen. Better to say "I verified A and B but couldn't reach C; please confirm C" than to claim a clean verification that wasn't performed.
 
+## See also: /acceptance (don't conflate the two)
+
+`/verify-work` and `/acceptance` are **different gates** — run both, not one instead of the other:
+
+- **`/verify-work` (this skill) = spec-confirmation.** A layered checklist that the feature *does the thing it was built to do* (build/boot, smoke, the happy user flow, persistence read back through the real DB, break-the-code). Largely **confirmatory** — you know what you're checking.
+- **`/acceptance` = exploratory hunt for the unexpected.** After this skill passes, the agent stops following a checklist and *roams the live product* like a demanding real user crossed with a hostile QA, against a real backend + real DB + real/sandboxed third parties, hunting what nobody specced or asserted: UI/UX friction, visual/formatting/layout breaks, responsive failures, console/network errors, perf jank, side effects, data-integrity problems, regressions in adjacent features, anything "unordinary". It is the **MANDATORY runtime gate before `/trunk-merge`** (no behavior/source change merges without a PASS report whose commit matches the merged tip).
+
+Sequence: tests green -> `/verify-work` (confirm it works as specified) -> `/code-review` (static) -> **`/acceptance`** (exploratory runtime gate) -> `/trunk-merge`.
+
 ## Integration with other skills
 
 - After `/verify-work` passes -> run `/ui-qa` for the deeper UI QA pass

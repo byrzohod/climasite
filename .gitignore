@@ -152,3 +152,8 @@ secrets.json
 test-results/
 TestResults/
 videos/
+
+# /acceptance gate (workflow): the redacted PASS reports .planning/acceptance/<id>.md ARE committed,
+# but their binary evidence (screenshots/console/network dumps) and any council audit artifacts are not.
+.planning/acceptance/evidence/
+.council/
