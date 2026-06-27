@@ -41,6 +41,13 @@ public class ExceptionHandlingMiddleware
 
         _logger.LogError(exception, "Exception occurred: {Message}", exception.Message);
 
+        // The correlation id (set by CorrelationIdMiddleware) lets a caller quote a single id when
+        // reporting an error; fall back to the framework trace identifier.
+        var traceId = context.Items.TryGetValue(CorrelationIdMiddleware.ItemKey, out var cid)
+            && cid is string s && !string.IsNullOrEmpty(s)
+                ? s
+                : context.TraceIdentifier;
+
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = (int)statusCode;
 
@@ -48,6 +55,7 @@ public class ExceptionHandlingMiddleware
         {
             status = (int)statusCode,
             message = message,
+            traceId,
             detail = exception is NotFoundException
                 or ClimaSite.Application.Common.Exceptions.ValidationException
                 or FluentValidation.ValidationException

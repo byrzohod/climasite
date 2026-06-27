@@ -402,6 +402,7 @@ Detail: `_review/devops.md`, `DEV_WORKFLOW.md`. The devops launch-blocker list (
 - **Depends on:** Same code path as SEC-01 — do together; OPS-03 hosts the step.
 
 ### OPS-05 — Observability floor: correlation IDs, structured logs, error tracker, alerts (P1, Medium)
+- **Status:** 🚧 FLOOR DONE (2026-06-27). `CorrelationIdMiddleware` (read/generate `X-Correlation-Id` → Serilog `LogContext` → echo on response) wired early in the pipeline; `ExceptionHandlingMiddleware` now returns a `traceId`; `Log.CloseAndFlush` registered on `ApplicationStopped`. Integration-tested (`CorrelationIdTests`, 3/3 — generated id, echoed id, traceId-in-error). **Remaining (deploy-time / needs O-4):** the error tracker (Sentry — O-4 vendor choice), OpenTelemetry (PROD-103), JSON-console-in-Production, healthcheck-based uptime alerting.
 - **Description:** Console-only Serilog; the `X-Correlation-Id` convention documented in CLAUDE.md is implemented nowhere; no Sentry/OTel/metrics/alerts/runbooks; no `Log.CloseAndFlush`. Add correlation middleware (read/generate header → Serilog LogContext → echo on response), JSON console output in Production, an error tracker (O-4 — Sentry suggested), OTel per Plan 18 PROD-103, healthcheck-based uptime alerting, `CloseAndFlush` in try/finally.
 - **Closes:** `_review/devops.md` #5 (P1 confirmed); Plan 18 PROD-103; CLAUDE.md correlation-ID doc-drift.
 - **Affected:** `Program.cs`, `src/ClimaSite.Api/Middleware/`, `appsettings.json`, new packages.
