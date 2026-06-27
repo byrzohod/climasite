@@ -223,11 +223,12 @@ jobs:
           TestSettings__AdminSecret: "test-admin-secret"
           # Wave 6: add STRIPE_SECRET_KEY + STRIPE_PUBLISHABLE_KEY (Stripe TEST keys only) as repo
           # Actions secrets to turn on the real-card money-path E2E (CardPaymentE2ETests). When unset,
-          # these FALL BACK to the appsettings dummy keys (NOT empty — an empty override changed the
-          # API's Stripe config and broke order-flow E2E), so /api/payments/config serves the dummy and
-          # the card E2E self-skips ("Dummy"). When the real secrets are present, the card E2E runs.
-          Stripe__SecretKey: ${{ secrets.STRIPE_SECRET_KEY || 'sk_test_51DummyKeyForTestingPurposesOnly000000000000' }}
-          Stripe__PublishableKey: ${{ secrets.STRIPE_PUBLISHABLE_KEY || 'pk_test_51DummyKeyForTestingPurposesOnly000000000000' }}
+          # these FALL BACK to a NON-EMPTY, NON-Stripe-shaped sentinel (SEC-07 — no committed dummy Stripe
+          # keys): non-empty so StripePaymentService still constructs and order-flow E2E works, but with no
+          # `pk_` prefix so /api/payments/config is not "real" and the card E2E self-skips. E2E runs in the
+          # Testing environment, so the SEC-07 Production fail-fast does not apply. Real secrets → card E2E runs.
+          Stripe__SecretKey: ${{ secrets.STRIPE_SECRET_KEY || 'e2e-fallback-not-a-real-stripe-secret' }}
+          Stripe__PublishableKey: ${{ secrets.STRIPE_PUBLISHABLE_KEY || 'e2e-fallback-not-a-real-publishable-key' }}
 
       - name: Start Angular Dev Server
         run: |
