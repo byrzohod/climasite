@@ -202,6 +202,55 @@ public class GdprControllerTests : IntegrationTestBase
         loginResponse.StatusCode.Should().NotBe(HttpStatusCode.OK);
     }
 
+    /// <summary>
+    /// SEC-14 / ADR-0004: account deletion ANONYMIZES the user's order PII (email/phone/address) but
+    /// RETAINS the order/invoice record (for the legal accounting-retention period).
+    /// </summary>
+    [Fact]
+    public async Task DeleteAccount_AnonymizesOrderPii_ButRetainsTheOrderRecord()
+    {
+        var email = $"gdpr-order-{Guid.NewGuid():N}@example.com";
+        const string password = "Password123!";
+        await AuthenticateAsync(email, password);
+        var userId = await GetUserIdAsync(email);
+
+        // Seed a real order owned by this user, with PII.
+        Guid orderId;
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var order = new Order($"TEST-ORD-{Guid.NewGuid():N}", email);
+            order.SetUser(userId);
+            order.SetCustomerPhone("+359888123456");
+            order.SetShippingAddress(new Dictionary<string, object>
+            {
+                ["fullName"] = "Real Customer",
+                ["street"] = "1 Real St",
+                ["city"] = "Sofia"
+            });
+            db.Orders.Add(order);
+            await db.SaveChangesAsync();
+            orderId = order.Id;
+        }
+
+        var response = await SendDeleteAsync(new { password, confirmDeletion = true });
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var order = await db.Orders.FindAsync(orderId);
+
+            order.Should().NotBeNull("the invoice record is retained for legal/tax compliance");
+            order!.CustomerEmail.Should().Be("anonymized@deleted.local");
+            order.CustomerPhone.Should().BeNull();
+            order.ShippingAddress.Should().NotContainKey("fullName");
+            order.ShippingAddress.Values.Select(v => v?.ToString())
+                .Should().NotContain("Real Customer", "the customer name must be scrubbed");
+            order.BillingAddress.Should().BeNull();
+        }
+    }
+
     #endregion
 
     private Task<HttpResponseMessage> SendDeleteAsync(object payload)

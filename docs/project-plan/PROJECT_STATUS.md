@@ -45,7 +45,7 @@ Repo `byrzohod/climasite` is **public**; **nothing is deployed yet (OPS-08)**.
 | Legal pages + cookie consent | ✅ Complete | terms/privacy/cookies/returns/shipping/FAQ + Impressum routes + consent banner. |
 | Payment methods (card + bank transfer) | ✅ Complete | Real bank transfer (IBAN/reference + outbox email). |
 | Email outbox | ✅ Complete | Durable Postgres outbox + worker (retry/backoff). R-007: per-instance worker (multi-instance locking deferred). |
-| GDPR (export/delete) | 🟡 Partial | Export + delete work (BUG-26 fixed); **SEC-14 open** — Orders PII not anonymized on erasure (needs an ADR). |
+| GDPR (export/delete) | ✅ Complete | Export + delete work (BUG-26 fixed); **SEC-14 done** — Orders PII anonymized on erasure, invoice record retained (ADR-0004, Art. 17(3)(b)), integration-tested. Follow-up: scheduled 7y retention-sweep + guest-order policy. |
 | Home v3 (configurator + recommendations) | ✅ Complete | Real recommendations endpoint. |
 | Accessibility (axe) | ✅ Complete | **`A11Y_ENFORCE=1` live in CI** (hard gate); UX-15 contrast fixed; scans under reduced-motion. |
 | Performance / Lighthouse | 🟡 Partial | Lighthouse runs every PR but **reporting-only** (warn + `\|\| true`), not enforced; some images lack `loading=lazy`. "Verified" was overstated. |

@@ -143,6 +143,18 @@ public class DeleteUserDataCommandHandler : IRequestHandler<DeleteUserDataComman
                     review.SetVerifiedPurchase(false, null);
                 }
 
+                // Anonymize the user's orders (SEC-14): scrub PII (email/phone/addresses incl. the name in
+                // the address dict) but RETAIN the order/invoice record for the legally-required accounting
+                // retention period — GDPR Art. 17(3)(b). Makes the confirmation email's "order history
+                // (anonymized)" claim true. See ADR-0004.
+                var orders = await _context.Orders
+                    .Where(o => o.UserId == userId.Value)
+                    .ToListAsync(cancellationToken);
+                foreach (var order in orders)
+                {
+                    order.AnonymizePersonalData();
+                }
+
                 // 3. Soft-delete the user account
                 user.IsActive = false;
                 user.Email = $"deleted_{userId.Value}@deleted.local";

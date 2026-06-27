@@ -187,6 +187,22 @@ public class Order : BaseEntity
         SetUpdatedAt();
     }
 
+    /// <summary>
+    /// GDPR Article 17 (right to erasure): scrub the directly-identifying personal data (email, phone,
+    /// shipping/billing address — the address dict also holds the customer name) while RETAINING the
+    /// order/invoice record itself (id, line items, amounts, dates) for the legally-required accounting
+    /// retention period. Lawful basis for retention: Art. 17(3)(b) (compliance with a legal obligation).
+    /// See ADR-0004.
+    /// </summary>
+    public void AnonymizePersonalData()
+    {
+        CustomerEmail = "anonymized@deleted.local";
+        CustomerPhone = null;
+        ShippingAddress = new Dictionary<string, object> { ["anonymized"] = true };
+        BillingAddress = null;
+        SetUpdatedAt();
+    }
+
     public void SetShippingMethod(string? method)
     {
         ShippingMethod = method;
