@@ -410,11 +410,12 @@ Detail: `_review/devops.md`, `DEV_WORKFLOW.md`. The devops launch-blocker list (
 - **Depends on:** **O-4** (vendor choice — owner).
 
 ### OPS-08 — Confirm Railway topology, live-deploy status, and backups (P1, Small, **Needs confirmation**)
+- **Status:** 🚧 READINESS ARTIFACTS PREPARED (2026-06-27, branch `ops/ops-08-deploy-readiness`). Canonical deploy runbook written: [`docs/runbooks/deploy.md`](../runbooks/deploy.md) — topology diagram, full env-var matrix (code-actual names, incl. discovered `ADMIN_EMAIL`/`ADMIN_INITIAL_PASSWORD`, `Minio__*`, `AllowedOrigins__*`, `API_URL`), deploy/migration/smoke procedure, rollback (expand-contract), and the deploy-artifact config-review (F1–F9). **Canonical artifacts confirmed:** root `railway.toml`→`Dockerfile.web` (web) + `railway.api.toml`→`Dockerfile.api` (api); the `src/ClimaSite.Api/Dockerfile`, `src/ClimaSite.Web/Dockerfile`, `src/ClimaSite.Api/railway.toml`, and `src/ClimaSite.Web/nginx.conf` are dead/stale duplicates (delete under OPS-03 — not deleted here, review-only). The remaining OPS-08 items are **owner-gated**: see the [Owner-action checklist](../runbooks/deploy.md#5-owner-action-checklist--the-5-ops-08-confirmation-questions) which frames the 5 confirmation questions to answer in one pass.
 - **Description:** Owner questions that gate several tasks: Is auto-deploy connected, and which services/config files? Has a production DB ever been seeded (if yes — rotate `admin@climasite.local` **now**)? What is production object storage? Are Postgres backups enabled / restore tested? Replica count (gates BUG-09 urgency, OutputCache coherence, KnownProxies for SEC-03)?
 - **Closes:** O-7; `_review/devops.md` open questions 1–5; `_review/architecture.md` + `_review/performance.md` topology open items.
-- **Affected:** Railway dashboard (owner); outcomes recorded in DOC-03 runbook + DECISIONS.md.
+- **Affected:** Railway dashboard (owner); outcomes recorded in [`docs/runbooks/deploy.md`](../runbooks/deploy.md) (DOC-03 runbook) + DECISIONS.md.
 - **Acceptance:** All five questions answered and recorded; any live exposure remediated same-day.
-- **Depends on:** Owner access.
+- **Depends on:** Owner access. (Readiness artifacts no longer blocking — done.)
 
 ### OPS-06 — CI hardening: lint, analyzers, docker-build, dependency scanning, concurrency, real-bundle E2E (P2, Medium)
 - **Description:** CI runs tests only — no `ng lint`, no `dotnet format`/`-warnaserror`, Dockerfiles never built, no `npm audit`/`dotnet list package --vulnerable`/dependabot/CodeQL, codecov upload is `continue-on-error`, no `concurrency:` group or NuGet cache, E2E tests the dev server not the built bundle, triggers reference a nonexistent `develop` branch.
