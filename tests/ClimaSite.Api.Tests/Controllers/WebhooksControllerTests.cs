@@ -57,7 +57,7 @@ public class WebhooksControllerTests : IntegrationTestBase
     public async Task HandleStripeWebhook_ReturnsBadRequest_WhenSignatureIsInvalid()
     {
         // Arrange - secret is configured so signature verification executes
-        using var client = CreateClientWithWebhookSecret("whsec_test_secret_value");
+        using var client = CreateClientWithWebhookSecret("test-webhook-secret-value");
 
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/webhooks/stripe")
         {
@@ -78,7 +78,7 @@ public class WebhooksControllerTests : IntegrationTestBase
     public async Task HandleStripeWebhook_ReturnsBadRequest_WhenSignatureIsMalformed()
     {
         // Arrange
-        using var client = CreateClientWithWebhookSecret("whsec_test_secret_value");
+        using var client = CreateClientWithWebhookSecret("test-webhook-secret-value");
 
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/webhooks/stripe")
         {

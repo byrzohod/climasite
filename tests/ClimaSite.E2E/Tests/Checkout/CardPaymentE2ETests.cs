@@ -13,9 +13,10 @@ namespace ClimaSite.E2E.Tests.Checkout;
 /// Self-skipping: if the running stack does not expose a REAL Stripe publishable key
 /// (GET /api/payments/config → publishableKey starts with "pk_" AND does not contain the
 /// placeholder marker "Dummy"), both tests log "SKIP: Stripe not configured" and return early
-/// instead of failing. This keeps the file safe in CI environments whose appsettings ships a dummy
-/// "pk_test_...Dummy..." key, while still exercising a genuine end-to-end charge whenever a real
-/// Stripe key is wired up (locally now; in CI once real STRIPE_* secrets are added).
+/// instead of failing. Since SEC-07, appsettings ships NO Stripe key and CI falls back to a non-Stripe
+/// sentinel (no "pk_" prefix), so the default config is not "real" and these self-skip — while still
+/// exercising a genuine end-to-end charge whenever a real Stripe key is wired up (locally now; in CI once
+/// real STRIPE_* secrets are added).
 ///
 /// The Stripe combined CardElement renders inside a same-origin-bridged iframe whose name
 /// starts with "__privateStripeFrame". Inside that frame the four fields are named
