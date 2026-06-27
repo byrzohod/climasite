@@ -588,9 +588,10 @@ Store sensitive configuration in environment variables or `appsettings.Developme
 | `JWT_SECRET` | JWT signing secret (min 32 chars) |
 | `JWT_ISSUER` | JWT issuer URL |
 | `JWT_AUDIENCE` | JWT audience URL |
-| `STRIPE_SECRET_KEY` | Stripe API secret key |
-| `STRIPE_PUBLISHABLE_KEY` | Stripe publishable key (frontend) |
-| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
+| `Stripe__SecretKey` | Stripe API secret key (the code reads the `Stripe:SecretKey` config section; `__` maps to `:`). **No dummy is committed** — Production fail-fasts at startup if unset (SEC-07). |
+| `Stripe__PublishableKey` | Stripe publishable key (served to the frontend via `GET /api/payments/config`) |
+| `Stripe__WebhookSecret` | Stripe webhook signing secret |
+| | _Full per-service env-var matrix (incl. `ADMIN_INITIAL_PASSWORD`, `Minio__*`, `Email__*`, CORS): `docs/runbooks/deploy.md`._ |
 | `SMTP_HOST` | Email server host |
 | `SMTP_PORT` | Email server port |
 | `SMTP_USER` | Email username |

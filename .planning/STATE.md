@@ -30,11 +30,11 @@ procedure, rollback, the 5 OPS-08 owner questions, known gaps).
   env-vars, provision Postgres/Redis/object-storage + **enable+test DB backups**, and **rotate the seeded
   `admin@climasite.local` + JWT_SECRET if any prod DB was ever booted**. Record answers in DECISIONS.md.
 - **Autonomous dev follow-ups the runbook surfaced** (good next units, each gated/PR'd):
-  **OPS-03** delete the dead duplicate `src/**` Dockerfiles + `src/ClimaSite.Api/railway.toml` (root is
-  canonical) + add a `deploy.yml`; **F3/OPS-07** make `Dockerfile.api` honor Railway `$PORT` + run
-  non-root; **SEC-06** gate Swagger out of production; **SEC-07** stop committing dummy secrets in
-  `appsettings.json` (defeats Stripe fail-fast); **OPS-04** move EF migrations to a pre-deploy step (today
-  it auto-migrates on startup — crash-loop risk, keep API at 1 replica until then).
+  **SEC-06** gate Swagger out of production (recommended NEXT); **OPS-03** delete the dead duplicate
+  `src/**` Dockerfiles + `src/ClimaSite.Api/railway.toml` (root is canonical) + add a `deploy.yml`;
+  **F3/OPS-07** make `Dockerfile.api` honor Railway `$PORT` + run non-root; **OPS-04** move EF migrations
+  to a pre-deploy step (today it auto-migrates on startup — crash-loop risk, keep API at 1 replica).
+  **SEC-07 is DONE** (below).
 
 ## Remaining (tracked — none blocking; full detail in `docs/project-plan/PRIORITIZED_BACKLOG.md`)
 - **DEC-SHIPPING** (next, above) · **OPS-08 deploy-readiness prep** (Railway; owner adds account+secrets).
@@ -60,6 +60,7 @@ procedure, rollback, the 5 OPS-08 owner questions, known gaps).
 - **Owner decisions made (2026-06-27, "best for a real company"):** SEC-14 = anonymize-but-retain (DONE) · DEC-SHIPPING = free standard shipping over €50 (DONE) · OPS-08 deploy = prepare Railway-readiness artifacts, owner adds account+secrets (NEXT).
 - **DEC-SHIPPING (DONE 2026-06-27):** free standard shipping when subtotal ≥ €50, else €5.99 (express €15.99 / overnight €19.99). Server `CheckoutPricing.GetShippingCost(method, subtotal)` is the single source of truth; `CalculateTotal` + `CreateOrderCommand` pass the subtotal; **fixed a latent checkout-summary bug** (the summary read the always-0 `cart.shipping` → always "Free"/total omitted express+overnight) — summary now uses one centralized `shippingCostFor()` so displayed==charged. Built via a Workflow (parallel server+UI → adversarial money-path verify=PASS). Cart-page Medium (council) also fixed via a shared `core/pricing/shipping.ts` helper used by cart+checkout. Tests: Application 823 + Api money-path 9/9 + ng 1321 green; 2 council rounds clean. Advisory follow-up: normalize `CartDto.Total` server-side (no live consumer now).
 - **OPS-08 deploy-readiness prep (DONE 2026-06-27):** `docs/runbooks/deploy.md` — devops review found the root `Dockerfile.api`/`Dockerfile.web` + `railway.toml`/`railway.api.toml` are canonical (the `src/**` Dockerfiles + `src/ClimaSite.Api/railway.toml` are DEAD/stale → OPS-03 delete); env-var matrix uses the REAL var names the code reads (`ADMIN_INITIAL_PASSWORD` throws on prod startup; `API_URL`, `AllowedOrigins__*`, `Minio__*`, double-underscore `Stripe__*`/`Email__*`); 5 owner-gated questions in §5. Surfaced: F3 API hardcodes :8080 (set Railway port 8080), SEC-06 Swagger-in-prod, SEC-07 committed dummy secrets, OPS-07 root containers, OPS-04 auto-migrate-on-startup. The actual deploy is owner-gated (Railway account+secrets).
+- **SEC-07 (DONE 2026-06-27):** removed the committed dummy Stripe keys from `appsettings.json` (0 in tracked source); new `StripeConfiguration.ValidateProductionConfiguration` (mirrors `JwtConfiguration`) wired in `ConfigureServices` → **Production fail-fasts at startup** on missing/placeholder Stripe keys; safe in Dev/Testing (scoped `StripePaymentService` + `FakePaymentService`). CLAUDE.md env table → `Stripe__*`. JWT was already prod-guarded. Tests green; council-reviewed. Follow-up: same pattern for SMTP/MinIO.
 
 ## Recently done (2026-06-25)
 - **Docs consolidated to ONE planning system** (`/hygiene-sweep`-style pass): retired the bespoke PROC-01 `docs/features/` pipeline + its duplicate hooks (`require-approved-plan`, `session-phase`) + skills (`feature-kickoff`, `verify-plan`) — the vault `.planning/units` + `/plan-tree` + `no-spec-no-code` flow is now the single system; added `docs/README.md` map; bannered ~20 stale legacy trackers; ADR-002 immutability fixed via superseding **ADR-0003**; leaned CLAUDE.md (status tables + pipeline → pointers). No protection lost (`no-spec-no-code` + test-ship + git/secret guards intact).

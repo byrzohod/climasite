@@ -50,6 +50,10 @@ async Task SeedDatabaseAsync(WebApplication app)
 
 void ConfigureServices(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment)
 {
+    // SEC-07: in Production, fail fast at startup if Stripe is missing/placeholder (no dummy keys are
+    // committed any more, so a by-the-book deploy that forgets the real keys must not boot silently).
+    StripeConfiguration.ValidateProductionConfiguration(configuration, environment);
+
     // Application layer services (MediatR, FluentValidation, Mapster)
     services.AddApplicationServices();
 
