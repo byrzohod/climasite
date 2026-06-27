@@ -23,6 +23,13 @@ from `.planning/STATE.md`; map of all docs in `docs/README.md`.
 - **Enabled domain skills:** threat-model, data-classify (payments + PII/GDPR), db-migrate, ui-qa,
   seo-review, accessibility-audit, perf-budget (public UI). Present-but-inactive (no AI features):
   ai-eval, cost-check, ai-specialist.
+- **Cross-vendor council (use it liberally):** run the Codex council (`.claude/orchestration/council.sh`,
+  already pinned to `gpt-5.5`@`xhigh` — best model/highest effort; Codex is a READ-ONLY advisor, Claude
+  executes) on **every non-trivial change** (owner preference 2026-06-27), and as a hard merge bar on
+  auth/payments/PII/migration/architecture work — fix every High/Medium and re-council until clean.
+- **`/acceptance` runtime gate:** behavior/source changes need an exploratory `/acceptance` pass (drive
+  the REAL running app adversarially) with a committed PASS report at `.planning/acceptance/<id>.md` whose
+  `commit:` matches the merged tip, **before** `/trunk-merge` (procedural DoD gate + Stop-hook nudge #11).
 
 ## Project status & history (single-sourced — do NOT keep a status table here)
 

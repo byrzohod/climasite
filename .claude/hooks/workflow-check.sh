@@ -65,6 +65,27 @@ if [ -n "$SOURCE_CHANGED" ] && [ -z "$STATE_TOUCHED" ]; then
   WARNINGS="$WARNINGS\n- Code changed but .planning/STATE.md not updated. Run /checkpoint so a /clear or auto-compact self-heals (the SessionStart hook re-injects STATE.md)."
 fi
 
+# 11. Acceptance gate (advisory): runtime-affecting change but no /acceptance PASS report
+#     anchored to the current HEAD. Non-blocking Stop reminder -- the BINDING gate is /trunk-merge.
+# A change is "runtime-affecting" if it is anything that is NOT clearly docs-only.
+RUNTIME_CHANGED=$(echo "$CHANGES" | grep -ivE '(\.(md|mdx|markdown|txt|rst|adoc)$|(^|/)LICENSE([.-]|$)|(^|/)NOTICE([.-]|$)|(^|/)AUTHORS$|(^|/)CODEOWNERS$|\.editorconfig$|\.gitignore$|\.gitattributes$|(^|/)docs/)' | head -1)
+if [ -n "$RUNTIME_CHANGED" ]; then
+  HEAD_SHA=$(git rev-parse HEAD 2>/dev/null)
+  if [ -n "$HEAD_SHA" ]; then
+    # FRESHNESS: a single report whose frontmatter has BOTH `verdict: PASS` and a
+    # `commit: <full HEAD sha>` line. Same file must satisfy both -- a body that merely
+    # mentions HEAD can't pass. Only scan *.md (never binary evidence).
+    PASS=""
+    if [ -d .planning/acceptance ]; then
+      PASS=$(find .planning/acceptance -type f -name '*.md' -exec grep -lE '^verdict:[[:space:]]*PASS' {} + 2>/dev/null \
+             | xargs -r grep -lE "^commit:[[:space:]]*$HEAD_SHA\b" 2>/dev/null)
+    fi
+    if [ -z "$PASS" ]; then
+      WARNINGS="$WARNINGS\n- Runtime change but no /acceptance PASS report for HEAD ($HEAD_SHA) -- run /acceptance (exploratory runtime gate) and resolve issues before /trunk-merge."
+    fi
+  fi
+fi
+
 # Output only if there are warnings
 if [ -n "$WARNINGS" ]; then
   echo -e "[WORKFLOW CHECK] Issues detected:$WARNINGS"
