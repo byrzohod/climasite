@@ -177,7 +177,13 @@ import { apiErrorToTranslationKey, toTranslationKey } from '../../core/utils/tra
                   <label class="payment-option" [class.selected]="checkoutService.shippingMethod() === 'standard'">
                     <input type="radio" name="shippingMethod" value="standard" [checked]="checkoutService.shippingMethod() === 'standard'" (change)="selectShippingMethod('standard')" data-testid="shipping-standard" />
                     <span class="payment-icon"><app-icon name="package" size="lg" /></span>
-                    <span>{{ 'checkout.shipping.standard' | translate }} ({{ 'checkout.shipping.standardTime' | translate }}) - {{ shippingCost.standard | currency:'EUR' }}</span>
+                    <span>{{ 'checkout.shipping.standard' | translate }} ({{ 'checkout.shipping.standardTime' | translate }}) -
+                      @if (shippingCost.standard === 0) {
+                        {{ 'cart.summary.freeShipping' | translate }}
+                      } @else {
+                        {{ shippingCost.standard | currency:'EUR' }}
+                      }
+                    </span>
                   </label>
 
                   <label class="payment-option" [class.selected]="checkoutService.shippingMethod() === 'express'">
@@ -351,11 +357,11 @@ import { apiErrorToTranslationKey, toTranslationKey } from '../../core/utils/tra
                 </div>
                 <div class="summary-row">
                   <span>{{ 'cart.summary.shipping' | translate }}</span>
-                  <span>
-                    @if ((cartService.cart()?.shipping ?? 0) === 0) {
+                  <span data-testid="summary-shipping">
+                    @if (selectedShippingCost() === 0) {
                       {{ 'cart.summary.freeShipping' | translate }}
                     } @else {
-                      {{ cartService.cart()?.shipping | currency:'EUR' }}
+                      {{ selectedShippingCost() | currency:'EUR' }}
                     }
                   </span>
                 </div>
@@ -365,7 +371,7 @@ import { apiErrorToTranslationKey, toTranslationKey } from '../../core/utils/tra
                 </div>
                 <div class="summary-row total">
                   <span>{{ 'cart.summary.total' | translate }}</span>
-                  <span data-testid="order-total">{{ cartService.total() | currency:'EUR' }}</span>
+                  <span data-testid="order-total">{{ summaryTotal() | currency:'EUR' }}</span>
                 </div>
               </div>
 
@@ -1210,11 +1216,65 @@ ngOnInit(): void {
     }
   }
 
-  // Per-tier shipping costs shown in the option labels, in EUR. MUST mirror the server's
-  // CheckoutPricing.cs (standard 5.99 / express 15.99 / overnight 19.99) so the displayed option
-  // amount == the cart-summary shipping line == the actual Stripe charge. Keep in sync with
-  // src/ClimaSite.Application/Common/Pricing/CheckoutPricing.cs.
-  readonly shippingCost = { standard: 5.99, express: 15.99, overnight: 19.99 };
+  // DEC-SHIPPING — single source of truth for per-method shipping cost in the UI. MUST mirror the
+  // server's CheckoutPricing.GetShippingCost(method, subtotal) so the displayed option amount ==
+  // the cart-summary shipping line == the actual Stripe charge (displayed == charged). Standard is
+  // FREE when the cart subtotal is at/above the €50 threshold, otherwise €5.99; express €15.99 /
+  // overnight €19.99 are flat. Keep in sync with
+  // src/ClimaSite.Application/Common/Pricing/CheckoutPricing.cs (BUG-11 / DEC-CURRENCY / DEC-SHIPPING).
+  static readonly FREE_SHIPPING_THRESHOLD = 50;
+  private static readonly STANDARD_SHIPPING = 5.99;
+  private static readonly EXPRESS_SHIPPING = 15.99;
+  private static readonly OVERNIGHT_SHIPPING = 19.99;
+
+  /** Current cart subtotal as the server computes it (sum of line totals). */
+  private cartSubtotal(): number {
+    return this.cartService.subtotal?.() ?? 0;
+  }
+
+  /**
+   * Threshold-aware shipping cost for a single method, mirroring the server. This is the ONE place
+   * the per-method cost is derived; both the option labels and the order summary read through it so
+   * there is never a second divergent formula.
+   */
+  shippingCostFor(method: string): number {
+    switch (method?.toLowerCase()) {
+      case 'express':
+        return CheckoutComponent.EXPRESS_SHIPPING;
+      case 'overnight':
+        return CheckoutComponent.OVERNIGHT_SHIPPING;
+      case 'standard':
+      default:
+        return this.cartSubtotal() >= CheckoutComponent.FREE_SHIPPING_THRESHOLD
+          ? 0
+          : CheckoutComponent.STANDARD_SHIPPING;
+    }
+  }
+
+  /** Per-tier shipping costs shown in the option labels (standard is threshold-aware). */
+  get shippingCost(): { standard: number; express: number; overnight: number } {
+    return {
+      standard: this.shippingCostFor('standard'),
+      express: this.shippingCostFor('express'),
+      overnight: this.shippingCostFor('overnight')
+    };
+  }
+
+  /** Cost of the currently selected shipping method — drives the order-summary line + total. */
+  selectedShippingCost(): number {
+    return this.shippingCostFor(this.checkoutService.shippingMethod());
+  }
+
+  /**
+   * Grand total shown in the order summary, matching the server's
+   * CheckoutPricing.CalculateTotal = subtotal + selectedShipping + tax. The cart's tax is the
+   * authoritative 20% VAT the API already returns; we add the threshold-aware selected shipping so
+   * the displayed total equals what Stripe charges.
+   */
+  summaryTotal(): number {
+    const tax = this.cartService.cart?.()?.tax ?? 0;
+    return this.cartSubtotal() + this.selectedShippingCost() + tax;
+  }
 
   selectShippingMethod(method: string): void {
     this.checkoutService.setShippingMethod(method);

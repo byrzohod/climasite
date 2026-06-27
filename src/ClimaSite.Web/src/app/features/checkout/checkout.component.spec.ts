@@ -82,10 +82,117 @@ describe('CheckoutComponent - double-submit guard', () => {
   });
 
   // BUG-11 / DEC-CURRENCY: the shipping-option labels must mirror the server's CheckoutPricing.cs in EUR
-  // (standard 5.99 / express 15.99 / overnight 19.99) so displayed shipping == charged shipping. If the
-  // server tiers change, this test fails to force the FE map back in sync.
+  // (express 15.99 / overnight 19.99 flat; standard 5.99 below the €50 free-shipping threshold) so
+  // displayed shipping == charged shipping. This block's CartService spy has no subtotal signal
+  // (defaults to 0 < 50), so standard is the paid 5.99 rate.
   it('shows shipping costs that match the server (CheckoutPricing) in EUR', () => {
     expect(component.shippingCost).toEqual({ standard: 5.99, express: 15.99, overnight: 19.99 });
+  });
+});
+
+/**
+ * DEC-SHIPPING: standard shipping is FREE when the cart subtotal is at/above €50, otherwise €5.99.
+ * The UI must mirror the server's CheckoutPricing.GetShippingCost(method, subtotal) so the displayed
+ * shipping == the charged shipping, and the order-summary shipping line + grand total reflect the
+ * SELECTED method (not the always-zero cart.shipping). Express €15.99 / overnight €19.99 are flat.
+ */
+describe('CheckoutComponent - DEC-SHIPPING free standard shipping over €50', () => {
+  let component: CheckoutComponent;
+  let cartService: jasmine.SpyObj<CartService>;
+  let checkoutService: jasmine.SpyObj<CheckoutService>;
+
+  function buildComponent(subtotal: number, tax: number, selectedMethod = 'standard'): void {
+    cartService = jasmine.createSpyObj<CartService>('CartService', ['clearCart', 'subtotal', 'cart', 'total']);
+    cartService.subtotal.and.returnValue(subtotal);
+    cartService.total.and.returnValue(subtotal + tax);
+    cartService.cart.and.returnValue({
+      id: 'c1', items: [], subtotal, shipping: 0, tax, total: subtotal + tax,
+      itemCount: 0, createdAt: '', updatedAt: ''
+    });
+
+    checkoutService = jasmine.createSpyObj<CheckoutService>(
+      'CheckoutService',
+      ['createOrder', 'setError', 'setStep', 'setShippingAddress', 'setPaymentMethod', 'setShippingMethod', 'getSessionId', 'paymentMethod', 'shippingMethod', 'shippingAddress', 'lastOrderId', 'isProcessing']
+    );
+    checkoutService.paymentMethod.and.returnValue('card');
+    checkoutService.shippingMethod.and.returnValue(selectedMethod);
+    checkoutService.shippingAddress.and.returnValue(null);
+    checkoutService.getSessionId.and.returnValue('session-1');
+
+    const addressService = jasmine.createSpyObj<AddressService>('AddressService', ['loadAddresses', 'hasAddresses', 'addresses']);
+    const authService = jasmine.createSpyObj<AuthService>('AuthService', ['isAuthenticated']);
+    authService.isAuthenticated.and.returnValue(false);
+    const confettiService = jasmine.createSpyObj<ConfettiService>('ConfettiService', ['burst', 'stop']);
+    const router = jasmine.createSpyObj<Router>('Router', ['navigate']);
+
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: CartService, useValue: cartService },
+        { provide: CheckoutService, useValue: checkoutService },
+        { provide: AddressService, useValue: addressService },
+        { provide: AuthService, useValue: authService },
+        { provide: PaymentService, useValue: jasmine.createSpyObj<PaymentService>('PaymentService', ['createPaymentIntent', 'confirmPayment', 'destroyElements', 'initialize', 'createElements', 'loadConfig']) },
+        { provide: ConfettiService, useValue: confettiService },
+        { provide: Router, useValue: router }
+      ]
+    });
+
+    component = TestBed.runInInjectionContext(() => new CheckoutComponent());
+  }
+
+  it('charges €5.99 standard shipping just below the €50 threshold (49.99)', () => {
+    buildComponent(49.99, 10.0, 'standard');
+    expect(component.shippingCostFor('standard')).toBe(5.99);
+    expect(component.shippingCost.standard).toBe(5.99);
+    expect(component.selectedShippingCost()).toBe(5.99);
+  });
+
+  it('gives FREE standard shipping exactly at the €50 threshold', () => {
+    buildComponent(50, 10.0, 'standard');
+    expect(component.shippingCostFor('standard')).toBe(0);
+    expect(component.shippingCost.standard).toBe(0);
+    expect(component.selectedShippingCost()).toBe(0);
+  });
+
+  it('gives FREE standard shipping above the €50 threshold (50.01)', () => {
+    buildComponent(50.01, 10.0, 'standard');
+    expect(component.shippingCostFor('standard')).toBe(0);
+    expect(component.selectedShippingCost()).toBe(0);
+  });
+
+  it('keeps express €15.99 and overnight €19.99 flat regardless of subtotal', () => {
+    buildComponent(500, 100.0, 'express');
+    // Flat tiers are unaffected by the free-shipping threshold even on a large order.
+    expect(component.shippingCostFor('express')).toBe(15.99);
+    expect(component.shippingCostFor('overnight')).toBe(19.99);
+  });
+
+  it('order-summary total = subtotal + selected shipping + tax for paid standard (<€50)', () => {
+    // subtotal 49.99, tax 10.00, standard selected → +5.99 shipping.
+    buildComponent(49.99, 10.0, 'standard');
+    expect(component.selectedShippingCost()).toBe(5.99);
+    expect(component.summaryTotal()).toBeCloseTo(49.99 + 5.99 + 10.0, 2);
+  });
+
+  it('order-summary total omits shipping when standard is free (≥€50)', () => {
+    // subtotal 60.00, tax 12.00, standard selected → free shipping, total = subtotal + tax.
+    buildComponent(60, 12.0, 'standard');
+    expect(component.selectedShippingCost()).toBe(0);
+    expect(component.summaryTotal()).toBeCloseTo(60 + 0 + 12.0, 2);
+  });
+
+  it('order-summary reflects the SELECTED express method even on a ≥€50 order (no longer always-free)', () => {
+    // The latent bug: summary used cart.shipping (always 0) and omitted express/overnight from the
+    // total. With express selected on a €60 order, shipping must be €15.99 and the total must include it.
+    buildComponent(60, 12.0, 'express');
+    expect(component.selectedShippingCost()).toBe(15.99);
+    expect(component.summaryTotal()).toBeCloseTo(60 + 15.99 + 12.0, 2);
+  });
+
+  it('order-summary reflects the SELECTED overnight method in the total', () => {
+    buildComponent(60, 12.0, 'overnight');
+    expect(component.selectedShippingCost()).toBe(19.99);
+    expect(component.summaryTotal()).toBeCloseTo(60 + 19.99 + 12.0, 2);
   });
 });
 

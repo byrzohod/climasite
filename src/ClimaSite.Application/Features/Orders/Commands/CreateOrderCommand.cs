@@ -237,7 +237,7 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
             // displayed at checkout, charged via Stripe, and the persisted order
             // total are always computed identically (BUG-02). Total is now final, so the
             // verified intent amount can be compared against it below.
-            order.SetShippingCost(CheckoutPricing.GetShippingCost(request.ShippingMethod));
+            order.SetShippingCost(CheckoutPricing.GetShippingCost(request.ShippingMethod, order.Subtotal));
             order.SetTaxAmount(CheckoutPricing.GetTax(order.Subtotal));
 
             // BUG-01: a card order MUST be backed by a verified PaymentIntent. Reject a card
