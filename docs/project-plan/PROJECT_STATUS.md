@@ -32,7 +32,7 @@ Repo `byrzohod/climasite` is **public**; **nothing is deployed yet (OPS-08)**.
 | Product catalog (PLP/PDP, variants, gallery) | ✅ Complete | Variants/images/translations/specs. |
 | Search & navigation | 🟡 Partial | Works, but **multi-term ILIKE substring** (no tsvector/pg_trgm/Meilisearch). Fine for MVP; **P2 scale gap**. |
 | Cart (guest + merge-on-login) | ✅ Complete | BUG-03 **fixed** — FE posts `/merge?guestSessionId=` (query) matching `[FromQuery]` (`cart.service.ts:236`). |
-| Checkout (address/shipping/payment/review) | 🟡 Partial | Flow complete; **currency now consistent EUR (BUG-11 fixed)** + shipping labels match the server; remaining gap: no field-level validation errors (UX). |
+| Checkout (address/shipping/payment/review) | 🟡 Partial | Flow complete; **currency consistent EUR (BUG-11)** + **free standard shipping over €50 (DEC-SHIPPING)** with the order-summary now reflecting the selected method (displayed==charged, latent always-free summary bug fixed); remaining gap: no field-level validation errors (UX). |
 | Payments (Stripe) | ✅ Complete | **Money path fixed** (BUG-01/02/18): server-side EUR amount, verified-intent-before-persist, atomic stock decrement w/ `stock>=qty` guard, idempotent (unique `payment_intent_id`), webhook reconcile, orphan-charge refund. |
 | Orders (create/track/cancel/invoice/reorder, guest token) | ✅ Complete | Guest token-gated confirmation lookup (SEC-02). |
 | Inventory | 🟡 Partial | Stock tracked + atomic decrement guard exists; **"reservations" are NOT implemented** (no reserve/hold) — known gap. |

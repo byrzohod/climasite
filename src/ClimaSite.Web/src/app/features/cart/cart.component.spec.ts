@@ -281,6 +281,24 @@ describe('CartComponent', () => {
       expect(toastService.error).toHaveBeenCalledWith('cart.restore_failed');
     }));
   });
+
+  describe('DEC-SHIPPING — cart-page shipping estimate (displayed == charged)', () => {
+    it('shows the €5.99 standard estimate and includes it in the total for a sub-€50 cart', () => {
+      cartService.subtotal.set(40);
+      cartService.cart.set({ tax: 8 } as Cart);
+
+      expect(component.standardShipping()).toBe(5.99);
+      expect(component.cartTotal()).toBeCloseTo(40 + 5.99 + 8, 2);
+    });
+
+    it('shows free standard shipping (no shipping in the total) at/above €50', () => {
+      cartService.subtotal.set(50);
+      cartService.cart.set({ tax: 10 } as Cart);
+
+      expect(component.standardShipping()).toBe(0);
+      expect(component.cartTotal()).toBeCloseTo(50 + 10, 2);
+    });
+  });
 });
 
 // helper: drain the microtask queue for the resolved removeItem promise inside fakeAsync.

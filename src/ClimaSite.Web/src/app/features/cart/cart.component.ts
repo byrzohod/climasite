@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { shippingCostFor, FREE_SHIPPING_THRESHOLD } from '../../core/pricing/shipping';
 import { CartService } from '../../core/services/cart.service';
 import { CartItem } from '../../core/models/cart.model';
 import { RevealDirective } from '../../shared/directives/reveal.directive';
@@ -139,10 +140,10 @@ import { EmptyStateComponent } from '../../shared/components/empty-state';
             <div class="summary-row">
               <span>{{ 'cart.summary.shipping' | translate }}</span>
               <span data-testid="cart-shipping">
-                @if (cartService.cart()?.shipping === 0) {
+                @if (standardShipping() === 0) {
                   {{ 'cart.summary.freeShipping' | translate }}
                 } @else {
-                  {{ cartService.cart()?.shipping | currency:'EUR' }}
+                  {{ standardShipping() | currency:'EUR' }}
                 }
               </span>
             </div>
@@ -154,7 +155,7 @@ import { EmptyStateComponent } from '../../shared/components/empty-state';
 
             <div class="summary-row total">
               <span>{{ 'cart.summary.total' | translate }}</span>
-              <span data-testid="cart-total">{{ cartService.total() | currency:'EUR' }}</span>
+              <span data-testid="cart-total">{{ cartTotal() | currency:'EUR' }}</span>
             </div>
 
             <a routerLink="/checkout" class="checkout-btn" data-testid="proceed-to-checkout">
@@ -638,6 +639,21 @@ export class CartComponent implements OnInit {
   
   // Animation duration in ms
   private readonly ANIMATION_DURATION = 300;
+
+  // DEC-SHIPPING — the cart page shows the STANDARD shipping estimate (the default method),
+  // threshold-aware via the shared helper, so the cart total matches what the standard checkout charges
+  // (displayed == charged). Free at/above the €50 subtotal, else €5.99; final shipping is confirmed at
+  // checkout once a method is chosen.
+  readonly freeShippingThreshold = FREE_SHIPPING_THRESHOLD;
+
+  standardShipping(): number {
+    return shippingCostFor('standard', this.cartService.subtotal());
+  }
+
+  /** Cart-page estimated total: subtotal + standard shipping estimate + tax (matches standard checkout). */
+  cartTotal(): number {
+    return this.cartService.subtotal() + this.standardShipping() + (this.cartService.cart()?.tax ?? 0);
+  }
 
   ngOnInit(): void {
     // Always reload cart data when navigating to cart page

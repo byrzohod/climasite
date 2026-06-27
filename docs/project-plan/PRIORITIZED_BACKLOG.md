@@ -17,7 +17,7 @@ Per the owner's standing convention, these are **owner decisions**, recorded as 
 |---|---|---|
 | DEC-CURRENCY | **Store currency: EUR or BGN?** Code currently mixes EUR (orders/display), BGN (Stripe charge), USD (cart/checkout pipes). Single most blocking decision in the repo (`_review/bugs.md` open question 1). | BUG-01, BUG-02, BUG-11, BUG-13 |
 | DEC-GUEST | Guest checkout in scope for v1? Backend half-supports it; route guard blocks it; docs claim it works. | GAP-07, TS-13 |
-| DEC-SHIPPING | Should **standard shipping be FREE**, or the €5.99 the server currently charges (`CheckoutPricing.cs`)? BUG-11 made the UI match the server (€5.99) so displayed==charged; if free is intended, change the backend tier to 0. | BUG-11 |
+| DEC-SHIPPING | ✅ RESOLVED 2026-06-27: **free standard shipping over a €50 subtotal**, €5.99 below (express €15.99 / overnight €19.99 unchanged). Implemented server-side (`CheckoutPricing.GetShippingCost(method, subtotal)`, threshold €50) + UI mirror; displayed==charged verified (cross-vendor council). | BUG-11 (done) |
 | O-1 | Background-job mechanism (BackgroundService + DB outbox vs Hangfire vs RabbitMQ from shared-infra) | ARCH-05, GAP-09, GAP-03 (reliability) |
 | O-2 | API error contract: RFC 7807 ProblemDetails vs ratify current `{status,message,detail}` | ARCH-04 |
 | O-3 | Query-caching owner: register `CachingBehavior` + invalidation vs delete it; vs OutputCache named policies | PERF-01 |
