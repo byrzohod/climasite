@@ -143,6 +143,32 @@ public class DeleteUserDataCommandHandler : IRequestHandler<DeleteUserDataComman
                     review.SetVerifiedPurchase(false, null);
                 }
 
+                // Anonymize this data subject's orders (SEC-14): scrub PII (email/phone/addresses incl. the
+                // name in the address dict, free-text notes, and the guest link) but RETAIN the accounting
+                // order record for the legally-required retention period — GDPR Art. 17(3)(b). Covers both
+                // account orders (by UserId) AND the user's prior GUEST checkouts under the same email
+                // (UserId null) — order emails are stored lower-cased, so match case-insensitively.
+                var emailLower = user.Email.ToLowerInvariant();
+                var orders = await _context.Orders
+                    .Where(o => o.UserId == userId.Value
+                                || (o.UserId == null && o.CustomerEmail.ToLower() == emailLower))
+                    .ToListAsync(cancellationToken);
+
+                // Delete the matching outbox (email-queue) rows BEFORE anonymizing: they carry the recipient
+                // address + order payloads (PII), and a still-Pending row would otherwise SEND a
+                // post-erasure email. Match the account email + every order email, case-insensitively.
+                var recipientEmails = new List<string> { emailLower };
+                recipientEmails.AddRange(orders.Select(o => o.CustomerEmail.ToLower()));
+                var outboxRows = await _context.OutboxMessages
+                    .Where(o => recipientEmails.Contains(o.ToEmail.ToLower()))
+                    .ToListAsync(cancellationToken);
+                _context.OutboxMessages.RemoveRange(outboxRows);
+
+                foreach (var order in orders)
+                {
+                    order.AnonymizePersonalData();
+                }
+
                 // 3. Soft-delete the user account
                 user.IsActive = false;
                 user.Email = $"deleted_{userId.Value}@deleted.local";

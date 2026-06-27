@@ -6,6 +6,7 @@ using ClimaSite.Core.Entities;
 using ClimaSite.Infrastructure.Data;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ClimaSite.Api.Tests.Controllers;
@@ -200,6 +201,82 @@ public class GdprControllerTests : IntegrationTestBase
         ClearAuthToken();
         var loginResponse = await Client.PostAsJsonAsync("/api/auth/login", new { email, password });
         loginResponse.StatusCode.Should().NotBe(HttpStatusCode.OK);
+    }
+
+    /// <summary>
+    /// SEC-14 / ADR-0004: account deletion ANONYMIZES the user's order PII (email/phone/address) but
+    /// RETAINS the order/invoice record (for the legal accounting-retention period).
+    /// </summary>
+    [Fact]
+    public async Task DeleteAccount_AnonymizesOrderPii_ButRetainsTheOrderRecord()
+    {
+        var email = $"gdpr-order-{Guid.NewGuid():N}@example.com";
+        const string password = "Password123!";
+        await AuthenticateAsync(email, password);
+        var userId = await GetUserIdAsync(email);
+
+        // Seed: (1) an account order with PII in every field; (2) a same-email GUEST order (UserId null)
+        // with a guest token; (3) an outbox row whose ToEmail is UPPER-CASE (order emails are lower-cased,
+        // so this proves case-insensitive cleanup).
+        Guid orderId, guestOrderId;
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var order = new Order($"TEST-ORD-{Guid.NewGuid():N}", email);
+            order.SetUser(userId);
+            order.SetCustomerPhone("+359888123456");
+            order.SetShippingAddress(new Dictionary<string, object>
+            {
+                ["fullName"] = "Real Customer",
+                ["addressLine1"] = "1 Real St",
+                ["city"] = "Sofia",
+                ["postalCode"] = "1000"
+            });
+            order.SetBillingAddress(new Dictionary<string, object> { ["fullName"] = "Real Customer" });
+            order.SetNotes("Call Real Customer on +359888123456 before delivery");
+            order.SetCancellationReason("Customer Real Customer changed their mind");
+            db.Orders.Add(order);
+
+            var guestOrder = new Order($"TEST-GUEST-{Guid.NewGuid():N}", email); // UserId stays null
+            guestOrder.SetCustomerPhone("+359888999999");
+            guestOrder.SetGuestAccessToken(Guid.NewGuid().ToString("N"));
+            db.Orders.Add(guestOrder);
+
+            db.OutboxMessages.Add(OutboxMessage.ForOrderConfirmation(email.ToUpperInvariant(), order.Id));
+            await db.SaveChangesAsync();
+            orderId = order.Id;
+            guestOrderId = guestOrder.Id;
+        }
+
+        var response = await SendDeleteAsync(new { password, confirmDeletion = true });
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var order = await db.Orders.FindAsync(orderId);
+
+            order.Should().NotBeNull("the accounting order record is retained for legal/tax compliance");
+            order!.CustomerEmail.Should().Be("anonymized@deleted.local");
+            order.CustomerPhone.Should().BeNull();
+            order.ShippingAddress.Should().NotContainKey("fullName");
+            order.ShippingAddress.Values.Select(v => v?.ToString())
+                .Should().NotContain("Real Customer", "the customer name must be scrubbed");
+            order.BillingAddress.Should().BeNull();
+            order.Notes.Should().BeNull("free-text notes can hold PII");
+            order.CancellationReason.Should().BeNull("free-text cancellation reason can hold PII");
+
+            // The same-email GUEST order is erased too, and its shareable link revoked.
+            var guestOrder = await db.Orders.FindAsync(guestOrderId);
+            guestOrder.Should().NotBeNull();
+            guestOrder!.CustomerEmail.Should().Be("anonymized@deleted.local");
+            guestOrder.CustomerPhone.Should().BeNull();
+            guestOrder.GuestAccessToken.Should().BeNull("the guest access link must be revoked");
+
+            // The queued email row must be gone despite the case difference — no post-erasure send.
+            var outboxLeft = await db.OutboxMessages.CountAsync(o => o.ToEmail.ToLower() == email.ToLower());
+            outboxLeft.Should().Be(0, "the user's email-queue rows are deleted on erasure (case-insensitive)");
+        }
     }
 
     #endregion

@@ -187,6 +187,28 @@ public class Order : BaseEntity
         SetUpdatedAt();
     }
 
+    /// <summary>
+    /// GDPR Article 17 (right to erasure): erase the personal data on the order — email, phone,
+    /// shipping/billing address (the address dict also holds the customer name), and the free-text
+    /// <see cref="Notes"/> / <see cref="CancellationReason"/> (which may contain names, phones, or
+    /// delivery instructions) — while RETAINING the accounting order record (id, line items, amounts,
+    /// dates) for the legally-required retention period. Lawful basis for retention: Art. 17(3)(b)
+    /// (compliance with a legal obligation). <see cref="UserId"/> is intentionally kept as an internal
+    /// retention/audit key (the user row it points to is itself anonymized) — so this is
+    /// pseudonymization-grade erasure of the personal fields. See ADR-0004.
+    /// </summary>
+    public void AnonymizePersonalData()
+    {
+        CustomerEmail = "anonymized@deleted.local";
+        CustomerPhone = null;
+        ShippingAddress = new Dictionary<string, object> { ["anonymized"] = true };
+        BillingAddress = null;
+        Notes = null;
+        CancellationReason = null;
+        GuestAccessToken = null; // revoke the shareable guest-order link
+        SetUpdatedAt();
+    }
+
     public void SetShippingMethod(string? method)
     {
         ShippingMethod = method;

@@ -18,6 +18,7 @@ See [`000-template.md`](./000-template.md) for the skeleton.
 | [002](./002-home-v3-stack-and-assets.md) | Home v3 stack, assets, and build order | Superseded by ADR 0003 (renderer) | 2026-04-08 |
 | [0001](./0001-background-jobs-db-outbox.md) | Background jobs via `BackgroundService` + a DB email outbox | Accepted | 2026-06-16 |
 | [0003](./0003-home-v3-rendering-canvas2d.md) | Home v3 configurator preview renders with Canvas 2D | Accepted | 2026-06-25 |
+| [0004](./0004-gdpr-order-pii-retention.md) | GDPR erasure anonymizes Order PII but retains the invoice record | Accepted | 2026-06-27 |
 
 ## When to write an ADR
 
