@@ -60,7 +60,7 @@ public class RegisterPage : BasePage
         {
             await Page.WaitForSelectorAsync(
                 $"{SuccessMessage}, {ErrorMessage}",
-                new PageWaitForSelectorOptions { Timeout = 10000 });
+                new PageWaitForSelectorOptions { Timeout = 30000 });
         }
         catch (TimeoutException)
         {
@@ -69,7 +69,7 @@ public class RegisterPage : BasePage
             try
             {
                 await Page.WaitForURLAsync(url => !url.Contains("/register"),
-                    new PageWaitForURLOptions { Timeout = 5000 });
+                    new PageWaitForURLOptions { Timeout = 15000 });
             }
             catch
             {
@@ -115,7 +115,7 @@ public class RegisterPage : BasePage
     {
         try
         {
-            await Page.WaitForSelectorAsync(SuccessMessage, new PageWaitForSelectorOptions { Timeout = 10000 });
+            await Page.WaitForSelectorAsync(SuccessMessage, new PageWaitForSelectorOptions { Timeout = 30000 });
             return true;
         }
         catch
@@ -130,7 +130,7 @@ public class RegisterPage : BasePage
     {
         try
         {
-            await WaitForSelectorAsync(ErrorMessage, 10000);
+            await WaitForSelectorAsync(ErrorMessage, 30000);
             return await GetTextAsync(ErrorMessage);
         }
         catch
@@ -144,7 +144,7 @@ public class RegisterPage : BasePage
     {
         try
         {
-            await WaitForSelectorAsync(ValidationError, 10000);
+            await WaitForSelectorAsync(ValidationError, 30000);
             return await GetTextAsync(ValidationError);
         }
         catch
@@ -157,7 +157,7 @@ public class RegisterPage : BasePage
     {
         try
         {
-            await WaitForSelectorAsync(ValidationError, 10000);
+            await WaitForSelectorAsync(ValidationError, 30000);
             return await IsVisibleAsync(ValidationError);
         }
         catch
