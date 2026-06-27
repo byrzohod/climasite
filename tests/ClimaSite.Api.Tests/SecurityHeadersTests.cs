@@ -1,3 +1,4 @@
+using System.Net;
 using ClimaSite.Api.Tests.Infrastructure;
 using FluentAssertions;
 
@@ -37,13 +38,28 @@ public class SecurityHeadersTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
-    public async Task SwaggerResponse_KeepsHeadersButOmitsCsp()
+    public async Task SwaggerPath_KeepsHeadersButOmitsCsp()
     {
-        // The middleware runs for every path; CSP is intentionally skipped for /swagger so the UI renders.
+        // The security-headers middleware runs for every path (even a 404); CSP is intentionally skipped
+        // for the /swagger path so the Swagger UI renders in Development. Swagger itself is Dev-only now
+        // (SEC-06), so in this Testing env the path 404s — but the header behavior is what we assert here.
         var response = await _client.GetAsync("/swagger/index.html");
 
         Header(response, "X-Content-Type-Options").Should().Be("nosniff");
         Header(response, "X-Frame-Options").Should().Be("DENY");
-        Header(response, "Content-Security-Policy").Should().BeNull("Swagger UI needs inline scripts/styles");
+        Header(response, "Content-Security-Policy").Should().BeNull("CSP is skipped for the /swagger path");
+    }
+
+    [Theory]
+    [InlineData("/swagger")]
+    [InlineData("/swagger/index.html")]
+    [InlineData("/swagger/v1/swagger.json")]
+    public async Task Swagger_IsNotServedOutsideDevelopment(string path)
+    {
+        // SEC-06: Swagger is gated to Development only. The integration factory runs in the Testing
+        // environment (non-Development), so the API schema + UI must NOT be exposed.
+        var response = await _client.GetAsync(path);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 }

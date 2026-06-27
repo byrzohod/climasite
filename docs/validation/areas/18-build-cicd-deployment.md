@@ -229,7 +229,7 @@ JWT_SECRET=test dotnet run --project src/ClimaSite.Api --launch-profile Developm
 | Check | Command/Action | Expected Result |
 |-------|----------------|-----------------|
 | API starts | `curl /health` | 200 OK, "Healthy" |
-| Swagger loads | Browse `/swagger` | Swagger UI renders |
+| Swagger loads (Dev only) | Browse `/swagger` | Swagger UI renders **in Development**; **404 in Production/Staging** (SEC-06 — gated to `IsDevelopment()`) |
 | Database connected | Check `/health` details | PostgreSQL healthy |
 | Redis connected | Check `/health` details | Redis healthy |
 | Auth works | POST `/api/auth/login` | JWT token returned |

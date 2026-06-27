@@ -309,13 +309,18 @@ void ConfigurePipeline(WebApplication app)
         app.UseHsts();
     }
 
-    // Swagger
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
+    // Swagger — Development only (SEC-06). The API schema + UI must not be exposed in Production
+    // (or Staging/Testing); it's a local dev tool. The Testing integration env is non-Development,
+    // so /swagger 404s there — which is what the SwaggerGatingTests assert.
+    if (app.Environment.IsDevelopment())
     {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "ClimaSite API V1");
-        options.RoutePrefix = "swagger";
-    });
+        app.UseSwagger();
+        app.UseSwaggerUI(options =>
+        {
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "ClimaSite API V1");
+            options.RoutePrefix = "swagger";
+        });
+    }
 
     // Serilog request logging
     app.UseSerilogRequestLogging();

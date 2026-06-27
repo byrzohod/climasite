@@ -79,6 +79,7 @@ Detail and evidence: `docs/project-plan/SECURITY_REVIEW.md` (SR-01..SR-20) and `
 - **Depends on:** None.
 
 ### SEC-06 — Gate Swagger out of production (P2, Small)
+- **Status:** ✅ DONE (2026-06-27). Wrapped `UseSwagger`/`UseSwaggerUI` in `if (app.Environment.IsDevelopment())` — the API schema + UI are now served **only in Development** (off in Production/Staging/Testing). Integration-tested: `/swagger/index.html` + `/swagger/v1/swagger.json` → 404 in the (non-Dev) Testing factory; the `/swagger` path still carries the security headers + no CSP. Council-reviewed.
 - **Description:** `UseSwagger`/`UseSwaggerUI` run unconditionally (`Program.cs:271-277`). Wrap in `IsDevelopment()` or protect behind auth/flag per Plan 18 **SEC-102**.
 - **Closes:** SR-10; `_review/security.md` #4.
 - **Affected:** `src/ClimaSite.Api/Program.cs`.

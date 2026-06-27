@@ -30,11 +30,10 @@ procedure, rollback, the 5 OPS-08 owner questions, known gaps).
   env-vars, provision Postgres/Redis/object-storage + **enable+test DB backups**, and **rotate the seeded
   `admin@climasite.local` + JWT_SECRET if any prod DB was ever booted**. Record answers in DECISIONS.md.
 - **Autonomous dev follow-ups the runbook surfaced** (good next units, each gated/PR'd):
-  **SEC-06** gate Swagger out of production (recommended NEXT); **OPS-03** delete the dead duplicate
-  `src/**` Dockerfiles + `src/ClimaSite.Api/railway.toml` (root is canonical) + add a `deploy.yml`;
-  **F3/OPS-07** make `Dockerfile.api` honor Railway `$PORT` + run non-root; **OPS-04** move EF migrations
-  to a pre-deploy step (today it auto-migrates on startup — crash-loop risk, keep API at 1 replica).
-  **SEC-07 is DONE** (below).
+  **OPS-03** delete the dead duplicate `src/**` Dockerfiles + `src/ClimaSite.Api/railway.toml` (root is
+  canonical) + add a `deploy.yml` (recommended NEXT); **F3/OPS-07** make `Dockerfile.api` honor Railway
+  `$PORT` + run non-root; **OPS-04** move EF migrations to a pre-deploy step (today it auto-migrates on
+  startup — crash-loop risk, keep API at 1 replica). **SEC-06 + SEC-07 are DONE** (below).
 
 ## Remaining (tracked — none blocking; full detail in `docs/project-plan/PRIORITIZED_BACKLOG.md`)
 - **DEC-SHIPPING** (next, above) · **OPS-08 deploy-readiness prep** (Railway; owner adds account+secrets).
@@ -61,6 +60,7 @@ procedure, rollback, the 5 OPS-08 owner questions, known gaps).
 - **DEC-SHIPPING (DONE 2026-06-27):** free standard shipping when subtotal ≥ €50, else €5.99 (express €15.99 / overnight €19.99). Server `CheckoutPricing.GetShippingCost(method, subtotal)` is the single source of truth; `CalculateTotal` + `CreateOrderCommand` pass the subtotal; **fixed a latent checkout-summary bug** (the summary read the always-0 `cart.shipping` → always "Free"/total omitted express+overnight) — summary now uses one centralized `shippingCostFor()` so displayed==charged. Built via a Workflow (parallel server+UI → adversarial money-path verify=PASS). Cart-page Medium (council) also fixed via a shared `core/pricing/shipping.ts` helper used by cart+checkout. Tests: Application 823 + Api money-path 9/9 + ng 1321 green; 2 council rounds clean. Advisory follow-up: normalize `CartDto.Total` server-side (no live consumer now).
 - **OPS-08 deploy-readiness prep (DONE 2026-06-27):** `docs/runbooks/deploy.md` — devops review found the root `Dockerfile.api`/`Dockerfile.web` + `railway.toml`/`railway.api.toml` are canonical (the `src/**` Dockerfiles + `src/ClimaSite.Api/railway.toml` are DEAD/stale → OPS-03 delete); env-var matrix uses the REAL var names the code reads (`ADMIN_INITIAL_PASSWORD` throws on prod startup; `API_URL`, `AllowedOrigins__*`, `Minio__*`, double-underscore `Stripe__*`/`Email__*`); 5 owner-gated questions in §5. Surfaced: F3 API hardcodes :8080 (set Railway port 8080), SEC-06 Swagger-in-prod, SEC-07 committed dummy secrets, OPS-07 root containers, OPS-04 auto-migrate-on-startup. The actual deploy is owner-gated (Railway account+secrets).
 - **SEC-07 (DONE 2026-06-27):** removed the committed dummy Stripe keys from `appsettings.json` (0 in tracked source); new `StripeConfiguration.ValidateProductionConfiguration` (mirrors `JwtConfiguration`) wired in `ConfigureServices` → **Production fail-fasts at startup** on missing/placeholder Stripe keys; safe in Dev/Testing (scoped `StripePaymentService` + `FakePaymentService`). CLAUDE.md env table → `Stripe__*`. JWT was already prod-guarded. Tests green; council-reviewed (3 rounds). Follow-up: same pattern for SMTP/MinIO.
+- **SEC-06 (DONE 2026-06-27):** gated `UseSwagger`/`UseSwaggerUI` behind `IsDevelopment()` — API schema + UI served only in Development (404 in Prod/Staging/Testing); integration-tested (`/swagger` + `/swagger/v1/swagger.json` → 404 in Testing; security headers still apply). Council-reviewed.
 - **Workflow sync from vault (DONE 2026-06-27):** adopted the new **`/acceptance`** skill (runtime exploratory gate — drive the REAL app adversarially before merge; PASS report at `.planning/acceptance/<id>.md` matching HEAD) + `workflow-check.sh` **check #11** (advisory nudge) + the updated `review-orchestrate`/`trunk-merge`/`verify-work` skills that wire it in. Confirmed `council.sh` already = Codex `gpt-5.5`@`xhigh` (best/highest). **Owner preference recorded:** use the cross-vendor council on **every non-trivial change**, not just security/compliance (see [[feedback_council_merge_gate]] memory). Vault has no other new agents/hooks since the 2026-06-23 adoption (only minor skill refreshes — autoresearch/cost-check/etc. — deferred).
 
 ## Recently done (2026-06-25)
