@@ -11,7 +11,7 @@ the strategy below.
 - ✅ **B1** specs for the 4 untested services — **PR #58**
 - ✅ **C2 / UX-15** contrast fixed (`--color-primary-surface`) + reduced-motion scans + **`A11Y_ENFORCE=1` enforced** — **PR #60**
 - ✅ **D** Knowledge graph enriched (vault)
-- 🚧 **B2** the 3 highest-value untested components done (product-list 32 + cart 18 + register 15 = **+65 specs**, suite 1246→1311); ~24 lower-value components + **B3** (replace ~27 placeholder `should create` specs) remain
+- 🚧 **B2** highest-value untested components specced over 2 batches: batch 1 = product-list 32 + cart 18 + register 15 (+65, suite→1311); batch 2 = admin-order-detail 24 + admin-moderation 20 + mega-menu 21 (+65, suite→1386). ~21 lower-value components + **B3** (replace ~27 placeholder `should create` specs) remain
 - ⏳ **A2** finish the no-wait-read / hard-sleep cleanup (`QuerySelectorAsync`/`IsVisibleAsync`/`Task.Delay`)
 - ⏳ **C1** `@defer` e2e-build mitigation (low priority — NetworkIdle gone) · **C3** dev rate-limit exemption · sharding (deferred)
 
