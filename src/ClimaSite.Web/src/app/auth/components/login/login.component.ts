@@ -6,6 +6,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../services/auth.service';
 import { InputComponent } from '../../../shared/components/input/input.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { GoogleSignInButtonComponent } from '../google-sign-in-button/google-sign-in-button.component';
 import { apiErrorToTranslationKey } from '../../../core/utils/translation-key.util';
 
 @Component({
@@ -17,7 +18,8 @@ import { apiErrorToTranslationKey } from '../../../core/utils/translation-key.ut
     RouterLink,
     TranslateModule,
     InputComponent,
-    ButtonComponent
+    ButtonComponent,
+    GoogleSignInButtonComponent
   ],
   template: `
     <div class="auth-container">
@@ -75,6 +77,8 @@ import { apiErrorToTranslationKey } from '../../../core/utils/translation-key.ut
             {{ 'auth.login.submit' | translate }}
           </app-button>
         </form>
+
+        <app-google-sign-in-button />
 
         <div class="auth-footer">
           <p>

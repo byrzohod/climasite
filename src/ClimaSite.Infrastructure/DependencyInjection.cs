@@ -67,6 +67,7 @@ public static class DependencyInjection
         services.AddTransient<IDateTime, DateTimeService>();
         services.AddScoped<IProductSearchService, Search.ProductSearchService>();
         services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IGoogleTokenValidator, GoogleTokenValidator>();
         services.AddScoped<ICacheService, CacheService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IPaymentService, StripePaymentService>();

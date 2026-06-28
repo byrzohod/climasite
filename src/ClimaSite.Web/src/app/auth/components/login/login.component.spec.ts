@@ -33,13 +33,15 @@ class FakeTranslateLoader implements TranslateLoader {
 describe('LoginComponent', () => {
   let fixture: ComponentFixture<LoginComponent>;
   let component: LoginComponent;
-  let authService: jasmine.SpyObj<Pick<AuthService, 'login'>> & { isLoading: WritableSignal<boolean> };
+  let authService: jasmine.SpyObj<Pick<AuthService, 'login' | 'getAuthConfig'>> & { isLoading: WritableSignal<boolean> };
 
   beforeEach(async () => {
-    authService = jasmine.createSpyObj<Pick<AuthService, 'login'>>('AuthService', ['login']) as jasmine.SpyObj<Pick<AuthService, 'login'>> & {
+    authService = jasmine.createSpyObj<Pick<AuthService, 'login' | 'getAuthConfig'>>('AuthService', ['login', 'getAuthConfig']) as jasmine.SpyObj<Pick<AuthService, 'login' | 'getAuthConfig'>> & {
       isLoading: WritableSignal<boolean>;
     };
     authService.isLoading = signal(false);
+    // The embedded Google button asks for config on init; report "not configured" so it stays hidden.
+    authService.getAuthConfig.and.returnValue(of({ googleClientId: '' }));
 
     await TestBed.configureTestingModule({
       imports: [

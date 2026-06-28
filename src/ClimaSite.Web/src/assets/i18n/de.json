@@ -1425,6 +1425,11 @@
       "signUp": "Registrieren",
       "error": "Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut."
     },
+    "google": {
+      "or": "oder",
+      "signIn": "Mit Google anmelden",
+      "error": "Google-Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut."
+    },
     "register": {
       "title": "Konto erstellen",
       "subtitle": "Werden Sie Teil von ClimaSite",

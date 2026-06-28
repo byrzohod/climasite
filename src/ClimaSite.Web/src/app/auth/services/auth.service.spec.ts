@@ -3,10 +3,13 @@ import { provideRouter } from '@angular/router';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { PLATFORM_ID } from '@angular/core';
+import { of } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { authInterceptor } from '../interceptors/auth.interceptor';
-import { AuthService, User } from './auth.service';
+import { CartService } from '../../core/services/cart.service';
+import { WishlistService } from '../../core/services/wishlist.service';
+import { AuthService, LoginResponse, User } from './auth.service';
 
 describe('AuthService', () => {
   let httpMock: HttpTestingController;
@@ -32,7 +35,10 @@ describe('AuthService', () => {
         provideRouter([]),
         provideHttpClient(withInterceptors([authInterceptor])),
         provideHttpClientTesting(),
-        { provide: PLATFORM_ID, useValue: 'browser' }
+        { provide: PLATFORM_ID, useValue: 'browser' },
+        // Stub the lazily-resolved merge collaborators so the auth pipeline makes no extra HTTP.
+        { provide: CartService, useValue: { mergeCart: () => of(null) } },
+        { provide: WishlistService, useValue: { mergeWithUserWishlist: () => of(null) } }
       ]
     });
 
@@ -95,4 +101,49 @@ describe('AuthService', () => {
     expect(service.isAuthenticated()).toBeFalse();
     httpMock.expectNone(`${environment.apiUrl}/api/auth/me`);
   });
+
+  it('signs in with Google: posts the id token and stores the session', fakeAsync(() => {
+    const service = TestBed.inject(AuthService);
+
+    const googleUser: User = {
+      ...adminUser,
+      id: 'google-1',
+      email: 'google.user@test.com',
+      role: 'Customer'
+    };
+
+    let result: LoginResponse | undefined;
+    service.googleSignIn('google-id-token').subscribe(response => (result = response));
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/api/auth/google`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ idToken: 'google-id-token' });
+    expect(req.request.withCredentials).toBeTrue();
+
+    req.flush({ accessToken: 'google-access-token', user: googleUser });
+    tick();
+
+    expect(result?.accessToken).toBe('google-access-token');
+    expect(localStorage.getItem('climasite_token')).toBe('google-access-token');
+    expect(service.isAuthenticated()).toBeTrue();
+    expect(service.user()).toEqual(googleUser);
+  }));
+
+  it('propagates an error and clears loading when Google sign-in is rejected', fakeAsync(() => {
+    const service = TestBed.inject(AuthService);
+
+    let errorStatus: number | undefined;
+    service.googleSignIn('bad-token').subscribe({
+      next: () => fail('expected Google sign-in to fail'),
+      error: err => (errorStatus = err.status)
+    });
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/api/auth/google`);
+    req.flush({ message: 'Invalid Google credentials' }, { status: 401, statusText: 'Unauthorized' });
+    tick();
+
+    expect(errorStatus).toBe(401);
+    expect(service.isAuthenticated()).toBeFalse();
+    expect(service.isLoading()).toBeFalse();
+  }));
 });
