@@ -34,8 +34,13 @@ export class SplitTextDirective implements OnInit, OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly animationService = inject(AnimationService);
   
-  /** Split type: chars, words, or lines */
-  splitType = input<SplitType>('chars', { alias: 'appSplitText' });
+  /** Split type: chars, words, or lines. A bare `appSplitText` binds '' to the aliased input, so coerce
+   *  '' / unknown values back to the 'chars' default — otherwise `<h1 appSplitText>` was a silent no-op. */
+  splitType = input<SplitType, string>('chars', {
+    alias: 'appSplitText',
+    transform: (value: string): SplitType =>
+      value === 'words' || value === 'lines' ? value : 'chars',
+  });
   
   /** Stagger delay between items (ms) */
   staggerDelay = input<number>(30);
@@ -57,6 +62,7 @@ export class SplitTextDirective implements OnInit, OnDestroy {
   
   private element!: HTMLElement;
   private originalHTML = '';
+  private originalHtmlCaptured = false;
   private splitElements: HTMLElement[] = [];
   private observer: IntersectionObserver | null = null;
   private hasAnimated = false;
@@ -73,7 +79,9 @@ export class SplitTextDirective implements OnInit, OnDestroy {
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
     this.element = this.el.nativeElement;
-    this.originalHTML = this.element.innerHTML;
+    // NB: originalHTML is captured in initializeSplit() (afterNextRender), NOT here — in ngOnInit the
+    // interpolated `{{ }}` content isn't committed to the DOM yet, so capturing now would store '' and the
+    // ngOnDestroy restore would silently no-op for interpolated hosts.
   }
   
   ngOnDestroy(): void {
@@ -88,7 +96,15 @@ export class SplitTextDirective implements OnInit, OnDestroy {
   
   private initializeSplit(): void {
     if (!this.element) return;
-    
+
+    // Capture the original markup ONCE — here (after afterNextRender, so interpolated `{{ }}` content is in
+    // the DOM) and BEFORE splitText() rewrites innerHTML — so ngOnDestroy can faithfully restore it. The
+    // once-guard means a re-init (e.g. resetAnimation) never overwrites the original with already-split markup.
+    if (!this.originalHtmlCaptured) {
+      this.originalHTML = this.element.innerHTML;
+      this.originalHtmlCaptured = true;
+    }
+
     // Skip if reduced motion preferred and animate is enabled
     if (this.animate() && this.animationService.prefersReducedMotion()) {
       return;
