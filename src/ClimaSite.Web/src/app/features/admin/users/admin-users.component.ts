@@ -7,11 +7,12 @@ import {
   AdminCustomerListItem,
   AdminCustomerDetail
 } from '../../../core/services/admin-customers.service';
+import { DualPricePipe } from '../../../shared/pipes/dual-price.pipe';
 
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule],
+  imports: [CommonModule, FormsModule, TranslateModule, DualPricePipe],
   template: `
     <div class="customers-container" data-testid="admin-customers-page">
       <div class="customers-header">
@@ -98,7 +99,7 @@ import {
                     </span>
                   </td>
                   <td class="orders">{{ customer.orderCount }}</td>
-                  <td>{{ customer.totalSpent | currency:'EUR' }}</td>
+                  <td>{{ customer.totalSpent | dualPrice }}</td>
                   <td class="created">{{ customer.createdAt | date:'mediumDate' }}</td>
                   <td>
                     <button
@@ -252,11 +253,11 @@ import {
                     <span class="stat-label">{{ 'admin.users.stats.totalOrders' | translate }}</span>
                   </div>
                   <div class="stat">
-                    <span class="stat-value">{{ cust.stats.totalSpent | currency:'EUR' }}</span>
+                    <span class="stat-value">{{ cust.stats.totalSpent | dualPrice }}</span>
                     <span class="stat-label">{{ 'admin.users.stats.totalSpent' | translate }}</span>
                   </div>
                   <div class="stat">
-                    <span class="stat-value">{{ cust.stats.averageOrderValue | currency:'EUR' }}</span>
+                    <span class="stat-value">{{ cust.stats.averageOrderValue | dualPrice }}</span>
                     <span class="stat-label">{{ 'admin.users.stats.averageOrder' | translate }}</span>
                   </div>
                   <div class="stat">
@@ -312,7 +313,7 @@ import {
                         @for (order of cust.recentOrders; track order.id) {
                           <tr data-testid="customer-order-row">
                             <td>{{ order.orderNumber }}</td>
-                            <td>{{ order.total | currency:'EUR' }}</td>
+                            <td>{{ order.total | dualPrice }}</td>
                             <td>{{ order.status }}</td>
                             <td>{{ order.createdAt | date:'mediumDate' }}</td>
                           </tr>

@@ -2,6 +2,7 @@ import { Component, input, output, computed, signal, effect } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
+import { DualPricePipe } from '../../pipes/dual-price.pipe';
 
 export interface BundleProduct {
   id: string;
@@ -16,7 +17,7 @@ export interface BundleProduct {
 @Component({
   selector: 'app-frequently-bought',
   standalone: true,
-  imports: [CommonModule, RouterLink, TranslateModule],
+  imports: [CommonModule, RouterLink, TranslateModule, DualPricePipe],
   template: `
     <div class="frequently-bought" data-testid="frequently-bought">
       <h2 class="section-title">{{ 'products.frequentlyBought.title' | translate }}</h2>
@@ -32,10 +33,10 @@ export interface BundleProduct {
             <span class="product-name">{{ mainProduct().name }}</span>
             <span class="product-price">
               @if (mainProduct().salePrice && mainProduct().salePrice! < mainProduct().price) {
-                <span class="original">{{ mainProduct().price | currency:'EUR' }}</span>
-                <span class="sale">{{ mainProduct().salePrice | currency:'EUR' }}</span>
+                <span class="original">{{ mainProduct().price | dualPrice }}</span>
+                <span class="sale">{{ mainProduct().salePrice | dualPrice }}</span>
               } @else {
-                {{ mainProduct().price | currency:'EUR' }}
+                {{ mainProduct().price | dualPrice }}
               }
             </span>
           </div>
@@ -65,10 +66,10 @@ export interface BundleProduct {
               <a [routerLink]="['/products', product.slug]" class="product-name">{{ product.name }}</a>
               <span class="product-price">
                 @if (product.salePrice && product.salePrice < product.price) {
-                  <span class="original">{{ product.price | currency:'EUR' }}</span>
-                  <span class="sale">{{ product.salePrice | currency:'EUR' }}</span>
+                  <span class="original">{{ product.price | dualPrice }}</span>
+                  <span class="sale">{{ product.salePrice | dualPrice }}</span>
                 } @else {
-                  {{ product.price | currency:'EUR' }}
+                  {{ product.price | dualPrice }}
                 }
               </span>
             </div>
@@ -90,13 +91,13 @@ export interface BundleProduct {
         @if (bundleSavings() > 0) {
           <div class="summary-row savings">
             <span class="label">{{ 'products.frequentlyBought.bundleSavings' | translate }}:</span>
-            <span class="value">-{{ bundleSavings() | currency:'EUR' }}</span>
+            <span class="value">-{{ bundleSavings() | dualPrice }}</span>
           </div>
         }
 
         <div class="summary-row total">
           <span class="label">{{ 'products.frequentlyBought.bundlePrice' | translate }}:</span>
-          <span class="value">{{ bundleTotal() | currency:'EUR' }}</span>
+          <span class="value">{{ bundleTotal() | dualPrice }}</span>
         </div>
 
         <button

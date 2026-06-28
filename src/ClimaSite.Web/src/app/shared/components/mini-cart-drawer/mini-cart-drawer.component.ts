@@ -11,7 +11,7 @@ import {
   viewChild,
   PLATFORM_ID
 } from '@angular/core';
-import { CommonModule, CurrencyPipe, isPlatformBrowser } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import {
@@ -25,6 +25,7 @@ import {
 import { CartService } from '../../../core/services/cart.service';
 import { CartItem } from '../../../core/models/cart.model';
 import { MiniCartItemComponent } from './mini-cart-item.component';
+import { DualPricePipe } from '../../pipes/dual-price.pipe';
 
 /**
  * Mini-Cart Drawer Component
@@ -44,7 +45,7 @@ import { MiniCartItemComponent } from './mini-cart-item.component';
     CommonModule,
     RouterModule,
     TranslateModule,
-    CurrencyPipe,
+    DualPricePipe,
     MiniCartItemComponent
   ],
   templateUrl: './mini-cart-drawer.component.html',

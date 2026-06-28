@@ -63,10 +63,10 @@
             <div class="rec-footer">
               <div class="rec-price">
                 @if (product.isOnSale && product.salePrice) {
-                  <span class="sale">{{ product.basePrice | currency:'EUR' }}</span>
-                  <span class="strike">{{ product.salePrice | currency:'EUR' }}</span>
+                  <span class="sale">{{ product.basePrice | dualPrice }}</span>
+                  <span class="strike">{{ product.salePrice | dualPrice }}</span>
                 } @else {
-                  <span>{{ product.basePrice | currency:'EUR' }}</span>
+                  <span>{{ product.basePrice | dualPrice }}</span>
                 }
               </div>
               <a

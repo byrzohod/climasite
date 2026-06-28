@@ -2,6 +2,7 @@ import { Component, input, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
+import { DualPricePipe } from '../../pipes/dual-price.pipe';
 
 export interface FinancingOption {
   months: number;
@@ -19,7 +20,7 @@ const DEFAULT_OPTIONS: FinancingOption[] = [
 @Component({
   selector: 'app-financing-calculator',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule],
+  imports: [CommonModule, FormsModule, TranslateModule, DualPricePipe],
   template: `
     <div class="financing-calculator" data-testid="financing-calculator">
       <h4 class="title">{{ 'products.financing.title' | translate }}</h4>
@@ -37,7 +38,7 @@ const DEFAULT_OPTIONS: FinancingOption[] = [
       }
 
       <div class="monthly-highlight">
-        <span class="from-text">{{ 'products.financing.monthlyFrom' | translate:{ amount: (lowestMonthlyPayment() | currency:'EUR') } }}</span>
+        <span class="from-text">{{ 'products.financing.monthlyFrom' | translate:{ amount: (lowestMonthlyPayment() | dualPrice) } }}</span>
       </div>
 
       <div class="options-selector">
@@ -62,16 +63,16 @@ const DEFAULT_OPTIONS: FinancingOption[] = [
       <div class="calculation-result">
         <div class="result-row">
           <span class="label">{{ 'products.financing.monthlyPayment' | translate }}:</span>
-          <span class="value highlight">{{ monthlyPayment() | currency:'EUR' }}</span>
+          <span class="value highlight">{{ monthlyPayment() | dualPrice }}</span>
         </div>
         <div class="result-row">
           <span class="label">{{ 'products.financing.totalCost' | translate }}:</span>
-          <span class="value">{{ totalCost() | currency:'EUR' }}</span>
+          <span class="value">{{ totalCost() | dualPrice }}</span>
         </div>
         @if (interestCost() > 0) {
           <div class="result-row interest">
             <span class="label">{{ 'products.financing.interest' | translate }}:</span>
-            <span class="value">{{ interestCost() | currency:'EUR' }}</span>
+            <span class="value">{{ interestCost() | dualPrice }}</span>
           </div>
         }
       </div>

@@ -13,6 +13,7 @@ import {
 import { ProductTranslationEditorComponent } from './components/product-translation-editor/product-translation-editor.component';
 import { RelatedProductsManagerComponent } from './components/related-products-manager/related-products-manager.component';
 import { apiErrorToTranslationKey } from '../../../core/utils/translation-key.util';
+import { DualPricePipe } from '../../../shared/pipes/dual-price.pipe';
 
 type FormMode = 'create' | 'edit';
 
@@ -68,7 +69,8 @@ function emptyForm(): ProductForm {
     FormsModule,
     TranslateModule,
     ProductTranslationEditorComponent,
-    RelatedProductsManagerComponent
+    RelatedProductsManagerComponent,
+    DualPricePipe
   ],
   template: `
     <div class="products-container" data-testid="admin-products-page">
@@ -172,10 +174,10 @@ function emptyForm(): ProductForm {
                   <td class="product-sku">{{ product.sku }}</td>
                   <td>
                     @if (product.salePrice != null) {
-                      <span class="sale-price">{{ product.salePrice | currency:'EUR' }}</span>
-                      <span class="old-price">{{ product.price | currency:'EUR' }}</span>
+                      <span class="sale-price">{{ product.salePrice | dualPrice }}</span>
+                      <span class="old-price">{{ product.price | dualPrice }}</span>
                     } @else {
-                      {{ product.price | currency:'EUR' }}
+                      {{ product.price | dualPrice }}
                     }
                   </td>
                   <td class="stock">{{ product.stockQuantity }}</td>

@@ -6,11 +6,12 @@ import { ProductBrief, EnergyRatingLevel } from '../../../core/models/product.mo
 import { CartService } from '../../../core/services/cart.service';
 import { WishlistService } from '../../../core/services/wishlist.service';
 import { FlyingCartService } from '../../../core/services/flying-cart.service';
+import { DualPricePipe } from '../../../shared/pipes/dual-price.pipe';
 
 @Component({
   selector: 'app-product-card',
   standalone: true,
-  imports: [CommonModule, RouterLink, TranslateModule],
+  imports: [CommonModule, RouterLink, TranslateModule, DualPricePipe],
   template: `
     <article
       class="product-card"
@@ -152,10 +153,10 @@ import { FlyingCartService } from '../../../core/services/flying-cart.service';
 
         <div class="product-price" data-testid="product-price">
           @if (product.isOnSale && product.salePrice) {
-            <span class="sale-price">{{ product.basePrice | currency:'EUR' }}</span>
-            <span class="original-price">{{ product.salePrice | currency:'EUR' }}</span>
+            <span class="sale-price">{{ product.basePrice | dualPrice }}</span>
+            <span class="original-price">{{ product.salePrice | dualPrice }}</span>
           } @else {
-            <span class="current-price">{{ product.basePrice | currency:'EUR' }}</span>
+            <span class="current-price">{{ product.basePrice | dualPrice }}</span>
           }
         </div>
 

@@ -6,11 +6,12 @@ import { BrandService } from '../../../core/services/brand.service';
 import { CartService } from '../../../core/services/cart.service';
 import { Brand } from '../../../core/models/brand.model';
 import { ProductBrief } from '../../../core/models/product.model';
+import { DualPricePipe } from '../../../shared/pipes/dual-price.pipe';
 
 @Component({
   selector: 'app-brand-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, TranslateModule],
+  imports: [CommonModule, RouterLink, TranslateModule, DualPricePipe],
   template: `
     <div class="brand-detail-page">
       @if (isLoading()) {
@@ -94,10 +95,10 @@ import { ProductBrief } from '../../../core/models/product.model';
                       <h3 class="product-name">{{ product.name }}</h3>
                       <div class="product-price">
                         @if (product.isOnSale && product.salePrice) {
-                          <span class="sale-price">{{ product.basePrice | currency:'EUR' }}</span>
-                          <span class="original-price">{{ product.salePrice | currency:'EUR' }}</span>
+                          <span class="sale-price">{{ product.basePrice | dualPrice }}</span>
+                          <span class="original-price">{{ product.salePrice | dualPrice }}</span>
                         } @else {
-                          <span class="current-price">{{ product.basePrice | currency:'EUR' }}</span>
+                          <span class="current-price">{{ product.basePrice | dualPrice }}</span>
                         }
                       </div>
                     </div>

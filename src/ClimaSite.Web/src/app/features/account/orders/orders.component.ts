@@ -6,11 +6,12 @@ import { TranslateModule } from '@ngx-translate/core';
 import { CheckoutService } from '../../../core/services/checkout.service';
 import { OrdersFilterParams, PaginatedOrders, ORDER_STATUS_CONFIG, OrderStatus } from '../../../core/models/order.model';
 import { EmptyStateComponent } from '../../../shared/components/empty-state';
+import { DualPricePipe } from '../../../shared/pipes/dual-price.pipe';
 
 @Component({
   selector: 'app-orders',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, EmptyStateComponent],
+  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, EmptyStateComponent, DualPricePipe],
   template: `
     <div class="orders-container" data-testid="orders-page">
       <h1>{{ 'account.orders.title' | translate }}</h1>
@@ -207,7 +208,7 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state';
 
               <div class="order-footer">
                 <div class="order-summary">
-                  <span class="order-total">{{ 'account.orders.total' | translate }}: {{ order.total | currency:'EUR' }}</span>
+                  <span class="order-total">{{ 'account.orders.total' | translate }}: {{ order.total | dualPrice }}</span>
                   <span class="order-item-count">{{ order.itemCount }} {{ order.itemCount === 1 ? ('account.orders.item' | translate) : ('account.orders.items' | translate) }}</span>
                 </div>
                 <a [routerLink]="['/account/orders', order.id]" class="btn-view-details" data-testid="view-order-details">

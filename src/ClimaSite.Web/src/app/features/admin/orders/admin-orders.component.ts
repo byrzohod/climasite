@@ -8,11 +8,12 @@ import {
   AdminOrderListItem,
   ORDER_STATUSES
 } from '../../../core/services/admin-orders.service';
+import { DualPricePipe } from '../../../shared/pipes/dual-price.pipe';
 
 @Component({
   selector: 'app-admin-orders',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, TranslateModule],
+  imports: [CommonModule, FormsModule, RouterLink, TranslateModule, DualPricePipe],
   template: `
     <div class="orders-container" data-testid="admin-orders-page">
       <div class="orders-header">
@@ -94,7 +95,7 @@ import {
                       <span class="customer-email">{{ order.customerEmail }}</span>
                     </div>
                   </td>
-                  <td>{{ order.totalAmount | currency:'EUR' }}</td>
+                  <td>{{ order.totalAmount | dualPrice }}</td>
                   <td>
                     <span class="status-badge" [class]="order.status.toLowerCase()">
                       {{ 'admin.orders.status.' + order.status | translate }}
