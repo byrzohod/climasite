@@ -10,16 +10,43 @@ namespace ClimaSite.Application.Features.Products.Queries;
 public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, PaginatedList<ProductBriefDto>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IProductSearchService _searchService;
 
-    public GetProductsQueryHandler(IApplicationDbContext context)
+    public GetProductsQueryHandler(IApplicationDbContext context, IProductSearchService searchService)
     {
         _context = context;
+        _searchService = searchService;
     }
 
     public async Task<PaginatedList<ProductBriefDto>> Handle(
         GetProductsQuery request,
         CancellationToken cancellationToken)
     {
+        // SEARCH-01-fts: when a search term is present, route through the shared Postgres FTS service so the
+        // user-facing header search (this is the path it actually hits) gets ranking + tags + translations +
+        // SKU + multilang. All of GetProductsQuery's facets/sort are preserved by passing the full filter.
+        if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+        {
+            var (orderedIds, total) = await _searchService.SearchAsync(new ProductSearchFilter
+            {
+                RawQuery = request.SearchTerm,
+                CategoryIds = request.CategoryId.HasValue ? new[] { request.CategoryId.Value } : null,
+                Brands = !string.IsNullOrWhiteSpace(request.Brand) ? new[] { request.Brand.ToLowerInvariant() } : null,
+                MinPrice = request.MinPrice,
+                MaxPrice = request.MaxPrice,
+                InStock = request.InStock ?? false,
+                OnSale = request.OnSale ?? false,
+                IsFeatured = request.IsFeatured ?? false,
+                SortBy = request.SortBy,
+                SortDescending = request.SortDescending,
+                PageNumber = request.PageNumber,
+                PageSize = request.PageSize,
+            }, cancellationToken);
+
+            var searched = await HydrateAsync(orderedIds, request.LanguageCode, cancellationToken);
+            return new PaginatedList<ProductBriefDto>(searched, total, request.PageNumber, request.PageSize);
+        }
+
         var query = _context.Products
             .AsNoTracking()
             .Where(p => p.IsActive);
@@ -28,16 +55,6 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, Paginat
         if (request.CategoryId.HasValue)
         {
             query = query.Where(p => p.CategoryId == request.CategoryId.Value);
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.SearchTerm))
-        {
-            var searchTerm = request.SearchTerm.ToLower();
-            query = query.Where(p =>
-                p.Name.ToLower().Contains(searchTerm) ||
-                (p.Description != null && p.Description.ToLower().Contains(searchTerm)) ||
-                (p.Brand != null && p.Brand.ToLower().Contains(searchTerm)) ||
-                (p.Model != null && p.Model.ToLower().Contains(searchTerm)));
         }
 
         if (!string.IsNullOrWhiteSpace(request.Brand))
@@ -96,30 +113,57 @@ public class GetProductsQueryHandler : IRequestHandler<GetProductsQuery, Paginat
             .Take(request.PageSize)
             .ToListAsync(cancellationToken);
 
-        var items = products.Select(p =>
-        {
-            var (name, shortDescription, _, _, _) = p.GetTranslatedContent(request.LanguageCode);
-            return new ProductBriefDto
-            {
-                Id = p.Id,
-                Name = name,
-                Slug = p.Slug,
-                ShortDescription = shortDescription,
-                BasePrice = p.BasePrice,
-                SalePrice = ProductPricing.GetSalePrice(p.BasePrice, p.CompareAtPrice),
-                IsOnSale = ProductPricing.IsOnSale(p.BasePrice, p.CompareAtPrice),
-                DiscountPercentage = ProductPricing.GetDiscountPercentage(p.BasePrice, p.CompareAtPrice),
-                Brand = p.Brand,
-                AverageRating = 0, // Will be calculated from reviews
-                ReviewCount = 0, // Will be calculated from reviews
-                PrimaryImageUrl = p.Images
-                    .Where(i => i.IsPrimary)
-                    .Select(i => i.Url)
-                    .FirstOrDefault(),
-                InStock = p.Variants.Any(v => v.StockQuantity > 0)
-            };
-        }).ToList();
+        var items = products.Select(p => ToBrief(p, request.LanguageCode)).ToList();
 
         return new PaginatedList<ProductBriefDto>(items, totalCount, request.PageNumber, request.PageSize);
+    }
+
+    /// <summary>Loads the ranked products by id, re-orders them to the SQL relevance order, and projects to DTOs.</summary>
+    private async Task<List<ProductBriefDto>> HydrateAsync(
+        IReadOnlyList<Guid> orderedIds,
+        string? languageCode,
+        CancellationToken cancellationToken)
+    {
+        if (orderedIds.Count == 0)
+            return new List<ProductBriefDto>();
+
+        var idSet = orderedIds.ToHashSet();
+        var products = await _context.Products
+            .AsNoTracking()
+            .Include(p => p.Translations)
+            .Include(p => p.Images.Where(i => i.IsPrimary))
+            .Include(p => p.Variants)
+            .Where(p => idSet.Contains(p.Id))
+            .ToListAsync(cancellationToken);
+
+        var byId = products.ToDictionary(p => p.Id);
+        return orderedIds
+            .Where(byId.ContainsKey)
+            .Select(id => ToBrief(byId[id], languageCode))
+            .ToList();
+    }
+
+    private static ProductBriefDto ToBrief(Core.Entities.Product p, string? languageCode)
+    {
+        var (name, shortDescription, _, _, _) = p.GetTranslatedContent(languageCode);
+        return new ProductBriefDto
+        {
+            Id = p.Id,
+            Name = name,
+            Slug = p.Slug,
+            ShortDescription = shortDescription,
+            BasePrice = p.BasePrice,
+            SalePrice = ProductPricing.GetSalePrice(p.BasePrice, p.CompareAtPrice),
+            IsOnSale = ProductPricing.IsOnSale(p.BasePrice, p.CompareAtPrice),
+            DiscountPercentage = ProductPricing.GetDiscountPercentage(p.BasePrice, p.CompareAtPrice),
+            Brand = p.Brand,
+            AverageRating = 0, // Will be calculated from reviews
+            ReviewCount = 0, // Will be calculated from reviews
+            PrimaryImageUrl = p.Images
+                .Where(i => i.IsPrimary)
+                .Select(i => i.Url)
+                .FirstOrDefault(),
+            InStock = p.Variants.Any(v => v.StockQuantity > 0)
+        };
     }
 }

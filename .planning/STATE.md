@@ -4,7 +4,7 @@
 > `--resume`. Read **Next action** first. Kept fresh via `/checkpoint` at each unit/phase boundary.
 > LEAN — pointers, not prose. **This is the single entry point; everything else is linked below.**
 
-- **Last checkpoint**: 2026-06-24 (after Plan 19 test-hardening + a11y enforcement)
+- **Last checkpoint**: 2026-06-28 (after #77 merged + SEARCH-01-fts implemented, diff-council in flight)
 
 ## Goal
 Production-grade multi-language (EN/BG/DE), multi-theme HVAC e-commerce platform — finish to production readiness with a hardened SDLC.
@@ -23,36 +23,28 @@ Production-grade multi-language (EN/BG/DE), multi-theme HVAC e-commerce platform
 
 ## ▶ RESUME HERE (saved 2026-06-27 before a machine restart — Docker was hung; restart fixes it)
 
-**You are on branch `test/e2e-full-customer-journey` → open PR #77** (the only open PR). Working tree is
-clean (all work committed + pushed: commits `e4e8dd6` journey tests, `9f7d351` route fix, `028e39c`
-timeout fix). `main` tip when saved ≈ `1dff5ae`+ (this branch was cut earlier, so its other STATE entries
-below lag main — trust git/PRs, not this file's older recap).
+**#77 (full customer-journey E2E) is MERGED** (squash `1df1529`; root cause was a 69-char test-email
+local-part > Angular's 64-char `Validators.email` limit + a submit-selector hitting the always-"enabled"
+`<app-button>` host — both fixed). **You are now on branch `feature/search-fts` → SEARCH-01-fts in flight.**
 
-**What #77 is:** comprehensive E2E coverage of the FULL human workflow (your ask: register→login→cart→
-wishlist→checkout(bank-transfer)→order→history→details→review). Files: `tests/ClimaSite.E2E/PageObjects/
-RegisterPage.cs`, `Tests/Authentication/RegistrationTests.cs` (3), `Tests/Journeys/FullCustomerJourneyTests.cs`
-(2) + converted `UserMenuTests`/`LoginTests` to `[RetryFact]`.
-
-**Status at save:** the **2 FullCustomerJourneyTests PASS in CI** (the full workflow is VERIFIED working).
-The **3 standalone `RegistrationTests` were FAILING** on `IsRegisteredAsync()==false`. Fixes already
-applied: (a) route `/auth/register`→`/register` (root route — `9f7d351`); (b) bumped RegisterPage waits
-10s→30s for cold-backend first-register latency (`028e39c`). A re-run was in flight at save (11 pass / E2E
-pending).
+**What SEARCH-01-fts is:** public product search migrated ILIKE→**Postgres FTS**. Trigger-maintained
+denormalised `products.search_vector` (base + tags + ALL translations), `climasite_search` config
+(simple+unaccent), GIN + pg_trgm indexes; one shared `IProductSearchService` (parameterized raw SQL) does
+match + facets + `ts_rank_cd` + exact-SKU boost + paging + window-count; per-term substring branch = recall
+superset; both public paths unified. Unit-plan: `.planning/units/SEARCH-01-fts/unit-plan.md`. Design + diff
+**council-validated** (Codex + plan-critic — they caught the array_to_string-STABLE, cross-table-multi-term,
+websearch-vs-plainto, and MigrateAsync-not-EnsureCreated issues; all folded in). **12 FTS integration tests
++ rank-reversal mutation gate pass; full backend suite green (Core 424 / App 823 / Api 305).**
 
 **FIRST STEPS ON RESUME:**
-1. `git checkout test/e2e-full-customer-journey && git pull`; `gh pr checks 77` — see if the timeout fix
-   greened the 3 RegistrationTests.
-2. **If green → merge #77** (`gh pr merge 77 --squash --delete-branch`) — full-workflow coverage DONE.
-3. **If RegistrationTests still fail → Docker is back now, so REPRODUCE LOCALLY** (the whole reason this was
-   hard): start the stack per `docs/project-plan/DEV_WORKFLOW.md` (API :5029 + `ng serve` :4200, shared
-   Postgres :5432 — see the [[project_repo_ops_gotchas]] memory for the exact connection-string override),
-   then `dotnet test tests/ClimaSite.E2E --filter "FullyQualifiedName~RegistrationTests"` to see the REAL
-   failure, fix, push, merge. (The journey tests already prove registration works end-to-end, so worst
-   case: keep RegisterPage + the 2 journey tests and trim/relax the 3 standalone ones.)
-4. **Known follow-up uncovered here:** `AccessibilityTests.cs:167` also navigates `/auth/register` (wrong
-   route) but masks it via a tolerant wait → its register a11y scan runs on the wrong page. Fixing its
-   route may surface previously-unscanned violations under the enforced axe gate (`A11Y_ENFORCE=1`) — do it
-   as a separate triaged unit.
+1. `git checkout feature/search-fts`; `git log --oneline -3`. If a PR is open: `gh pr checks` → merge if green
+   (after a diff-council-clean + an `/acceptance` PASS committed at the tip per the DoD).
+2. If NOT pushed yet: finish the diff council (`scratchpad/codex-diff/codex.md`), address any High/Medium,
+   then push + open PR to main, get 6 green checks, run `/acceptance` against the running app (drive the
+   header search box), then squash-merge.
+3. **Follow-up surfaced:** `AccessibilityTests.cs:167` navigates the wrong `/auth/register` route (masked by a
+   tolerant wait) → its a11y scan runs on the wrong page; fix route as a separate triaged unit (may surface
+   new axe violations under `A11Y_ENFORCE=1`).
 
 ### Merged to main this session (2026-06-27) — for context (newest first)
 #76 B2 component specs batch 2 (+65, admin-order-detail/admin-moderation/mega-menu) · #75 OPS-03 delete

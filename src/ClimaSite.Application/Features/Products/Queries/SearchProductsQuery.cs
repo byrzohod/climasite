@@ -26,110 +26,100 @@ public record SearchProductsQuery : IRequest<PaginatedList<ProductBriefDto>>, IC
 public class SearchProductsQueryHandler : IRequestHandler<SearchProductsQuery, PaginatedList<ProductBriefDto>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IProductSearchService _searchService;
 
-    public SearchProductsQueryHandler(IApplicationDbContext context)
+    public SearchProductsQueryHandler(IApplicationDbContext context, IProductSearchService searchService)
     {
         _context = context;
+        _searchService = searchService;
     }
 
     public async Task<PaginatedList<ProductBriefDto>> Handle(
         SearchProductsQuery request,
         CancellationToken cancellationToken)
     {
-        var searchTerms = request.Query.ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        var langCode = request.LanguageCode?.ToLowerInvariant();
+        // A blank query never reaches here (the controller 400s on blank q); guard anyway.
+        if (string.IsNullOrWhiteSpace(request.Query))
+            return new PaginatedList<ProductBriefDto>(new List<ProductBriefDto>(), 0, request.PageNumber, request.PageSize);
 
-        var query = _context.Products
+        // Resolve facets in EF (category descendants + brand normalisation), then hand the full filter to the
+        // Postgres FTS service, which does match + facets + relevance + paging + total in one query.
+        IReadOnlyList<Guid>? categoryIds = null;
+        if (!string.IsNullOrWhiteSpace(request.CategorySlug))
+        {
+            var resolved = await GetCategoryIdsWithDescendantsAsync(request.CategorySlug, cancellationToken);
+            categoryIds = resolved.Count > 0 ? resolved : new List<Guid> { Guid.Empty }; // empty-but-nonnull → match nothing
+        }
+
+        var brands = request.Brands is { Count: > 0 }
+            ? request.Brands.Select(b => b.ToLowerInvariant()).ToList()
+            : null;
+
+        var (orderedIds, totalCount) = await _searchService.SearchAsync(new ProductSearchFilter
+        {
+            RawQuery = request.Query,
+            CategoryIds = categoryIds,
+            Brands = brands,
+            MinPrice = request.MinPrice,
+            MaxPrice = request.MaxPrice,
+            PageNumber = request.PageNumber,
+            PageSize = request.PageSize,
+        }, cancellationToken);
+
+        var items = await HydrateAsync(orderedIds, request.LanguageCode, cancellationToken);
+        return new PaginatedList<ProductBriefDto>(items, totalCount, request.PageNumber, request.PageSize);
+    }
+
+    /// <summary>
+    /// Loads the ranked products by id (with Images/Variants/Translations), re-orders them in memory to match
+    /// the SQL relevance order (an IN-fetch loses ordering), and projects to <see cref="ProductBriefDto"/>.
+    /// </summary>
+    private async Task<List<ProductBriefDto>> HydrateAsync(
+        IReadOnlyList<Guid> orderedIds,
+        string? languageCode,
+        CancellationToken cancellationToken)
+    {
+        if (orderedIds.Count == 0)
+            return new List<ProductBriefDto>();
+
+        var idSet = orderedIds.ToHashSet();
+        var products = await _context.Products
             .AsNoTracking()
             .Include(p => p.Images)
             .Include(p => p.Variants)
             .Include(p => p.Translations)
-            .Where(p => p.IsActive)
-            .AsQueryable();
-
-        // Search in both default fields and translations
-        foreach (var term in searchTerms)
-        {
-            query = query.Where(p =>
-                p.Name.ToLower().Contains(term) ||
-                (p.ShortDescription != null && p.ShortDescription.ToLower().Contains(term)) ||
-                (p.Description != null && p.Description.ToLower().Contains(term)) ||
-                (p.Brand != null && p.Brand.ToLower().Contains(term)) ||
-                (p.Model != null && p.Model.ToLower().Contains(term)) ||
-                p.Tags.Any(t => t.Contains(term)) ||
-                // Search in translations
-                p.Translations.Any(t =>
-                    t.Name.ToLower().Contains(term) ||
-                    (t.ShortDescription != null && t.ShortDescription.ToLower().Contains(term)) ||
-                    (t.Description != null && t.Description.ToLower().Contains(term))));
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.CategorySlug))
-        {
-            var categoryIds = await GetCategoryIdsWithDescendantsAsync(request.CategorySlug, cancellationToken);
-            if (categoryIds.Any())
-            {
-                query = query.Where(p => p.CategoryId.HasValue && categoryIds.Contains(p.CategoryId.Value));
-            }
-        }
-
-        if (request.Brands != null && request.Brands.Any())
-        {
-            var normalizedBrands = request.Brands.Select(b => b.ToLowerInvariant()).ToList();
-            query = query.Where(p => p.Brand != null && normalizedBrands.Contains(p.Brand.ToLower()));
-        }
-
-        if (request.MinPrice.HasValue)
-        {
-            query = query.Where(p => p.BasePrice >= request.MinPrice.Value);
-        }
-
-        if (request.MaxPrice.HasValue)
-        {
-            query = query.Where(p => p.BasePrice <= request.MaxPrice.Value);
-        }
-
-        query = query.OrderByDescending(p =>
-            (p.Name.ToLower().Contains(request.Query.ToLower()) ? 10 : 0) +
-            (p.Brand != null && p.Brand.ToLower().Contains(request.Query.ToLower()) ? 5 : 0))
-            .ThenBy(p => p.Name);
-
-        // Fetch products then apply translations in memory
-        var totalCount = await query.CountAsync(cancellationToken);
-        var products = await query
-            .Skip((request.PageNumber - 1) * request.PageSize)
-            .Take(request.PageSize)
+            .Where(p => idSet.Contains(p.Id))
             .ToListAsync(cancellationToken);
 
-        var items = products.Select(p =>
-        {
-            var translated = p.GetTranslatedContent(request.LanguageCode);
-            return new ProductBriefDto
-            {
-                Id = p.Id,
-                Name = translated.Name,
-                Slug = p.Slug,
-                ShortDescription = translated.ShortDescription,
-                BasePrice = p.BasePrice,
-                SalePrice = ProductPricing.GetSalePrice(p.BasePrice, p.CompareAtPrice),
-                IsOnSale = ProductPricing.IsOnSale(p.BasePrice, p.CompareAtPrice),
-                DiscountPercentage = ProductPricing.GetDiscountPercentage(p.BasePrice, p.CompareAtPrice),
-                Brand = p.Brand,
-                AverageRating = 0,
-                ReviewCount = 0,
-                PrimaryImageUrl = p.Images
-                    .Where(i => i.IsPrimary)
-                    .Select(i => i.Url)
-                    .FirstOrDefault(),
-                InStock = p.Variants.Any(v => v.StockQuantity > 0)
-            };
-        }).ToList();
+        var byId = products.ToDictionary(p => p.Id);
 
-        return new PaginatedList<ProductBriefDto>(
-            items,
-            totalCount,
-            request.PageNumber,
-            request.PageSize);
+        return orderedIds
+            .Where(byId.ContainsKey)
+            .Select(id => byId[id])
+            .Select(p =>
+            {
+                var translated = p.GetTranslatedContent(languageCode);
+                return new ProductBriefDto
+                {
+                    Id = p.Id,
+                    Name = translated.Name,
+                    Slug = p.Slug,
+                    ShortDescription = translated.ShortDescription,
+                    BasePrice = p.BasePrice,
+                    SalePrice = ProductPricing.GetSalePrice(p.BasePrice, p.CompareAtPrice),
+                    IsOnSale = ProductPricing.IsOnSale(p.BasePrice, p.CompareAtPrice),
+                    DiscountPercentage = ProductPricing.GetDiscountPercentage(p.BasePrice, p.CompareAtPrice),
+                    Brand = p.Brand,
+                    AverageRating = 0,
+                    ReviewCount = 0,
+                    PrimaryImageUrl = p.Images
+                        .Where(i => i.IsPrimary)
+                        .Select(i => i.Url)
+                        .FirstOrDefault(),
+                    InStock = p.Variants.Any(v => v.StockQuantity > 0)
+                };
+            })
+            .ToList();
     }
 
     private async Task<List<Guid>> GetCategoryIdsWithDescendantsAsync(string categorySlug, CancellationToken cancellationToken)

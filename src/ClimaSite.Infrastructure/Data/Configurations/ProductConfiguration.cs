@@ -2,7 +2,9 @@ using System.Text.Json;
 using ClimaSite.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using NpgsqlTypes;
 
 namespace ClimaSite.Infrastructure.Data.Configurations;
 
@@ -160,5 +162,27 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.HasIndex(p => p.CreatedAt).IsDescending();
         builder.HasIndex(p => p.Tags).HasMethod("gin");
         builder.HasIndex(p => p.Specifications).HasMethod("gin");
+
+        // SEARCH-01-fts: full-text search vector (snake_case `search_vector`). Shadow property — the domain
+        // entity stays free of NpgsqlTypes. It is a PLAIN tsvector column MAINTAINED BY A TRIGGER (created in
+        // the migration; it cannot be a generated column because it denormalises product_translations from
+        // another table and uses array_to_string(tags), which is STABLE not IMMUTABLE). EF must therefore
+        // never write it — mark it store-generated + ignore on save so inserts/updates leave it to the trigger.
+        builder.Property<NpgsqlTsVector>("search_vector")
+            .HasColumnName("search_vector")
+            .HasColumnType("tsvector")
+            .ValueGeneratedOnAddOrUpdate();
+        builder.Property<NpgsqlTsVector>("search_vector").Metadata
+            .SetBeforeSaveBehavior(PropertySaveBehavior.Ignore);
+        builder.Property<NpgsqlTsVector>("search_vector").Metadata
+            .SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
+        builder.HasIndex("search_vector").HasMethod("gin");
+
+        // pg_trgm GIN indexes back the ILIKE substring fallback (the `%term%` recall superset). Distinct names
+        // because brand/sku already have b-tree indexes above.
+        builder.HasIndex(p => p.Name, "ix_products_name_trgm").HasMethod("gin").HasOperators("gin_trgm_ops");
+        builder.HasIndex(p => p.Brand, "ix_products_brand_trgm").HasMethod("gin").HasOperators("gin_trgm_ops");
+        builder.HasIndex(p => p.Model, "ix_products_model_trgm").HasMethod("gin").HasOperators("gin_trgm_ops");
+        builder.HasIndex(p => p.Sku, "ix_products_sku_trgm").HasMethod("gin").HasOperators("gin_trgm_ops");
     }
 }

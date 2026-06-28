@@ -60,6 +60,15 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
         // Apply all configurations from the assembly
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
+        // SEARCH-01-fts: Postgres full-text search. unaccent folds diacritics (DE umlauts / BG accents) and
+        // pg_trgm backs the ILIKE substring fallback (gin_trgm_ops indexes). The climasite_search text-search
+        // CONFIGURATION + the search_vector trigger are NOT modelled by EF — they live in the migration SQL.
+        modelBuilder.HasPostgresExtension("unaccent");
+        modelBuilder.HasPostgresExtension("pg_trgm");
+
+        // Keyless projection for the raw FTS ranking query (maps to no table).
+        modelBuilder.Entity<Search.ProductSearchHit>().HasNoKey().ToView(null);
+
         // Configure Identity tables with snake_case naming
         ConfigureIdentityTables(modelBuilder);
     }
