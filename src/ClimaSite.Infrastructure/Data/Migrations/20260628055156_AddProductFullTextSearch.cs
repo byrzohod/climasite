@@ -87,13 +87,18 @@ CREATE TRIGGER trg_products_search_vector
 CREATE OR REPLACE FUNCTION fn_product_translations_search_vector_trg() RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE v_id uuid;
 BEGIN
-    v_id := COALESCE(NEW.product_id, OLD.product_id);
-    UPDATE products p SET search_vector = fn_product_search_document(
-        p.name, p.brand, p.model, p.tags, p.short_description, p.description,
-        (SELECT string_agg(t.name, ' ') FROM product_translations t WHERE t.product_id = v_id),
-        (SELECT string_agg(coalesce(t.short_description, '') || ' ' || coalesce(t.description, ''), ' ')
-           FROM product_translations t WHERE t.product_id = v_id))
-    WHERE p.id = v_id;
+    -- Recompute BOTH the new and (on a reassignment/delete) the old parent product, so a translation moved
+    -- between products never leaves the old product's vector stale.
+    FOR v_id IN
+        SELECT DISTINCT pid FROM (VALUES (NEW.product_id), (OLD.product_id)) AS v(pid) WHERE pid IS NOT NULL
+    LOOP
+        UPDATE products p SET search_vector = fn_product_search_document(
+            p.name, p.brand, p.model, p.tags, p.short_description, p.description,
+            (SELECT string_agg(t.name, ' ') FROM product_translations t WHERE t.product_id = v_id),
+            (SELECT string_agg(coalesce(t.short_description, '') || ' ' || coalesce(t.description, ''), ' ')
+               FROM product_translations t WHERE t.product_id = v_id))
+        WHERE p.id = v_id;
+    END LOOP;
     RETURN NULL;
 END $$;
 

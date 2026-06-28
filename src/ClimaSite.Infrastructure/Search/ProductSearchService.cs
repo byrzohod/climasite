@@ -7,14 +7,18 @@ using NpgsqlTypes;
 namespace ClimaSite.Infrastructure.Search;
 
 /// <summary>
-/// Postgres full-text product search. ONE parameterized statement does match + facets + relevance + paging +
-/// total (window count), then the handler hydrates the returned ids via EF. Design (council-validated):
+/// Postgres full-text product search. Two parameterized statements that SHARE the exact same FROM/WHERE
+/// (<see cref="FromWhere"/>) — a ranked, paged page query and a sibling COUNT — so the total is correct even
+/// for an out-of-range page (which returns zero rows) and the two predicates can never drift. The handler
+/// hydrates the returned ids via EF. Design (council-validated):
 /// <list type="bullet">
 /// <item>FTS branch: <c>search_vector @@ plainto_tsquery(...)</c> over the trigger-maintained denormalized
 ///   per-product vector (base fields + tags + ALL translations). <c>plainto_tsquery</c> (not websearch) gives
 ///   literal AND-of-terms and won't misparse model codes like <c>MSZ-AP25</c> (websearch's <c>-</c> = NOT).</item>
 /// <item>Substring branch (keeps today's per-term substring recall a strict superset): EVERY term must
-///   substring-match some field (incl. description/tags/translations), via <c>unnest(@terms)</c>.</item>
+///   substring-match some field (incl. description/tags/translations), via <c>unnest(@terms)</c>. NOTE: this
+///   correlated branch is a SEQ SCAN — fine at the current catalog scale (no live data); a future perf pass
+///   would split FTS/substring with UNION + indexable single-term predicates if the catalog grows large.</item>
 /// <item>Ranking: <c>ts_rank_cd</c> (weights {D,C,B,A}) + an additive exact/prefix SKU boost.</item>
 /// <item>All inputs are parameters; LIKE metacharacters in terms are escaped, so <c>%</c>/<c>_</c> can't
 ///   widen the match and there is no injection surface.</item>
@@ -26,19 +30,10 @@ public sealed class ProductSearchService : IProductSearchService
 
     public ProductSearchService(ApplicationDbContext db) => _db = db;
 
-    // The FTS config name here MUST equal the one the migration (AddProductFullTextSearch) creates and the
-    // trigger uses to build search_vector — the query config must match the vector config or lexemes won't
-    // align. The weight array ARRAY[0.1,0.2,0.4,1.0] is order {D,C,B,A} (A=name highest); both are constants
-    // here, never user input. count(*) OVER() returns the total in the same statement so page + total can't
-    // drift. NB: weights use ARRAY[...] (square brackets) NOT '{...}' — a literal "{0.1...}" collides with
-    // FromSqlRaw's {n} placeholder parser and throws a FormatException before the query ever runs.
-    private const string SqlHead = @"
-SELECT p.id AS ""Id"",
-       (ts_rank_cd(ARRAY[0.1, 0.2, 0.4, 1.0]::real[], p.search_vector, q.query)
-        + CASE WHEN lower(p.sku) = lower(@rawQuery) THEN 2.0
-               WHEN p.sku ILIKE @skuPrefix ESCAPE '\' THEN 1.0
-               ELSE 0 END)::double precision AS ""Score"",
-       count(*) OVER() AS ""TotalCount""
+    // Shared FROM + WHERE. The FTS config name MUST equal the migration's (query config == vector config).
+    // Facets are null-guarded parameters (never string-built). Both the page and count queries embed this
+    // verbatim, so their predicates are identical by construction.
+    private const string FromWhere = @"
 FROM products p
 CROSS JOIN (SELECT plainto_tsquery('climasite_search', @rawQuery) AS query) q
 WHERE p.is_active
@@ -68,11 +63,16 @@ WHERE p.is_active
   AND (@maxPrice::numeric IS NULL OR p.base_price <= @maxPrice::numeric)
   AND (NOT @inStock OR EXISTS (SELECT 1 FROM product_variants v WHERE v.product_id = p.id AND v.stock_quantity > 0))
   AND (NOT @onSale OR (p.compare_at_price IS NOT NULL AND p.compare_at_price > p.base_price))
-  AND (NOT @featured OR p.is_featured)
-ORDER BY ";
+  AND (NOT @featured OR p.is_featured)";
 
-    private const string SqlTail = @"
-OFFSET @skip LIMIT @take";
+    // ts_rank_cd weights ARRAY[0.1,0.2,0.4,1.0] = order {D,C,B,A} (A=name highest). NB: ARRAY[...] (square
+    // brackets) NOT '{...}' — a literal "{0.1...}" collides with FromSqlRaw's {n} placeholder parser.
+    private const string ScoreSelect = @"
+SELECT p.id AS ""Id"",
+       (ts_rank_cd(ARRAY[0.1, 0.2, 0.4, 1.0]::real[], p.search_vector, q.query)
+        + CASE WHEN lower(p.sku) = lower(@rawQuery) THEN 2.0
+               WHEN p.sku ILIKE @skuPrefix ESCAPE '\' THEN 1.0
+               ELSE 0 END)::double precision AS ""Score""";
 
     public async Task<ProductSearchResult> SearchAsync(ProductSearchFilter filter, CancellationToken cancellationToken)
     {
@@ -88,33 +88,46 @@ OFFSET @skip LIMIT @take";
         if (terms.Length == 0)
             return new ProductSearchResult(Array.Empty<Guid>(), 0);
 
-        // OrderByClause returns a whitelisted constant clause — NEVER user input — so this concatenation is safe.
-        var sql = SqlHead + OrderByClause(filter) + SqlTail;
+        // Total first (correct regardless of which page is requested), then the page itself. Both share
+        // FromWhere verbatim → identical predicates, no drift.
+        var total = await _db.Database
+            .SqlQueryRaw<int>("SELECT count(*)::int AS \"Value\"" + FromWhere, WhereParams(filter, terms))
+            .SingleAsync(cancellationToken);
 
-        var parameters = new object[]
+        if (total == 0)
+            return new ProductSearchResult(Array.Empty<Guid>(), 0);
+
+        // OrderByClause returns a whitelisted constant clause — NEVER user input — so this concatenation is safe.
+        var pageSql = ScoreSelect + FromWhere + "\nORDER BY " + OrderByClause(filter) + "\nOFFSET @skip LIMIT @take";
+        var pageParams = WhereParams(filter, terms).Concat(new object[]
         {
-            new NpgsqlParameter("rawQuery", NpgsqlDbType.Text) { Value = filter.RawQuery },
             new NpgsqlParameter("skuPrefix", NpgsqlDbType.Text) { Value = EscapeLike(filter.RawQuery.ToLowerInvariant()) + "%" },
-            new NpgsqlParameter("terms", NpgsqlDbType.Array | NpgsqlDbType.Text) { Value = terms },
-            ArrayParam("catIds", NpgsqlDbType.Uuid, filter.CategoryIds?.ToArray()),
-            ArrayParam("brands", NpgsqlDbType.Text, filter.Brands?.ToArray()),
-            NullableNumeric("minPrice", filter.MinPrice),
-            NullableNumeric("maxPrice", filter.MaxPrice),
-            new NpgsqlParameter("inStock", NpgsqlDbType.Boolean) { Value = filter.InStock },
-            new NpgsqlParameter("onSale", NpgsqlDbType.Boolean) { Value = filter.OnSale },
-            new NpgsqlParameter("featured", NpgsqlDbType.Boolean) { Value = filter.IsFeatured },
             new NpgsqlParameter("skip", NpgsqlDbType.Integer) { Value = (filter.PageNumber - 1) * filter.PageSize },
             new NpgsqlParameter("take", NpgsqlDbType.Integer) { Value = filter.PageSize },
-        };
+        }).ToArray();
 
         var hits = await _db.Set<ProductSearchHit>()
-            .FromSqlRaw(sql, parameters)
+            .FromSqlRaw(pageSql, pageParams)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        var total = hits.Count > 0 ? (int)hits[0].TotalCount : 0;
         return new ProductSearchResult(hits.Select(h => h.Id).ToList(), total);
     }
+
+    // Fresh parameter instances each call (an NpgsqlParameter is bound to a single command, so the page and
+    // count queries can't share instances). @rawQuery + @terms drive the match; the rest are facets.
+    private static object[] WhereParams(ProductSearchFilter filter, string[] terms) => new object[]
+    {
+        new NpgsqlParameter("rawQuery", NpgsqlDbType.Text) { Value = filter.RawQuery },
+        new NpgsqlParameter("terms", NpgsqlDbType.Array | NpgsqlDbType.Text) { Value = terms },
+        ArrayParam("catIds", NpgsqlDbType.Uuid, filter.CategoryIds?.ToArray()),
+        ArrayParam("brands", NpgsqlDbType.Text, filter.Brands?.ToArray()),
+        NullableNumeric("minPrice", filter.MinPrice),
+        NullableNumeric("maxPrice", filter.MaxPrice),
+        new NpgsqlParameter("inStock", NpgsqlDbType.Boolean) { Value = filter.InStock },
+        new NpgsqlParameter("onSale", NpgsqlDbType.Boolean) { Value = filter.OnSale },
+        new NpgsqlParameter("featured", NpgsqlDbType.Boolean) { Value = filter.IsFeatured },
+    };
 
     /// <summary>Whitelisted ORDER BY (never user input). Relevance when no explicit sort + a query is present.</summary>
     private static string OrderByClause(ProductSearchFilter filter) => filter.SortBy?.ToLowerInvariant() switch

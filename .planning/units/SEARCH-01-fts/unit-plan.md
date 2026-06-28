@@ -158,9 +158,15 @@ cutover safe (only ordering changes), so a flag adds little pre-launch.
 - `src/ClimaSite.Application/Features/Products/Queries/SearchProductsQuery.cs`, `GetProductsQueryHandler.cs`
 - `tests/ClimaSite.Api.Tests/Controllers/ProductSearchFtsTests.cs` [new]
 
-## Out of scope
+## Out of scope / accepted v1 limitations
 Admin search (D4), autocomplete redesign, search analytics, Meilisearch, the future CONCURRENTLY index
 migration (only once a live prod DB with data exists).
+- **PERF (accepted for v1, diff-council Medium):** the substring fallback is a correlated `unnest(@terms)`
+  `NOT EXISTS`, so it SEQ-SCANS — the trgm indexes can't serve a correlated subquery, and the `OR` with the
+  FTS branch prevents a clean BitmapOr. Fine at the current scale (no live data, small demo catalog). Tracked
+  follow-up: if the catalog grows large, split FTS/substring with `UNION` + indexable single-term predicates
+  (the trgm indexes are already in place for that rewrite). The FTS branch (the common path) uses the GIN
+  `search_vector` index.
 
 ## DoD gates
 Green CI (6 checks) · diff-council clean on the migration + raw SQL (fix every High/Medium, re-council) ·

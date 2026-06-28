@@ -1,8 +1,10 @@
 using System.Net;
 using System.Net.Http.Json;
 using ClimaSite.Api.Tests.Infrastructure;
+using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Core.Entities;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ClimaSite.Api.Tests.Controllers;
 
@@ -209,5 +211,65 @@ public class ProductSearchFtsTests : IntegrationTestBase
         var result = await SearchProductsAsync("%");
 
         result.TotalCount.Should().Be(0, "a '%' term is escaped to a literal, so it matches nothing here");
+    }
+
+    [Fact] // 13 — out-of-range page must still report the true total (regression for the count/page split)
+    public async Task Search_OutOfRangePage_StillReportsCorrectTotal()
+    {
+        await SeedAsync("OOR-1", "Widget One", "oor-1", null);
+        await SeedAsync("OOR-2", "Widget Two", "oor-2", null);
+        await SeedAsync("OOR-3", "Widget Three", "oor-3", null);
+
+        var result = await SearchProductsAsync("widget", "&pageNumber=99&pageSize=12");
+
+        result.Items.Should().BeEmpty("page 99 is beyond the results");
+        result.TotalCount.Should().Be(3, "the total must be correct even when the requested page is empty");
+    }
+
+    [Fact] // 14 — the rich /api/products/search endpoint returns ranked results (positive path)
+    public async Task SearchEndpoint_RichQuery_ReturnsRankedResults()
+    {
+        await SeedAsync("RICH-1", "Quiet Inverter Heat Pump", "rich-1", null);
+
+        var resp = await Client.GetAsync("/api/products/search?q=inverter");
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await resp.Content.ReadFromJsonAsync<SearchResponse>();
+
+        body!.Items.Should().ContainSingle(i => i.Slug == "rich-1");
+    }
+
+    // #15/#16 verify the TRIGGER → vector path via IProductSearchService directly: the HTTP endpoints wrap a
+    // 5-min ICacheableQuery cache, which would mask a re-search of the same term within one test.
+    private IProductSearchService SearchService => Scope.ServiceProvider.GetRequiredService<IProductSearchService>();
+
+    [Fact] // 15 — updating a product's text re-fires the BEFORE UPDATE trigger and refreshes the vector
+    public async Task ProductTextUpdate_RefreshesSearchVector()
+    {
+        var p = await SeedAsync("UPD-1", "Alpha Unit", "upd-1", null);
+        (await SearchService.SearchAsync(new ProductSearchFilter { RawQuery = "omega" }, CancellationToken.None))
+            .OrderedIds.Should().BeEmpty("'omega' isn't in the product yet");
+
+        p.SetName("Omega Unit");
+        await DbContext.SaveChangesAsync(); // BEFORE UPDATE OF name → trigger recomputes search_vector
+
+        (await SearchService.SearchAsync(new ProductSearchFilter { RawQuery = "omega" }, CancellationToken.None))
+            .OrderedIds.Should().Contain(p.Id, "the update trigger must refresh the vector");
+    }
+
+    [Fact] // 16 — deleting a translation re-fires the AFTER DELETE trigger and drops it from the parent's vector
+    public async Task TranslationDelete_RefreshesParentVector()
+    {
+        var p = await SeedAsync("TRDEL-1", "Climate Unit", "trdel-1", null);
+        var tr = new ProductTranslation(p.Id, "bg", "Климатик Делукс");
+        DbContext.ProductTranslations.Add(tr);
+        await DbContext.SaveChangesAsync();
+        (await SearchService.SearchAsync(new ProductSearchFilter { RawQuery = "делукс" }, CancellationToken.None))
+            .OrderedIds.Should().Contain(p.Id);
+
+        DbContext.ProductTranslations.Remove(tr);
+        await DbContext.SaveChangesAsync(); // AFTER DELETE → parent vector recomputed without the translation
+
+        (await SearchService.SearchAsync(new ProductSearchFilter { RawQuery = "делукс" }, CancellationToken.None))
+            .OrderedIds.Should().BeEmpty("the translation token is gone after delete");
     }
 }
