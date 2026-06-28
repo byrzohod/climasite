@@ -3,12 +3,13 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import type { RecommendedProduct } from '../../models/home-v3.models';
+import { DualPricePipe } from '../../../../shared/pipes/dual-price.pipe';
 
 @Component({
   selector: 'app-home-v3-recommendations',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterLink, TranslateModule],
+  imports: [CommonModule, RouterLink, TranslateModule, DualPricePipe],
   templateUrl: './recommendations.component.html',
   styleUrl: './recommendations.component.scss',
 })

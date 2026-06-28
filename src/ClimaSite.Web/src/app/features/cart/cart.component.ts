@@ -9,11 +9,12 @@ import { CartItem } from '../../core/models/cart.model';
 import { RevealDirective } from '../../shared/directives/reveal.directive';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state';
+import { DualPricePipe } from '../../shared/pipes/dual-price.pipe';
 
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, RevealDirective, EmptyStateComponent],
+  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, RevealDirective, EmptyStateComponent, DualPricePipe],
   template: `
     <div class="cart-container" data-testid="cart-page">
       <h1>{{ 'cart.title' | translate }}</h1>
@@ -71,10 +72,10 @@ import { EmptyStateComponent } from '../../shared/components/empty-state';
 
                 <div class="item-price" data-testid="cart-item-price">
                   @if (item.salePrice && item.salePrice > item.unitPrice) {
-                    <span class="sale-price">{{ item.unitPrice | currency:'EUR' }}</span>
-                    <span class="original-price">{{ item.salePrice | currency:'EUR' }}</span>
+                    <span class="sale-price">{{ item.unitPrice | dualPrice }}</span>
+                    <span class="original-price">{{ item.salePrice | dualPrice }}</span>
                   } @else {
-                    <span>{{ item.unitPrice | currency:'EUR' }}</span>
+                    <span>{{ item.unitPrice | dualPrice }}</span>
                   }
                 </div>
 
@@ -114,7 +115,7 @@ import { EmptyStateComponent } from '../../shared/components/empty-state';
                 }
 
                 <div class="item-subtotal" data-testid="cart-item-subtotal">
-                  {{ item.subtotal | currency:'EUR' }}
+                  {{ item.subtotal | dualPrice }}
                 </div>
 
                 <button
@@ -134,7 +135,7 @@ import { EmptyStateComponent } from '../../shared/components/empty-state';
 
             <div class="summary-row">
               <span>{{ 'cart.summary.subtotal' | translate }}</span>
-              <span data-testid="cart-subtotal">{{ cartService.subtotal() | currency:'EUR' }}</span>
+              <span data-testid="cart-subtotal">{{ cartService.subtotal() | dualPrice }}</span>
             </div>
 
             <div class="summary-row">
@@ -143,19 +144,19 @@ import { EmptyStateComponent } from '../../shared/components/empty-state';
                 @if (standardShipping() === 0) {
                   {{ 'cart.summary.freeShipping' | translate }}
                 } @else {
-                  {{ standardShipping() | currency:'EUR' }}
+                  {{ standardShipping() | dualPrice }}
                 }
               </span>
             </div>
 
             <div class="summary-row">
               <span>{{ 'cart.summary.tax' | translate }}</span>
-              <span data-testid="cart-tax">{{ cartService.cart()?.tax | currency:'EUR' }}</span>
+              <span data-testid="cart-tax">{{ cartService.cart()?.tax | dualPrice }}</span>
             </div>
 
             <div class="summary-row total">
               <span>{{ 'cart.summary.total' | translate }}</span>
-              <span data-testid="cart-total">{{ cartTotal() | currency:'EUR' }}</span>
+              <span data-testid="cart-total">{{ cartTotal() | dualPrice }}</span>
             </div>
 
             <a routerLink="/checkout" class="checkout-btn" data-testid="proceed-to-checkout">

@@ -1,8 +1,9 @@
 import { Component, input, output } from '@angular/core';
-import { CommonModule, CurrencyPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { CartItem } from '../../../core/models/cart.model';
+import { DualPricePipe } from '../../pipes/dual-price.pipe';
 
 /**
  * Mini Cart Item Component
@@ -18,7 +19,7 @@ import { CartItem } from '../../../core/models/cart.model';
 @Component({
   selector: 'app-mini-cart-item',
   standalone: true,
-  imports: [CommonModule, RouterModule, TranslateModule, CurrencyPipe],
+  imports: [CommonModule, RouterModule, TranslateModule, DualPricePipe],
   template: `
     <article 
       class="mini-cart-item" 
@@ -68,10 +69,10 @@ import { CartItem } from '../../../core/models/cart.model';
         <!-- Price -->
         <div class="item-price">
           @if (item().salePrice && item().salePrice! > item().unitPrice) {
-            <span class="price-sale">{{ item().unitPrice | currency:'EUR' }}</span>
-            <span class="price-original">{{ item().salePrice | currency:'EUR' }}</span>
+            <span class="price-sale">{{ item().unitPrice | dualPrice }}</span>
+            <span class="price-original">{{ item().salePrice | dualPrice }}</span>
           } @else {
-            <span class="price-regular">{{ item().unitPrice | currency:'EUR' }}</span>
+            <span class="price-regular">{{ item().unitPrice | dualPrice }}</span>
           }
         </div>
         

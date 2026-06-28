@@ -88,7 +88,7 @@
         <!-- Subtotal -->
         <div class="subtotal-row">
           <span class="subtotal-label">{{ 'cart.summary.subtotal' | translate }}</span>
-          <span class="subtotal-amount">{{ subtotal() | currency:'EUR' }}</span>
+          <span class="subtotal-amount">{{ subtotal() | dualPrice }}</span>
         </div>
         
         <!-- Shipping Note -->

@@ -2,6 +2,7 @@ import { Component, input, output, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
+import { DualPricePipe } from '../../pipes/dual-price.pipe';
 
 export interface ProductVariantOption {
   id: string;
@@ -24,7 +25,7 @@ export interface VariantGroup {
 @Component({
   selector: 'app-product-variants',
   standalone: true,
-  imports: [CommonModule, RouterLink, TranslateModule],
+  imports: [CommonModule, RouterLink, TranslateModule, DualPricePipe],
   template: `
     <div class="product-variants" data-testid="product-variants">
       @for (group of variantGroups(); track group.name) {
@@ -46,9 +47,9 @@ export interface VariantGroup {
                     @if (showPrices()) {
                       <span class="variant-price">
                         @if (option.salePrice && option.salePrice < option.price) {
-                          <span class="sale">{{ option.salePrice | currency:'EUR' }}</span>
+                          <span class="sale">{{ option.salePrice | dualPrice }}</span>
                         } @else {
-                          {{ option.price | currency:'EUR' }}
+                          {{ option.price | dualPrice }}
                         }
                       </span>
                     }
@@ -70,7 +71,7 @@ export interface VariantGroup {
                     [value]="option.id"
                     [selected]="option.isSelected"
                     [disabled]="!option.inStock">
-                    {{ option.name }} - {{ option.price | currency:'EUR' }}
+                    {{ option.name }} - {{ option.price | dualPrice }}
                     {{ !option.inStock ? '(' + ('products.outOfStock' | translate) + ')' : '' }}
                   </option>
                 }
@@ -106,7 +107,7 @@ export interface VariantGroup {
         <div class="price-comparison">
           <span class="range-label">{{ 'products.variants.priceRange' | translate }}:</span>
           <span class="range-value">
-            {{ priceRange()!.min | currency:'EUR' }} - {{ priceRange()!.max | currency:'EUR' }}
+            {{ priceRange()!.min | dualPrice }} - {{ priceRange()!.max | dualPrice }}
           </span>
         </div>
       }

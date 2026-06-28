@@ -605,7 +605,7 @@ Detail: `docs/project-plan/UI_UX_REVIEW.md` (work-list #1-23) and `_review/uiux.
 - **Depends on:** none. Gated `src/` change → via `/plan-tree` unit-plan. Pairs with UX-07 (light-theme error color) and UX-13 (energy-label palette).
 
 ### UX-16 — Transitional dual EUR/BGN price display (DEC-CURRENCY) (P3, Medium)
-- **Status:** OPEN (split out of BUG-11, 2026-06-26). BUG-11 made all prices render single **EUR**; DEC-CURRENCY's fuller intent is the legally-transitional **dual EUR/BGN** display (peg **1.95583**) during BG's euro adoption.
+- **Status:** ✅ **DONE 2026-06-28.** Shared pure `DualPricePipe` (`| dualPrice`) renders `€X.XX / Y.YY лв` at the 1.95583 peg; replaced all 78 static `currency:'EUR'` store-price renders + 2 missed non-pipe patterns (fixed a latent `$`-symbol bug in installation-service); dynamic order-currency renders left intact. Inline format chosen. Pipe unit-tested (peg/grouping/negatives/null); council-reviewed (no High); /acceptance PASS. Follow-ups: summary-DTO currency field (only if multi-currency orders ever), promo-badge dual, aria-label on critical totals.
 - **Description:** Introduce a shared `PricePipe`/`DualPriceComponent` that renders `€X.XX / Y.YY лв` from a single EUR amount + a peg constant, and replace the ~36 `| currency:'EUR'` renders with it (single source for price formatting). Decide placement/format (inline vs tooltip) — a small UX-design call.
 - **Affected:** new shared pipe/component + all price renders across `src/ClimaSite.Web`.
 - **Acceptance:** every price shows EUR + BGN at the 1.95583 peg; one shared formatter (no scattered `currency:'EUR'`); pipe unit-tested.
