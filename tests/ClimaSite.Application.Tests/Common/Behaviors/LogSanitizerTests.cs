@@ -87,6 +87,80 @@ public class LogSanitizerTests
         act.Should().Throw<ArgumentNullException>();
     }
 
+    private sealed record FakeGuestCart(string GuestSessionId, int Quantity);
+    private sealed record WithDictionary(IDictionary<string, string> Data);
+    private sealed record WithList(IEnumerable<int> Items);
+    private sealed record Throwing(IEnumerable<int> Items);
+    private sealed record Deep1(Deep2 Next);
+    private sealed record Deep2(Deep3 Next);
+    private sealed record Deep3(Deep4 Next);
+    private sealed record Deep4(Deep5 Next);
+    private sealed record Deep5(string Password);
+
+    private static IEnumerable<int> ThrowingSequence()
+    {
+        yield return 1;
+        throw new InvalidOperationException("enumeration blew up");
+    }
+
+    [Fact]
+    public void Redact_GuestSessionId_IsRedacted()
+    {
+        // A bearer-like key for anonymous cart/checkout — must not log in cleartext (council [High]).
+        var result = LogSanitizer.Redact(new FakeGuestCart("sess-abc-123", 2));
+
+        result["GuestSessionId"].Should().Be(LogSanitizer.Redacted);
+        result["Quantity"].Should().Be(2);
+    }
+
+    [Fact]
+    public void Redact_DictionaryWithSensitiveKey_RedactsValue()
+    {
+        var request = new WithDictionary(new Dictionary<string, string>
+        {
+            ["refreshToken"] = "leak-me",
+            ["color"] = "blue"
+        });
+
+        var result = LogSanitizer.Redact(request);
+
+        var data = result["Data"].Should().BeAssignableTo<IReadOnlyDictionary<string, object?>>().Subject;
+        data["refreshToken"].Should().Be(LogSanitizer.Redacted);   // sensitive KEY → value redacted
+        data["color"].Should().Be("blue");
+    }
+
+    [Fact]
+    public void Redact_BeyondMaxDepth_DoesNotLeakViaToString()
+    {
+        // A secret nested deeper than MaxDepth must not slip out via record ToString().
+        var request = new Deep1(new Deep2(new Deep3(new Deep4(new Deep5("DEEPSECRET")))));
+
+        var flattened = System.Text.Json.JsonSerializer.Serialize(LogSanitizer.Redact(request));
+
+        flattened.Should().NotContain("DEEPSECRET");
+    }
+
+    [Fact]
+    public void Redact_LargeCollection_IsTruncated()
+    {
+        var result = LogSanitizer.Redact(new WithList(Enumerable.Range(1, 100)));
+
+        var items = result["Items"].Should().BeAssignableTo<System.Collections.IEnumerable>()
+            .Subject.Cast<object?>().ToList();
+        items.Should().HaveCount(33);              // 32 items + a truncation marker
+        items.Last().Should().Be("…(truncated)");
+    }
+
+    [Fact]
+    public void Redact_ThrowingEnumerable_DoesNotThrow()
+    {
+        IReadOnlyDictionary<string, object?> result = null!;
+        var act = () => result = LogSanitizer.Redact(new Throwing(ThrowingSequence()));
+
+        act.Should().NotThrow();
+        result["Items"].Should().Be("<unenumerable>");
+    }
+
     private sealed record Inner(string Email, string AccessToken);
     private sealed record Outer(string Name, Inner Details, IReadOnlyList<Inner> Items);
 

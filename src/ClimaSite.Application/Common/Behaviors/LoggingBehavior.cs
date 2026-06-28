@@ -30,11 +30,16 @@ public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
         // SECURITY: log a redacted projection — never the raw command. The raw command can carry
         // credentials (LoginCommand/RegisterCommand.Password, GoogleSignInCommand.IdToken); destructuring
         // it with {@Request} would write those to logs in cleartext (OWASP A09 / GDPR). See LogSanitizer.
-        var safeRequest = LogSanitizer.Redact(request);
-
-        _logger.LogInformation(
-            "ClimaSite Request: {Name} {@UserId} {@Request}",
-            requestName, userId, safeRequest);
+        // Computed lazily + only when the consuming level is enabled, so the projection cost (reflection +
+        // bounded collection materialisation) is skipped when request logging is off.
+        IReadOnlyDictionary<string, object?>? safeRequest = null;
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            safeRequest = LogSanitizer.Redact(request);
+            _logger.LogInformation(
+                "ClimaSite Request: {Name} {@UserId} {@Request}",
+                requestName, userId, safeRequest);
+        }
 
         var stopwatch = Stopwatch.StartNew();
         var response = await next();
@@ -42,8 +47,9 @@ public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
 
         var elapsedMilliseconds = stopwatch.ElapsedMilliseconds;
 
-        if (elapsedMilliseconds > 500)
+        if (elapsedMilliseconds > 500 && _logger.IsEnabled(LogLevel.Warning))
         {
+            safeRequest ??= LogSanitizer.Redact(request);
             _logger.LogWarning(
                 "ClimaSite Long Running Request: {Name} ({ElapsedMilliseconds} ms) {@UserId} {@Request}",
                 requestName, elapsedMilliseconds, userId, safeRequest);
