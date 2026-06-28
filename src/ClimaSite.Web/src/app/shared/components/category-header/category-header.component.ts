@@ -65,7 +65,7 @@ imports: [CommonModule, RouterLink, TranslateModule],
         }
 
         <!-- Product Count -->
-        @if (category()?.productCount !== undefined) {
+        @if (category() && category()!.productCount !== undefined) {
           <div class="product-count" data-testid="product-count">
             {{ 'products.itemsFound' | translate: { count: category()!.productCount } }}
           </div>
