@@ -38,16 +38,6 @@ class TestHostComponent {
 })
 class DefaultsHostComponent {}
 
-// A host with STATIC (non-interpolated) text. The directive captures originalHTML in ngOnInit,
-// which runs before interpolation is committed to the DOM; static content is already present,
-// so this host exercises the real restore-on-destroy path (see ngOnDestroy spec below).
-@Component({
-  standalone: true,
-  imports: [SplitTextDirective],
-  template: `<h1 [appSplitText]="'chars'">Hello World</h1>`
-})
-class StaticTextHostComponent {}
-
 // Reach private members for deterministic assertions (no reliance on
 // afterNextRender / IntersectionObserver firing on their own).
 interface SplitTextInternals {
@@ -83,7 +73,7 @@ describe('SplitTextDirective', () => {
     animationServiceSpy.prefersReducedMotion.and.returnValue(false);
 
     await TestBed.configureTestingModule({
-      imports: [TestHostComponent, DefaultsHostComponent, StaticTextHostComponent],
+      imports: [TestHostComponent, DefaultsHostComponent],
       providers: [{ provide: AnimationService, useValue: animationServiceSpy }]
     }).compileComponents();
   });
@@ -100,9 +90,9 @@ describe('SplitTextDirective', () => {
         .query(By.directive(SplitTextDirective))
         .injector.get(SplitTextDirective);
 
-      // A bare `appSplitText` attribute (no value) binds an empty-string attribute to the
-      // aliased `splitType` input, which overrides the directive's documented 'chars' default.
-      expect(dir.splitType()).toBe('');
+      // A bare `appSplitText` attribute binds '' to the aliased input; the input's transform coerces
+      // '' (and any unknown value) back to the documented 'chars' default so `<h1 appSplitText>` splits.
+      expect(dir.splitType()).toBe('chars');
       expect(dir.staggerDelay()).toBe(30);
       expect(dir.animate()).toBeFalse();
       expect(dir.duration()).toBe(600);
@@ -306,22 +296,18 @@ describe('SplitTextDirective', () => {
   // ==========================================================================
 
   describe('ngOnDestroy', () => {
-    it('should restore the original HTML', () => {
-      // Static-content host so the directive captures the original HTML in ngOnInit
-      // (interpolated content is not yet in the DOM at that point — see StaticTextHostComponent).
-      const staticFixture = TestBed.createComponent(StaticTextHostComponent);
-      staticFixture.detectChanges();
-      const dirEl = staticFixture.debugElement.query(By.directive(SplitTextDirective));
-      const staticDirective = dirEl.injector.get(SplitTextDirective);
-      const staticEl = dirEl.nativeElement as HTMLElement;
+    it('should restore the original INTERPOLATED HTML on destroy', () => {
+      // The fix: originalHTML is captured in initializeSplit() (afterNextRender, after `{{ text }}` is
+      // committed to the DOM) — NOT in ngOnInit where interpolated content is still empty. So interpolated
+      // hosts now restore faithfully on destroy (previously a silent no-op).
+      createDirective({ splitType: 'chars', text: 'Hello World' });
+      asInternals(directive).initializeSplit();
+      expect(el.querySelectorAll('.split-item').length).toBeGreaterThan(0);
 
-      asInternals(staticDirective).initializeSplit();
-      expect(staticEl.querySelectorAll('.split-item').length).toBeGreaterThan(0);
+      directive.ngOnDestroy();
 
-      staticDirective.ngOnDestroy();
-
-      expect(staticEl.querySelectorAll('.split-item').length).toBe(0);
-      expect(staticEl.textContent).toBe('Hello World');
+      expect(el.querySelectorAll('.split-item').length).toBe(0);
+      expect(el.textContent).toBe('Hello World');
     });
   });
 });
