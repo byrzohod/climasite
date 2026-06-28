@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { InstallationService, InstallationOption, ProductInstallationOptions } from '../../services/installation.service';
+import { DualPricePipe } from '../../../../shared/pipes/dual-price.pipe';
 
 @Component({
   selector: 'app-installation-service',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslateModule],
+  imports: [CommonModule, ReactiveFormsModule, TranslateModule, DualPricePipe],
   template: `
     @if (options() && options()!.installationAvailable) {
       <section class="installation-service">
@@ -37,7 +38,7 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
               <h3 class="option-name">{{ option.name }}</h3>
               <p class="option-description">{{ option.description }}</p>
               <div class="option-price">
-                {{ 'common.currency' | translate: { amount: option.price | number:'1.2-2' } }}
+                {{ option.price | dualPrice }}
               </div>
               <div class="option-timeline">
                 <span class="icon">&#128197;</span>
@@ -177,7 +178,7 @@ import { InstallationService, InstallationOption, ProductInstallationOptions } f
             </div>
             <div class="summary-row total">
               <span>{{ 'products.installation.estimatedCost' | translate }}</span>
-              <span class="value">{{ 'common.currency' | translate: { amount: selectedOption()!.price | number:'1.2-2' } }}</span>
+              <span class="value">{{ selectedOption()!.price | dualPrice }}</span>
             </div>
           </div>
 

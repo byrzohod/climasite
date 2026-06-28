@@ -59,6 +59,21 @@ i18n keys. EUR part formatted exactly like today's `currency:'EUR'` (`en-US` loc
 Order-history/confirmation/admin-order prices (render the order's charged currency); a user currency-toggle;
 live FX. Only needed before a BG launch (OPS-08).
 
+## Council resolutions (Codex, 2026-06-28) + accepted follow-ups
+- **M1 (Medium) FIXED** — `frequently-bought` bundle-savings rendered `-€X / Y лв` (BGN looked positive);
+  now negates the value → `-€X / -Y лв` (+ negative-value pipe spec).
+- **M2 (Medium) FIXED** — two store-price renders used non-`currency:'EUR'` patterns and were missed:
+  `installation-service` used `common.currency` (which is `${{amount}}` — a `$` symbol! — in en.json) and
+  `related-products-manager` used `number + ' EUR'`; both now `| dualPrice` (also retires the `$` bug).
+- **M3 (Medium) ACCEPTED + tracked** — order-LIST rows (account/orders, admin-orders/dashboard/users) use
+  `dualPrice`, but their summary DTOs (`OrderBriefDto`, `AdminOrderListItemDto`, `RecentOrderDto`) carry no
+  currency. Acceptable because ALL persisted orders are EUR (DEC-CURRENCY; no live data / OPS-08). **Follow-up
+  (only if multi-currency orders are ever introduced):** add `currency` to those summary DTOs and render the
+  order's own currency there (like the detail views already do).
+- **Low/a11y (tracked):** promotion fixed-amount discount badges still render `-€${value}` (compact badges,
+  left single-EUR); and `€X / Y лв` reads as "slash" to screen readers — a polish pass could add an
+  aria-label ("EUR …, BGN …") on critical totals (cart/checkout). Plus the acceptance nit: sale-price wrap.
+
 ## DoD gates
-Green CI (6 checks) · cross-vendor council (non-trivial UI change, 23 files) · committed `/acceptance` PASS ·
-update CHANGELOG / STATE / BACKLOG (mark UX-16 done).
+Green CI (6 checks) · cross-vendor council (non-trivial UI change) — ran; no High, Mediums fixed/accepted ·
+committed `/acceptance` PASS · update CHANGELOG / STATE / BACKLOG (mark UX-16 done).

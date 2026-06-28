@@ -91,7 +91,7 @@ export interface BundleProduct {
         @if (bundleSavings() > 0) {
           <div class="summary-row savings">
             <span class="label">{{ 'products.frequentlyBought.bundleSavings' | translate }}:</span>
-            <span class="value">-{{ bundleSavings() | dualPrice }}</span>
+            <span class="value">{{ (bundleSavings() * -1) | dualPrice }}</span>
           </div>
         }
 

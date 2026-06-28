@@ -31,6 +31,12 @@ driver: headless real-browser (node Playwright/chromium) against the running app
   `€249.99 /` / `488.94 лв`). Readable and unbroken — acceptable for the transitional display. Polish
   follow-up: `white-space: nowrap` on the price (or a smaller BGN part) if tighter cards are wanted.
 
+## Post-council deltas (covered)
+After this runtime pass, the Codex council surfaced 2 Medium fixes (negative bundle-savings dual;
+2 missed store-price renders incl. a latent `$`-symbol bug in installation-service). Both were fixed with the
+SAME validated `dualPrice` pipe + unit tests (incl. a negative-value spec); 1393 frontend tests + `ng lint`
+green. No new mechanism — the runtime verdict holds.
+
 ## Verdict
 **PASS** — zero blocker, zero major; one minor (sale-price wrap) tracked as a follow-up. The transitional
 dual EUR/BGN display renders correctly across catalog/detail/cart with correct peg math and on-sale handling;

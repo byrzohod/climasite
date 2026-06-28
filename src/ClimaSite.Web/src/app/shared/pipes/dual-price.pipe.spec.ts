@@ -30,6 +30,11 @@ describe('DualPricePipe', () => {
     expect(pipe.transform(5)).toBe('€5.00 / 9.78 лв');
   });
 
+  it('negates BOTH sides for a negative value (bundle savings row)', () => {
+    // -66.70 * 1.95583 = -130.453861 → -130.45 (both EUR and BGN carry the sign)
+    expect(pipe.transform(-66.70)).toBe('-€66.70 / -130.45 лв');
+  });
+
   it('returns empty string for null / undefined / NaN', () => {
     expect(pipe.transform(null)).toBe('');
     expect(pipe.transform(undefined)).toBe('');
