@@ -20,6 +20,12 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
     /// </summary>
     public FakePaymentService PaymentService { get; } = new();
 
+    /// <summary>
+    /// Deterministic fake Google token validator so integration tests exercise the Google sign-in
+    /// flow without contacting Google. Registered as a singleton below.
+    /// </summary>
+    public FakeGoogleTokenValidator GoogleTokenValidator { get; } = new();
+
     private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
         .WithImage("postgres:16-alpine")
         .WithDatabase("climasite_test")
@@ -78,6 +84,15 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
                 services.Remove(paymentDescriptor);
 
             services.AddSingleton<IPaymentService>(PaymentService);
+
+            // Replace the real Google token validator with a deterministic fake so integration tests
+            // never call Google's JWKS endpoint.
+            var googleDescriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(IGoogleTokenValidator));
+            if (googleDescriptor != null)
+                services.Remove(googleDescriptor);
+
+            services.AddSingleton<IGoogleTokenValidator>(GoogleTokenValidator);
 
             // Replace production health checks so integration tests don't depend on local services.
             services.Configure<HealthCheckServiceOptions>(options => options.Registrations.Clear());

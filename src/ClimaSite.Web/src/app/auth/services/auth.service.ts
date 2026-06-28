@@ -39,6 +39,10 @@ export interface LoginResponse {
   user: User;
 }
 
+export interface AuthConfig {
+  googleClientId: string;
+}
+
 export interface UpdateProfileRequest {
   firstName?: string;
   lastName?: string;
@@ -123,39 +127,71 @@ export class AuthService {
     return this.http.post<LoginResponse>(`${this.apiUrl}/api/auth/login`, credentials, {
       withCredentials: true
     }).pipe(
-      tap(response => {
-        this._accessToken = response.accessToken;
-        this._hasToken.set(true);
-        this._user.set(response.user);
-        this.storeToken(response.accessToken);
-      }),
-      // Merge guest cart and wishlist with user data after successful login
-      switchMap(response => {
-        const guestSessionId = this.isBrowser ? localStorage.getItem(this.GUEST_SESSION_KEY) : null;
-        const cartMerge$ = guestSessionId
-          ? this.injector.get(CartService).mergeCart(response.user.id).pipe(
-              catchError(() => {
-                console.warn('Failed to merge guest cart, continuing with login');
-                return of(null);
-              })
-            )
-          : of(null);
-
-        return cartMerge$.pipe(
-          switchMap(() => this.injector.get(WishlistService).mergeWithUserWishlist().pipe(
-            catchError(() => {
-              console.warn('Failed to merge guest wishlist, continuing with login');
-              return of(null);
-            })
-          )),
-          tap(() => this._isLoading.set(false)),
-          switchMap(() => of(response))
-        );
-      }),
+      switchMap(response => this.completeAuthSession(response)),
       catchError((error: HttpErrorResponse) => {
         this._isLoading.set(false);
         return throwError(() => error);
       })
+    );
+  }
+
+  /**
+   * Sign in with a Google Identity Services ID token. Posts the ID token to the backend
+   * (which verifies it and issues the same app JWT as password login), then runs the IDENTICAL
+   * post-login pipeline as {@link login}: store the token/user and merge the guest cart + wishlist.
+   */
+  googleSignIn(idToken: string) {
+    this._isLoading.set(true);
+
+    return this.http.post<LoginResponse>(`${this.apiUrl}/api/auth/google`, { idToken }, {
+      withCredentials: true
+    }).pipe(
+      switchMap(response => this.completeAuthSession(response)),
+      catchError((error: HttpErrorResponse) => {
+        this._isLoading.set(false);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Public auth configuration for the SPA (e.g. the Google OAuth client id). The client id is empty
+   * when Google sign-in is not configured, in which case the UI hides the Google button.
+   */
+  getAuthConfig() {
+    return this.http.get<AuthConfig>(`${this.apiUrl}/api/auth/config`);
+  }
+
+  /**
+   * Shared success pipeline for password and Google sign-in: persist the session, then merge the
+   * guest cart (only when a guest session exists) and wishlist. Cart/wishlist merge failures are
+   * non-fatal — the user stays logged in.
+   */
+  private completeAuthSession(response: LoginResponse) {
+    this._accessToken = response.accessToken;
+    this._hasToken.set(true);
+    this._user.set(response.user);
+    this.storeToken(response.accessToken);
+
+    const guestSessionId = this.isBrowser ? localStorage.getItem(this.GUEST_SESSION_KEY) : null;
+    const cartMerge$ = guestSessionId
+      ? this.injector.get(CartService).mergeCart(response.user.id).pipe(
+          catchError(() => {
+            console.warn('Failed to merge guest cart, continuing with login');
+            return of(null);
+          })
+        )
+      : of(null);
+
+    return cartMerge$.pipe(
+      switchMap(() => this.injector.get(WishlistService).mergeWithUserWishlist().pipe(
+        catchError(() => {
+          console.warn('Failed to merge guest wishlist, continuing with login');
+          return of(null);
+        })
+      )),
+      tap(() => this._isLoading.set(false)),
+      switchMap(() => of(response))
     );
   }
 

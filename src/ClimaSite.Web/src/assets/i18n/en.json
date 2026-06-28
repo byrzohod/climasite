@@ -1425,6 +1425,11 @@
       "signUp": "Sign up",
       "error": "Login failed. Please try again."
     },
+    "google": {
+      "or": "or",
+      "signIn": "Sign in with Google",
+      "error": "Google sign-in failed. Please try again."
+    },
     "register": {
       "title": "Create Account",
       "subtitle": "Join ClimaSite",

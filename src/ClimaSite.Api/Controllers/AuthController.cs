@@ -5,6 +5,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Configuration;
 
 namespace ClimaSite.Api.Controllers;
 
@@ -14,10 +15,25 @@ namespace ClimaSite.Api.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IConfiguration _configuration;
 
-    public AuthController(IMediator mediator)
+    public AuthController(IMediator mediator, IConfiguration configuration)
     {
         _mediator = mediator;
+        _configuration = configuration;
+    }
+
+    /// <summary>
+    /// Public auth configuration for the SPA. Currently exposes the Google OAuth client id (public by
+    /// design — mirrors <c>GET /api/payments/config</c> which serves the Stripe publishable key). The
+    /// id is empty when Google sign-in is not configured, letting the frontend hide the button.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpGet("config")]
+    public IActionResult GetConfig()
+    {
+        var googleClientId = _configuration["Authentication:Google:ClientId"] ?? string.Empty;
+        return Ok(new { googleClientId });
     }
 
     [HttpPost("register")]
@@ -36,6 +52,26 @@ public class AuthController : ControllerBase
         var ipAddress = GetIpAddress();
         command = command with { IpAddress = ipAddress };
 
+        var result = await _mediator.Send(command);
+        if (!result.IsSuccess)
+            return Unauthorized(new { message = result.Error });
+
+        SetRefreshTokenCookie(result.Value!.RefreshToken);
+        return Ok(new
+        {
+            result.Value.AccessToken,
+            result.Value.User
+        });
+    }
+
+    /// <summary>
+    /// Sign in with Google (OIDC ID-token flow). The frontend obtains a Google ID token via Google
+    /// Identity Services and posts it here; the backend verifies it, finds/links/creates the user and
+    /// issues the SAME app JWT + refresh cookie as <see cref="Login"/>. 401 on an invalid token.
+    /// </summary>
+    [HttpPost("google")]
+    public async Task<IActionResult> GoogleSignIn([FromBody] GoogleSignInCommand command)
+    {
         var result = await _mediator.Send(command);
         if (!result.IsSuccess)
             return Unauthorized(new { message = result.Error });
