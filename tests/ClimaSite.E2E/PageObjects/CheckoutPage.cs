@@ -212,8 +212,9 @@ public class CheckoutPage : BasePage
     public async Task<decimal> GetOrderTotalAsync()
     {
         var totalText = await GetTextAsync("[data-testid='order-total']");
-        // Remove currency symbols and formatting (supports $, €, EUR, BGN, etc.)
-        var cleanedText = System.Text.RegularExpressions.Regex.Replace(totalText, @"[^\d.,]", "").Trim();
+        // Remove currency symbols and formatting (supports $, €, EUR, BGN, etc.). For the UX-16 dual
+        // display "€999.99 / 1,955.81 лв" take the EUR part before the '/' so the BGN digits aren't merged in.
+        var cleanedText = System.Text.RegularExpressions.Regex.Replace(totalText.Split('/')[0], @"[^\d.,]", "").Trim();
         // Handle European number format (1.234,56) vs US format (1,234.56)
         // If both comma and dot exist, determine which is decimal separator
         if (cleanedText.Contains(",") && cleanedText.Contains("."))

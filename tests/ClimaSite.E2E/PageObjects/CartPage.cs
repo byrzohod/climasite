@@ -28,8 +28,10 @@ public class CartPage : BasePage
     public async Task<decimal> GetTotalAsync()
     {
         var totalText = await GetTextAsync(CartTotal);
-        // Handle various currency formats: $360.00, €360.00, EUR360.00, 360.00 EUR, etc.
+        // Handle various currency formats: $360.00, €360.00, EUR360.00, 360.00 EUR, and the UX-16
+        // transitional dual display "€360.00 / 704.10 лв" (take the EUR part before the '/').
         var cleaned = totalText
+            .Split('/')[0]
             .Replace("$", "")
             .Replace("€", "")
             .Replace("EUR", "")
