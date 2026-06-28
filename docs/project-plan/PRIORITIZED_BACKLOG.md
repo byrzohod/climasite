@@ -25,7 +25,7 @@ Per the owner's standing convention, these are **owner decisions**, recorded as 
 | O-5 | ADR 003 (Canvas 2D) + ADR for wishlist share-token design | DOC-05, OPS-01 (ideally before merge) |
 | O-6 | Shared-infra vs project-local docker-compose for local dev | OPS-10 |
 | O-7 | **Railway topology: is anything deployed today?** Which services/config files, auto-deploy status, backups. Determines whether SEC-01 is an *active* P0 and the KnownProxies config for SEC-03. | SEC-01, SEC-03, OPS-03, OPS-08, BUG-09 |
-| DEC-SEARCH | Real search backend: Postgres FTS vs pg_trgm vs shared-infra Meilisearch (docs claim "full-text search"; reality is multi-ILIKE) | PERF-05 |
+| ~~DEC-SEARCH~~ | ✅ **DECIDED + DONE 2026-06-28 (SEARCH-01-fts):** Postgres FTS (trigger-maintained `search_vector`, `ts_rank_cd`) + pg_trgm substring fallback hybrid — chosen over Meilisearch (no extra infra at this catalog scale). | PERF-05 |
 | DEC-SSR | SSR/prerender for the public storefront vs client-only meta | PERF-07 |
 
 ---

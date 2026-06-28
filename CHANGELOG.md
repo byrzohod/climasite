@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **SEARCH-01-fts — Postgres full-text product search** (replaces the unindexed multi-ILIKE search on both public paths). A trigger-maintained denormalised `products.search_vector` (base fields + tags + ALL translations in one doc), a single `climasite_search` config (`simple` + `unaccent`, diacritic-folding for EN/BG/DE), GIN + pg_trgm indexes. One shared `IProductSearchService` (parameterized raw query) does match + facets + `ts_rank_cd` relevance + exact-SKU boost + paging + window-count total; a per-term substring branch keeps recall a **strict superset** of the old ILIKE search (description/tags/translations included), and the user-facing header search (`GET /api/products?searchTerm=`, previously name/desc/brand/model only) now gets tags/translations/SKU/ranking. 12 real-Postgres FTS integration tests + a verified rank-reversal mutation gate. Design ratified by owner + cross-vendor council (Codex + plan-critic); unit-plan at `.planning/units/SEARCH-01-fts/unit-plan.md`. Resolves **DEC-SEARCH**.
 - Plan 18 — Project Completion master plan (`docs/plans/18-project-completion.md`) consolidating the final 9-phase path to production readiness.
 - ADR 001 — Home page v3 concept decision (Configurator-First selected).
 - ADR 002 — Home v3 stack, assets, and build order (Three.js latest, procedural geometry, rules-based scoring, backend-first).

@@ -30,7 +30,7 @@ Repo `byrzohod/climasite` is **public**; **nothing is deployed yet (OPS-08)**.
 | i18n EN/BG/DE | ✅ Complete | ngx-translate; full key parity. |
 | Auth (register/login/refresh/lockout/reset) | ✅ Complete | Password-reset email sent via outbox; token not logged (BUG-07). |
 | Product catalog (PLP/PDP, variants, gallery) | ✅ Complete | Variants/images/translations/specs. |
-| Search & navigation | 🟡 Partial | Works, but **multi-term ILIKE substring** (no tsvector/pg_trgm/Meilisearch). Fine for MVP; **P2 scale gap**. |
+| Search & navigation | ✅ Complete | **Postgres FTS (SEARCH-01-fts)** — GIN-indexed trigger-maintained `search_vector` (base + tags + translations), `simple`+`unaccent` config, `ts_rank_cd` relevance + exact-SKU boost, pg_trgm substring fallback (recall superset). Both public paths unified through `IProductSearchService`. |
 | Cart (guest + merge-on-login) | ✅ Complete | BUG-03 **fixed** — FE posts `/merge?guestSessionId=` (query) matching `[FromQuery]` (`cart.service.ts:236`). |
 | Checkout (address/shipping/payment/review) | 🟡 Partial | Flow complete; **currency consistent EUR (BUG-11)** + **free standard shipping over €50 (DEC-SHIPPING)** with the order-summary now reflecting the selected method (displayed==charged, latent always-free summary bug fixed); remaining gap: no field-level validation errors (UX). |
 | Payments (Stripe) | ✅ Complete | **Money path fixed** (BUG-01/02/18): server-side EUR amount, verified-intent-before-persist, atomic stock decrement w/ `stock>=qty` guard, idempotent (unique `payment_intent_id`), webhook reconcile, orphan-charge refund. |
@@ -56,12 +56,12 @@ Repo `byrzohod/climasite` is **public**; **nothing is deployed yet (OPS-08)**.
 ## 3. Disputed claims — resolved by this verification
 - **Admin panel** = real CRUD (NOT 12-line stubs). **Notifications** = real producers + frontend bell (NOT "zero"). **Contact/Legal/Installation/GDPR-delete/Payments** = all verified complete. These were built in the M2 GAP work + later, *after* the 2026-06-11 snapshot.
 - **Corrected verifier errors** (hand-checked): **BUG-03 cart-merge is FIXED**; **wishlist guest-merge EXISTS**. (Two agents claimed otherwise; the code says fixed/present.)
-- **Confirmed still-open**: search-is-ILIKE, inventory-has-no-reservations, Lighthouse-reporting-only, SEC-14 (GDPR Orders-PII), SEC-08 (security headers). *(BUG-11 checkout-USD — now **FIXED**, single EUR + shipping labels match the server.)*
+- **Confirmed still-open**: inventory-has-no-reservations, Lighthouse-reporting-only. *(search-is-ILIKE — now **FIXED**, Postgres FTS, SEARCH-01-fts; BUG-11 checkout-USD, SEC-14, SEC-08 — all **FIXED** since this snapshot.)*
 
 ## 4. Real remaining gaps (all already in `PRIORITIZED_BACKLOG.md`)
 - ~~BUG-11 checkout/cart USD~~ ✅ **FIXED 2026-06-26** (single EUR + shipping labels match the server). Remaining currency work: **UX-16** dual EUR/BGN transitional display (P3, pre-BG-launch) + **DEC-SHIPPING** owner question (standard free vs €5.99).
 - **Inventory reservations** don't exist (oversell window narrowed by the atomic guard, but no hold/reserve).
-- **Search** ILIKE → FTS/Meilisearch (P2 scale).
+- ~~**Search** ILIKE → FTS~~ ✅ **DONE 2026-06-28** (SEARCH-01-fts — Postgres FTS, trigger-maintained `search_vector`, ts_rank_cd + pg_trgm hybrid; recall superset). Meilisearch not needed at this scale.
 - **SEC-14** GDPR Orders-PII anonymization (ADR + handler scrub). **SEC-08** security headers. **SEC-12/13** Angular advisories / gitleaks-enforce.
 - **Lighthouse** flip warn→enforce + image lazy-load. **OPS-08** deploy · **OPS-05** observability · **OPS-11** merge queue (paid-plan-blocked).
 - Plan-19 **B2/B3** (more Angular component specs). **DOC-05/06** tail (more ADRs, AGENTS.md regen).
