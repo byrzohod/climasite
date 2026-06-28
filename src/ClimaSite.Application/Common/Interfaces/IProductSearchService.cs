@@ -30,12 +30,13 @@ public sealed record ProductSearchFilter
     public int PageSize { get; init; } = 12;
 }
 
-/// <summary>The ranked, paged product ids for one search, plus the total matching count (window-counted in the same query).</summary>
+/// <summary>The ranked, paged product ids for one search, plus the total matching count (from a sibling COUNT query that shares the same predicate, so it is correct even for an out-of-range page).</summary>
 public sealed record ProductSearchResult(IReadOnlyList<Guid> OrderedIds, int TotalCount);
 
 /// <summary>
 /// Postgres full-text search over products (FTS ∪ substring fallback, ranked). Implemented in Infrastructure
-/// with a single parameterized raw query; callers hydrate the returned ids via EF and re-order in memory.
+/// with parameterized raw SQL (a page query + a sibling COUNT sharing the same FROM/WHERE); callers hydrate
+/// the returned ids via EF and re-order in memory.
 /// </summary>
 public interface IProductSearchService
 {

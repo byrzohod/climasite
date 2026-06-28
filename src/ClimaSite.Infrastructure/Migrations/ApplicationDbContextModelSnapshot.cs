@@ -2333,9 +2333,6 @@ namespace ClimaSite.Infrastructure.Migrations
                     b.Property<double>("Score")
                         .HasColumnType("double precision");
 
-                    b.Property<long>("TotalCount")
-                        .HasColumnType("bigint");
-
                     b.ToTable((string)null);
 
                     b.ToView(null, (string)null);
