@@ -75,10 +75,11 @@ const GSI_SCRIPT_SRC = 'https://accounts.google.com/gsi/client';
         <span>{{ 'auth.google.or' | translate }}</span>
       </div>
 
+      <!-- GSI renders the real, accessibly-named button inside this host. aria-label is prohibited on a
+           role-less container (axe aria-prohibited-attr), so the host carries none. -->
       <div
         #googleButton
         class="google-button-host"
-        [attr.aria-label]="'auth.google.signIn' | translate"
         data-testid="google-signin-button"
       ></div>
 
