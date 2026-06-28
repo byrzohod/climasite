@@ -6,11 +6,12 @@ import { Subject, takeUntil } from 'rxjs';
 import { ProductService } from '../../../core/services/product.service';
 import { CartService } from '../../../core/services/cart.service';
 import { ProductBrief } from '../../../core/models/product.model';
+import { DualPricePipe } from '../../pipes/dual-price.pipe';
 
 @Component({
   selector: 'app-similar-products',
   standalone: true,
-  imports: [CommonModule, RouterLink, TranslateModule],
+  imports: [CommonModule, RouterLink, TranslateModule, DualPricePipe],
   template: `
     @if (products().length > 0) {
       <section class="similar-products-section" data-testid="similar-products-section">
@@ -50,10 +51,10 @@ import { ProductBrief } from '../../../core/models/product.model';
                     <h3 class="product-name">{{ product.name }}</h3>
                     <div class="product-price">
                       @if (product.isOnSale && product.salePrice) {
-                        <span class="sale-price">{{ product.basePrice | currency:'EUR' }}</span>
-                        <span class="original-price">{{ product.salePrice | currency:'EUR' }}</span>
+                        <span class="sale-price">{{ product.basePrice | dualPrice }}</span>
+                        <span class="original-price">{{ product.salePrice | dualPrice }}</span>
                       } @else {
-                        <span class="current-price">{{ product.basePrice | currency:'EUR' }}</span>
+                        <span class="current-price">{{ product.basePrice | dualPrice }}</span>
                       }
                     </div>
                   </div>

@@ -8,11 +8,12 @@ import {
   INSTALLATION_STATUS_FILTERS,
   INSTALLATION_STATUS_TARGETS
 } from '../../../core/services/admin-installation.service';
+import { DualPricePipe } from '../../../shared/pipes/dual-price.pipe';
 
 @Component({
   selector: 'app-admin-installation',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule],
+  imports: [CommonModule, FormsModule, TranslateModule, DualPricePipe],
   template: `
     <div class="installation-container" data-testid="admin-installation-page">
       <div class="installation-header">
@@ -113,7 +114,7 @@ import {
                   </td>
                   <td class="muted">{{ request.preferredDate ? (request.preferredDate | date:'mediumDate') : '—' }}</td>
                   <td class="muted">{{ request.scheduledDate ? (request.scheduledDate | date:'mediumDate') : '—' }}</td>
-                  <td>{{ request.estimatedPrice | currency:'EUR' }}</td>
+                  <td>{{ request.estimatedPrice | dualPrice }}</td>
                   <td class="muted">{{ request.createdAt | date:'mediumDate' }}</td>
                   <td>
                     <div class="status-actions">

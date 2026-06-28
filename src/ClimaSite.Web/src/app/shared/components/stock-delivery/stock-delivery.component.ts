@@ -1,6 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
+import { DualPricePipe } from '../../pipes/dual-price.pipe';
 
 export interface DeliveryOption {
   type: 'standard' | 'express' | 'pickup';
@@ -12,7 +13,7 @@ export interface DeliveryOption {
 @Component({
   selector: 'app-stock-delivery',
   standalone: true,
-  imports: [CommonModule, TranslateModule],
+  imports: [CommonModule, TranslateModule, DualPricePipe],
   template: `
     <div class="stock-delivery" data-testid="stock-delivery">
       <!-- Stock Status -->
@@ -85,7 +86,7 @@ export interface DeliveryOption {
                 @if (option.price === 0) {
                   <span class="free">{{ 'delivery.free' | translate }}</span>
                 } @else {
-                  <span>{{ option.price | currency:'EUR' }}</span>
+                  <span>{{ option.price | dualPrice }}</span>
                 }
               </div>
             </div>

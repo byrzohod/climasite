@@ -6,11 +6,12 @@ import { PromotionService } from '../../../core/services/promotion.service';
 import { CartService } from '../../../core/services/cart.service';
 import { Promotion, PromotionType } from '../../../core/models/promotion.model';
 import { ProductBrief } from '../../../core/models/product.model';
+import { DualPricePipe } from '../../../shared/pipes/dual-price.pipe';
 
 @Component({
   selector: 'app-promotion-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, TranslateModule],
+  imports: [CommonModule, RouterLink, TranslateModule, DualPricePipe],
   template: `
     <div class="promotion-detail-page">
       @if (isLoading()) {
@@ -46,7 +47,7 @@ import { ProductBrief } from '../../../core/models/product.model';
                 </div>
                 @if (promotion()?.minimumOrderAmount) {
                   <div class="min-order">
-                    {{ 'promotions.minOrder' | translate:{ amount: promotion()?.minimumOrderAmount | currency:'EUR' } }}
+                    {{ 'promotions.minOrder' | translate:{ amount: promotion()?.minimumOrderAmount | dualPrice } }}
                   </div>
                 }
               </div>
@@ -93,10 +94,10 @@ import { ProductBrief } from '../../../core/models/product.model';
                       <h3 class="product-name">{{ product.name }}</h3>
                       <div class="product-price">
                         @if (product.isOnSale && product.salePrice) {
-                          <span class="sale-price">{{ product.basePrice | currency:'EUR' }}</span>
-                          <span class="original-price">{{ product.salePrice | currency:'EUR' }}</span>
+                          <span class="sale-price">{{ product.basePrice | dualPrice }}</span>
+                          <span class="original-price">{{ product.salePrice | dualPrice }}</span>
                         } @else {
-                          <span class="current-price">{{ product.basePrice | currency:'EUR' }}</span>
+                          <span class="current-price">{{ product.basePrice | dualPrice }}</span>
                         }
                       </div>
                     </div>

@@ -9,11 +9,12 @@ import {
 } from '../../services/admin-related-products.service';
 import { AdminProductsService } from '../../../../../core/services/admin-products.service';
 import { apiErrorToTranslationKey } from '../../../../../core/utils/translation-key.util';
+import { DualPricePipe } from '../../../../../shared/pipes/dual-price.pipe';
 
 @Component({
   selector: 'app-related-products-manager',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule],
+  imports: [CommonModule, FormsModule, TranslateModule, DualPricePipe],
   template: `
     <div class="related-products-manager">
       <h4>{{ 'admin.products.relatedProducts' | translate }}</h4>
@@ -69,7 +70,7 @@ import { apiErrorToTranslationKey } from '../../../../../core/utils/translation-
                   <span class="name">{{ relation.name }}</span>
                   <span class="sku">{{ relation.sku }}</span>
                 </div>
-                <span class="price">{{ relation.price | number:'1.2-2' }} EUR</span>
+                <span class="price">{{ relation.price | dualPrice }}</span>
                 <div class="order-controls">
                   <button
                     type="button"

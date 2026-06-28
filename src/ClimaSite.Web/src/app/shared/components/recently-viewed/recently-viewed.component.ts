@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { RecentlyViewedService, RecentlyViewedProduct } from '../../../core/services/recently-viewed.service';
+import { DualPricePipe } from '../../pipes/dual-price.pipe';
 
 @Component({
   selector: 'app-recently-viewed',
   standalone: true,
-  imports: [CommonModule, RouterLink, TranslateModule],
+  imports: [CommonModule, RouterLink, TranslateModule, DualPricePipe],
   template: `
     @if (products().length > 0) {
       <section class="recently-viewed" data-testid="recently-viewed">
@@ -52,10 +53,10 @@ import { RecentlyViewedService, RecentlyViewedProduct } from '../../../core/serv
                 <span class="name">{{ product.name }}</span>
                 <div class="price">
                   @if (product.isOnSale && product.salePrice) {
-                    <span class="sale">{{ product.basePrice | currency:'EUR' }}</span>
-                    <span class="original">{{ product.salePrice | currency:'EUR' }}</span>
+                    <span class="sale">{{ product.basePrice | dualPrice }}</span>
+                    <span class="original">{{ product.salePrice | dualPrice }}</span>
                   } @else {
-                    <span class="current">{{ product.basePrice | currency:'EUR' }}</span>
+                    <span class="current">{{ product.basePrice | dualPrice }}</span>
                   }
                 </div>
               </div>

@@ -52,8 +52,10 @@ public class ProductPage : BasePage
     public async Task<decimal> GetProductPriceAsync()
     {
         var priceText = await GetTextAsync(ProductPrice);
-        // Handle multiple currency symbols
+        // Handle multiple currency symbols + the UX-16 dual display "€1,299.99 / 2,541.79 лв"
+        // (take the EUR part before the '/').
         var cleanedPrice = priceText
+            .Split('/')[0]
             .Replace("$", "")
             .Replace("€", "")
             .Replace("лв", "") // Bulgarian Lev

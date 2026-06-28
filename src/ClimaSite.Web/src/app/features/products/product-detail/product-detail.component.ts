@@ -19,11 +19,12 @@ import { ProductQaComponent } from '../components/product-qa/product-qa.componen
 import { InstallationServiceComponent } from '../components/installation-service/installation-service.component';
 import { SpecKeyPipe } from '../../../shared/pipes/spec-key.pipe';
 import { RevealDirective } from '../../../shared/directives/reveal.directive';
+import { DualPricePipe } from '../../../shared/pipes/dual-price.pipe';
 
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, ProductConsumablesComponent, SimilarProductsComponent, ProductGalleryComponent, EnergyRatingComponent, WarrantyBadgeComponent, ProductReviewsComponent, ProductQaComponent, InstallationServiceComponent, SpecKeyPipe, RevealDirective],
+  imports: [CommonModule, RouterLink, FormsModule, TranslateModule, ProductConsumablesComponent, SimilarProductsComponent, ProductGalleryComponent, EnergyRatingComponent, WarrantyBadgeComponent, ProductReviewsComponent, ProductQaComponent, InstallationServiceComponent, SpecKeyPipe, RevealDirective, DualPricePipe],
   template: `
     <div class="product-detail-container" data-testid="product-detail">
       @if (isLoading()) {
@@ -84,11 +85,11 @@ import { RevealDirective } from '../../../shared/directives/reveal.directive';
 
               <div class="product-price" data-testid="product-price">
                 @if (product()?.isOnSale && product()?.salePrice) {
-                  <span class="sale-price">{{ product()?.basePrice | currency:'EUR' }}</span>
-                  <span class="original-price">{{ product()?.salePrice | currency:'EUR' }}</span>
+                  <span class="sale-price">{{ product()?.basePrice | dualPrice }}</span>
+                  <span class="original-price">{{ product()?.salePrice | dualPrice }}</span>
                   <span class="discount-badge">-{{ product()?.discountPercentage }}%</span>
                 } @else {
-                  <span class="current-price">{{ product()?.basePrice | currency:'EUR' }}</span>
+                  <span class="current-price">{{ product()?.basePrice | dualPrice }}</span>
                 }
               </div>
 

@@ -11,6 +11,7 @@ import {
   LowStockProductDto,
   TopSellingProductDto
 } from '../../../core/services/admin-dashboard.service';
+import { DualPricePipe } from '../../../shared/pipes/dual-price.pipe';
 
 interface OrderStatusBar {
   key: string;
@@ -20,7 +21,7 @@ interface OrderStatusBar {
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, TranslateModule],
+  imports: [CommonModule, RouterLink, TranslateModule, DualPricePipe],
   template: `
     <div class="admin-container" data-testid="admin-dashboard">
       <h1>{{ 'admin.title' | translate }}</h1>
@@ -63,7 +64,7 @@ interface OrderStatusBar {
 
             <div class="kpi-card" data-testid="kpi-revenue">
               <span class="kpi-label">{{ 'admin.dashboard.kpis.revenue' | translate }}</span>
-              <span class="kpi-value">{{ data.revenue.thisMonth | currency:'EUR' }}</span>
+              <span class="kpi-value">{{ data.revenue.thisMonth | dualPrice }}</span>
               <span class="kpi-trend" [class]="trendClass(data.revenue.trendPercentage)">
                 {{ trendArrow(data.revenue.trendPercentage) }}
                 {{ data.revenue.trendPercentage | number:'1.0-1' }}%
@@ -83,7 +84,7 @@ interface OrderStatusBar {
 
             <div class="kpi-card" data-testid="kpi-avg-order-value">
               <span class="kpi-label">{{ 'admin.dashboard.kpis.avgOrderValue' | translate }}</span>
-              <span class="kpi-value">{{ data.averageOrderValue.thisMonth | currency:'EUR' }}</span>
+              <span class="kpi-value">{{ data.averageOrderValue.thisMonth | dualPrice }}</span>
               <span class="kpi-trend" [class]="trendClass(data.averageOrderValue.trendPercentage)">
                 {{ trendArrow(data.averageOrderValue.trendPercentage) }}
                 {{ data.averageOrderValue.trendPercentage | number:'1.0-1' }}%
@@ -156,7 +157,7 @@ interface OrderStatusBar {
                           </a>
                         </td>
                         <td>{{ order.customerName }}</td>
-                        <td>{{ order.totalAmount | currency:'EUR' }}</td>
+                        <td>{{ order.totalAmount | dualPrice }}</td>
                         <td>
                           <span class="status-badge" [class]="order.status.toLowerCase()">
                             {{ 'admin.orders.status.' + order.status | translate }}
@@ -219,7 +220,7 @@ interface OrderStatusBar {
                         <td>{{ product.name }}</td>
                         <td class="muted">{{ product.sku }}</td>
                         <td>{{ product.quantitySold | number }}</td>
-                        <td>{{ product.revenue | currency:'EUR' }}</td>
+                        <td>{{ product.revenue | dualPrice }}</td>
                       </tr>
                     }
                   </tbody>
