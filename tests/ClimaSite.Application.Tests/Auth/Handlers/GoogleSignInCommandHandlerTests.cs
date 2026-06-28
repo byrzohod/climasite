@@ -99,9 +99,10 @@ public class GoogleSignInCommandHandlerTests
     [Fact]
     public async Task Handle_WhenEmailMatchesExistingAccount_LinksGoogleLoginWithoutDuplicating()
     {
-        // Arrange
+        // Arrange — the existing account has ALREADY confirmed this mailbox, so linking is safe.
         ValidatorReturns(VerifiedGoogleUser());
         var existing = CreateTestUser();
+        existing.EmailConfirmed = true;
         _userManagerMock.Setup(x => x.FindByLoginAsync("Google", GoogleSubject)).ReturnsAsync((ApplicationUser?)null);
         _userManagerMock.Setup(x => x.FindByEmailAsync(GoogleEmail)).ReturnsAsync(existing);
         _userManagerMock.Setup(x => x.AddLoginAsync(existing, It.IsAny<UserLoginInfo>())).ReturnsAsync(IdentityResult.Success);
@@ -119,6 +120,25 @@ public class GoogleSignInCommandHandlerTests
         _userManagerMock.Verify(x => x.CreateAsync(It.IsAny<ApplicationUser>()), Times.Never);
         _userManagerMock.Verify(x => x.AddLoginAsync(existing,
             It.Is<UserLoginInfo>(l => l.LoginProvider == "Google" && l.ProviderKey == GoogleSubject)), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WhenEmailMatchesUNVERIFIEDAccount_RefusesToLink()
+    {
+        // SECURITY: an attacker could pre-register the victim's email as an UNCONFIRMED password account.
+        // Google sign-in must NOT silently link onto it (federated pre-hijack) — it must reject.
+        ValidatorReturns(VerifiedGoogleUser());
+        var existingUnverified = CreateTestUser();
+        existingUnverified.EmailConfirmed = false;
+        _userManagerMock.Setup(x => x.FindByLoginAsync("Google", GoogleSubject)).ReturnsAsync((ApplicationUser?)null);
+        _userManagerMock.Setup(x => x.FindByEmailAsync(GoogleEmail)).ReturnsAsync(existingUnverified);
+
+        var result = await _handler.Handle(new GoogleSignInCommand("id-token"), CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        // No link, no duplicate account — the attacker's account is left untouched and no session is issued.
+        _userManagerMock.Verify(x => x.AddLoginAsync(It.IsAny<ApplicationUser>(), It.IsAny<UserLoginInfo>()), Times.Never);
+        _userManagerMock.Verify(x => x.CreateAsync(It.IsAny<ApplicationUser>()), Times.Never);
     }
 
     [Fact]

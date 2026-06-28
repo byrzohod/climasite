@@ -93,15 +93,40 @@ public class GoogleAuthTests : IntegrationTestBase
         });
         registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         var existingUserId = await GetUserIdByEmailAsync(email);
+        // The account proves mailbox control (EmailConfirmed) — only then is Google auto-linking allowed.
+        await ConfirmEmailAsync(email);
 
         // Act - the same email signs in via Google (a brand new Google subject).
         var token = FakeGoogleTokenValidator.ValidToken($"sub-{Guid.NewGuid()}", email);
         var response = await Client.PostAsJsonAsync("/api/auth/google", new { idToken = token });
 
-        // Assert - Google is LINKED to the existing account; no duplicate user is created.
+        // Assert - Google is LINKED to the existing (confirmed) account; no duplicate user is created.
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var user = (await DeserializeAsync(response)).User!;
         user.Id.Should().Be(existingUserId);
+        (CountUsersByEmail(email)).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GoogleSignIn_RefusesToLink_ToUnverifiedExistingAccount()
+    {
+        // SECURITY (federated pre-hijack): an attacker pre-registers the victim's email as an UNCONFIRMED
+        // password account. The victim's Google sign-in must NOT be linked onto it — it must be rejected,
+        // issuing no session and leaving the account untouched (not duplicated).
+        var email = $"g-{Guid.NewGuid()}@example.com";
+        var registerResponse = await Client.PostAsJsonAsync("/api/auth/register", new
+        {
+            email,
+            password = "ValidPassword123!",
+            firstName = "Pre",
+            lastName = "Hijack"
+        });
+        registerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var token = FakeGoogleTokenValidator.ValidToken($"sub-{Guid.NewGuid()}", email);
+        var response = await Client.PostAsJsonAsync("/api/auth/google", new { idToken = token });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         (CountUsersByEmail(email)).Should().Be(1);
     }
 
@@ -161,6 +186,15 @@ public class GoogleAuthTests : IntegrationTestBase
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var user = await userManager.FindByEmailAsync(email);
         return user!.Id;
+    }
+
+    private async Task ConfirmEmailAsync(string email)
+    {
+        using var scope = Factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await userManager.FindByEmailAsync(email);
+        user!.EmailConfirmed = true;
+        await userManager.UpdateAsync(user);
     }
 
     private record AuthResponse(string AccessToken, UserResponse? User);

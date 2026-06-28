@@ -116,10 +116,22 @@ public class GoogleSignInCommandHandler : IRequestHandler<GoogleSignInCommand, R
             return Result<ApplicationUser>.Success(user);
         }
 
-        // 2. Existing local account with the same email — link Google to it (never duplicate).
+        // 2. Existing local account with the same email.
         user = await _userManager.FindByEmailAsync(googleUser.Email);
         if (user != null)
         {
+            // SECURITY (federated account pre-hijack): only auto-link Google to an account that has ALREADY
+            // proven it controls this mailbox (EmailConfirmed). Otherwise an attacker who pre-registered the
+            // victim's email as an UNCONFIRMED password account would be handed the victim's Google session.
+            // The app does not yet send confirmation emails, so unconfirmed accounts must sign in with their
+            // password (an authenticated settings-flow "link Google" is the future path).
+            if (!user.EmailConfirmed)
+            {
+                _logger.LogWarning("Refused Google auto-link to an unverified local account: {Email}", googleUser.Email);
+                return Result<ApplicationUser>.Failure(
+                    "An account already exists for this email. Please sign in with your email and password.");
+            }
+
             var linkExisting = await _userManager.AddLoginAsync(
                 user, new UserLoginInfo(LoginProvider, googleUser.Subject, LoginProvider));
             if (!linkExisting.Succeeded)
@@ -148,20 +160,32 @@ public class GoogleSignInCommandHandler : IRequestHandler<GoogleSignInCommand, R
         var createResult = await _userManager.CreateAsync(newUser);
         if (!createResult.Succeeded)
         {
-            var errors = DescribeErrors(createResult);
-            _logger.LogWarning("Google sign-in could not create user for {Email}: {Errors}", googleUser.Email, errors);
-            return Result<ApplicationUser>.Failure(errors);
+            // Log details server-side only; return a CONSTANT message so an anonymous caller can't probe
+            // internal validation state (e.g. password-policy details, "already taken" races).
+            _logger.LogWarning("Google sign-in could not create user for {Email}: {Errors}",
+                googleUser.Email, DescribeErrors(createResult));
+            return Result<ApplicationUser>.Failure("Could not sign in with Google.");
         }
 
-        await _userManager.AddToRoleAsync(newUser, "Customer");
+        // Provision the role + Google login ATOMICALLY: roll the new account back if either step fails, so a
+        // half-provisioned passwordless account can never block future sign-in/registration for this email.
+        var roleResult = await _userManager.AddToRoleAsync(newUser, "Customer");
+        if (!roleResult.Succeeded)
+        {
+            await _userManager.DeleteAsync(newUser);
+            _logger.LogError("Failed to assign role to new Google account {Email}: {Errors}; rolled back.",
+                googleUser.Email, DescribeErrors(roleResult));
+            return Result<ApplicationUser>.Failure("Could not sign in with Google.");
+        }
 
         var linkNew = await _userManager.AddLoginAsync(
             newUser, new UserLoginInfo(LoginProvider, googleUser.Subject, LoginProvider));
         if (!linkNew.Succeeded)
         {
-            _logger.LogError("Failed to attach Google login to new account {Email}: {Errors}",
+            await _userManager.DeleteAsync(newUser);
+            _logger.LogError("Failed to attach Google login to new account {Email}: {Errors}; rolled back.",
                 googleUser.Email, DescribeErrors(linkNew));
-            return Result<ApplicationUser>.Failure("Could not link Google account");
+            return Result<ApplicationUser>.Failure("Could not sign in with Google.");
         }
 
         return Result<ApplicationUser>.Success(newUser);

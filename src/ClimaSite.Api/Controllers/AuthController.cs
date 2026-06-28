@@ -29,7 +29,6 @@ public class AuthController : ControllerBase
     /// id is empty when Google sign-in is not configured, letting the frontend hide the button.
     /// </summary>
     [AllowAnonymous]
-    [DisableRateLimiting]
     [HttpGet("config")]
     public IActionResult GetConfig()
     {
