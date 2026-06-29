@@ -18,12 +18,17 @@ export class CartService {
   private readonly _cart = signal<Cart | null>(null);
   private readonly _isLoading = signal(false);
   private readonly _error = signal<string | null>(null);
+  // Load failure is tracked separately from _error (which also carries transient mutation errors), so the
+  // page-level "couldn't load your cart, Retry" branch fires ONLY on a real load failure (B-020) and a failed
+  // quantity-update doesn't blank the cart/mini-cart.
+  private readonly _loadFailed = signal(false);
   private readonly _miniCartOpen = signal(false);
 
   // Public readonly signals
   readonly cart = this._cart.asReadonly();
   readonly isLoading = this._isLoading.asReadonly();
   readonly error = this._error.asReadonly();
+  readonly loadFailed = this._loadFailed.asReadonly();
   readonly miniCartOpen = this._miniCartOpen.asReadonly();
 
   // Computed signals
@@ -96,18 +101,24 @@ export class CartService {
   loadCart(): void {
     this._isLoading.set(true);
     this._error.set(null);
+    this._loadFailed.set(false);
 
     const sessionId = this.getSessionId();
     this.http.get<Cart>(`${this.apiUrl}?guestSessionId=${sessionId}${this.langSuffix()}`)
       .pipe(
         tap(cart => {
           this._cart.set(cart);
+          this._loadFailed.set(false);
           this._isLoading.set(false);
         }),
         catchError(error => {
           console.error('Failed to load cart:', error);
-          // Initialize with empty cart on error
-          this._cart.set(this.createEmptyCart());
+          // B-020: surface the failure instead of masking it as an empty cart. Flag loadFailed (the
+          // page-level error+Retry branch renders) and DON'T clobber a previously-loaded cart with an
+          // empty one — a first-load failure simply leaves the cart null, and loadFailed() is checked
+          // before isEmpty() in the template so the error state wins.
+          this._error.set('cart.errors.loadFailed');
+          this._loadFailed.set(true);
           this._isLoading.set(false);
           return of(null);
         })

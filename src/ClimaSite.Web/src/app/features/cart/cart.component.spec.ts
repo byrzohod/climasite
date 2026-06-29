@@ -1,12 +1,19 @@
 import { WritableSignal, signal } from '@angular/core';
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { TestBed, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
+import { TranslateService, TranslateModule, TranslateLoader } from '@ngx-translate/core';
+import { provideRouter } from '@angular/router';
+import { Observable, of, throwError } from 'rxjs';
 
 import { CartComponent } from './cart.component';
 import { CartService } from '../../core/services/cart.service';
 import { ToastService } from '../../shared/components/toast/toast.service';
 import { Cart, CartItem } from '../../core/models/cart.model';
+
+class FakeTranslateLoader implements TranslateLoader {
+  getTranslation(_lang: string): Observable<Record<string, string>> {
+    return of({});
+  }
+}
 
 /**
  * Plan-19 B2: unit coverage for the cart page's quantity / removal / totals logic.
@@ -29,6 +36,7 @@ interface CartServiceStub {
   isEmpty: WritableSignal<boolean>;
   isLoading: WritableSignal<boolean>;
   error: WritableSignal<string | null>;
+  loadFailed: WritableSignal<boolean>;
   loadCart: jasmine.Spy;
   updateQuantity: jasmine.Spy;
   removeItem: jasmine.Spy;
@@ -66,6 +74,7 @@ describe('CartComponent', () => {
       isEmpty: signal(true),
       isLoading: signal(false),
       error: signal<string | null>(null),
+      loadFailed: signal(false),
       loadCart: jasmine.createSpy('loadCart'),
       updateQuantity: jasmine.createSpy('updateQuantity').and.returnValue(of(undefined)),
       removeItem: jasmine.createSpy('removeItem').and.returnValue(of(undefined)),
@@ -306,3 +315,78 @@ function flushMicrotasks(p: Promise<void>): void {
   void p;
   tick();
 }
+
+/**
+ * B-020: render-level coverage for the cart-error branch + Retry. Uses a real fixture (the main suite is
+ * logic-only) so we can assert the template shows the error+retry state — not a fake empty cart — on a load
+ * failure, and that Retry re-invokes loadCart.
+ */
+describe('CartComponent error branch (B-020 render)', () => {
+  let fixture: ComponentFixture<CartComponent>;
+  let cartService: CartServiceStub;
+
+  beforeEach(() => {
+    cartService = {
+      items: signal<CartItem[]>([]),
+      cart: signal<Cart | null>(null),
+      subtotal: signal(0),
+      total: signal(0),
+      itemCount: signal(0),
+      isEmpty: signal(true),
+      isLoading: signal(false),
+      error: signal<string | null>(null),
+      loadFailed: signal(false),
+      loadCart: jasmine.createSpy('loadCart'),
+      updateQuantity: jasmine.createSpy('updateQuantity').and.returnValue(of(undefined)),
+      removeItem: jasmine.createSpy('removeItem').and.returnValue(of(undefined)),
+      addToCart: jasmine.createSpy('addToCart').and.returnValue(of(undefined))
+    };
+
+    TestBed.configureTestingModule({
+      imports: [
+        CartComponent,
+        TranslateModule.forRoot({ loader: { provide: TranslateLoader, useClass: FakeTranslateLoader } })
+      ],
+      providers: [
+        provideRouter([]),
+        { provide: CartService, useValue: cartService },
+        { provide: ToastService, useValue: jasmine.createSpyObj('ToastService', ['success', 'error']) }
+      ]
+    });
+
+    fixture = TestBed.createComponent(CartComponent);
+  });
+
+  it('renders the error + Retry state (not the empty state) when loadFailed() is set', () => {
+    cartService.error.set('cart.errors.loadFailed');
+    cartService.loadFailed.set(true);
+    fixture.detectChanges();
+
+    const el = fixture.nativeElement;
+    expect(el.querySelector('[data-testid="cart-error"]')).toBeTruthy();
+    expect(el.querySelector('[data-testid="cart-retry"]')).toBeTruthy();
+    // A load failure must NOT render as an empty cart.
+    expect(el.querySelector('[data-testid="empty-cart"]')).toBeNull();
+  });
+
+  it('does NOT show the page-level error branch for a transient mutation error', () => {
+    // A failed quantity update sets error() but not loadFailed() — the cart must stay visible.
+    cartService.items.set([makeItem()]);
+    cartService.isEmpty.set(false);
+    cartService.error.set('cart.errors.updateQuantityFailed');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="cart-error"]')).toBeNull();
+  });
+
+  it('Retry re-invokes loadCart', () => {
+    cartService.error.set('cart.errors.loadFailed');
+    cartService.loadFailed.set(true);
+    fixture.detectChanges();
+    cartService.loadCart.calls.reset();
+
+    fixture.nativeElement.querySelector('[data-testid="cart-retry"]').click();
+
+    expect(cartService.loadCart).toHaveBeenCalledTimes(1);
+  });
+});

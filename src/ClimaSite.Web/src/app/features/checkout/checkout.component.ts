@@ -44,6 +44,14 @@ import { DualPricePipe } from '../../shared/pipes/dual-price.pipe';
             </div>
           </div>
         </div>
+      } @else if (cartService.loadFailed()) {
+        <!-- B-020: a cart load failure must not masquerade as an empty cart here either. -->
+        <div class="checkout-cart-error" role="alert" data-testid="checkout-cart-error">
+          <p>{{ cartService.error() | translate }}</p>
+          <button class="btn-primary" (click)="cartService.loadCart()" data-testid="checkout-cart-retry">
+            {{ 'common.retry' | translate }}
+          </button>
+        </div>
       } @else if (cartService.isEmpty()) {
         <div class="empty-cart" data-testid="checkout-empty">
           <p>{{ 'cart.empty' | translate }}</p>
@@ -409,6 +417,33 @@ import { DualPricePipe } from '../../shared/pipes/dual-price.pipe';
       p {
         margin-bottom: 1.5rem;
         color: var(--color-text-secondary);
+      }
+    }
+
+    .checkout-cart-error {
+      text-align: center;
+      padding: 3rem;
+      background: var(--color-error-bg);
+      border-radius: 12px;
+
+      p {
+        margin-bottom: 1.5rem;
+        color: var(--color-error);
+      }
+
+      .btn-primary {
+        padding: 0.75rem 1.5rem;
+        background: var(--color-primary);
+        color: var(--color-text-inverse);
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background 0.2s ease;
+
+        &:hover {
+          background: var(--color-primary-dark);
+        }
       }
     }
 

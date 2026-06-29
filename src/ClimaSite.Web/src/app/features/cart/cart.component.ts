@@ -23,9 +23,12 @@ import { DualPricePipe } from '../../shared/pipes/dual-price.pipe';
         <div class="loading" data-testid="cart-loading">
           {{ 'common.loading' | translate }}
         </div>
-      } @else if (cartService.error()) {
-        <div class="error-message" data-testid="cart-error">
-          {{ cartService.error() | translate }}
+      } @else if (cartService.loadFailed()) {
+        <div class="error-message" role="alert" data-testid="cart-error">
+          <p>{{ cartService.error() | translate }}</p>
+          <button class="btn-primary" (click)="cartService.loadCart()" data-testid="cart-retry">
+            {{ 'common.retry' | translate }}
+          </button>
         </div>
       } @else if (cartService.isEmpty()) {
         <app-empty-state
@@ -191,12 +194,31 @@ import { DualPricePipe } from '../../shared/pipes/dual-price.pipe';
     }
 
     .error-message {
-      padding: 1rem;
+      padding: 1.5rem;
       background: var(--color-error-bg);
       color: var(--color-error);
       border-radius: 8px;
       margin-bottom: 1rem;
       text-align: center;
+    }
+
+    .error-message p {
+      margin: 0 0 1rem;
+    }
+
+    .error-message .btn-primary {
+      padding: 0.625rem 1.5rem;
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.2s ease;
+    }
+
+    .error-message .btn-primary:hover {
+      background: var(--color-primary-dark);
     }
 
     .cart-content {

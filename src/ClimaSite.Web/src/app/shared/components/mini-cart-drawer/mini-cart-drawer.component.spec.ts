@@ -20,6 +20,8 @@ describe('MiniCartDrawerComponent', () => {
   let mockSubtotal: WritableSignal<number>;
   let mockIsEmpty: WritableSignal<boolean>;
   let mockIsLoading: WritableSignal<boolean>;
+  let mockError: WritableSignal<string | null>;
+  let mockLoadFailed: WritableSignal<boolean>;
 
   const mockCartItem: CartItem = {
     id: 'item-1',
@@ -53,13 +55,18 @@ describe('MiniCartDrawerComponent', () => {
     mockSubtotal = signal(itemsValue.reduce((sum, i) => sum + i.subtotal, 0));
     mockIsEmpty = signal(itemsValue.length === 0);
     mockIsLoading = signal(false);
-    
+    mockError = signal<string | null>(null);
+    mockLoadFailed = signal(false);
+
     return {
       items: mockItems.asReadonly(),
       itemCount: mockItemCount.asReadonly(),
       subtotal: mockSubtotal.asReadonly(),
       isEmpty: mockIsEmpty.asReadonly(),
       isLoading: mockIsLoading.asReadonly(),
+      error: mockError.asReadonly(),
+      loadFailed: mockLoadFailed.asReadonly(),
+      loadCart: jasmine.createSpy('loadCart'),
       updateQuantity: jasmine.createSpy('updateQuantity').and.returnValue(of(mockCart)),
       removeItem: jasmine.createSpy('removeItem').and.returnValue(of({ ...mockCart, items: [], itemCount: 0 }))
     };
@@ -295,6 +302,38 @@ describe('MiniCartDrawerComponent', () => {
     it('should not display cart items', () => {
       const items = fixture.nativeElement.querySelector('[data-testid="mini-cart-items"]');
       expect(items).toBeNull();
+    });
+  });
+
+  describe('with a cart load error (B-020)', () => {
+    let cartServiceMock: ReturnType<typeof createCartServiceMock>;
+
+    beforeEach(async () => {
+      cartServiceMock = createCartServiceMock([]);
+      mockError.set('cart.errors.loadFailed');
+      mockLoadFailed.set(true);
+
+      await TestBed.configureTestingModule({
+        imports: [MiniCartDrawerComponent, MiniCartItemComponent, NoopAnimationsModule, RouterTestingModule, TranslateModule.forRoot()],
+        providers: [{ provide: CartService, useValue: cartServiceMock }]
+      }).compileComponents();
+
+      fixture = TestBed.createComponent(MiniCartDrawerComponent);
+      component = fixture.componentInstance;
+      fixture.componentRef.setInput('isOpen', true);
+      fixture.detectChanges();
+    });
+
+    it('shows an error + Retry instead of the empty-cart state', () => {
+      expect(fixture.nativeElement.querySelector('[data-testid="mini-cart-error"]')).toBeTruthy();
+      expect(fixture.nativeElement.querySelector('[data-testid="mini-cart-retry"]')).toBeTruthy();
+      expect(fixture.nativeElement.querySelector('[data-testid="mini-cart-empty"]')).toBeNull();
+      expect(fixture.nativeElement.querySelector('[data-testid="mini-cart-footer"]')).toBeNull();
+    });
+
+    it('Retry re-invokes loadCart', () => {
+      fixture.nativeElement.querySelector('[data-testid="mini-cart-retry"]').click();
+      expect(cartServiceMock.loadCart).toHaveBeenCalledTimes(1);
     });
   });
 });
