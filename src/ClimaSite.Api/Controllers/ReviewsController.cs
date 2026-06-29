@@ -1,3 +1,4 @@
+using ClimaSite.Api.Common;
 using ClimaSite.Application.Common.Models;
 using ClimaSite.Application.Features.Reviews.Commands;
 using ClimaSite.Application.Features.Reviews.DTOs;
@@ -39,8 +40,8 @@ public class ReviewsController : ControllerBase
         var query = new GetProductReviewsQuery
         {
             ProductId = productId,
-            PageNumber = pageNumber,
-            PageSize = pageSize,
+            PageNumber = QueryBounds.PageNumber(pageNumber),
+            PageSize = QueryBounds.PageSize(pageSize),
             SortBy = sortBy
         };
 

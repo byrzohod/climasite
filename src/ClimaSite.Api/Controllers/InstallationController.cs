@@ -2,6 +2,7 @@ using ClimaSite.Application.Features.Installation.Commands;
 using ClimaSite.Application.Features.Installation.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace ClimaSite.Api.Controllers;
 
@@ -30,7 +31,10 @@ public class InstallationController : ControllerBase
     /// <summary>
     /// Create a new installation request
     /// </summary>
+    // Anonymous PII lead form that also enqueues an outbox email — same strict 5/min/IP budget as the
+    // contact form, so it can't be used to flood leads/emails (B-034).
     [HttpPost("requests")]
+    [EnableRateLimiting("strict")]
     public async Task<IActionResult> CreateInstallationRequest([FromBody] CreateInstallationRequestRequest request)
     {
         var command = new CreateInstallationRequestCommand

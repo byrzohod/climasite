@@ -1,3 +1,4 @@
+using ClimaSite.Api.Common;
 using ClimaSite.Application.Features.Promotions.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -23,8 +24,8 @@ public class PromotionsController : ControllerBase
     {
         var query = new GetActivePromotionsQuery
         {
-            PageNumber = pageNumber,
-            PageSize = pageSize,
+            PageNumber = QueryBounds.PageNumber(pageNumber),
+            PageSize = QueryBounds.PageSize(pageSize),
             LanguageCode = lang
         };
 
@@ -49,7 +50,7 @@ public class PromotionsController : ControllerBase
         [FromQuery] int count = 4,
         [FromQuery] string? lang = null)
     {
-        var query = new GetFeaturedPromotionsQuery { Count = count, LanguageCode = lang };
+        var query = new GetFeaturedPromotionsQuery { Count = QueryBounds.Count(count), LanguageCode = lang };
         var result = await _mediator.Send(query);
         return Ok(result);
     }

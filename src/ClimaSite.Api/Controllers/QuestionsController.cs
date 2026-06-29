@@ -1,3 +1,4 @@
+using ClimaSite.Api.Common;
 using ClimaSite.Application.Features.Questions.Commands;
 using ClimaSite.Application.Features.Questions.Queries;
 using MediatR;
@@ -30,8 +31,8 @@ public class QuestionsController : ControllerBase
         var query = new GetProductQuestionsQuery
         {
             ProductId = productId,
-            PageNumber = pageNumber,
-            PageSize = pageSize,
+            PageNumber = QueryBounds.PageNumber(pageNumber),
+            PageSize = QueryBounds.PageSize(pageSize),
             IncludeUnanswered = includeUnanswered
         };
 

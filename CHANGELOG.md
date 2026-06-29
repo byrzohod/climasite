@@ -38,6 +38,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- **Backend quick-wins hardening batch (B-007, B-008, B-034, B-036, B-055) from the external review.** Five
+  small, independent backend fixes shipped together:
+  - **B-007** — order confirmation/shipped email CTAs built `/account/orders/$<guid>` (a literal `$` in the
+    interpolation) → a 404 link whenever real email is enabled. The order URL is now built by a single
+    `EmailService.BuildOrderUrl` helper (no `$`), unit-tested.
+  - **B-008** — `ExceptionHandlingMiddleware` echoed a raw `ArgumentException.Message` (and put it in the
+    response `detail`), which can leak internal parameter names/state. Unhandled `ArgumentException` now maps
+    to a generic `BadRequest "Invalid request"` with null detail; FluentValidation/app `ValidationException`
+    still surface their intended user-facing messages. Middleware unit-tested.
+  - **B-034** — the anonymous installation-lead endpoint (writes PII + enqueues an outbox email) had no rate
+    limit beyond the global 100/min/IP. It now carries `[EnableRateLimiting("strict")]` (5/min/IP, same as the
+    contact form). **Proven live**: the 6th rapid POST returns 429.
+  - **B-036** — public pagination/count params were unbounded: `pageSize=0` divided by zero in
+    `PaginatedList.TotalPages`, a huge `pageNumber` overflowed `(pageNumber-1)*pageSize` into a negative `Skip`
+    (a 500), and `pageSize`/`count`=100000 fetched the whole table (a cheap DoS). A new `QueryBounds` helper
+    clamps at the API edge (PageNumber 1..100000, PageSize 1..100, Count 1..24) on `GetProducts`/`SearchProducts`
+    and the 6 public count endpoints, plus a defensive floor in `PaginatedList` for any direct caller. **Proven
+    live**: `?pageSize=100000` returns at most 100 items; `?pageSize=0` and `?pageNumber=2147483647` return 200.
+  - **B-055** — `CorrelationIdMiddleware` echoed and log-pushed an inbound `X-Correlation-Id` verbatim with no
+    bound (log-forging / oversize). It now honours only `^[A-Za-z0-9._-]{1,128}$`, else generates a fresh GUID.
+    **Proven live**: a spaces/`!`-bearing id is replaced with a GUID; a valid id is still echoed.
+
+  Backend only; no DB migration; no i18n; no frontend change. Backend suites green (Application 873 / Core 424 /
+  Api integration 392). Cross-vendor Codex council on the combined diff; `/acceptance` PASS at
+  `.planning/acceptance/QW-backend-batch.md`. Unit-plan at `.planning/units/QW-backend-batch/unit-plan.md`.
 - **B-002 / BUG-06 (admin slice) — admin product list inverted current vs compare-at price.** The admin
   Product Management list showed an on-sale product's **higher compare-at price prominently** (as if it were the
   live price) and the **real selling price struck-through** — the exact inverse of reality, so admins made
