@@ -1,4 +1,5 @@
 using ClimaSite.Application.Common.Behaviors;
+using ClimaSite.Application.Features.Payments.Commands;
 using FluentAssertions;
 using Xunit;
 
@@ -35,6 +36,32 @@ public class LogSanitizerTests
 
         result["IdToken"].Should().Be(LogSanitizer.Redacted);
         result["EmailVerified"].Should().Be(true);
+    }
+
+    private sealed record FakeIdem(string IdempotencyKey, string Region);
+
+    [Fact]
+    public void Redact_IdempotencyKey_OnRealPaymentCommand_IsRedacted()
+    {
+        // The per-attempt key gates a Stripe clientSecret on replay, so it must never log in cleartext
+        // (its property name isn't otherwise a sensitive marker). Proven on the REAL command shape.
+        var result = LogSanitizer.Redact(new CreatePaymentIntentCommand
+        {
+            ShippingMethod = "standard",
+            IdempotencyKey = "ci-some-uuid"
+        });
+
+        result["IdempotencyKey"].Should().Be(LogSanitizer.Redacted);
+    }
+
+    [Fact]
+    public void Redact_IdempotencyMarker_RedactsKey_PreservesNonSensitive()
+    {
+        // The "idempotency" marker redacts the key while a genuinely non-sensitive sibling is preserved.
+        var result = LogSanitizer.Redact(new FakeIdem("ci-some-uuid", "eu-west"));
+
+        result["IdempotencyKey"].Should().Be(LogSanitizer.Redacted);
+        result["Region"].Should().Be("eu-west");
     }
 
     [Fact]

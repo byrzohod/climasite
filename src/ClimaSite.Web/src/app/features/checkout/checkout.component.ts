@@ -1300,6 +1300,24 @@ ngOnInit(): void {
     };
   }
 
+  /**
+   * A fresh per-attempt idempotency token that satisfies the server's [A-Za-z0-9_-]{8,200}
+   * contract. Prefers crypto.randomUUID(), but degrades gracefully so card checkout (a revenue
+   * path) never hard-fails on a non-secure-context / older browser where randomUUID is absent:
+   * falls back to getRandomValues() hex, then to a time+random token as a last resort.
+   */
+  private newAttemptKey(): string {
+    const c: Crypto | undefined = globalThis.crypto;
+    if (typeof c?.randomUUID === 'function') {
+      return c.randomUUID();
+    }
+    if (typeof c?.getRandomValues === 'function') {
+      const bytes = c.getRandomValues(new Uint8Array(16));
+      return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+    }
+    return Date.now().toString(36) + Math.random().toString(36).slice(2);
+  }
+
   async placeOrder(): Promise<void> {
     // BUG-04: double-submit guard. Bail out if a placement is already in flight, otherwise
     // claim the lock immediately — before any create-intent/charge call — so a double-click
@@ -1315,11 +1333,17 @@ ngOnInit(): void {
     // Handle card payment with Stripe
     if (this.checkoutService.paymentMethod() === 'card') {
       try {
+        // Per-attempt idempotency key: a network retry of this one create-intent POST resends
+        // the identical key so Stripe dedupes it; a user retry after a failure is a new click
+        // here -> new key -> a fresh intent (so a refunded charge is never replayed).
+        const attemptKey = this.newAttemptKey();
+
         // Create payment intent. The amount and currency are computed
         // server-side from the cart and chosen shipping method.
         const intentResponse = await this.paymentService.createPaymentIntent(
           this.checkoutService.shippingMethod(),
-          this.checkoutService.getSessionId() || undefined
+          this.checkoutService.getSessionId() || undefined,
+          attemptKey
         ).toPromise();
 
         if (!intentResponse?.clientSecret) {

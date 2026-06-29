@@ -1,5 +1,6 @@
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Options;
+using ClimaSite.Application.Common.Payments;
 using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Orders.Commands;
 using ClimaSite.Application.Features.Orders.DTOs;
@@ -39,8 +40,8 @@ public class CreateOrderCommandHandlerTests
         // Default RefundAsync to a succeeded result so the await never hits a null Task; tests
         // that assert refund behaviour can still Verify the call count.
         _paymentServiceMock
-            .Setup(x => x.RefundAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string id, CancellationToken _) => PaymentIntentResult.Success(id, string.Empty, "succeeded"));
+            .Setup(x => x.RefundAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string id, string? _, CancellationToken _) => PaymentIntentResult.Success(id, string.Empty, "succeeded"));
     }
 
     // Use a real EmailOutbox over the mock context so tests can assert the confirmation email
@@ -806,7 +807,7 @@ public class CreateOrderCommandHandlerTests
                 Amount = CheckoutPricing.ToMinorUnits(expectedTotal)
             });
         _paymentServiceMock
-            .Setup(x => x.RefundAsync("pi_test_123", It.IsAny<CancellationToken>()))
+            .Setup(x => x.RefundAsync("pi_test_123", It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(PaymentIntentResult.Success("pi_test_123", string.Empty, "succeeded"));
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
@@ -823,7 +824,13 @@ public class CreateOrderCommandHandlerTests
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.Error.Should().Contain("Insufficient stock");
-        _paymentServiceMock.Verify(x => x.RefundAsync("pi_test_123", It.IsAny<CancellationToken>()), Times.Once);
+        // BUG-04 + PAY-IDEM: the orphaned charge is refunded with the deterministic server-derived key.
+        _paymentServiceMock.Verify(
+            x => x.RefundAsync(
+                "pi_test_123",
+                PaymentIdempotency.ForRefund("pi_test_123"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     #endregion
