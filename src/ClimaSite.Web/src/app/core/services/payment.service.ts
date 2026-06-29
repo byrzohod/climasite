@@ -139,13 +139,22 @@ export class PaymentService {
     this.elements = null;
   }
 
-  createPaymentIntent(shippingMethod: string, guestSessionId?: string): Observable<PaymentIntentResponse> {
+  createPaymentIntent(
+    shippingMethod: string,
+    guestSessionId?: string,
+    idempotencyKey?: string
+  ): Observable<PaymentIntentResponse> {
     // Amount and currency are computed server-side from the cart; the client
-    // only supplies the shipping method and (for guests) the session id.
-    return this.http.post<PaymentIntentResponse>(`${this.apiUrl}/create-intent`, {
+    // only supplies the shipping method, (for guests) the session id, and an
+    // optional per-attempt idempotency key so a network retry of this POST dedupes.
+    const body: { shippingMethod: string; guestSessionId?: string; idempotencyKey?: string } = {
       shippingMethod,
       guestSessionId
-    });
+    };
+    if (idempotencyKey !== undefined) {
+      body.idempotencyKey = idempotencyKey;
+    }
+    return this.http.post<PaymentIntentResponse>(`${this.apiUrl}/create-intent`, body);
   }
 
   async confirmPayment(clientSecret: string, billingDetails?: {

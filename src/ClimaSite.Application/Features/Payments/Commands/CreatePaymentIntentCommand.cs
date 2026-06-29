@@ -1,5 +1,6 @@
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Models;
+using ClimaSite.Application.Common.Payments;
 using ClimaSite.Application.Common.Pricing;
 using FluentValidation;
 using MediatR;
@@ -29,6 +30,13 @@ public record CreatePaymentIntentCommand : IRequest<Result<PaymentIntentDto>>
 {
     public string ShippingMethod { get; init; } = "standard";
     public string? GuestSessionId { get; init; }
+
+    /// <summary>
+    /// Optional per-attempt idempotency key supplied by the client (a fresh UUID generated
+    /// once per place-order attempt). When present it dedupes a network retry of this single
+    /// create-intent POST; absent/empty degrades to today's no-dedup behaviour.
+    /// </summary>
+    public string? IdempotencyKey { get; init; }
 }
 
 public class CreatePaymentIntentCommandValidator : AbstractValidator<CreatePaymentIntentCommand>
@@ -42,6 +50,11 @@ public class CreatePaymentIntentCommandValidator : AbstractValidator<CreatePayme
             // Scope the allow-list check to ONLY this rule so an empty value still trips NotEmpty
             // above (rather than being skipped by a chain-wide condition).
             .When(x => !string.IsNullOrWhiteSpace(x.ShippingMethod), ApplyConditionTo.CurrentValidator);
+
+        RuleFor(x => x.IdempotencyKey)
+            .Must(PaymentIdempotency.IsValidClientKey)
+            .When(x => !string.IsNullOrEmpty(x.IdempotencyKey))
+            .WithMessage("Idempotency key must be 8-200 characters of [A-Za-z0-9_-].");
     }
 }
 
@@ -88,23 +101,31 @@ public class CreatePaymentIntentCommandHandler
         }
 
         // Amount is computed server-side from the cart; the client cannot influence it.
+        // CheckoutPricing is already case-insensitive on the shipping method, so the total is
+        // unaffected by casing; the Stripe metadata, however, records the canonical value.
         var subtotal = cart.Items.Sum(i => i.UnitPrice * i.Quantity);
         var total = CheckoutPricing.CalculateTotal(subtotal, request.ShippingMethod);
+        var canonicalShipping = ShippingMethods.Canonicalize(request.ShippingMethod);
 
         var metadata = new Dictionary<string, string>
         {
             ["cartId"] = cart.Id.ToString(),
-            ["shippingMethod"] = request.ShippingMethod
+            ["shippingMethod"] = canonicalShipping
         };
         if (userId.HasValue)
         {
             metadata["userId"] = userId.Value.ToString();
         }
 
+        // Per-attempt key (namespaced ci_<clientKey>); null when the client supplied none.
+        var idemKey = PaymentIdempotency.NormalizeClientKey(request.IdempotencyKey);
+
         var result = await _paymentService.CreatePaymentIntentAsync(
             total,
             CheckoutPricing.Currency,
-            metadata);
+            metadata,
+            idemKey,
+            cancellationToken);
 
         if (!result.Succeeded || string.IsNullOrEmpty(result.PaymentIntentId) || string.IsNullOrEmpty(result.ClientSecret))
         {

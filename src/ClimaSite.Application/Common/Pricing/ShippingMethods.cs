@@ -22,4 +22,13 @@ public static class ShippingMethods
     public static bool IsAllowed(string? method) =>
         method is not null
         && Allowed.Any(m => string.Equals(m, method, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Returns the canonical lowercase allowed value matching <paramref name="method"/>
+    /// (case-insensitive), or the raw input unchanged when it is not an allowed method.
+    /// Used to normalise the value sent to Stripe metadata so casing is consistent.
+    /// </summary>
+    public static string Canonicalize(string? method) =>
+        Allowed.FirstOrDefault(m => string.Equals(m, method, StringComparison.OrdinalIgnoreCase))
+        ?? (method ?? string.Empty);
 }

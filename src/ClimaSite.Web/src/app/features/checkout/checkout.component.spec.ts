@@ -479,3 +479,75 @@ describe('CheckoutComponent - proceedFromPayment (Stripe card capture)', () => {
     expect(checkoutService.setStep).toHaveBeenCalledWith('review');
   });
 });
+
+/**
+ * PAY-IDEM: each place-order ATTEMPT must forward a FRESH idempotency key (the 3rd arg of
+ * createPaymentIntent). A network retry of one POST reuses the same key (Stripe dedupes); a *user*
+ * retry after a failure is a new click -> a new key -> a fresh intent, so a refunded charge is never
+ * replayed (the [High]). This guards against a refactor that hoists/caches the attempt key.
+ */
+describe('CheckoutComponent - per-attempt idempotency key rotation (PAY-IDEM)', () => {
+  let component: CheckoutComponent;
+  let paymentService: jasmine.SpyObj<PaymentService>;
+  let checkoutService: jasmine.SpyObj<CheckoutService>;
+
+  beforeEach(() => {
+    paymentService = jasmine.createSpyObj<PaymentService>(
+      'PaymentService',
+      ['createPaymentIntent', 'confirmPayment', 'destroyElements', 'initialize', 'createElements', 'loadConfig']
+    );
+    paymentService.loadConfig.and.returnValue(Promise.resolve(null));
+    // Resolve create-intent with NO client secret so placeOrder() bails early (no Stripe.js needed),
+    // releasing the in-flight guard so the next attempt re-enters and calls create-intent again.
+    paymentService.createPaymentIntent.and.returnValue(of({ clientSecret: '' } as PaymentIntentResponse));
+
+    checkoutService = jasmine.createSpyObj<CheckoutService>(
+      'CheckoutService',
+      ['createOrder', 'setError', 'setStep', 'setShippingAddress', 'setPaymentMethod', 'setShippingMethod', 'getSessionId', 'paymentMethod', 'shippingMethod', 'shippingAddress', 'lastOrderId', 'isProcessing']
+    );
+    checkoutService.paymentMethod.and.returnValue('card');
+    checkoutService.shippingMethod.and.returnValue('standard');
+    checkoutService.shippingAddress.and.returnValue(null);
+    checkoutService.getSessionId.and.returnValue('session-1');
+
+    const cartService = jasmine.createSpyObj<CartService>('CartService', ['clearCart']);
+    const addressService = jasmine.createSpyObj<AddressService>('AddressService', ['loadAddresses', 'hasAddresses', 'addresses']);
+    const authService = jasmine.createSpyObj<AuthService>('AuthService', ['isAuthenticated']);
+    authService.isAuthenticated.and.returnValue(false);
+    const confettiService = jasmine.createSpyObj<ConfettiService>('ConfettiService', ['burst', 'stop']);
+    const router = jasmine.createSpyObj<Router>('Router', ['navigate']);
+
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: CartService, useValue: cartService },
+        { provide: CheckoutService, useValue: checkoutService },
+        { provide: AddressService, useValue: addressService },
+        { provide: AuthService, useValue: authService },
+        { provide: PaymentService, useValue: paymentService },
+        { provide: ConfettiService, useValue: confettiService },
+        { provide: Router, useValue: router }
+      ]
+    });
+
+    component = TestBed.runInInjectionContext(() => new CheckoutComponent());
+    component.shippingForm.patchValue({ email: 'buyer@test.com', phone: '+359888000000' });
+  });
+
+  it('forwards a fresh, non-empty idempotency key on each place-order attempt', async () => {
+    // Two separate user attempts (each releases the guard via the early bail-out above).
+    await component.placeOrder();
+    await component.placeOrder();
+
+    const calls = paymentService.createPaymentIntent.calls.all();
+    expect(calls.length).toBe(2);
+
+    const firstKey = calls[0].args[2] as string;
+    const secondKey = calls[1].args[2] as string;
+
+    expect(typeof firstKey).toBe('string');
+    expect(firstKey.length).toBeGreaterThan(0);
+    expect(secondKey.length).toBeGreaterThan(0);
+    // Per-attempt rotation: the two attempts must NOT share a key (closes the refund-replay [High]).
+    expect(firstKey).not.toBe(secondKey);
+  });
+});

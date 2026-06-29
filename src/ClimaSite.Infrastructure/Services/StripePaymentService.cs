@@ -30,7 +30,9 @@ public class StripePaymentService : IPaymentService
     public async Task<PaymentIntentResult> CreatePaymentIntentAsync(
         decimal amount,
         string currency = "eur",
-        Dictionary<string, string>? metadata = null)
+        Dictionary<string, string>? metadata = null,
+        string? idempotencyKey = null,
+        CancellationToken cancellationToken = default)
     {
         try
         {
@@ -50,7 +52,13 @@ public class StripePaymentService : IPaymentService
                 Metadata = metadata ?? new Dictionary<string, string>()
             };
 
-            var paymentIntent = await _paymentIntentService.CreateAsync(options);
+            // A per-attempt idempotency key (when supplied) makes a network retry of this single
+            // create call dedupe to one Stripe PaymentIntent. Null => no request options (today's behaviour).
+            var requestOptions = string.IsNullOrEmpty(idempotencyKey)
+                ? null
+                : new RequestOptions { IdempotencyKey = idempotencyKey };
+
+            var paymentIntent = await _paymentIntentService.CreateAsync(options, requestOptions, cancellationToken);
 
             _logger.LogInformation(
                 "Created PaymentIntent {PaymentIntentId} for amount {Amount} {Currency}",
@@ -136,15 +144,18 @@ public class StripePaymentService : IPaymentService
 
     public async Task<PaymentIntentResult> RefundAsync(
         string paymentIntentId,
+        string? idempotencyKey = null,
         CancellationToken cancellationToken = default)
     {
         try
         {
             // Refund the entire charge backing the intent. Used to compensate an
             // already-charged PaymentIntent when the order it was meant to back
-            // cannot be created (BUG-04: orphaned-charge compensation).
+            // cannot be created (BUG-04: orphaned-charge compensation). A deterministic
+            // server-derived key (when supplied) dedupes a retried/concurrent refund.
             var refund = await _refundService.CreateAsync(
                 new RefundCreateOptions { PaymentIntent = paymentIntentId },
+                string.IsNullOrEmpty(idempotencyKey) ? null : new RequestOptions { IdempotencyKey = idempotencyKey },
                 cancellationToken: cancellationToken);
 
             _logger.LogInformation(

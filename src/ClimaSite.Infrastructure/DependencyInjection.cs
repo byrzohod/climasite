@@ -72,6 +72,11 @@ public static class DependencyInjection
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IPaymentService, StripePaymentService>();
 
+        // Resilience for transient Stripe failures; complements the explicit idempotency keys we
+        // attach to the create-intent and refund calls so app-level retries can't double-charge.
+        // (2 is also Stripe.net's default — set here once at the composition root to make it explicit.)
+        Stripe.StripeConfiguration.MaxNetworkRetries = 2;
+
         // Email outbox options (ARCH-05), bound from the "Outbox" configuration section.
         var outboxOptions = new EmailOutboxOptions();
         configuration.GetSection(EmailOutboxOptions.SectionName).Bind(outboxOptions);

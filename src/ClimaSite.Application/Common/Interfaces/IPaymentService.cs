@@ -2,11 +2,11 @@ namespace ClimaSite.Application.Common.Interfaces;
 
 public interface IPaymentService
 {
-    Task<PaymentIntentResult> CreatePaymentIntentAsync(decimal amount, string currency = "eur", Dictionary<string, string>? metadata = null);
+    Task<PaymentIntentResult> CreatePaymentIntentAsync(decimal amount, string currency = "eur", Dictionary<string, string>? metadata = null, string? idempotencyKey = null, CancellationToken cancellationToken = default);
     Task<PaymentIntentResult> ConfirmPaymentIntentAsync(string paymentIntentId);
     Task<PaymentIntentResult> CancelPaymentIntentAsync(string paymentIntentId);
     Task<PaymentIntentResult> GetPaymentIntentAsync(string paymentIntentId);
-    Task<PaymentIntentResult> RefundAsync(string paymentIntentId, CancellationToken cancellationToken = default);
+    Task<PaymentIntentResult> RefundAsync(string paymentIntentId, string? idempotencyKey = null, CancellationToken cancellationToken = default);
 }
 
 public record PaymentIntentResult

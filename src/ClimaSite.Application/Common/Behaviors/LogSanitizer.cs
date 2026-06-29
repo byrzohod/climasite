@@ -30,11 +30,12 @@ public static class LogSanitizer
 
     // Case-insensitive substrings. "token" covers IdToken/RefreshToken/AccessToken/ShareToken;
     // "secret" covers ClientSecret/WebhookSecret; "session" covers GuestSessionId/SessionId (bearer-like
-    // keys for anonymous cart/checkout); "card" covers CardNumber/CreditCard.
+    // keys for anonymous cart/checkout); "card" covers CardNumber/CreditCard; "idempotency" covers
+    // CreatePaymentIntentCommand.IdempotencyKey (it gates a Stripe clientSecret on replay → treat as secret).
     private static readonly string[] SensitiveMarkers =
     {
         "password", "token", "secret", "session", "card", "cvc", "cvv", "pin",
-        "apikey", "credential", "authorization", "cookie"
+        "apikey", "credential", "authorization", "cookie", "idempotency"
     };
 
     private static readonly ConcurrentDictionary<Type, PropertyInfo[]> PropertyCache = new();

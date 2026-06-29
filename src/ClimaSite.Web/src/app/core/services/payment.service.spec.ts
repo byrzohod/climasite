@@ -194,6 +194,25 @@ describe('PaymentService', () => {
       req.flush(mockIntentResponse);
     });
 
+    it('should include the per-attempt idempotency key in the POST body when provided', () => {
+      service.createPaymentIntent('express', 'sess_guest_2', 'attempt-key-123').subscribe();
+
+      const req = httpMock.expectOne(createIntentUrl);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body.idempotencyKey).toBe('attempt-key-123');
+      expect(req.request.body.shippingMethod).toBe('express');
+      expect(req.request.body.guestSessionId).toBe('sess_guest_2');
+      req.flush(mockIntentResponse);
+    });
+
+    it('should not include an idempotency key field when none is provided', () => {
+      service.createPaymentIntent('standard', 'sess_guest_3').subscribe();
+
+      const req = httpMock.expectOne(createIntentUrl);
+      expect('idempotencyKey' in req.request.body).toBeFalse();
+      req.flush(mockIntentResponse);
+    });
+
     it('should expose the server-computed amount and currency on the response', () => {
       let result: PaymentIntentResponse | undefined;
       service.createPaymentIntent('standard').subscribe(res => { result = res; });

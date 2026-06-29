@@ -2,6 +2,7 @@ using System.Globalization;
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Models;
 using ClimaSite.Application.Common.Options;
+using ClimaSite.Application.Common.Payments;
 using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Orders.DTOs;
 using ClimaSite.Application.Features.Outbox;
@@ -367,7 +368,10 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
                     return;
                 }
 
-                var refund = await _paymentService.RefundAsync(paymentIntentId, cancellationToken);
+                var refund = await _paymentService.RefundAsync(
+                    paymentIntentId,
+                    PaymentIdempotency.ForRefund(paymentIntentId),
+                    cancellationToken: cancellationToken);
                 if (!refund.Succeeded)
                 {
                     _logger.LogError(

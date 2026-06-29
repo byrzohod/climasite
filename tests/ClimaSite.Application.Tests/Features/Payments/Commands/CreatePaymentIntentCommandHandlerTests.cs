@@ -1,4 +1,5 @@
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Payments;
 using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Payments.Commands;
 using ClimaSite.Application.Tests.TestHelpers;
@@ -47,8 +48,8 @@ public class CreatePaymentIntentCommandHandlerTests
         string? capturedCurrency = null;
         _paymentServiceMock
             .Setup(x => x.CreatePaymentIntentAsync(
-                It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
-            .Callback<decimal, string, Dictionary<string, string>?>((amount, currency, _) =>
+                It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Callback<decimal, string, Dictionary<string, string>?, string?, CancellationToken>((amount, currency, _, _, _) =>
             {
                 capturedAmount = amount;
                 capturedCurrency = currency;
@@ -91,7 +92,7 @@ public class CreatePaymentIntentCommandHandlerTests
 
         _paymentServiceMock
             .Setup(x => x.CreatePaymentIntentAsync(
-                It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
+                It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(PaymentIntentResult.Success("pi_guest", "pi_guest_secret", "requires_payment_method"));
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns((Guid?)null);
@@ -129,7 +130,7 @@ public class CreatePaymentIntentCommandHandlerTests
         result.IsSuccess.Should().BeFalse();
         result.Error.Should().Be("Cart is empty");
         _paymentServiceMock.Verify(
-            x => x.CreatePaymentIntentAsync(It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()),
+            x => x.CreatePaymentIntentAsync(It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -186,6 +187,160 @@ public class CreatePaymentIntentCommandHandlerTests
     {
         var validator = new CreatePaymentIntentCommandValidator();
         var command = new CreatePaymentIntentCommand { ShippingMethod = method };
+
+        var result = validator.Validate(command);
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Handle_WhenIdempotencyKeySupplied_ForwardsNamespacedKeyToPaymentService()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var product = CreateProduct();
+        var variant = product.Variants.First();
+
+        var cart = new Cart(userId, null);
+        cart.AddItem(product.Id, variant.Id, 1, 100m);
+
+        _context.AddProduct(product);
+        _context.AddCart(cart);
+
+        string? capturedKey = null;
+        _paymentServiceMock
+            .Setup(x => x.CreatePaymentIntentAsync(
+                It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Callback<decimal, string, Dictionary<string, string>?, string?, CancellationToken>((_, _, _, key, _) => capturedKey = key)
+            .ReturnsAsync(PaymentIntentResult.Success("pi_idem", "pi_idem_secret", "requires_payment_method"));
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        var handler = CreateHandler();
+        var clientKey = Guid.NewGuid().ToString("N");
+        var command = new CreatePaymentIntentCommand
+        {
+            ShippingMethod = "standard",
+            IdempotencyKey = clientKey
+        };
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert: the handler namespaces the client key with "ci_" before forwarding it.
+        result.IsSuccess.Should().BeTrue();
+        capturedKey.Should().Be("ci_" + clientKey);
+    }
+
+    [Fact]
+    public async Task Handle_WhenNoIdempotencyKey_ForwardsNullToPaymentService()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var product = CreateProduct();
+        var variant = product.Variants.First();
+
+        var cart = new Cart(userId, null);
+        cart.AddItem(product.Id, variant.Id, 1, 100m);
+
+        _context.AddProduct(product);
+        _context.AddCart(cart);
+
+        string? capturedKey = "sentinel";
+        _paymentServiceMock
+            .Setup(x => x.CreatePaymentIntentAsync(
+                It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Callback<decimal, string, Dictionary<string, string>?, string?, CancellationToken>((_, _, _, key, _) => capturedKey = key)
+            .ReturnsAsync(PaymentIntentResult.Success("pi_nokey", "pi_nokey_secret", "requires_payment_method"));
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        var handler = CreateHandler();
+        var command = new CreatePaymentIntentCommand { ShippingMethod = "standard" };
+
+        // Act
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // Assert: absent key degrades to today's no-dedup behaviour (null forwarded).
+        result.IsSuccess.Should().BeTrue();
+        capturedKey.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_PropagatesCancellationTokenToPaymentService()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var product = CreateProduct();
+        var variant = product.Variants.First();
+
+        var cart = new Cart(userId, null);
+        cart.AddItem(product.Id, variant.Id, 1, 100m);
+
+        _context.AddProduct(product);
+        _context.AddCart(cart);
+
+        CancellationToken capturedToken = default;
+        _paymentServiceMock
+            .Setup(x => x.CreatePaymentIntentAsync(
+                It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Callback<decimal, string, Dictionary<string, string>?, string?, CancellationToken>((_, _, _, _, ct) => capturedToken = ct)
+            .ReturnsAsync(PaymentIntentResult.Success("pi_ct", "pi_ct_secret", "requires_payment_method"));
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        var handler = CreateHandler();
+        var command = new CreatePaymentIntentCommand { ShippingMethod = "standard" };
+
+        using var cts = new CancellationTokenSource();
+        var token = cts.Token;
+
+        // Act
+        var result = await handler.Handle(command, token);
+
+        // Assert: the handler threads the request CancellationToken straight through to the payment
+        // service (symmetry with RefundAsync, which already takes one — B-061). Assert the EXACT token.
+        result.IsSuccess.Should().BeTrue();
+        capturedToken.Should().Be(token);
+        _paymentServiceMock.Verify(
+            x => x.CreatePaymentIntentAsync(
+                It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(), It.IsAny<string?>(), token),
+            Times.Once);
+    }
+
+    [Fact]
+    public void Validator_WhenIdempotencyKeyMalformed_ReturnsValidationError()
+    {
+        var validator = new CreatePaymentIntentCommandValidator();
+        var command = new CreatePaymentIntentCommand
+        {
+            ShippingMethod = "standard",
+            IdempotencyKey = "bad key!" // contains a space and a '!'
+        };
+
+        var result = validator.Validate(command);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.PropertyName == nameof(CreatePaymentIntentCommand.IdempotencyKey));
+    }
+
+    [Fact]
+    public void Validator_WhenIdempotencyKeyNull_IsValid()
+    {
+        var validator = new CreatePaymentIntentCommandValidator();
+        var command = new CreatePaymentIntentCommand { ShippingMethod = "standard", IdempotencyKey = null };
+
+        var result = validator.Validate(command);
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Validator_WhenIdempotencyKeyIsValidUuid_IsValid()
+    {
+        var validator = new CreatePaymentIntentCommandValidator();
+        var command = new CreatePaymentIntentCommand
+        {
+            ShippingMethod = "standard",
+            IdempotencyKey = Guid.NewGuid().ToString()
+        };
 
         var result = validator.Validate(command);
 

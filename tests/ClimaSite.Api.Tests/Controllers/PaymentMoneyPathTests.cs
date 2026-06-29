@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using ClimaSite.Api.Tests.Infrastructure;
+using ClimaSite.Application.Common.Payments;
 using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Orders.DTOs;
 using ClimaSite.Application.Features.Payments.Commands;
@@ -340,6 +341,238 @@ public class PaymentMoneyPathTests : IntegrationTestBase
         // ...and the owner-only by-id endpoint still rejects anonymous access (SEC-02 intact).
         var byId = await Client.GetAsync($"/api/orders/{order.Id}");
         byId.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task CreateIntent_WithIdempotencyKey_RecordsTheNamespacedKey()
+    {
+        // Arrange
+        var guestSessionId = Guid.NewGuid().ToString();
+        var (product, variant) = await CreateTestProductWithVariantAsync(basePrice: 100m);
+        await AddToCartAsync(product.Id, variant.Id, 1, guestSessionId);
+
+        var clientKey = Guid.NewGuid().ToString("N");
+
+        // Act
+        var intentResponse = await Client.PostAsJsonAsync("/api/payments/create-intent", new
+        {
+            shippingMethod = "standard",
+            guestSessionId,
+            idempotencyKey = clientKey
+        });
+
+        // Assert: the service received the "ci_"-namespaced client key.
+        intentResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        Factory.PaymentService.LastCreateIdempotencyKey.Should().Be("ci_" + clientKey);
+        Factory.PaymentService.CreateIdempotencyKeys.Should().ContainSingle()
+            .Which.Should().Be("ci_" + clientKey);
+    }
+
+    [Fact]
+    public async Task CreateIntent_TwiceWithSameKeyAndCart_ReturnsTheSameIntent()
+    {
+        // Arrange
+        var guestSessionId = Guid.NewGuid().ToString();
+        var (product, variant) = await CreateTestProductWithVariantAsync(basePrice: 100m);
+        await AddToCartAsync(product.Id, variant.Id, 2, guestSessionId);
+
+        var clientKey = Guid.NewGuid().ToString("N");
+        object Body() => new { shippingMethod = "standard", guestSessionId, idempotencyKey = clientKey };
+
+        // Act: two create-intent calls with the SAME key and unchanged cart.
+        var first = await Client.PostAsJsonAsync("/api/payments/create-intent", Body());
+        var second = await Client.PostAsJsonAsync("/api/payments/create-intent", Body());
+
+        // Assert: Stripe-style dedup -> the same PaymentIntent id is returned.
+        first.StatusCode.Should().Be(HttpStatusCode.OK);
+        second.StatusCode.Should().Be(HttpStatusCode.OK);
+        var firstIntent = await first.Content.ReadFromJsonAsync<CreateIntentResponse>();
+        var secondIntent = await second.Content.ReadFromJsonAsync<CreateIntentResponse>();
+
+        secondIntent!.PaymentIntentId.Should().Be(firstIntent!.PaymentIntentId);
+        // Only one underlying intent was created despite two POSTs.
+        Factory.PaymentService.CreatedIntents.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task CreateIntent_TwiceWithDifferentKeys_ReturnsDifferentIntents()
+    {
+        // Arrange
+        var guestSessionId = Guid.NewGuid().ToString();
+        var (product, variant) = await CreateTestProductWithVariantAsync(basePrice: 100m);
+        await AddToCartAsync(product.Id, variant.Id, 1, guestSessionId);
+
+        // Act: two create-intent calls with DIFFERENT keys (a user retry after failure).
+        var first = await Client.PostAsJsonAsync("/api/payments/create-intent", new
+        {
+            shippingMethod = "standard",
+            guestSessionId,
+            idempotencyKey = Guid.NewGuid().ToString("N")
+        });
+        var second = await Client.PostAsJsonAsync("/api/payments/create-intent", new
+        {
+            shippingMethod = "standard",
+            guestSessionId,
+            idempotencyKey = Guid.NewGuid().ToString("N")
+        });
+
+        // Assert: a fresh attempt key yields a fresh intent (closes the refund-replay [High]).
+        first.StatusCode.Should().Be(HttpStatusCode.OK);
+        second.StatusCode.Should().Be(HttpStatusCode.OK);
+        var firstIntent = await first.Content.ReadFromJsonAsync<CreateIntentResponse>();
+        var secondIntent = await second.Content.ReadFromJsonAsync<CreateIntentResponse>();
+        secondIntent!.PaymentIntentId.Should().NotBe(firstIntent!.PaymentIntentId);
+        Factory.PaymentService.CreatedIntents.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task CreateOrder_WhenVariantOutOfStock_RefundsWithDeterministicKey()
+    {
+        // Arrange: a verified, correctly-charged intent that becomes orphaned when stock drains.
+        var guestSessionId = Guid.NewGuid().ToString();
+        var (product, variant) = await CreateTestProductWithVariantAsync(basePrice: 100m, stockQuantity: 1);
+        await AddToCartAsync(product.Id, variant.Id, 1, guestSessionId);
+
+        var intentResponse = await Client.PostAsJsonAsync("/api/payments/create-intent", new
+        {
+            shippingMethod = "standard",
+            guestSessionId,
+            idempotencyKey = Guid.NewGuid().ToString("N")
+        });
+        var intent = await intentResponse.Content.ReadFromJsonAsync<CreateIntentResponse>();
+        intent.Should().NotBeNull();
+
+        await SetVariantStockAsync(variant.Id, 0);
+
+        // Act
+        var orderResponse = await Client.PostAsJsonAsync("/api/orders", new
+        {
+            customerEmail = "refund-idem@test.com",
+            shippingAddress = ValidAddress(),
+            shippingMethod = "standard",
+            paymentIntentId = intent!.PaymentIntentId,
+            paymentMethod = "card",
+            guestSessionId
+        });
+
+        // Assert: the orphaned charge is refunded with the deterministic server-derived key.
+        orderResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Factory.PaymentService.Refunds.Should().ContainSingle()
+            .Which.Should().Be(intent.PaymentIntentId);
+        Factory.PaymentService.RefundIdempotencyKeys.Should().ContainSingle()
+            .Which.Should().Be(PaymentIdempotency.ForRefund(intent.PaymentIntentId));
+    }
+
+    [Fact]
+    public async Task CreateIntent_TwiceWithSameKeyButChangedCart_ReturnsBadRequest()
+    {
+        // Real Stripe rejects a reused idempotency key when ANY create param differs (it hashes the
+        // whole request body). Here the SAME key is sent twice but the server-computed total changes
+        // (a different shipping method => different amount + metadata), so the Fake returns the
+        // param-mismatch failure -> the handler fails -> 400, and no second intent is minted.
+        var guestSessionId = Guid.NewGuid().ToString();
+        var (product, variant) = await CreateTestProductWithVariantAsync(basePrice: 100m);
+        await AddToCartAsync(product.Id, variant.Id, 1, guestSessionId); // subtotal 100 (>=€50)
+
+        var clientKey = Guid.NewGuid().ToString("N");
+
+        // First: standard shipping (free at this subtotal).
+        var first = await Client.PostAsJsonAsync("/api/payments/create-intent", new
+        {
+            shippingMethod = "standard",
+            guestSessionId,
+            idempotencyKey = clientKey
+        });
+        first.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Second: SAME key, but express shipping changes the server-computed total (+€15.99).
+        var second = await Client.PostAsJsonAsync("/api/payments/create-intent", new
+        {
+            shippingMethod = "express",
+            guestSessionId,
+            idempotencyKey = clientKey
+        });
+
+        second.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        // Only the first intent was created; the mismatched replay never minted a second.
+        Factory.PaymentService.CreatedIntents.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task ChargeRefundRetry_AfterRefund_IssuesAFreshIntentForTheNewAttempt()
+    {
+        // The regression this whole unit exists to prevent (and that the rejected cart-state-key design
+        // would FAIL): a charge that is refunded on a post-charge failure must NOT be replayed on the
+        // buyer's next attempt. Attempt 1 charges (key A) then fails out-of-stock -> the intent is
+        // refunded; attempt 2 is a new click (key B) on the UNCHANGED cart -> a brand-new intent.
+        var guestSessionId = Guid.NewGuid().ToString();
+        var (product, variant) = await CreateTestProductWithVariantAsync(basePrice: 100m, stockQuantity: 1);
+        await AddToCartAsync(product.Id, variant.Id, 1, guestSessionId);
+
+        // Attempt 1: create the intent (key A), then drain stock so order creation fails post-charge.
+        var firstIntentResponse = await Client.PostAsJsonAsync("/api/payments/create-intent", new
+        {
+            shippingMethod = "standard",
+            guestSessionId,
+            idempotencyKey = Guid.NewGuid().ToString("N")
+        });
+        firstIntentResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var firstIntent = await firstIntentResponse.Content.ReadFromJsonAsync<CreateIntentResponse>();
+        firstIntent.Should().NotBeNull();
+
+        await SetVariantStockAsync(variant.Id, 0);
+
+        var orderResponse = await Client.PostAsJsonAsync("/api/orders", new
+        {
+            customerEmail = "charge-refund-retry@test.com",
+            shippingAddress = ValidAddress(),
+            shippingMethod = "standard",
+            paymentIntentId = firstIntent!.PaymentIntentId,
+            paymentMethod = "card",
+            guestSessionId
+        });
+
+        // The orphaned charge is refunded (BUG-04) and the order is rejected.
+        orderResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        Factory.PaymentService.Refunds.Should().ContainSingle()
+            .Which.Should().Be(firstIntent.PaymentIntentId);
+
+        // Attempt 2: the buyer retries. A NEW per-attempt key on the (still-unchanged) cart must mint a
+        // brand-new intent, never replay the refunded one.
+        var secondIntentResponse = await Client.PostAsJsonAsync("/api/payments/create-intent", new
+        {
+            shippingMethod = "standard",
+            guestSessionId,
+            idempotencyKey = Guid.NewGuid().ToString("N")
+        });
+        secondIntentResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var secondIntent = await secondIntentResponse.Content.ReadFromJsonAsync<CreateIntentResponse>();
+
+        secondIntent!.PaymentIntentId.Should().NotBe(firstIntent.PaymentIntentId);
+        // Two distinct intents were created (the refunded one + the fresh retry); the refund stands.
+        Factory.PaymentService.CreatedIntents.Should().HaveCount(2);
+        Factory.PaymentService.CreatedIntents.Keys.Should().Contain(firstIntent.PaymentIntentId);
+        Factory.PaymentService.CreatedIntents.Keys.Should().Contain(secondIntent.PaymentIntentId);
+    }
+
+    [Fact]
+    public async Task CreateIntent_WithMalformedIdempotencyKey_ReturnsBadRequest()
+    {
+        // The per-attempt key is bounded to [A-Za-z0-9_-]{8,200} before it can reach Stripe; a key
+        // with a space and '!' is rejected by the validator -> 400 (defence-in-depth on a
+        // client-controlled value that is forwarded to the Stripe API).
+        var guestSessionId = Guid.NewGuid().ToString();
+        var (product, variant) = await CreateTestProductWithVariantAsync(basePrice: 100m);
+        await AddToCartAsync(product.Id, variant.Id, 1, guestSessionId);
+
+        var response = await Client.PostAsJsonAsync("/api/payments/create-intent", new
+        {
+            shippingMethod = "standard",
+            guestSessionId,
+            idempotencyKey = "bad key!"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     #region Helpers
