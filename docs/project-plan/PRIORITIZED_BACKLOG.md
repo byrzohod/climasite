@@ -9,6 +9,10 @@
 
 ---
 
+> **External multi-agent review (2026-06-28) — triaged + council-verified.** A 12-dimension external code review (`/Users/sarkisharalampiev/Projects/climasite-review-20260628-211745`) was re-checked against the live code by 14 skeptical verifiers, with a Codex `gpt-5.5` cross-check of the high-stakes cluster. See **[`EXTERNAL_REVIEW_TRIAGE.md`](EXTERNAL_REVIEW_TRIAGE.md)** for the full 61-item register (57 CONFIRMED / 3 PARTIAL / 1 ALREADY_FIXED; post-council **2 High, 32 Medium, 25 Low, 2 None**). It largely **validates this backlog and attaches `file:line` evidence** to existing items (e.g. B-011→SEC-05, B-002→BUG-06 admin slice, B-040→SEC-09, B-046→SEC-04, B-006→BUG-08, B-043→BUG-12, B-013/B-019→PERF-01, B-027/B-028→SEC-14, B-004/B-017→OPS-07, B-045→OPS-04, B-024→SEC-07, B-022→SEC-08) — it is **not a new parallel backlog**. The genuinely-new confirmed items are registered in [§ External review — newly-tracked items](#external-review--newly-tracked-items-2026-06-28-triaged) below. Only **two** items are post-council High: **B-011** (committed JWT fallback secret = SEC-05) and **B-002** (admin price inversion = BUG-06 admin slice); council fix-first = **B-011**.
+
+---
+
 ## Blocking decisions (resolve early — they gate the tasks that cite them)
 
 Per the owner's standing convention, these are **owner decisions**, recorded as ADRs (`docs/adr/`). Full context in `DECISIONS.md` §3.
@@ -784,6 +788,41 @@ Detail: `_review/docs.md` (incl. the full per-file Disposition Table) and `_revi
 - **Affected:** `.claude/agents/*`, `.claude/skills/*`, `.claude/settings.json` + `hooks/`, `.github/workflows/*`, `docs/features/*`, `CLAUDE.md`, `DEV_WORKFLOW.md`.
 - **Acceptance:** Each of the 7 waves lands as its own green-CI PR; the eight-phase pipeline is documented (`docs/features/README.md`) and dogfooded; hard gates (Wave 2 hooks, Wave 3 coverage, Wave 6 real-card E2E) enforce the phases. Owner-approved pauses before flipping any gate that could block all future PRs.
 - **Depends on:** None (foundational). Waves are sequential (each builds on the prior).
+
+---
+
+## External review — newly-tracked items (2026-06-28, triaged)
+
+These are the **genuinely-new, CONFIRMED-real** findings from the 2026-06-28 external review that **no existing `SEC/BUG/GAP/OPS/UX/PERF/ARCH/TS/DOC` task already tracks** — full triage + council notes in [`EXTERNAL_REVIEW_TRIAGE.md`](EXTERNAL_REVIEW_TRIAGE.md). IDs keep their review `B-nnn` and carry a suggested home. **All B-IDs that map onto an existing task are NOT re-listed here** — the register cross-references them (e.g. B-005→UX-01, B-036→PERF-02, B-041→UX-03, B-018→UX-05, B-060→UX-06, B-008→ARCH-04/SR-18, B-003→SEC-12, B-058→OPS-06, B-059→TS-16, B-051→ARCH-03). Nothing is deployed yet (OPS-08), so deploy-conditional items are latent.
+
+### NEW-BUG (functional defects)
+- **B-007 (Medium, XS):** Order confirmation/shipped email CTAs build `/account/orders/$<guid>` — the literal `$` in `$"…/${orderId}"` breaks the link to a 404 (`EmailService.cs:66,76`; only fires when `Email:UsePlaceholder=false`). **Fix:** drop the stray `$` → `{orderId}`; assert the rendered body contains `/account/orders/{guid}` and not `/$`.
+- **B-016 (Medium, M):** Recommendation scoring reads canonical spec keys (`btu`,`isInverter`,`noiseLevel`,…) that `DataSeeder` never emits (it writes `"BTU"` int / `"Noise Level"` string), so HVAC fit-scoring silently collapses to fallback for display-key products (`RecommendationScoringService.cs:41` vs `DataSeeder.cs:247`; **council: seeding is Dev/Test-gated, not "100% of prod"**). **Fix:** enforce a canonical HVAC spec schema at the seed/import/admin boundary, or make the `Extract*` helpers alias-aware; add a recommendation test seeded via `DataSeeder`.
+- **B-038 (Medium, S):** `AnswerQuestionCommand.cs:74` calls `MarkAsAnswered()` on submission of a still-`Pending` public answer, so a question is flagged answered (hidden from the unanswered queue) while `AnswerCount` renders 0 (`GetProductQuestionsQuery.cs:32-41`). **Fix:** set `AnsweredAt` only on first approval, or recompute answered-state from `Answers.Any(a => a.Status == Approved)`.
+
+### NEW-UX / a11y (Definition-of-Done: keyboard + SR, both themes, EN/BG/DE)
+- **B-001 (Medium, S):** Address add/edit/delete dialogs hand-roll `.modal-overlay` with no `role=dialog`/`aria-modal`/Escape/focus-trap/restore (`addresses.component.ts:90,246`), unlike the shared `modal.component.ts`. **Fix:** render both via `<app-modal>` (Escape, focus-trap, focus-restore for free); add the 3 specs.
+- **B-014 (Medium, S):** Payment + shipping `<input type=radio>` are `display:none` (`checkout.component.ts` CSS:695), removing them from tab order + the a11y tree — keyboard/SR users are stuck on the preselected defaults. **Fix:** sr-only-but-focusable pattern with a visible focus ring; wrap each group in `role=radiogroup` with a group name.
+- **B-020 (Medium, S):** `cart.service.ts:107` `loadCart()` catchError sets an empty cart and never sets `_error`, so a network/5xx failure renders as an empty cart (the existing `cart-error` branch is unreachable). **Fix:** set `_error` (translation key) on transport/5xx, don't clobber a loaded cart; add a Retry; add the 3 specs.
+- **B-042 (Medium, S):** Saved-address cards in checkout are `<div (click)>` with no `role`/`tabindex`/keydown and selection conveyed visually only (`checkout.component.ts:84`). **Fix:** render as `<button>` (or `role=radio` in a `role=radiogroup`) with keyboard activation + `aria-checked`.
+- **B-049 (Low, XS):** Cart removal toast renders `"… - Undo"` text but passes no action callback; `undoRemoval()` exists but is never wired (`cart.component.ts:775,794`). **Fix:** wire the toast action to `undoRemoval(item.id)`, or remove the "Undo" copy until the action exists.
+- **B-033 (Low, XS):** `language.service.ts:40` `initializeTranslations()` calls `translate.use(initialLang)` but never sets `document.documentElement.lang`, so a returning bg/de user's first paint keeps `<html lang="en">` (SEO + SR pronunciation). **Fix:** set `documentElement.lang = initialLang` on init; add stored-`bg`/`de` specs.
+
+### NEW-SEC (hardening — low individual stakes)
+- **B-034 (Medium, XS):** `POST api/installation/requests` is anonymous with no `[EnableRateLimiting]`, so a PII lead form + outbox email is throttled only by the global 100/min/IP (`InstallationController.cs:33`), vs contact's 5/min `strict`. **Fix:** add `[EnableRateLimiting("strict")]` + an integration test (Nth POST → 429).
+- **B-039 (Medium, M):** Q&A vote endpoints (`QuestionsController.cs:115,126`) have no `[Authorize]`, no voter identity, no `QuestionVote`/`AnswerVote` ledger — counts are freely inflatable by repeated anonymous POSTs (reviews already have a per-voter ledger). **Fix:** mirror `ReviewVote` (per-voter or anon-token ledger, idempotent/toggleable, uniqueness enforced).
+- **B-029 (Low, S):** Generic contact/installation email bodies concatenate raw user `Name/Email/Message` and are sent with `IsBodyHtml=true` unescaped (`CreateContactMessageCommand.cs:59` / `EmailService.cs:127`), unlike the order/welcome templates which `EscapeHtml`. Recipient is the internal business address (no JS exec) → Low. **Fix:** send Generic bodies as `text/plain`, or `HtmlEncode` the user fields.
+- **B-055 (Low, XS):** `CorrelationIdMiddleware.cs:22` accepts the first inbound `X-Correlation-Id` with no length/charset bound, then echoes + log-pushes it verbatim (log-forging, oversized-id bloat). **Fix:** validate against `^[A-Za-z0-9._-]{1,128}$`, else fall back to a new GUID, before echo/`PushProperty`.
+
+### NEW-SEO
+- **B-044 (Medium, M/L):** No `robots.txt`/`sitemap.xml`; `provideRouter` has no `TitleStrategy`/Meta/canonical; product/category/legal routes get no dynamic title or description; `StructuredDataService` is unwired; `index.html:5` title is brand-inconsistent (`app.config.ts:30`). *(PERF-07 covers the per-route meta slice only.)* **Fix:** add robots.txt + sitemap.xml, a `TitleStrategy` + small `SeoService` (title/meta/canonical), wire `StructuredDataService` into home/product/legal/FAQ, correct the `index.html` title. SSR-limited without prerender.
+- **B-048 (Low, XS):** Breadcrumb JSON-LD is emitted via a component-template `<script>` (`breadcrumb.component.ts:77`) while the head-level `StructuredDataService` sits unused — risks duplicate/inconsistent structured data. **Fix:** move emission into `StructuredDataService` (stable id for de-dup), drop the template `<script>`; couple with B-044.
+
+### NEW-CHORE (tech-debt / tooling)
+- **B-053 (Low, S):** Guest cart expiry is enforced on read only (`GetCartQuery.cs:41`); no cleanup job exists, so expired guest carts persist indefinitely (bloat + retention angle). **Fix:** add a `BackgroundService` batch-deleting carts where `UserId IS NULL AND ExpiresAt<now`; **council: also enforce `ExpiresAt` on cart writes** (`AddToCartCommand.cs:134` currently resurrects expired carts).
+- **B-047 (Low, XS):** `src/assets/config.json` (`{ "apiUrl":"/api" }`) advertises runtime API config but is referenced nowhere (services read `environment.apiUrl`) — an operator edit-trap. **Fix:** delete it (+ the dist copy), or wire a real runtime-config app-initializer; document the single config path.
+- **B-056 (Low, S):** `specs-table.component.ts:8` and `share-product.component.ts:64` accept/render icon strings via `[innerHTML]` — inputs are static today (Angular auto-sanitizes; no live XSS), but it's a data-driven-HTML API smell. **Fix:** accept a typed icon-name (or `ng-template` outlet) + a lint rule forbidding new data-driven `[innerHTML]`.
+- **B-026 (Low, S):** No single-command local E2E orchestrator (start API+web → healthcheck → run → teardown) and the card-E2E self-skip (`CardPaymentE2ETests.cs:83,117`) isn't surfaced in the CI Test Summary. **Fix:** add `scripts/e2e-local.sh`; emit a CI step-summary line when card E2E self-skips. *(The PAY-IDEM acceptance report is the in-flight unit's own pre-merge gate, not tracked here.)*
 
 ---
 
