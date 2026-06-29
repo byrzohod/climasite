@@ -178,7 +178,7 @@ docker run -d --name api-test \
   -p 8080:8080 \
   -e DATABASE_URL="postgresql://climasite:climasite_dev_password@host.docker.internal:5433/climasite" \
   -e REDIS_URL="redis://host.docker.internal:6379" \
-  -e JWT_SECRET="YourSuperSecretKeyThatIsAtLeast32CharactersLong!" \
+  -e JWT_SECRET="<set-a-real-32+char-JWT_SECRET>" \
   climasite-api:test
 
 # Verify API health

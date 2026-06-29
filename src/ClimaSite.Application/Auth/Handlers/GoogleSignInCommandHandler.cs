@@ -1,7 +1,4 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using System.Security.Cryptography;
-using System.Text;
 using ClimaSite.Application.Auth.Commands;
 using ClimaSite.Application.Auth.DTOs;
 using ClimaSite.Application.Common.Interfaces;
@@ -9,9 +6,7 @@ using ClimaSite.Application.Common.Models;
 using ClimaSite.Core.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 
 namespace ClimaSite.Application.Auth.Handlers;
 
@@ -27,18 +22,18 @@ public class GoogleSignInCommandHandler : IRequestHandler<GoogleSignInCommand, R
 
     private readonly IGoogleTokenValidator _googleTokenValidator;
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly IConfiguration _configuration;
+    private readonly ITokenService _tokenService;
     private readonly ILogger<GoogleSignInCommandHandler> _logger;
 
     public GoogleSignInCommandHandler(
         IGoogleTokenValidator googleTokenValidator,
         UserManager<ApplicationUser> userManager,
-        IConfiguration configuration,
+        ITokenService tokenService,
         ILogger<GoogleSignInCommandHandler> logger)
     {
         _googleTokenValidator = googleTokenValidator;
         _userManager = userManager;
-        _configuration = configuration;
+        _tokenService = tokenService;
         _logger = logger;
     }
 
@@ -76,7 +71,7 @@ public class GoogleSignInCommandHandler : IRequestHandler<GoogleSignInCommand, R
         await _userManager.UpdateAsync(applicationUser);
 
         var roles = await _userManager.GetRolesAsync(applicationUser);
-        var accessToken = GenerateAccessToken(applicationUser, roles);
+        var accessToken = _tokenService.GenerateAccessToken(applicationUser, roles);
         var refreshToken = GenerateRefreshToken();
 
         applicationUser.SetRefreshToken(refreshToken, DateTime.UtcNow.AddDays(7));
@@ -193,46 +188,6 @@ public class GoogleSignInCommandHandler : IRequestHandler<GoogleSignInCommand, R
 
     private static string DescribeErrors(IdentityResult result) =>
         string.Join(", ", result.Errors.Select(e => e.Description));
-
-    // Mirrors LoginCommandHandler so a Google session yields an identical app JWT.
-    private string GenerateAccessToken(ApplicationUser user, IList<string> roles)
-    {
-        var jwtSettings = _configuration.GetSection("JwtSettings");
-        var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET")
-            ?? jwtSettings["Secret"]
-            ?? throw new InvalidOperationException("JWT Secret not configured. Set JWT_SECRET or JwtSettings:Secret.");
-        var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER")
-            ?? jwtSettings["Issuer"]
-            ?? "https://localhost:5001";
-        var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE")
-            ?? jwtSettings["Audience"]
-            ?? "https://localhost:4200";
-
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new(ClaimTypes.Email, user.Email!),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new("firstName", user.FirstName),
-            new("lastName", user.LastName)
-        };
-
-        claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
-
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
-        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-        var expires = DateTime.UtcNow.AddMinutes(int.Parse(jwtSettings["AccessTokenExpirationMinutes"] ?? "15"));
-
-        var token = new JwtSecurityToken(
-            issuer: issuer,
-            audience: audience,
-            claims: claims,
-            expires: expires,
-            signingCredentials: credentials
-        );
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
-    }
 
     private static string GenerateRefreshToken()
     {

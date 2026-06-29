@@ -1,11 +1,9 @@
-using System.IdentityModel.Tokens.Jwt;
 using ClimaSite.Application.Auth.Commands;
 using ClimaSite.Application.Auth.Handlers;
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Core.Entities;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -13,15 +11,16 @@ namespace ClimaSite.Application.Tests.Auth.Handlers;
 
 public class GoogleSignInCommandHandlerTests
 {
-    // Secret must be >= 32 chars for HMAC-SHA256 token signing.
-    private const string JwtSecret = "test-secret-key-that-is-at-least-32-bytes-long!!";
-    private const string JwtIssuer = "https://test-issuer";
-    private const string JwtAudience = "https://test-audience";
+    // Access-token minting is delegated to ITokenService (SEC-05/B-011); token content is covered in
+    // TokenServiceTests. Here we assert resolution/linking behaviour and that a successful sign-in
+    // surfaces the service token.
+    private const string KnownAccessToken = "google.access.token";
 
     private const string GoogleSubject = "google-subject-123";
     private const string GoogleEmail = "google.user@example.com";
 
     private readonly Mock<IGoogleTokenValidator> _validatorMock = new();
+    private readonly Mock<ITokenService> _tokenServiceMock = new();
     private readonly Mock<UserManager<ApplicationUser>> _userManagerMock;
     private readonly GoogleSignInCommandHandler _handler;
 
@@ -31,12 +30,16 @@ public class GoogleSignInCommandHandlerTests
             Mock.Of<IUserStore<ApplicationUser>>(), null!, null!, null!, null!, null!, null!, null!, null!);
         var logger = new Mock<ILogger<GoogleSignInCommandHandler>>();
 
+        _tokenServiceMock
+            .Setup(x => x.GenerateAccessToken(It.IsAny<ApplicationUser>(), It.IsAny<IList<string>>()))
+            .Returns(KnownAccessToken);
+
         _handler = new GoogleSignInCommandHandler(
-            _validatorMock.Object, _userManagerMock.Object, BuildConfiguration(), logger.Object);
+            _validatorMock.Object, _userManagerMock.Object, _tokenServiceMock.Object, logger.Object);
     }
 
     [Fact]
-    public async Task Handle_WithNewGoogleUser_CreatesUserAndReturnsTokens()
+    public async Task Handle_WithNewGoogleUser_CreatesUserAndReturnsServiceToken()
     {
         // Arrange
         ValidatorReturns(VerifiedGoogleUser());
@@ -54,17 +57,18 @@ public class GoogleSignInCommandHandlerTests
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value!.AccessToken.Should().NotBeNullOrWhiteSpace();
+        result.Value!.AccessToken.Should().Be(KnownAccessToken);
         result.Value.RefreshToken.Should().NotBeNullOrWhiteSpace();
         result.Value.User.Email.Should().Be(GoogleEmail);
         result.Value.User.FirstName.Should().Be("Goog");
         result.Value.User.LastName.Should().Be("User");
         result.Value.User.Role.Should().Be("Customer");
 
-        // The access token is a real JWT signed with the configured issuer/audience.
-        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(result.Value.AccessToken);
-        jwt.Issuer.Should().Be(JwtIssuer);
-        jwt.Audiences.Should().Contain(JwtAudience);
+        // The access token comes from ITokenService, called with the resolved user + its roles.
+        _tokenServiceMock.Verify(
+            x => x.GenerateAccessToken(It.Is<ApplicationUser>(u => u.Email == GoogleEmail),
+                It.Is<IList<string>>(r => r.Contains("Customer"))),
+            Times.Once);
 
         // The new account is created exactly once and the Google login is attached to it.
         _userManagerMock.Verify(x => x.CreateAsync(It.Is<ApplicationUser>(u =>
@@ -88,7 +92,8 @@ public class GoogleSignInCommandHandlerTests
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value!.User.Email.Should().Be(existing.Email);
+        result.Value!.AccessToken.Should().Be(KnownAccessToken);
+        result.Value.User.Email.Should().Be(existing.Email);
         existing.LastLoginAt.Should().NotBeNull();
 
         _userManagerMock.Verify(x => x.FindByEmailAsync(It.IsAny<string>()), Times.Never);
@@ -136,9 +141,11 @@ public class GoogleSignInCommandHandlerTests
         var result = await _handler.Handle(new GoogleSignInCommand("id-token"), CancellationToken.None);
 
         result.IsSuccess.Should().BeFalse();
-        // No link, no duplicate account — the attacker's account is left untouched and no session is issued.
+        // No link, no duplicate account, no token — the attacker's account is left untouched.
         _userManagerMock.Verify(x => x.AddLoginAsync(It.IsAny<ApplicationUser>(), It.IsAny<UserLoginInfo>()), Times.Never);
         _userManagerMock.Verify(x => x.CreateAsync(It.IsAny<ApplicationUser>()), Times.Never);
+        _tokenServiceMock.Verify(
+            x => x.GenerateAccessToken(It.IsAny<ApplicationUser>(), It.IsAny<IList<string>>()), Times.Never);
     }
 
     [Fact]
@@ -178,17 +185,6 @@ public class GoogleSignInCommandHandlerTests
 
     private static GoogleUserInfo VerifiedGoogleUser() =>
         new(GoogleSubject, GoogleEmail, EmailVerified: true, "Goog", "User", "https://example.com/p.png");
-
-    private static IConfiguration BuildConfiguration() =>
-        new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["JwtSettings:Secret"] = JwtSecret,
-                ["JwtSettings:Issuer"] = JwtIssuer,
-                ["JwtSettings:Audience"] = JwtAudience,
-                ["JwtSettings:AccessTokenExpirationMinutes"] = "15"
-            })
-            .Build();
 
     private static ApplicationUser CreateTestUser() =>
         new()

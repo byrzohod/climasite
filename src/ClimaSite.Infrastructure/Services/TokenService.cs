@@ -3,47 +3,44 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Options;
 using ClimaSite.Core.Entities;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace ClimaSite.Infrastructure.Services;
 
 public class TokenService : ITokenService
 {
-    private readonly IConfiguration _configuration;
     private readonly string _secretKey;
     private readonly string _issuer;
     private readonly string _audience;
     private readonly int _accessTokenExpirationMinutes;
 
-    public TokenService(IConfiguration configuration)
+    public TokenService(IOptions<JwtOptions> jwtOptions)
     {
-        _configuration = configuration;
-        // Prefer environment variables (Railway), fallback to config
-        _secretKey = Environment.GetEnvironmentVariable("JWT_SECRET")
-            ?? _configuration["JwtSettings:Secret"]
-            ?? throw new InvalidOperationException("JWT Secret not configured. Set JWT_SECRET or JwtSettings:Secret.");
-        _issuer = Environment.GetEnvironmentVariable("JWT_ISSUER")
-            ?? _configuration["JwtSettings:Issuer"]
-            ?? "https://climasite.local";
-        _audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE")
-            ?? _configuration["JwtSettings:Audience"]
-            ?? "https://climasite.local";
-        _accessTokenExpirationMinutes = int.Parse(_configuration["JwtSettings:AccessTokenExpirationMinutes"] ?? "15");
+        // SEC-05 / B-011: secret/issuer/audience are resolved + validated ONCE at startup and bound into
+        // JwtOptions, so issuance here uses the SAME values as bearer validation — no direct config/env
+        // reads, no divergent fallback defaults.
+        var options = jwtOptions.Value;
+        _secretKey = options.Secret;
+        _issuer = options.Issuer;
+        _audience = options.Audience;
+        _accessTokenExpirationMinutes = options.AccessTokenExpirationMinutes;
     }
 
     public string GenerateAccessToken(ApplicationUser user, IList<string> roles)
     {
+        // Live claim shape (matches the former handler-local generators): the backend reads
+        // NameIdentifier + Role, the SPA uses the response body. firstName/lastName are the custom
+        // claims the handlers emitted; the old GivenName/Surname/preferred_* claims were dead.
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Email, user.Email ?? string.Empty),
-            new(ClaimTypes.GivenName, user.FirstName),
-            new(ClaimTypes.Surname, user.LastName),
-            new("preferred_language", user.PreferredLanguage),
-            new("preferred_currency", user.PreferredCurrency),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new("firstName", user.FirstName),
+            new("lastName", user.LastName)
         };
 
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));

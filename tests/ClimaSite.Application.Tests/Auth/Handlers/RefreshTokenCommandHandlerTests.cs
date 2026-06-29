@@ -1,11 +1,10 @@
-using System.IdentityModel.Tokens.Jwt;
 using ClimaSite.Application.Auth.Commands;
 using ClimaSite.Application.Auth.Handlers;
+using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Tests.TestHelpers;
 using ClimaSite.Core.Entities;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -13,12 +12,12 @@ namespace ClimaSite.Application.Tests.Auth.Handlers;
 
 public class RefreshTokenCommandHandlerTests
 {
-    // Secret must be >= 32 chars for HMAC-SHA256 token signing.
-    private const string JwtSecret = "test-secret-key-that-is-at-least-32-bytes-long!!";
-    private const string JwtIssuer = "https://test-issuer";
-    private const string JwtAudience = "https://test-audience";
+    // The handler delegates access-token minting to ITokenService (SEC-05/B-011); token content is
+    // covered in TokenServiceTests. Refresh-token rotation stays local to the handler (SEC-09 territory).
+    private const string KnownAccessToken = "refreshed.access.token";
 
     private readonly Mock<UserManager<ApplicationUser>> _userManagerMock;
+    private readonly Mock<ITokenService> _tokenServiceMock = new();
     private readonly RefreshTokenCommandHandler _handler;
 
     public RefreshTokenCommandHandlerTests()
@@ -27,11 +26,15 @@ public class RefreshTokenCommandHandlerTests
             Mock.Of<IUserStore<ApplicationUser>>(), null!, null!, null!, null!, null!, null!, null!, null!);
         var logger = new Mock<ILogger<RefreshTokenCommandHandler>>();
 
-        _handler = new RefreshTokenCommandHandler(_userManagerMock.Object, BuildConfiguration(), logger.Object);
+        _tokenServiceMock
+            .Setup(x => x.GenerateAccessToken(It.IsAny<ApplicationUser>(), It.IsAny<IList<string>>()))
+            .Returns(KnownAccessToken);
+
+        _handler = new RefreshTokenCommandHandler(_userManagerMock.Object, _tokenServiceMock.Object, logger.Object);
     }
 
     [Fact]
-    public async Task Handle_WithValidStoredToken_RotatesAndReturnsNewTokens()
+    public async Task Handle_WithValidStoredToken_RotatesAndReturnsServiceToken()
     {
         // Arrange
         var user = CreateTestUser();
@@ -48,7 +51,7 @@ public class RefreshTokenCommandHandlerTests
 
         // Assert
         result.IsSuccess.Should().BeTrue();
-        result.Value!.AccessToken.Should().NotBeNullOrWhiteSpace();
+        result.Value!.AccessToken.Should().Be(KnownAccessToken);
         result.Value.RefreshToken.Should().NotBeNullOrWhiteSpace();
         // Refresh token is rotated and persisted.
         result.Value.RefreshToken.Should().NotBe(originalToken);
@@ -56,9 +59,10 @@ public class RefreshTokenCommandHandlerTests
         user.RefreshTokenExpiryTime.Should().BeCloseTo(DateTime.UtcNow.AddDays(7), TimeSpan.FromMinutes(1));
         _userManagerMock.Verify(x => x.UpdateAsync(user), Times.Once);
 
-        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(result.Value.AccessToken);
-        jwt.Issuer.Should().Be(JwtIssuer);
-        jwt.Audiences.Should().Contain(JwtAudience);
+        // The access token comes from ITokenService, called with the user + its roles.
+        _tokenServiceMock.Verify(
+            x => x.GenerateAccessToken(user, It.Is<IList<string>>(r => r.Contains("Customer"))),
+            Times.Once);
     }
 
     [Fact]
@@ -78,6 +82,8 @@ public class RefreshTokenCommandHandlerTests
         result.IsSuccess.Should().BeFalse();
         result.Error.Should().Contain("Invalid or expired refresh token");
         _userManagerMock.Verify(x => x.UpdateAsync(It.IsAny<ApplicationUser>()), Times.Never);
+        _tokenServiceMock.Verify(
+            x => x.GenerateAccessToken(It.IsAny<ApplicationUser>(), It.IsAny<IList<string>>()), Times.Never);
     }
 
     [Fact]
@@ -124,19 +130,6 @@ public class RefreshTokenCommandHandlerTests
     {
         var queryable = new TestAsyncEnumerable<ApplicationUser>(users.AsQueryable());
         _userManagerMock.Setup(x => x.Users).Returns(queryable);
-    }
-
-    private static IConfiguration BuildConfiguration()
-    {
-        return new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["JwtSettings:Secret"] = JwtSecret,
-                ["JwtSettings:Issuer"] = JwtIssuer,
-                ["JwtSettings:Audience"] = JwtAudience,
-                ["JwtSettings:AccessTokenExpirationMinutes"] = "15"
-            })
-            .Build();
     }
 
     private static ApplicationUser CreateTestUser(Guid? id = null)

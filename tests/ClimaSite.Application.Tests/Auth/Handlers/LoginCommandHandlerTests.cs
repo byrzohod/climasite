@@ -1,10 +1,9 @@
-using System.IdentityModel.Tokens.Jwt;
 using ClimaSite.Application.Auth.Commands;
 using ClimaSite.Application.Auth.Handlers;
+using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Core.Entities;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -12,12 +11,13 @@ namespace ClimaSite.Application.Tests.Auth.Handlers;
 
 public class LoginCommandHandlerTests
 {
-    // Secret must be >= 32 chars for HMAC-SHA256 token signing.
-    private const string JwtSecret = "test-secret-key-that-is-at-least-32-bytes-long!!";
-    private const string JwtIssuer = "https://test-issuer";
-    private const string JwtAudience = "https://test-audience";
+    // The handler no longer mints the JWT itself — it delegates to ITokenService (SEC-05/B-011).
+    // Token content (claims/issuer/expiry) is asserted in TokenServiceTests; here we assert the
+    // handler invokes the service with (user, roles) and surfaces its token.
+    private const string KnownAccessToken = "login.access.token";
 
     private readonly Mock<UserManager<ApplicationUser>> _userManagerMock;
+    private readonly Mock<ITokenService> _tokenServiceMock = new();
     private readonly LoginCommandHandler _handler;
 
     public LoginCommandHandlerTests()
@@ -26,11 +26,15 @@ public class LoginCommandHandlerTests
             Mock.Of<IUserStore<ApplicationUser>>(), null!, null!, null!, null!, null!, null!, null!, null!);
         var logger = new Mock<ILogger<LoginCommandHandler>>();
 
-        _handler = new LoginCommandHandler(_userManagerMock.Object, BuildConfiguration(), logger.Object);
+        _tokenServiceMock
+            .Setup(x => x.GenerateAccessToken(It.IsAny<ApplicationUser>(), It.IsAny<IList<string>>()))
+            .Returns(KnownAccessToken);
+
+        _handler = new LoginCommandHandler(_userManagerMock.Object, _tokenServiceMock.Object, logger.Object);
     }
 
     [Fact]
-    public async Task Handle_WithValidCredentials_ReturnsTokensAndUser()
+    public async Task Handle_WithValidCredentials_ReturnsServiceTokenAndUser()
     {
         // Arrange
         var user = CreateTestUser();
@@ -43,17 +47,16 @@ public class LoginCommandHandlerTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeNull();
-        result.Value!.AccessToken.Should().NotBeNullOrWhiteSpace();
+        result.Value!.AccessToken.Should().Be(KnownAccessToken);
         result.Value.RefreshToken.Should().NotBeNullOrWhiteSpace();
         result.Value.User.Email.Should().Be(user.Email);
         result.Value.User.FirstName.Should().Be(user.FirstName);
         result.Value.User.Role.Should().Be("Customer");
 
-        // Access token is a real, parseable JWT signed with the configured issuer/audience.
-        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(result.Value.AccessToken);
-        jwt.Issuer.Should().Be(JwtIssuer);
-        jwt.Audiences.Should().Contain(JwtAudience);
-
+        // The access token comes from ITokenService, called with the authenticated user + its roles.
+        _tokenServiceMock.Verify(
+            x => x.GenerateAccessToken(user, It.Is<IList<string>>(r => r.Contains("Customer"))),
+            Times.Once);
         _userManagerMock.Verify(x => x.ResetAccessFailedCountAsync(user), Times.Once);
     }
 
@@ -93,9 +96,11 @@ public class LoginCommandHandlerTests
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.Error.Should().Contain("Invalid email or password");
-        // Lockout path: failed attempt is recorded.
+        // Lockout path: failed attempt is recorded, no token is issued.
         _userManagerMock.Verify(x => x.AccessFailedAsync(user), Times.Once);
         _userManagerMock.Verify(x => x.ResetAccessFailedCountAsync(It.IsAny<ApplicationUser>()), Times.Never);
+        _tokenServiceMock.Verify(
+            x => x.GenerateAccessToken(It.IsAny<ApplicationUser>(), It.IsAny<IList<string>>()), Times.Never);
     }
 
     [Fact]
@@ -160,19 +165,6 @@ public class LoginCommandHandlerTests
         _userManagerMock.Setup(x => x.ResetAccessFailedCountAsync(user)).ReturnsAsync(IdentityResult.Success);
         _userManagerMock.Setup(x => x.GetRolesAsync(user)).ReturnsAsync(new List<string> { "Customer" });
         _userManagerMock.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
-    }
-
-    private static IConfiguration BuildConfiguration()
-    {
-        return new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["JwtSettings:Secret"] = JwtSecret,
-                ["JwtSettings:Issuer"] = JwtIssuer,
-                ["JwtSettings:Audience"] = JwtAudience,
-                ["JwtSettings:AccessTokenExpirationMinutes"] = "15"
-            })
-            .Build();
     }
 
     private static ApplicationUser CreateTestUser(string? email = null)
