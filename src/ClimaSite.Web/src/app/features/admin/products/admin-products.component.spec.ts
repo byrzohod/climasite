@@ -26,8 +26,10 @@ describe('AdminProductsComponent', () => {
         name: 'Test AC Unit',
         sku: 'AC-001',
         slug: 'test-ac-unit',
-        price: 599.99,
-        salePrice: 499.99,
+        // On sale: price is the current selling price (499.99); salePrice carries the
+        // higher original/compare-at (599.99) that renders struck-through.
+        price: 499.99,
+        salePrice: 599.99,
         stockQuantity: 10,
         status: 'Active',
         primaryImageUrl: 'https://img/ac.jpg',
@@ -96,6 +98,30 @@ describe('AdminProductsComponent', () => {
 
     const badges = fixture.nativeElement.querySelectorAll('[data-testid="product-status-badge"]');
     expect(badges.length).toBe(2);
+  });
+
+  it('renders the current price prominently and the original compare-at struck-through (B-002)', () => {
+    fixture.detectChanges();
+    httpMock.expectOne(r => r.url === baseUrl).flush(productsList);
+    fixture.detectChanges();
+
+    const rows = fixture.nativeElement.querySelectorAll('[data-testid="product-row"]');
+
+    // On-sale row: prominent .sale-price = current selling price (499.99),
+    // struck .old-price = original/compare-at (599.99). Must NOT be inverted.
+    const onSale = rows[0];
+    const current = onSale.querySelector('.sale-price');
+    const original = onSale.querySelector('.old-price');
+    expect(current).toBeTruthy();
+    expect(original).toBeTruthy();
+    expect(current.textContent).toContain('499.99');
+    expect(original.textContent).toContain('599.99');
+
+    // Not-on-sale row: single price, no struck-through element.
+    const plain = rows[1];
+    expect(plain.querySelector('.old-price')).toBeNull();
+    expect(plain.querySelector('.sale-price')).toBeNull();
+    expect(plain.textContent).toContain('299');
   });
 
   it('shows the error state with a retry button when loading fails', () => {

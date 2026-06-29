@@ -174,8 +174,10 @@ function emptyForm(): ProductForm {
                   <td class="product-sku">{{ product.sku }}</td>
                   <td>
                     @if (product.salePrice != null) {
-                      <span class="sale-price">{{ product.salePrice | dualPrice }}</span>
-                      <span class="old-price">{{ product.price | dualPrice }}</span>
+                      <!-- On sale: current selling price prominent, original (compare-at) struck.
+                           salePrice carries the original price (null unless on sale) — B-002. -->
+                      <span class="sale-price">{{ product.price | dualPrice }}</span>
+                      <span class="old-price">{{ product.salePrice | dualPrice }}</span>
                     } @else {
                       {{ product.price | dualPrice }}
                     }

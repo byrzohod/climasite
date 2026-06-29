@@ -18,12 +18,14 @@ public class GetAdminProductsQueryHandlerTests
         bool isActive = true,
         string? brand = null,
         int stock = 50,
-        int lowStockThreshold = 5)
+        int lowStockThreshold = 5,
+        decimal? compareAtPrice = null)
     {
         var slug = name.ToLowerInvariant().Replace(" ", "-");
         var product = new Product(sku, name, slug, basePrice);
         product.SetActive(isActive);
         product.SetBrand(brand);
+        product.SetCompareAtPrice(compareAtPrice);
 
         var variant = new ProductVariant(product.Id, $"{sku}-V", "Default");
         variant.SetLowStockThreshold(lowStockThreshold);
@@ -143,6 +145,56 @@ public class GetAdminProductsQueryHandlerTests
         result.TotalCount.Should().Be(5);
         result.TotalPages.Should().Be(3);
         result.PageNumber.Should().Be(2);
+    }
+
+    // --- B-002 price mapping ---
+    // NOTE on what kills the B-002 mutation: the fix changed `SalePrice = p.CompareAtPrice` (raw)
+    // to `SalePrice = ProductPricing.GetSalePrice(p.BasePrice, p.CompareAtPrice)`. Those two
+    // expressions are IDENTICAL whenever CompareAt > Base, so a *genuine-sale* assertion can NOT
+    // distinguish the fix from the bug. The mutation only manifests when CompareAt <= Base — that
+    // is the explicit guard below (Handle_CompareAtNotAboveBase_SalePriceIsNull). The on-sale and
+    // null Facts are positive characterizations of the contract, not mutation-killers.
+
+    [Fact]
+    public async Task Handle_OnSaleProduct_MapsBasePriceAndOriginalCompareAt()
+    {
+        // Characterization: on a genuine sale, Price carries the current selling price and
+        // SalePrice carries the higher original (struck-through on the UI). Passes on both the
+        // old and new mapping — see the NOTE above; the mutation guard is the Theory below.
+        SeedProduct("SALE", "On Sale", basePrice: 499.99m, compareAtPrice: 599.99m);
+
+        var result = await CreateHandler().Handle(new GetAdminProductsQuery(), CancellationToken.None);
+
+        var item = result.Items.Single(i => i.Sku == "SALE");
+        item.Price.Should().Be(499.99m);
+        item.SalePrice.Should().Be(599.99m);
+    }
+
+    [Fact]
+    public async Task Handle_NotOnSale_NullCompareAt_SalePriceIsNull()
+    {
+        // Characterization of the no-compare-at branch (null on both old and new mapping).
+        SeedProduct("PLAIN", "No Sale", basePrice: 100m, compareAtPrice: null);
+
+        var result = await CreateHandler().Handle(new GetAdminProductsQuery(), CancellationToken.None);
+
+        result.Items.Single(i => i.Sku == "PLAIN").SalePrice.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(100)] // compare-at equal to base — not a real sale
+    [InlineData(80)]  // compare-at below base — legacy/garbage data, not a sale
+    public async Task Handle_CompareAtNotAboveBase_SalePriceIsNull(decimal compareAt)
+    {
+        // THE B-002 mutation guard. The old raw mapping (SalePrice = p.CompareAtPrice) echoes a
+        // non-null value here and paints a fake sale; GetSalePrice returns null unless CompareAt
+        // strictly exceeds Base. This is the ONLY case where the two mappings differ, so reverting
+        // the handler fix turns this test (and only this test) red.
+        SeedProduct("FAKE", "Fake Sale", basePrice: 100m, compareAtPrice: compareAt);
+
+        var result = await CreateHandler().Handle(new GetAdminProductsQuery(), CancellationToken.None);
+
+        result.Items.Single(i => i.Sku == "FAKE").SalePrice.Should().BeNull();
     }
 
     [Fact]

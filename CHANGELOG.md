@@ -38,6 +38,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- **B-002 / BUG-06 (admin slice) — admin product list inverted current vs compare-at price.** The admin
+  Product Management list showed an on-sale product's **higher compare-at price prominently** (as if it were the
+  live price) and the **real selling price struck-through** — the exact inverse of reality, so admins made
+  merchandising/discount decisions off a wrong screen. Two compounding defects, both fixed: (1) `GetAdminProductsQuery`
+  mapped `SalePrice = p.CompareAtPrice` **raw** (non-null even when not on sale → fake sale); it now uses the shared
+  `ProductPricing.GetSalePrice(BasePrice, CompareAtPrice)` contract (null unless `CompareAt > Base`), identical to
+  the public `GetProductsQueryHandler`; (2) the admin list template rendered `salePrice` (original) prominent and
+  `price` (current) struck — now `product.price` (current) is prominent and `product.salePrice` (original) is
+  struck-through, matching the convention used by every other price renderer in the app. **Proven LIVE** against the
+  running stack (real admin API + freshly-rebuilt `ng serve`): the on-sale row shows €499.99 (current) prominent and
+  €599.99 (original) struck in light AND dark; not-on-sale rows show a single price, no fake sale (`/acceptance` PASS
+  at `.planning/acceptance/B-002-admin-price-inversion.md`). Backend `GetAdminProductsQueryHandlerTests` (mutation-proven:
+  the `CompareAt ≤ Base` Theory is the real guard) + a frontend inversion-guard DOM spec; full FE suite 1742 green.
+  Cross-vendor Codex council (`gpt-5.5`@`xhigh`) on the diff: 0 findings. Unit-plan at
+  `.planning/units/B-002-admin-price-inversion/unit-plan.md`. No DB migration; no i18n change.
 - E2E stability: raised the page-objects' tight 10s Playwright waits to the suite's 30s default (113 call sites) — slow CI runners were intermittently tripping them (e.g. order/overlay pages taking ~12s), causing flaky required-check failures that forced re-runs. Longer patience only; no test-logic change.
 - GDPR account deletion (Article 17 right-to-erasure) now works: `DeleteUserDataCommandHandler` ran a manual `BeginTransactionAsync` that threw under the `NpgsqlRetryingExecutionStrategy` (`EnableRetryOnFailure`), so logged-in users could not delete their account (silent 400). The deletion now runs inside `Database.CreateExecutionStrategy().ExecuteAsync(...)`. Found by the new Wave 6 integration tests (BUG-26).
 
