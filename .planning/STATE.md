@@ -4,13 +4,14 @@
 > `--resume`. Read **Next action** first. Kept fresh via `/checkpoint` at each unit/phase boundary.
 > LEAN — pointers, not prose. **This is the single entry point; everything else is linked below.**
 
-- **Last checkpoint**: 2026-06-28 (after #77 merged + SEARCH-01-fts implemented, diff-council in flight)
+- **Last checkpoint**: 2026-06-29 (PAY-IDEM in PR #84 — `/acceptance` PASS + design/diff councils clean; external multi-agent review triaged + council-verified)
 
 ## Goal
 Production-grade multi-language (EN/BG/DE), multi-theme HVAC e-commerce platform — finish to production readiness with a hardened SDLC.
 
 ## Current position
-- **Phase**: maintenance / incremental hardening. No feature in-flight. Three big initiatives DONE (below); a tracked backlog remains.
+- **Phase**: maintenance / incremental hardening. **PAY-IDEM (Stripe idempotency keys + B-061 CancellationToken) is in PR #84** — `/acceptance` PASS (live real-Stripe dedup proven), design + final-diff cross-vendor councils CLEAN; awaiting CI green → squash-merge.
+- An **external multi-agent code review was triaged + council-verified** → `docs/project-plan/EXTERNAL_REVIEW_TRIAGE.md` (full 61-item register; **uncommitted on the PAY-IDEM branch — commit via the next docs PR**, kept out of #84). 57 CONFIRMED, post-council **2 real Highs**: **B-011** (committed JWT fallback secret = SEC-05, fix-first) and **B-002** (admin price inversion = BUG-06 admin slice); ~30 Med / ~25 Low. New items folded into `PRIORITIZED_BACKLOG.md` → "External review — newly-tracked items".
 
 ## ✅ Done (all merged to `main`)
 1. **PROC-01 SDLC hardening** — all 7 waves, 18 PRs. Gated pipeline, CI gates, 80/70 coverage, branch protection, 163 integration tests, real-card Stripe E2E. Tracker: `docs/features/PROC-01/STATE.md`.
@@ -21,11 +22,25 @@ Production-grade multi-language (EN/BG/DE), multi-theme HVAC e-commerce platform
    - **UX-15 a11y: fixed + ENFORCED** — `--color-primary-surface` token + reduced-motion scans; `A11Y_ENFORCE=1` live in CI; both axe suites are hard gates (PR #60).
    - KG enriched (vault).
 
-## ▶ RESUME HERE (saved 2026-06-27 before a machine restart — Docker was hung; restart fixes it)
+## ▶ RESUME HERE (2026-06-29)
 
-**#77 (full customer-journey E2E) is MERGED** (squash `1df1529`; root cause was a 69-char test-email
-local-part > Angular's 64-char `Validators.email` limit + a submit-selector hitting the always-"enabled"
-`<app-button>` host — both fixed). **You are now on branch `feature/search-fts` → SEARCH-01-fts in flight.**
+**Branch `feature/pay-idem-stripe-keys` → PR #84 (PAY-IDEM) open.** Merged since this block's old content:
+#78 FTS, #79 dual-currency, #80 B3 specs, #81 Google OAuth, #82 split-text fix, #83 log-redaction. PAY-IDEM
+adds Stripe idempotency keys (client-supplied per-attempt key on create-intent + `re_v1_<sha256>` on refund;
+`MaxNetworkRetries=2`; key redacted in `LogSanitizer`; B-061 CancellationToken) — **proven LIVE** vs real
+Stripe test mode (same key → identical `pi_`, different key → different `pi_`); acceptance PASS at
+`.planning/acceptance/PAY-IDEM-stripe-keys.md`.
+
+**NEXT ACTION:**
+1. **Watch PR #84 CI → squash-merge when all checks green** (the PR-Checklist gate needed `/security-review`
+   in the body + a re-push; this STATE refresh is that re-trigger commit).
+2. **Commit the external-review triage docs** (`docs/project-plan/EXTERNAL_REVIEW_TRIAGE.md` + the
+   `PRIORITIZED_BACKLOG.md` edits) as their own docs PR off main — they're uncommitted on this branch.
+3. **Then the review fixes**, council-ordered: **B-011** (JWT secret = SEC-05) first, then **B-002** (admin
+   price inversion = BUG-06), then the quick wins (B-007 email-`$`, B-036 pagination bounds, B-055 correlation-id,
+   B-034 install rate-limit, B-018/B-020 error-states, B-008-residual). Register: `EXTERNAL_REVIEW_TRIAGE.md`.
+
+_(Historical SEARCH-01-fts / #77 resume notes below are SUPERSEDED — kept for context only.)_
 
 **What SEARCH-01-fts is:** public product search migrated ILIKE→**Postgres FTS**. Trigger-maintained
 denormalised `products.search_vector` (base + tags + ALL translations), `climasite_search` config
