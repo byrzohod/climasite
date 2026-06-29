@@ -1,3 +1,4 @@
+using ClimaSite.Api.Common;
 using ClimaSite.Application.Common.Models;
 using ClimaSite.Application.Features.Orders.Commands;
 using ClimaSite.Application.Features.Orders.DTOs;
@@ -57,8 +58,8 @@ public class OrdersController : ControllerBase
     {
         var query = new GetUserOrdersQuery
         {
-            PageNumber = pageNumber,
-            PageSize = pageSize,
+            PageNumber = QueryBounds.PageNumber(pageNumber),
+            PageSize = QueryBounds.PageSize(pageSize),
             Status = status,
             DateFrom = dateFrom,
             DateTo = dateTo,

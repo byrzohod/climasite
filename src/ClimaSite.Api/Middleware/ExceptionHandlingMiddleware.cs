@@ -35,7 +35,9 @@ public class ExceptionHandlingMiddleware
             ClimaSite.Application.Common.Exceptions.ValidationException validation => (HttpStatusCode.BadRequest, FlattenValidationErrors(validation.Errors)),
             FluentValidation.ValidationException validation => (HttpStatusCode.BadRequest, string.Join("; ", validation.Errors.Select(e => e.ErrorMessage))),
             UnauthorizedAccessException => (HttpStatusCode.Unauthorized, "Unauthorized access"),
-            ArgumentException arg => (HttpStatusCode.BadRequest, arg.Message),
+            // Don't echo a raw ArgumentException.Message — it can leak internal parameter names/state
+            // (B-008). Intentional user-facing messages come from the validation exceptions above.
+            ArgumentException => (HttpStatusCode.BadRequest, "Invalid request"),
             _ => (HttpStatusCode.InternalServerError, "An error occurred processing your request")
         };
 
@@ -59,7 +61,6 @@ public class ExceptionHandlingMiddleware
             detail = exception is NotFoundException
                 or ClimaSite.Application.Common.Exceptions.ValidationException
                 or FluentValidation.ValidationException
-                or ArgumentException
                 ? exception.Message
                 : null
         };

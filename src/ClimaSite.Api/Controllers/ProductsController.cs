@@ -1,3 +1,4 @@
+using ClimaSite.Api.Common;
 using ClimaSite.Application.Common.Models;
 using ClimaSite.Application.Features.Products.DTOs;
 using ClimaSite.Application.Features.Products.Queries;
@@ -42,8 +43,8 @@ public class ProductsController : ControllerBase
     {
         var query = new GetProductsQuery
         {
-            PageNumber = pageNumber,
-            PageSize = pageSize,
+            PageNumber = QueryBounds.PageNumber(pageNumber),
+            PageSize = QueryBounds.PageSize(pageSize),
             CategoryId = categoryId,
             SearchTerm = searchTerm,
             Brand = brand,
@@ -85,7 +86,7 @@ public class ProductsController : ControllerBase
         [FromQuery] int count = 8,
         [FromQuery] string? lang = null)
     {
-        var query = new GetFeaturedProductsQuery { Count = count, LanguageCode = lang };
+        var query = new GetFeaturedProductsQuery { Count = QueryBounds.Count(count), LanguageCode = lang };
         var result = await _mediator.Send(query);
         return Ok(result);
     }
@@ -114,8 +115,8 @@ public class ProductsController : ControllerBase
         var query = new SearchProductsQuery
         {
             Query = q,
-            PageNumber = pageNumber,
-            PageSize = pageSize,
+            PageNumber = QueryBounds.PageNumber(pageNumber),
+            PageSize = QueryBounds.PageSize(pageSize),
             CategorySlug = categorySlug,
             Brands = brands,
             MinPrice = minPrice,
@@ -140,7 +141,7 @@ public class ProductsController : ControllerBase
         var query = new GetRelatedProductsQuery
         {
             ProductId = id,
-            Count = count,
+            Count = QueryBounds.Count(count),
             LanguageCode = lang
         };
 
@@ -158,7 +159,7 @@ public class ProductsController : ControllerBase
         {
             ProductId = id,
             RelationType = RelationType.Similar,
-            Count = count,
+            Count = QueryBounds.Count(count),
             LanguageCode = lang
         };
 
@@ -176,7 +177,7 @@ public class ProductsController : ControllerBase
         {
             ProductId = id,
             RelationType = RelationType.Accessory,
-            Count = count,
+            Count = QueryBounds.Count(count),
             LanguageCode = lang
         };
 
@@ -194,7 +195,7 @@ public class ProductsController : ControllerBase
         {
             ProductId = id,
             RelationType = RelationType.FrequentlyBoughtTogether,
-            Count = count,
+            Count = QueryBounds.Count(count),
             LanguageCode = lang
         };
 

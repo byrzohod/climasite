@@ -4,15 +4,15 @@
 > `--resume`. Read **Next action** first. Kept fresh via `/checkpoint` at each unit/phase boundary.
 > LEAN — pointers, not prose. **This is the single entry point; everything else is linked below.**
 
-- **Last checkpoint**: 2026-06-29 (B-002 admin price-inversion in PR `fix/b-002-admin-price-inversion` — `/acceptance` PASS live + Codex council clean + 3-lens Claude verify; both real Highs from the external review now shipped)
+- **Last checkpoint**: 2026-06-29 (backend quick-wins batch B-007/B-008/B-034/B-036/B-055 in PR `fix/backend-quickwins-batch` — `/acceptance` PASS live + 2-round Codex council; both real Highs already shipped)
 
 ## Goal
 Production-grade multi-language (EN/BG/DE), multi-theme HVAC e-commerce platform — finish to production readiness with a hardened SDLC.
 
 ## Current position
-- **Phase**: maintenance / incremental hardening, working the triaged external-review register. **PAY-IDEM (#84), the external-review triage docs (#85), and SEC-05/B-011 (#86) are all MERGED to `main`** (tip `1f69576`).
-- **B-002 (admin product-list price inversion = the 2nd of the two real Highs) is in PR `fix/b-002-admin-price-inversion`** — backend now maps `SalePrice` via `ProductPricing.GetSalePrice` (not raw `CompareAtPrice`) + the admin template swapped so the current price is prominent and the original is struck. **`/acceptance` PASS** (drove the real running stack — proven live in light+dark: €499.99 current prominent / €599.99 original struck; not-on-sale → single price), **Codex council 0 findings**, 3-lens Claude verify confirmed correct+complete (caught a vacuous headline test → re-commented + mutation-proven the `≤base` Theory is the real guard). Awaiting CI green → squash-merge.
-- The **external review register** lives at `docs/project-plan/EXTERNAL_REVIEW_TRIAGE.md` (61 items; both real Highs **B-011 + B-002 now DONE**). New items folded into `PRIORITIZED_BACKLOG.md` → "External review — newly-tracked items" (incl. two found during B-002: FOUND-B002-orphans = dead-code inverted components; FOUND-B002-noimage = missing `no-image.svg` placeholder).
+- **Phase**: maintenance / incremental hardening, working the triaged external-review register. **MERGED to `main`** (tip `d1aa6ab`): PAY-IDEM (#84), triage docs (#85), SEC-05/B-011 (#86), **B-002 admin price-inversion (#87)** — so **both real Highs (B-011, B-002) are DONE**.
+- **Backend quick-wins batch is in PR `fix/backend-quickwins-batch`** — 5 small independent backend fixes: **B-007** (order-email `$<guid>` 404 → `BuildOrderUrl` helper), **B-008** (stop echoing raw `ArgumentException.Message`), **B-034** (`[EnableRateLimiting("strict")]` on the installation lead endpoint), **B-036** (`QueryBounds` clamps pagination/count at the edge on EVERY anonymous public list/count endpoint + `PaginatedList` div-by-zero floor), **B-055** (`X-Correlation-Id` `\A…\z` charset/length validation). **`/acceptance` PASS** live (429 after the strict budget; `pageSize=100000`→cap 100 on the 2259-product DB; bad correlation-id→GUID). Codex council ran **2 rounds** (round 1 caught B-036 under-scoped to Products-only + a B-055 `$`-vs-`\z` anchor → both fixed + re-counciled). Backend suites green: Application 873 / Core 424 / Api 411. Awaiting CI → squash-merge.
+- The **external review register** (`docs/project-plan/EXTERNAL_REVIEW_TRIAGE.md`, 61 items) now has both real Highs + these 5 quick wins marked DONE. Two B-002-discovered follow-ups remain in `PRIORITIZED_BACKLOG.md`: FOUND-B002-orphans (dead-code inverted components), FOUND-B002-noimage (missing `no-image.svg`).
 
 ## ✅ Done (all merged to `main`)
 1. **PROC-01 SDLC hardening** — all 7 waves, 18 PRs. Gated pipeline, CI gates, 80/70 coverage, branch protection, 163 integration tests, real-card Stripe E2E. Tracker: `docs/features/PROC-01/STATE.md`.

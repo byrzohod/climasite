@@ -1,3 +1,4 @@
+using ClimaSite.Api.Common;
 using ClimaSite.Application.Features.PriceHistory.DTOs;
 using ClimaSite.Application.Features.PriceHistory.Queries;
 using MediatR;
@@ -21,7 +22,9 @@ public class PriceHistoryController : ControllerBase
         Guid productId,
         [FromQuery] int daysBack = 90)
     {
-        var result = await _mediator.Send(new GetProductPriceHistoryQuery(productId, daysBack));
+        // Clamp the untrusted look-back window so a huge/zero/negative value can't fetch all history or
+        // overflow DateTime.AddDays (B-036 — anonymous public range param).
+        var result = await _mediator.Send(new GetProductPriceHistoryQuery(productId, QueryBounds.Days(daysBack)));
 
         if (result == null)
             return NotFound();

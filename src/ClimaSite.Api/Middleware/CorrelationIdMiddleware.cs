@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Serilog.Context;
 
 namespace ClimaSite.Api.Middleware;
@@ -13,6 +14,12 @@ public class CorrelationIdMiddleware
     public const string HeaderName = "X-Correlation-Id";
     public const string ItemKey = "CorrelationId";
 
+    // Only accept an inbound id that is a short, safe token. This blocks log-forging (CR/LF/control
+    // chars in the value) and oversized-id bloat — anything else is replaced with a fresh GUID (B-055).
+    // \A…\z (absolute anchors, NOT ^…$) so a value ending in a newline can't slip through — in .NET `$`
+    // also matches the position before a trailing \n, which would defeat the anti-log-forging intent.
+    private static readonly Regex ValidId = new(@"\A[A-Za-z0-9._-]{1,128}\z", RegexOptions.Compiled);
+
     private readonly RequestDelegate _next;
 
     public CorrelationIdMiddleware(RequestDelegate next) => _next = next;
@@ -20,7 +27,7 @@ public class CorrelationIdMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         var correlationId = context.Request.Headers[HeaderName].FirstOrDefault();
-        if (string.IsNullOrWhiteSpace(correlationId))
+        if (string.IsNullOrWhiteSpace(correlationId) || !ValidId.IsMatch(correlationId))
         {
             correlationId = Guid.NewGuid().ToString();
         }

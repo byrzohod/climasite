@@ -60,10 +60,16 @@ public class EmailService : IEmailService
         await SendEmailAsync(to, subject, body, cancellationToken);
     }
 
+    /// <summary>
+    /// Builds the customer-facing order-detail URL. Single source for both order emails so the path stays
+    /// correct — a stray `$` here once produced `/account/orders/$&lt;guid&gt;` 404s (B-007).
+    /// </summary>
+    public static string BuildOrderUrl(string baseUrl, Guid orderId) => $"{baseUrl}/account/orders/{orderId}";
+
     public async Task SendOrderConfirmationEmailAsync(string to, Guid orderId, CancellationToken cancellationToken = default)
     {
         var baseUrl = _configuration["AppSettings:BaseUrl"] ?? "https://climasite.local";
-        var orderUrl = $"{baseUrl}/account/orders/${orderId}";
+        var orderUrl = BuildOrderUrl(baseUrl, orderId);
 
         var subject = $"Order Confirmation - ClimaSite #{orderId.ToString()[..8].ToUpper()}";
         var body = GenerateOrderConfirmationEmailHtml(orderId, orderUrl);
@@ -73,7 +79,7 @@ public class EmailService : IEmailService
     public async Task SendOrderShippedEmailAsync(string to, Guid orderId, string trackingNumber, CancellationToken cancellationToken = default)
     {
         var baseUrl = _configuration["AppSettings:BaseUrl"] ?? "https://climasite.local";
-        var orderUrl = $"{baseUrl}/account/orders/${orderId}";
+        var orderUrl = BuildOrderUrl(baseUrl, orderId);
 
         var subject = $"Your Order Has Shipped - ClimaSite #{orderId.ToString()[..8].ToUpper()}";
         var body = GenerateOrderShippedEmailHtml(orderId, orderUrl, trackingNumber);

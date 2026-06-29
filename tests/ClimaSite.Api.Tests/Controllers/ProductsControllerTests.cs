@@ -166,4 +166,24 @@ public class ProductsControllerTests : IntegrationTestBase
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
+
+    // B-036: out-of-bounds pagination/count params on public endpoints must be clamped at the edge, so the
+    // request returns a sane bounded 200 — never a 500 (div-by-zero on pageSize=0, negative-Skip overflow on
+    // a huge pageNumber, or a fetch-all DoS on a huge pageSize/count). Exact bounds are pinned by QueryBoundsTests.
+    [Theory]
+    [InlineData("/api/products?pageSize=0")]
+    [InlineData("/api/products?pageSize=-1")]
+    [InlineData("/api/products?pageSize=100000")]
+    [InlineData("/api/products?pageNumber=0")]
+    [InlineData("/api/products?pageNumber=2147483647")] // int.MaxValue → overflows Skip without the page cap
+    [InlineData("/api/products/search?q=ac&pageSize=0")]
+    [InlineData("/api/products/search?q=ac&pageNumber=2147483647")]
+    [InlineData("/api/products/featured?count=100000")]
+    [InlineData("/api/products/featured?count=-1")]
+    public async Task PublicEndpoints_WithOutOfBoundsParams_ReturnOkNotServerError(string url)
+    {
+        var response = await Client.GetAsync(url);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
 }

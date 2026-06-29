@@ -1,3 +1,4 @@
+using ClimaSite.Api.Common;
 using ClimaSite.Application.Features.Brands.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -24,8 +25,8 @@ public class BrandsController : ControllerBase
     {
         var query = new GetBrandsQuery
         {
-            PageNumber = pageNumber,
-            PageSize = pageSize,
+            PageNumber = QueryBounds.PageNumber(pageNumber),
+            PageSize = QueryBounds.PageSize(pageSize),
             FeaturedOnly = featured,
             LanguageCode = lang
         };
@@ -40,7 +41,7 @@ public class BrandsController : ControllerBase
         [FromQuery] int limit = 8,
         [FromQuery] string? lang = null)
     {
-        var query = new GetFeaturedBrandsQuery { Limit = limit, LanguageCode = lang };
+        var query = new GetFeaturedBrandsQuery { Limit = QueryBounds.Count(limit), LanguageCode = lang };
         var result = await _mediator.Send(query);
         return Ok(result);
     }
@@ -55,8 +56,8 @@ public class BrandsController : ControllerBase
         var query = new GetBrandBySlugQuery
         {
             Slug = slug,
-            ProductPageNumber = productPage,
-            ProductPageSize = productPageSize,
+            ProductPageNumber = QueryBounds.PageNumber(productPage),
+            ProductPageSize = QueryBounds.PageSize(productPageSize),
             LanguageCode = lang
         };
 
