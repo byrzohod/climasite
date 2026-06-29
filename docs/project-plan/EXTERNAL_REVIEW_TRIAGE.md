@@ -19,7 +19,7 @@ Sorted by post-council real severity, then by ID. **Highs are bold.** Verdict ke
 
 | B-ID | Title | Verdict | Real sev | Maps to existing | Fix (one line) |
 |---|---|---|---|---|---|
-| **B-002** | Admin product list inverts current vs compare-at price | C | **High** | BUG-06 (admin slice — not in BUG-06's files) | Map admin `SalePrice` via `ProductPricing.GetSalePrice` (null unless on-sale) + swap template so BasePrice is prominent / compare-at struck (`GetAdminProductsQuery.cs:112`). |
+| **B-002** ✅ FIXED 2026-06-29 | Admin product list inverts current vs compare-at price | C | **High** | BUG-06 (admin slice — not in BUG-06's files) | DONE: admin `SalePrice` now via `ProductPricing.GetSalePrice` (null unless on-sale) + template swapped so BasePrice prominent / compare-at struck. `/acceptance` PASS + Codex council clean. Both real Highs (B-011, B-002) now shipped. |
 | **B-011** | JWT secret falls back to committed appsettings outside Production; duplicated token generators | C | **High** | SEC-05 | Delete committed `JwtSettings:Secret`; require a non-placeholder `JWT_SECRET` in every non-Dev/Test env; route all token issuance through `TokenService` (drop the 3 handler-local generators). `appsettings.json:38` / `JwtConfiguration.cs:21`. |
 | B-001 | Address modals bypass the accessible shared modal pattern | C | Medium | — (new, NEW-UX) | Render both address dialogs via shared `<app-modal>` (role=dialog, Escape, focus-trap/restore). `addresses.component.ts:90,246`. |
 | B-003 | CI does not fail on prod high/critical npm advisories | C | Medium | SEC-12 | Drop `\|\| true`; run `npm audit --omit=dev --audit-level=high` as a hard gate (needs the Angular major). `test.yml:356`. |

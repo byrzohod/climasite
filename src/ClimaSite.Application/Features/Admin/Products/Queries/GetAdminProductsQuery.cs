@@ -1,4 +1,5 @@
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Admin.Products.DTOs;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -109,7 +110,11 @@ public class GetAdminProductsQueryHandler : IRequestHandler<GetAdminProductsQuer
             Sku = p.Sku,
             Slug = p.Slug,
             Price = p.BasePrice,
-            SalePrice = p.CompareAtPrice,
+            // SalePrice carries the original (compare-at) price, struck-through on the UI, and is
+            // null unless the product is actually on sale (CompareAt > Base). Use the shared pricing
+            // contract — NOT the raw CompareAtPrice — so the admin list matches the public side and
+            // never paints a fake sale (B-002 / BUG-06 admin slice).
+            SalePrice = ProductPricing.GetSalePrice(p.BasePrice, p.CompareAtPrice),
             StockQuantity = p.TotalStock,
             Status = GetStatus(p),
             PrimaryImageUrl = p.PrimaryImage?.Url,

@@ -4,14 +4,15 @@
 > `--resume`. Read **Next action** first. Kept fresh via `/checkpoint` at each unit/phase boundary.
 > LEAN — pointers, not prose. **This is the single entry point; everything else is linked below.**
 
-- **Last checkpoint**: 2026-06-29 (PAY-IDEM in PR #84 — `/acceptance` PASS + design/diff councils clean; external multi-agent review triaged + council-verified)
+- **Last checkpoint**: 2026-06-29 (B-002 admin price-inversion in PR `fix/b-002-admin-price-inversion` — `/acceptance` PASS live + Codex council clean + 3-lens Claude verify; both real Highs from the external review now shipped)
 
 ## Goal
 Production-grade multi-language (EN/BG/DE), multi-theme HVAC e-commerce platform — finish to production readiness with a hardened SDLC.
 
 ## Current position
-- **Phase**: maintenance / incremental hardening. **PAY-IDEM (Stripe idempotency keys + B-061 CancellationToken) is in PR #84** — `/acceptance` PASS (live real-Stripe dedup proven), design + final-diff cross-vendor councils CLEAN; awaiting CI green → squash-merge.
-- An **external multi-agent code review was triaged + council-verified** → `docs/project-plan/EXTERNAL_REVIEW_TRIAGE.md` (full 61-item register; **uncommitted on the PAY-IDEM branch — commit via the next docs PR**, kept out of #84). 57 CONFIRMED, post-council **2 real Highs**: **B-011** (committed JWT fallback secret = SEC-05, fix-first) and **B-002** (admin price inversion = BUG-06 admin slice); ~30 Med / ~25 Low. New items folded into `PRIORITIZED_BACKLOG.md` → "External review — newly-tracked items".
+- **Phase**: maintenance / incremental hardening, working the triaged external-review register. **PAY-IDEM (#84), the external-review triage docs (#85), and SEC-05/B-011 (#86) are all MERGED to `main`** (tip `1f69576`).
+- **B-002 (admin product-list price inversion = the 2nd of the two real Highs) is in PR `fix/b-002-admin-price-inversion`** — backend now maps `SalePrice` via `ProductPricing.GetSalePrice` (not raw `CompareAtPrice`) + the admin template swapped so the current price is prominent and the original is struck. **`/acceptance` PASS** (drove the real running stack — proven live in light+dark: €499.99 current prominent / €599.99 original struck; not-on-sale → single price), **Codex council 0 findings**, 3-lens Claude verify confirmed correct+complete (caught a vacuous headline test → re-commented + mutation-proven the `≤base` Theory is the real guard). Awaiting CI green → squash-merge.
+- The **external review register** lives at `docs/project-plan/EXTERNAL_REVIEW_TRIAGE.md` (61 items; both real Highs **B-011 + B-002 now DONE**). New items folded into `PRIORITIZED_BACKLOG.md` → "External review — newly-tracked items" (incl. two found during B-002: FOUND-B002-orphans = dead-code inverted components; FOUND-B002-noimage = missing `no-image.svg` placeholder).
 
 ## ✅ Done (all merged to `main`)
 1. **PROC-01 SDLC hardening** — all 7 waves, 18 PRs. Gated pipeline, CI gates, 80/70 coverage, branch protection, 163 integration tests, real-card Stripe E2E. Tracker: `docs/features/PROC-01/STATE.md`.
@@ -32,13 +33,15 @@ Stripe test mode (same key → identical `pi_`, different key → different `pi_
 `.planning/acceptance/PAY-IDEM-stripe-keys.md`.
 
 **NEXT ACTION:**
-1. **Watch PR #84 CI → squash-merge when all checks green** (the PR-Checklist gate needed `/security-review`
-   in the body + a re-push; this STATE refresh is that re-trigger commit).
-2. **Commit the external-review triage docs** (`docs/project-plan/EXTERNAL_REVIEW_TRIAGE.md` + the
-   `PRIORITIZED_BACKLOG.md` edits) as their own docs PR off main — they're uncommitted on this branch.
-3. **Then the review fixes**, council-ordered: **B-011** (JWT secret = SEC-05) first, then **B-002** (admin
-   price inversion = BUG-06), then the quick wins (B-007 email-`$`, B-036 pagination bounds, B-055 correlation-id,
-   B-034 install rate-limit, B-018/B-020 error-states, B-008-residual). Register: `EXTERNAL_REVIEW_TRIAGE.md`.
+1. **Watch PR `fix/b-002-admin-price-inversion` CI → squash-merge when all six checks green.** Then refresh the
+   in-repo STATE tip hash in the next PR.
+2. **Then the quick wins** (council-ordered, both real Highs now done): **B-007** (order-email `$<guid>` 404, XS) ·
+   **B-036** (clamp public pagination bounds = PERF-02, S) · **B-055** (bound/charset-validate inbound
+   `X-Correlation-Id`, XS) · **B-034** (`[EnableRateLimiting("strict")]` on the install lead endpoint, XS) ·
+   **B-018/B-020** (real error+retry states for account-orders/cart instead of fake "empty", S) · **B-008-residual**
+   (stop echoing raw `ArgumentException.Message`, XS). Register: `EXTERNAL_REVIEW_TRIAGE.md`.
+3. Cheap cleanups surfaced by B-002: **FOUND-B002-noimage** (add the missing `no-image.svg`, XS) and
+   **FOUND-B002-orphans** (fix/delete the two dead-code inverted-convention components, S).
 
 _(Historical SEARCH-01-fts / #77 resume notes below are SUPERSEDED — kept for context only.)_
 
