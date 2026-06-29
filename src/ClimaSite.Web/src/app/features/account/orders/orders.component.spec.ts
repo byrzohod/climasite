@@ -111,7 +111,7 @@ describe('OrdersComponent', () => {
     expect(newComponent.isLoading()).toBeTrue();
   });
 
-  it('should handle error when loading orders fails', () => {
+  it('shows an error+retry state (not the empty state) when loading orders fails (B-018)', () => {
     checkoutServiceMock.getOrders.and.returnValue(throwError(() => new Error('Failed to load')));
 
     const newFixture = TestBed.createComponent(OrdersComponent);
@@ -119,7 +119,29 @@ describe('OrdersComponent', () => {
     newFixture.detectChanges();
 
     expect(newComponent.isLoading()).toBeFalse();
-    expect(newComponent.orders()).toEqual([]);
+    expect(newComponent.loadError()).toBeTrue();
+
+    const compiled = newFixture.nativeElement;
+    expect(compiled.querySelector('[data-testid="orders-error"]')).toBeTruthy();
+    expect(compiled.querySelector('[data-testid="orders-retry"]')).toBeTruthy();
+    // A load failure must NOT masquerade as "you have no orders".
+    expect(compiled.querySelector('[data-testid="orders-empty"]')).toBeNull();
+  });
+
+  it('retry re-issues the orders request and recovers after a failure (B-018)', () => {
+    checkoutServiceMock.getOrders.and.returnValue(throwError(() => new Error('boom')));
+    const newFixture = TestBed.createComponent(OrdersComponent);
+    const newComponent = newFixture.componentInstance;
+    newFixture.detectChanges();
+    expect(newComponent.loadError()).toBeTrue();
+
+    // Recover: the next load succeeds when Retry is clicked.
+    checkoutServiceMock.getOrders.and.returnValue(of(mockPaginatedResponse));
+    newFixture.nativeElement.querySelector('[data-testid="orders-retry"]').click();
+    newFixture.detectChanges();
+
+    expect(newComponent.loadError()).toBeFalse();
+    expect(newFixture.nativeElement.querySelector('[data-testid="orders-list"]')).toBeTruthy();
   });
 
   it('should display orders when loaded', () => {

@@ -41,7 +41,15 @@
     
     <!-- Content -->
     <div class="drawer-content">
-      @if (isEmpty()) {
+      @if (cartService.loadFailed()) {
+        <!-- B-020: surface a cart load failure with Retry instead of a fake empty cart. -->
+        <div class="empty-cart" role="alert" data-testid="mini-cart-error">
+          <p class="empty-text">{{ cartService.error() | translate }}</p>
+          <button class="shop-link" (click)="cartService.loadCart()" data-testid="mini-cart-retry">
+            {{ 'common.retry' | translate }}
+          </button>
+        </div>
+      } @else if (isEmpty()) {
         <!-- Empty Cart State -->
         <div class="empty-cart" data-testid="mini-cart-empty">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon">
@@ -83,7 +91,7 @@
     </div>
     
     <!-- Footer (only when cart has items) -->
-    @if (!isEmpty()) {
+    @if (!isEmpty() && !cartService.loadFailed()) {
       <footer class="drawer-footer" data-testid="mini-cart-footer">
         <!-- Subtotal -->
         <div class="subtotal-row">

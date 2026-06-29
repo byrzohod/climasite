@@ -122,7 +122,7 @@ import { DualPricePipe } from '../../../shared/pipes/dual-price.pipe';
       </div>
 
       <!-- Results Info -->
-      @if (!isLoading() && paginatedOrders()) {
+      @if (!isLoading() && !loadError() && paginatedOrders()) {
         <div class="results-info" data-testid="orders-results-info">
           {{ 'account.orders.showingResults' | translate:{count: paginatedOrders()!.totalCount} }}
         </div>
@@ -147,6 +147,13 @@ import { DualPricePipe } from '../../../shared/pipes/dual-price.pipe';
               </div>
             </div>
           }
+        </div>
+      } @else if (loadError()) {
+        <div class="orders-error" role="alert" data-testid="orders-error">
+          <p>{{ 'account.orders.errors.loadListFailed' | translate }}</p>
+          <button class="btn-primary" (click)="loadOrders()" data-testid="orders-retry">
+            {{ 'common.retry' | translate }}
+          </button>
         </div>
       } @else if (orders().length === 0) {
         @if (hasActiveFilters()) {
@@ -420,6 +427,33 @@ import { DualPricePipe } from '../../../shared/pipes/dual-price.pipe';
       margin-bottom: 1rem;
       font-size: 0.875rem;
       color: var(--color-text-secondary);
+    }
+
+    .orders-error {
+      text-align: center;
+      padding: 3rem 2rem;
+      background: var(--color-error-bg);
+      border-radius: 12px;
+    }
+
+    .orders-error p {
+      color: var(--color-error);
+      margin-bottom: 1.5rem;
+    }
+
+    .orders-error .btn-primary {
+      padding: 0.75rem 1.5rem;
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.2s ease;
+    }
+
+    .orders-error .btn-primary:hover {
+      background: var(--color-primary-dark);
     }
 
     /* Loading Skeleton */
@@ -796,6 +830,7 @@ export class OrdersComponent implements OnInit {
   orders = computed(() => this.paginatedOrders()?.items ?? []);
   availableStatuses = signal<string[]>([]);
   isLoading = signal(true);
+  loadError = signal(false); // B-018: distinguish a load failure from a true zero-order count
 
   // Filter state
   searchQuery = '';
@@ -826,6 +861,7 @@ export class OrdersComponent implements OnInit {
 
   loadOrders(): void {
     this.isLoading.set(true);
+    this.loadError.set(false);
     const params = this.buildFilterParams();
 
     this.checkoutService.getOrders(params).subscribe({
@@ -834,7 +870,10 @@ export class OrdersComponent implements OnInit {
         this.isLoading.set(false);
       },
       error: () => {
-        this.paginatedOrders.set({ items: [], pageNumber: 1, totalPages: 0, totalCount: 0, hasPreviousPage: false, hasNextPage: false });
+        // B-018: flag the failure instead of setting an empty result (which would render the
+        // "you have no orders" empty-state). The error+retry branch renders instead; a previously
+        // loaded page is left untouched so a transient reload failure doesn't blank the list silently.
+        this.loadError.set(true);
         this.isLoading.set(false);
       }
     });

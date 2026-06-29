@@ -121,19 +121,40 @@ describe('CartService', () => {
       expect(service.isEmpty()).toBeFalse();
     }));
 
-    it('should create empty cart on error', fakeAsync(() => {
+    it('should set an error and preserve the loaded cart on load failure (B-020)', fakeAsync(() => {
+      // First, a successful load so there is a cart to preserve.
       service.loadCart();
       tick();
+      httpMock.expectOne(req => req.url.includes('/api/cart')).flush(mockCart);
+      tick();
+      expect(service.items().length).toBe(1);
 
-      const req = httpMock.expectOne(req =>
-        req.url.includes('/api/cart')
-      );
-      req.error(new ErrorEvent('Network error'));
+      // A subsequent load fails: surface the error and DON'T clobber the loaded cart with an empty one.
+      service.loadCart();
+      tick();
+      httpMock.expectOne(req => req.url.includes('/api/cart')).error(new ErrorEvent('Network error'));
       tick();
 
-      expect(service.cart()).toBeTruthy();
-      expect(service.items()).toEqual([]);
+      expect(service.error()).toBe('cart.errors.loadFailed');
+      expect(service.loadFailed()).toBeTrue();
       expect(service.isLoading()).toBeFalse();
+      expect(service.items().length).toBe(1); // preserved, not blanked into a fake empty cart
+    }));
+
+    it('should clear the error and loadFailed on a subsequent successful load', fakeAsync(() => {
+      service.loadCart();
+      tick();
+      httpMock.expectOne(req => req.url.includes('/api/cart')).error(new ErrorEvent('boom'));
+      tick();
+      expect(service.loadFailed()).toBeTrue();
+
+      service.loadCart();
+      tick();
+      httpMock.expectOne(req => req.url.includes('/api/cart')).flush(mockCart);
+      tick();
+      expect(service.error()).toBeNull();
+      expect(service.loadFailed()).toBeFalse();
+      expect(service.items().length).toBe(1);
     }));
   });
 

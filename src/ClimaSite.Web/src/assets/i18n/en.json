@@ -169,7 +169,8 @@
       "addFailed": "Failed to add item to cart",
       "updateQuantityFailed": "Failed to update item quantity",
       "removeFailed": "Failed to remove item from cart",
-      "clearFailed": "Failed to clear cart"
+      "clearFailed": "Failed to clear cart",
+      "loadFailed": "Failed to load cart"
     }
   },
   "checkout": {
@@ -392,7 +393,8 @@
       "notes": "Notes",
       "errors": {
         "notFound": "Order not found",
-        "loadFailed": "Failed to load order"
+        "loadFailed": "Failed to load order",
+        "loadListFailed": "Failed to load your orders"
       }
     },
     "addresses": {

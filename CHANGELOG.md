@@ -38,6 +38,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- **B-018 / B-020 — real error+retry states instead of fake "empty" on a load failure (UX).** A failed load
+  was silently rendered as an empty state, telling the user "you have no orders" / "your cart is empty" when
+  the request had actually failed. Now each surface distinguishes a transport/5xx failure from a true
+  zero-count and shows an accessible (`role="alert"`) error message + **Retry**:
+  - **B-018 (account orders)**: `orders.component` gained a `loadError` signal and an error+retry branch before
+    the empty-state branch; the error handler no longer fakes an empty result.
+  - **B-020 (cart)**: `CartService.loadCart` now sets `_error` on failure and no longer clobbers a loaded cart
+    with a fresh empty one. The cart page — **and checkout and the mini-cart drawer** (a cross-vendor council
+    caught that they showed the same fake-empty) — render the error+Retry branch before their empty state.
+
+  New i18n keys `cart.errors.loadFailed` + `account.orders.errors.loadListFailed` (en/bg/de). **Proven live**:
+  forcing the cart/orders GET to 500 shows the error+Retry on the cart page, orders, and checkout (not the
+  empty state), and Retry recovers (`/acceptance` PASS at `.planning/acceptance/B-018-B-020-load-error-states.md`).
+  Specs: cart.service / cart.component / orders.component / mini-cart-drawer; full FE suite 1748 green. Frontend
+  only; no backend change. Council (2 rounds) clean bar a tracked latest-request-race follow-up.
 - **Backend quick-wins hardening batch (B-007, B-008, B-034, B-036, B-055) from the external review.** Five
   small, independent backend fixes shipped together:
   - **B-007** — order confirmation/shipped email CTAs built `/account/orders/$<guid>` (a literal `$` in the
