@@ -14,6 +14,25 @@ namespace ClimaSite.Api.Tests.Infrastructure;
 
 public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    // SEC-05/B-011: a deterministic ≥32-char non-placeholder JWT signing secret for integration tests.
+    private const string TestJwtSecret = "integration-test-jwt-signing-secret-32+chars-xyz";
+
+    static TestWebApplicationFactory()
+    {
+        // appsettings.json no longer ships a JWT secret, and every WithWebHostBuilder sub-factory
+        // (incl. the UseEnvironment("Staging") one in TestControllerTests) is NOT exempt from the
+        // require-a-secret startup gate. In the minimal-hosting model JwtConfiguration.ResolveSecret
+        // runs while the app is still building (before the test ConfigureAppConfiguration overrides
+        // merge in), so an in-memory JwtSettings:Secret is invisible to it — the reliable lever is the
+        // JWT_SECRET environment variable, which the resolver reads directly. Setting it process-wide
+        // (once) makes the Testing default AND every sub-factory boot deterministically. Only set it
+        // when unset so an ambient/CI-provided secret still wins.
+        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("JWT_SECRET")))
+        {
+            Environment.SetEnvironmentVariable("JWT_SECRET", TestJwtSecret);
+        }
+    }
+
     /// <summary>
     /// Controllable fake payment service so integration tests exercise the money
     /// path without calling Stripe. Registered as a singleton below.
@@ -52,7 +71,11 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Outbox:Enabled"] = "false",
-                ["Email:UsePlaceholder"] = "true"
+                ["Email:UsePlaceholder"] = "true",
+                // SEC-05/B-011: mirrors the static-ctor JWT_SECRET env var so any runtime read of
+                // JwtSettings:Secret is also covered. The startup gate (JwtConfiguration.ResolveSecret)
+                // is satisfied by the env var, not this entry — see the static constructor above.
+                ["JwtSettings:Secret"] = TestJwtSecret
             });
         });
 

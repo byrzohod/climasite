@@ -5,6 +5,7 @@ using ClimaSite.Api.Configuration;
 using ClimaSite.Api.Middleware;
 using ClimaSite.Application;
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Options;
 using ClimaSite.Infrastructure;
 using ClimaSite.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -64,15 +65,27 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     // register unconditionally; integration tests set Enabled=false and drive the processor directly.
     services.AddHostedService<EmailOutboxBackgroundService>();
 
-    // JWT Authentication - prefer env vars (Railway), fallback to config outside Production.
+    // JWT Authentication (SEC-05 / B-011) — resolve + validate the signing secret ONCE here, then bind a
+    // single JwtOptions used by BOTH the bearer validation below AND TokenService issuance, so the two
+    // provably share one secret/issuer/audience. ResolveSecret fail-fasts in every non-Development/Testing
+    // environment without a real JWT_SECRET and rejects the committed placeholder in all environments.
     var jwtSettings = configuration.GetSection("JwtSettings");
-    var secretKey = JwtConfiguration.ResolveSecret(configuration, environment);
-    var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER")
-        ?? jwtSettings["Issuer"]
-        ?? "https://localhost:5001";
-    var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE")
-        ?? jwtSettings["Audience"]
-        ?? "https://localhost:4200";
+    var jwtOptions = new JwtOptions
+    {
+        Secret = JwtConfiguration.ResolveSecret(configuration, environment),
+        Issuer = Environment.GetEnvironmentVariable("JWT_ISSUER")
+            ?? jwtSettings["Issuer"]
+            ?? "https://localhost:5001",
+        Audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE")
+            ?? jwtSettings["Audience"]
+            ?? "https://localhost:4200",
+        AccessTokenExpirationMinutes = int.TryParse(jwtSettings["AccessTokenExpirationMinutes"], out var accessTokenMinutes)
+            ? accessTokenMinutes
+            : 15
+    };
+
+    // Single source of truth for issuance: TokenService consumes IOptions<JwtOptions>.
+    services.AddSingleton(Microsoft.Extensions.Options.Options.Create(jwtOptions));
 
     services.AddAuthentication(options =>
     {
@@ -87,9 +100,9 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtIssuer,
-            ValidAudience = jwtAudience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+            ValidIssuer = jwtOptions.Issuer,
+            ValidAudience = jwtOptions.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Secret)),
             ClockSkew = TimeSpan.Zero
         };
     });
