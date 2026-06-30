@@ -38,6 +38,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- **FOUND-QW-admin-pagination — clamp pagination bounds on the admin list endpoints.** The public B-036 fix
+  bounded every anonymous endpoint, but the auth-gated lists (admin products/orders/customers/questions/reviews/
+  **inventory**/**installation-requests** + the authenticated **notifications** list) still drove their own
+  `Math.Ceiling(count / pageSize)` + `Skip`/`Take`, so `pageSize=0` (div-by-zero) or a huge `pageNumber`
+  (negative-Skip overflow) could 500 an admin's own screen, and `pageSize=100000` fetched the whole table. Each
+  now clamps via the existing `QueryBounds` at the controller boundary (individual params, or `query with { … }`
+  for the `[FromQuery]`-bound records); the dashboard `recent-orders`/`low-stock`/`top-products` `count` (which
+  could crash on `Take(-1)` or fetch-all) gets a generous `QueryBounds.DashboardCount` (1..100). **Proven live**:
+  `/api/admin/products?pageSize=100000` caps at 100 on the 2260-product DB; `pageSize=0` / `pageNumber=int.MaxValue`
+  → 200. Integration: `AdminPaginationBoundsTests` (20 cases → no 5xx); Api.Tests 446 green. A cross-vendor council
+  (3 rounds) closed every gap — inventory/installation/notifications/dashboard the first pass missed. Only the
+  notifications `summary` `recentCount` is left ("recent N" semantics). Backend only; no migration.
 - **B-018 / B-020 — real error+retry states instead of fake "empty" on a load failure (UX).** A failed load
   was silently rendered as an empty state, telling the user "you have no orders" / "your cart is empty" when
   the request had actually failed. Now each surface distinguishes a transport/5xx failure from a true

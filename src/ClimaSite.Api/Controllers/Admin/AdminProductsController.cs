@@ -1,3 +1,4 @@
+using ClimaSite.Api.Common;
 using ClimaSite.Application.Features.Admin.Products.Queries;
 using ClimaSite.Application.Features.Admin.RelatedProducts.Commands;
 using ClimaSite.Application.Features.Admin.RelatedProducts.Queries;
@@ -39,8 +40,8 @@ public class AdminProductsController : ControllerBase
     {
         var query = new GetAdminProductsQuery
         {
-            PageNumber = pageNumber,
-            PageSize = pageSize,
+            PageNumber = QueryBounds.PageNumber(pageNumber),
+            PageSize = QueryBounds.PageSize(pageSize),
             CategoryId = categoryId,
             Search = search,
             Status = status,

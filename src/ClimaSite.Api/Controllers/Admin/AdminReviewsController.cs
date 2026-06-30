@@ -1,3 +1,4 @@
+using ClimaSite.Api.Common;
 using ClimaSite.Application.Features.Reviews.Commands;
 using ClimaSite.Application.Features.Reviews.Queries;
 using ClimaSite.Core.Entities;
@@ -29,8 +30,8 @@ public class AdminReviewsController : ControllerBase
     {
         var query = new GetPendingReviewsQuery
         {
-            PageNumber = pageNumber,
-            PageSize = pageSize
+            PageNumber = QueryBounds.PageNumber(pageNumber),
+            PageSize = QueryBounds.PageSize(pageSize)
         };
 
         var result = await _mediator.Send(query);
@@ -48,8 +49,8 @@ public class AdminReviewsController : ControllerBase
     {
         var query = new GetPendingReviewsQuery
         {
-            PageNumber = pageNumber,
-            PageSize = pageSize,
+            PageNumber = QueryBounds.PageNumber(pageNumber),
+            PageSize = QueryBounds.PageSize(pageSize),
             Status = status
         };
 

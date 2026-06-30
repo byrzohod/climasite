@@ -1,3 +1,4 @@
+using ClimaSite.Api.Common;
 using ClimaSite.Application.Features.Admin.Dashboard.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -41,21 +42,21 @@ public class AdminDashboardController : ControllerBase
     [HttpGet("recent-orders")]
     public async Task<IActionResult> GetRecentOrders([FromQuery] int count = 10)
     {
-        var result = await _mediator.Send(new GetRecentOrdersQuery { Count = count });
+        var result = await _mediator.Send(new GetRecentOrdersQuery { Count = QueryBounds.DashboardCount(count) });
         return Ok(result);
     }
 
     [HttpGet("low-stock")]
     public async Task<IActionResult> GetLowStockProducts([FromQuery] int count = 10)
     {
-        var result = await _mediator.Send(new GetLowStockProductsQuery { Count = count });
+        var result = await _mediator.Send(new GetLowStockProductsQuery { Count = QueryBounds.DashboardCount(count) });
         return Ok(result);
     }
 
     [HttpGet("top-products")]
     public async Task<IActionResult> GetTopSellingProducts([FromQuery] int count = 10, [FromQuery] string period = "30d")
     {
-        var result = await _mediator.Send(new GetTopSellingProductsQuery { Count = count, Period = period });
+        var result = await _mediator.Send(new GetTopSellingProductsQuery { Count = QueryBounds.DashboardCount(count), Period = period });
         return Ok(result);
     }
 }

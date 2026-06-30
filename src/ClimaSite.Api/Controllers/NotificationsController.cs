@@ -1,3 +1,4 @@
+using ClimaSite.Api.Common;
 using ClimaSite.Application.Features.Notifications.Commands;
 using ClimaSite.Application.Features.Notifications.Queries;
 using MediatR;
@@ -21,6 +22,13 @@ public class NotificationsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetNotifications([FromQuery] GetNotificationsQuery query)
     {
+        // Clamp untrusted pagination so pageSize=0 / a huge pageNumber can't 500 this authenticated list
+        // (FOUND-QW-admin-pagination — the summary's recentCount keeps its own "recent N" semantics).
+        query = query with
+        {
+            PageNumber = QueryBounds.PageNumber(query.PageNumber),
+            PageSize = QueryBounds.PageSize(query.PageSize)
+        };
         var result = await _mediator.Send(query);
         return Ok(result);
     }

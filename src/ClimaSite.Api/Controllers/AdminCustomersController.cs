@@ -1,3 +1,4 @@
+using ClimaSite.Api.Common;
 using ClimaSite.Application.Features.Admin.Customers.Commands;
 using ClimaSite.Application.Features.Admin.Customers.Queries;
 using MediatR;
@@ -21,6 +22,13 @@ public class AdminCustomersController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetCustomers([FromQuery] GetAdminCustomersQuery query)
     {
+        // Clamp the bound pagination so pageSize=0 / a huge pageNumber on this admin list can't 500
+        // (FOUND-QW-admin-pagination — same edge guard as the public B-036 endpoints).
+        query = query with
+        {
+            PageNumber = QueryBounds.PageNumber(query.PageNumber),
+            PageSize = QueryBounds.PageSize(query.PageSize)
+        };
         var result = await _mediator.Send(query);
         return Ok(result);
     }
