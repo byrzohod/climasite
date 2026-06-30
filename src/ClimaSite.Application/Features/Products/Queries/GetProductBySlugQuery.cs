@@ -55,6 +55,8 @@ public class GetProductBySlugQueryHandler : IRequestHandler<GetProductBySlugQuer
             Slug = product.Slug,
             Description = description,
             ShortDescription = shortDescription,
+            MetaTitle = metaTitle,
+            MetaDescription = metaDescription,
             BasePrice = product.BasePrice,
             SalePrice = ProductPricing.GetSalePrice(product.BasePrice, product.CompareAtPrice),
             IsOnSale = ProductPricing.IsOnSale(product.BasePrice, product.CompareAtPrice),

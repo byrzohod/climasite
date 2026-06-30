@@ -45,7 +45,52 @@ server {
         proxy_ssl_protocols TLSv1.2 TLSv1.3;
     }
 
-    # Cache static assets
+    # SEO crawler files (B-044) — generated dynamically by the API. Exact-match locations so they take
+    # priority over the SPA catch-all. We set the REAL public Host ($host) — NOT ${API_HOST} — so the API
+    # resolves the canonical host without any global forwarded-host trust (council R3), plus
+    # X-Forwarded-Proto so the absolute <loc>/Sitemap URLs use the public scheme (https) instead of http.
+    location = /robots.txt {
+        proxy_pass ${API_URL}/robots.txt;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 90;
+        proxy_connect_timeout 90;
+        proxy_ssl_server_name on;
+        proxy_ssl_protocols TLSv1.2 TLSv1.3;
+    }
+
+    location = /sitemap.xml {
+        proxy_pass ${API_URL}/sitemap.xml;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 90;
+        proxy_connect_timeout 90;
+        proxy_ssl_server_name on;
+        proxy_ssl_protocols TLSv1.2 TLSv1.3;
+    }
+
+    # Private / semi-private SPA prefixes (B-044) — JS-independent noindex guard layered over the Wave A
+    # route-meta noindex. NOTE: once a location block declares its own add_header, nginx stops inheriting
+    # the server-level add_headers, so the security headers are RE-DECLARED here (council R2). This block
+    # still serves the SPA via the standard index.html fallback.
+    # ORDER MATTERS: nginx evaluates regex locations in declaration order (first match wins). This block
+    # MUST precede the static-asset regex below so an asset-like private path (e.g. /admin/x.js) still gets
+    # X-Robots-Tag + the re-declared security headers instead of falling into the cache-asset block.
+    location ~ ^/(admin|account|checkout|cart|login|register|forgot-password|reset-password|wishlist)(/|$) {
+        add_header X-Robots-Tag "noindex, nofollow" always;
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Cache static assets (normal root bundles like /main.abc.js don't match the private prefix above).
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";

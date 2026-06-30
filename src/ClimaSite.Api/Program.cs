@@ -218,6 +218,9 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     // Response caching
     services.AddResponseCaching();
 
+    // In-memory cache — backs the host-independent sitemap enumeration (B-044). Idempotent.
+    services.AddMemoryCache();
+
     // Forwarded headers — populate the real client IP/scheme from the nginx reverse proxy.
     // This MUST be applied (in the pipeline) before rate limiting and HTTPS redirection so the
     // rate limiter partitions per real client rather than per proxy. (SEC-03 / SR-06)
