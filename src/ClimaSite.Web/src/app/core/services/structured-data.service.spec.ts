@@ -30,6 +30,7 @@ describe('StructuredDataService', () => {
       { id: 'img-2', url: 'https://example.com/img2.jpg', isPrimary: false, sortOrder: 1 }
     ],
     variants: [],
+    inStock: true,
     warrantyMonths: 24,
     requiresInstallation: true,
     createdAt: '2024-01-01'
@@ -70,10 +71,10 @@ describe('StructuredDataService', () => {
   });
 
   describe('setProductData', () => {
-    it('should add JSON-LD script to document head', () => {
+    it('should add JSON-LD script to document head under the stable "product" id', () => {
       service.setProductData(mockProduct, 'https://example.com');
 
-      const script = document.getElementById('structured-data-default');
+      const script = document.getElementById('structured-data-product');
       expect(script).toBeTruthy();
       expect(script?.getAttribute('type')).toBe('application/ld+json');
     });
@@ -81,7 +82,7 @@ describe('StructuredDataService', () => {
     it('should include product name in JSON-LD', () => {
       service.setProductData(mockProduct, 'https://example.com');
 
-      const script = document.getElementById('structured-data-default');
+      const script = document.getElementById('structured-data-product');
       const data = JSON.parse(script?.textContent || '{}');
 
       expect(data.name).toBe('Test Air Conditioner');
@@ -90,7 +91,7 @@ describe('StructuredDataService', () => {
     it('should include brand information', () => {
       service.setProductData(mockProduct, 'https://example.com');
 
-      const script = document.getElementById('structured-data-default');
+      const script = document.getElementById('structured-data-product');
       const data = JSON.parse(script?.textContent || '{}');
 
       expect(data.brand).toEqual({
@@ -104,17 +105,62 @@ describe('StructuredDataService', () => {
       // customer pays, not the struck-through original (salePrice).
       service.setProductData(mockProduct, 'https://example.com');
 
-      const script = document.getElementById('structured-data-default');
+      const script = document.getElementById('structured-data-product');
       const data = JSON.parse(script?.textContent || '{}');
 
       expect(data.offers.price).toBe(599);
       expect(data.offers.priceCurrency).toBe('EUR');
     });
 
+    it('should follow product.inStock when no variants exist (InStock when true)', () => {
+      // M2: with no variants, availability follows the product-level inStock flag.
+      service.setProductData(mockProduct, 'https://example.com');
+
+      const script = document.getElementById('structured-data-product');
+      const data = JSON.parse(script?.textContent || '{}');
+
+      expect(data.offers.availability).toBe('https://schema.org/InStock');
+    });
+
+    it('should mark OutOfStock with no variants when inStock is false', () => {
+      service.setProductData({ ...mockProduct, inStock: false }, 'https://example.com');
+
+      const script = document.getElementById('structured-data-product');
+      const data = JSON.parse(script?.textContent || '{}');
+
+      expect(data.offers.availability).toBe('https://schema.org/OutOfStock');
+    });
+
+    it('should NEVER default to InStock when there are no variants and no inStock flag (council M2)', () => {
+      const noStockSignal: Product = { ...mockProduct, inStock: undefined };
+      service.setProductData(noStockSignal, 'https://example.com');
+
+      const script = document.getElementById('structured-data-product');
+      const data = JSON.parse(script?.textContent || '{}');
+
+      expect(data.offers.availability).toBe('https://schema.org/OutOfStock');
+    });
+
+    it('should mark OutOfStock when every variant has no available quantity', () => {
+      const outOfStock: Product = {
+        ...mockProduct,
+        variants: [{
+          id: 'v1', sku: 'V-1', price: 599, stockQuantity: 0,
+          reservedQuantity: 0, availableQuantity: 0, isActive: true
+        }]
+      };
+      service.setProductData(outOfStock, 'https://example.com');
+
+      const script = document.getElementById('structured-data-product');
+      const data = JSON.parse(script?.textContent || '{}');
+
+      expect(data.offers.availability).toBe('https://schema.org/OutOfStock');
+    });
+
     it('should include aggregate rating when reviews exist', () => {
       service.setProductData(mockProduct, 'https://example.com');
 
-      const script = document.getElementById('structured-data-default');
+      const script = document.getElementById('structured-data-product');
       const data = JSON.parse(script?.textContent || '{}');
 
       expect(data.aggregateRating).toBeTruthy();
@@ -125,18 +171,31 @@ describe('StructuredDataService', () => {
     it('should include multiple images', () => {
       service.setProductData(mockProduct, 'https://example.com');
 
-      const script = document.getElementById('structured-data-default');
+      const script = document.getElementById('structured-data-product');
       const data = JSON.parse(script?.textContent || '{}');
 
       expect(data.image.length).toBe(2);
     });
+
+    it('should absolutize relative image URLs against the base url', () => {
+      const relativeImages: Product = {
+        ...mockProduct,
+        images: [{ id: 'img-rel', url: '/assets/p.jpg', isPrimary: true, sortOrder: 0 }]
+      };
+      service.setProductData(relativeImages, 'https://example.com');
+
+      const script = document.getElementById('structured-data-product');
+      const data = JSON.parse(script?.textContent || '{}');
+
+      expect(data.image[0]).toBe('https://example.com/assets/p.jpg');
+    });
   });
 
   describe('setProductListData', () => {
-    it('should create ItemList schema', () => {
+    it('should create ItemList schema under the stable "product-list" id', () => {
       service.setProductListData([mockProductBrief], 'Test List', 'https://example.com');
 
-      const script = document.getElementById('structured-data-default');
+      const script = document.getElementById('structured-data-product-list');
       const data = JSON.parse(script?.textContent || '{}');
 
       expect(data['@type']).toBe('ItemList');
@@ -147,7 +206,7 @@ describe('StructuredDataService', () => {
       const products = [mockProductBrief, { ...mockProductBrief, id: 'prod-2', slug: 'prod-2' }];
       service.setProductListData(products, 'List', 'https://example.com');
 
-      const script = document.getElementById('structured-data-default');
+      const script = document.getElementById('structured-data-product-list');
       const data = JSON.parse(script?.textContent || '{}');
 
       expect(data.itemListElement.length).toBe(2);
@@ -226,6 +285,16 @@ describe('StructuredDataService', () => {
       expect(data['@type']).toBe('WebSite');
       expect(data.potentialAction['@type']).toBe('SearchAction');
     });
+
+    it('should target the storefront search param `search` (not `q`)', () => {
+      service.setWebsiteData('ClimaSite', 'https://climasite.com', 'https://climasite.com/products');
+
+      const script = document.getElementById('structured-data-website');
+      const data = JSON.parse(script?.textContent || '{}');
+
+      expect(data.potentialAction.target.urlTemplate)
+        .toBe('https://climasite.com/products?search={search_term_string}');
+    });
   });
 
   describe('setFaqData', () => {
@@ -266,7 +335,7 @@ describe('StructuredDataService', () => {
       service.clearById('breadcrumb');
 
       expect(document.getElementById('structured-data-breadcrumb')).toBeFalsy();
-      expect(document.getElementById('structured-data-default')).toBeTruthy();
+      expect(document.getElementById('structured-data-product')).toBeTruthy();
     });
   });
 });

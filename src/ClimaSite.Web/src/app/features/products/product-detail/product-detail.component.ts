@@ -1,6 +1,8 @@
-import { Component, inject, signal, OnInit, computed, effect, ElementRef, ViewChild } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, signal, computed, effect, ElementRef, ViewChild, DestroyRef } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ProductService } from '../../../core/services/product.service';
@@ -8,6 +10,8 @@ import { CartService } from '../../../core/services/cart.service';
 import { LanguageService } from '../../../core/services/language.service';
 import { WishlistService } from '../../../core/services/wishlist.service';
 import { FlyingCartService } from '../../../core/services/flying-cart.service';
+import { SeoService } from '../../../core/services/seo.service';
+import { StructuredDataService } from '../../../core/services/structured-data.service';
 import { Product } from '../../../core/models/product.model';
 import { ProductConsumablesComponent } from '../../../shared/components/product-consumables/product-consumables.component';
 import { SimilarProductsComponent } from '../../../shared/components/similar-products/similar-products.component';
@@ -822,15 +826,32 @@ import { DualPricePipe } from '../../../shared/pipes/dual-price.pipe';
                     }
                   `]
 })
-export class ProductDetailComponent implements OnInit {
-private readonly route = inject(ActivatedRoute);
+export class ProductDetailComponent {
+  private readonly route = inject(ActivatedRoute);
   private readonly productService = inject(ProductService);
   private readonly cartService = inject(CartService);
   private readonly languageService = inject(LanguageService);
   private readonly wishlistService = inject(WishlistService);
   private readonly flyingCartService = inject(FlyingCartService);
-  private currentSlug: string | null = null;
-  private lastLanguage: string | null = null;
+  private readonly seo = inject(SeoService);
+  private readonly structuredData = inject(StructuredDataService);
+  private readonly document = inject(DOCUMENT);
+  private readonly destroyRef = inject(DestroyRef);
+
+  /** Slug as a signal so same-route param changes (`/products/a` -> `/products/b`) refresh. */
+  private readonly slug = toSignal(
+    this.route.paramMap.pipe(map(p => p.get('slug'))),
+    { initialValue: this.route.snapshot.paramMap.get('slug') }
+  );
+  /** Last `(slug, lang)` actually loaded — dedupes the unified reactive trigger. */
+  private lastLoadedKey: string | null = null;
+  /**
+   * Monotonic load token (#91 FOUND-loaderr-race pattern). Navigating A->B reuses this
+   * component (no destroy), so `takeUntilDestroyed` alone can't stop A's slower response
+   * from landing after B's. Each load captures `seq`; callbacks apply state/meta/JSON-LD
+   * only when their `seq` is still the latest.
+   */
+  private loadSeq = 0;
 
   @ViewChild('galleryWrapper') galleryWrapper?: ElementRef<HTMLElement>;
 
@@ -855,13 +876,29 @@ private readonly route = inject(ActivatedRoute);
   });
 
   constructor() {
-    // Refresh product when language changes
+    // H7/H3/H5: ONE reactive load trigger keyed on (slug, lang). Combining the route
+    // param signal with the language signal in a single effect — deduped against the
+    // last-loaded key — refreshes content + head on either change without the old
+    // double-fetch race (no second subscription alongside this effect).
     effect(() => {
-      const currentLang = this.languageService.currentLanguage();
-      if (this.currentSlug && this.lastLanguage !== null && this.lastLanguage !== currentLang) {
-        this.loadProduct(this.currentSlug);
+      const slug = this.slug();
+      const lang = this.languageService.currentLanguage();
+      if (!slug) {
+        this.lastLoadedKey = null;
+        this.loadSeq++; // invalidate any in-flight load
+        this.error.set('products.details.notFound');
+        this.isLoading.set(false);
+        this.seo.setMeta({
+          titleKey: 'seo.product.notFoundTitle',
+          descriptionKey: 'seo.product.notFoundDescription',
+          robots: 'noindex,follow'
+        });
+        return;
       }
-      this.lastLanguage = currentLang;
+      const key = `${slug}::${lang}`;
+      if (key === this.lastLoadedKey) return;
+      this.lastLoadedKey = key;
+      this.loadProduct(slug);
     });
   }
 
@@ -889,31 +926,60 @@ private readonly route = inject(ActivatedRoute);
     return validRatings.includes(rating as EnergyRatingLevel) ? rating as EnergyRatingLevel : null;
   });
 
-  ngOnInit(): void {
-    const slug = this.route.snapshot.paramMap.get('slug');
-    if (slug) {
-      this.currentSlug = slug;
-      this.loadProduct(slug);
-    } else {
-      this.error.set('products.details.notFound');
-      this.isLoading.set(false);
-    }
+  private loadProduct(slug: string): void {
+    const seq = ++this.loadSeq;
+    this.isLoading.set(true);
+    this.error.set(null);
+    // takeUntilDestroyed cancels in-flight on destroy; the `seq` guard additionally rejects
+    // a stale response from a previous slug/lang that lands out-of-order on the SAME instance.
+    this.productService.getProductBySlug(slug)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (product) => {
+          if (seq !== this.loadSeq) return;
+          this.product.set(product);
+          this.isLoading.set(false);
+          this.applyProductSeo(product);
+        },
+        error: () => {
+          if (seq !== this.loadSeq) return;
+          // Error details are intentionally not logged in production
+          // Consider implementing a logging service for production error tracking
+          this.error.set('products.details.loadError');
+          this.isLoading.set(false);
+          // H5: a matched /products/:slug whose slug 404s in-component is not covered by
+          // the `**` route's noindex — mark this error state noindex,follow explicitly.
+          this.seo.setMeta({
+            titleKey: 'seo.product.notFoundTitle',
+            descriptionKey: 'seo.product.notFoundDescription',
+            robots: 'noindex,follow'
+          });
+        }
+      });
   }
 
-  private loadProduct(slug: string): void {
-    this.isLoading.set(true);
-    this.productService.getProductBySlug(slug).subscribe({
-      next: (product) => {
-        this.product.set(product);
-        this.isLoading.set(false);
-      },
-      error: () => {
-        // Error details are intentionally not logged in production
-        // Consider implementing a logging service for production error tracking
-        this.error.set('products.details.loadError');
-        this.isLoading.set(false);
-      }
+  /** Apply curated-or-fallback meta + Product/Breadcrumb JSON-LD for the loaded product. */
+  private applyProductSeo(product: Product): void {
+    const origin = this.document.location.origin;
+    this.seo.setMeta({
+      title: product.metaTitle ?? product.name,
+      description: product.metaDescription ?? product.shortDescription ?? product.description,
+      image: product.images?.[0]?.url,
+      type: 'product',
+      robots: 'index,follow'
     });
+    this.structuredData.setProductData(product, origin);
+    // B-048/M1: the visible breadcrumb here is inline markup, so this component is the
+    // breadcrumb JSON-LD emitter for the product page (Home > Products > [Category] > name).
+    const trail = [
+      { name: this.languageService.instant('nav.home'), url: `${origin}/` },
+      { name: this.languageService.instant('nav.products'), url: `${origin}/products` }
+    ];
+    if (product.category) {
+      trail.push({ name: product.category.name, url: `${origin}/products/category/${product.category.slug}` });
+    }
+    trail.push({ name: product.name, url: `${origin}/products/${product.slug}` });
+    this.structuredData.setBreadcrumbData(trail);
   }
 
   selectImage(url: string): void {

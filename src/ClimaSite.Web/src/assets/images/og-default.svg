@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="ClimaSite — HVAC, Heating & Climate Solutions">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset="1" stop-color="#0e2a3a"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0ea5e9"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1200" height="8" fill="url(#accent)"/>
+  <g transform="translate(96 250)">
+    <text x="0" y="0" font-family="'Space Grotesk', 'Segoe UI', system-ui, sans-serif" font-size="96" font-weight="700" fill="#ffffff">ClimaSite</text>
+    <text x="4" y="78" font-family="Inter, 'Segoe UI', system-ui, sans-serif" font-size="40" font-weight="400" fill="#9fb3c8">HVAC, Heating &amp; Climate Solutions</text>
+  </g>
+  <circle cx="1040" cy="150" r="56" fill="none" stroke="url(#accent)" stroke-width="10"/>
+  <path d="M1010 150 h60 M1040 120 v60" stroke="url(#accent)" stroke-width="10" stroke-linecap="round"/>
+</svg>

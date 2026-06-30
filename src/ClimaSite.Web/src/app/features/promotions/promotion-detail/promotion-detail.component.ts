@@ -1,9 +1,14 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, signal, effect, DestroyRef } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs/operators';
 import { TranslateModule } from '@ngx-translate/core';
 import { PromotionService } from '../../../core/services/promotion.service';
 import { CartService } from '../../../core/services/cart.service';
+import { LanguageService } from '../../../core/services/language.service';
+import { SeoService } from '../../../core/services/seo.service';
+import { StructuredDataService } from '../../../core/services/structured-data.service';
 import { Promotion, PromotionType } from '../../../core/models/promotion.model';
 import { ProductBrief } from '../../../core/models/product.model';
 import { DualPricePipe } from '../../../shared/pipes/dual-price.pipe';
@@ -466,10 +471,23 @@ import { DualPricePipe } from '../../../shared/pipes/dual-price.pipe';
     }
   `]
 })
-export class PromotionDetailComponent implements OnInit {
+export class PromotionDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly promotionService = inject(PromotionService);
   private readonly cartService = inject(CartService);
+  private readonly languageService = inject(LanguageService);
+  private readonly seo = inject(SeoService);
+  private readonly structuredData = inject(StructuredDataService);
+  private readonly document = inject(DOCUMENT);
+  private readonly destroyRef = inject(DestroyRef);
+
+  private readonly slug = toSignal(
+    this.route.paramMap.pipe(map(p => p.get('slug'))),
+    { initialValue: this.route.snapshot.paramMap.get('slug') }
+  );
+  private lastLoadedKey: string | null = null;
+  /** Monotonic load token — rejects stale out-of-order responses (#91 pattern). */
+  private loadSeq = 0;
 
   promotion = signal<Promotion | null>(null);
   isLoading = signal(true);
@@ -478,29 +496,65 @@ export class PromotionDetailComponent implements OnInit {
   addingItems = signal<Record<string, boolean>>({});
   addedItems = signal<Record<string, boolean>>({});
 
-  ngOnInit(): void {
-    const slug = this.route.snapshot.paramMap.get('slug');
-    if (slug) {
+  constructor() {
+    // One reactive (slug, lang) load trigger — same param-unify pattern as product-detail.
+    effect(() => {
+      const slug = this.slug();
+      const lang = this.languageService.currentLanguage();
+      if (!slug) {
+        this.lastLoadedKey = null;
+        this.loadSeq++; // invalidate any in-flight load
+        this.error.set('promotions.errors.notFound');
+        this.isLoading.set(false);
+        this.seo.setMeta({ titleKey: 'seo.promotion.notFoundTitle', descriptionKey: 'seo.promotion.notFoundDescription', robots: 'noindex,follow' });
+        return;
+      }
+      const key = `${slug}::${lang}`;
+      if (key === this.lastLoadedKey) return;
+      this.lastLoadedKey = key;
       this.loadPromotion(slug);
-    } else {
-      this.error.set('promotions.errors.notFound');
-      this.isLoading.set(false);
-    }
+    });
   }
 
   private loadPromotion(slug: string): void {
+    const seq = ++this.loadSeq;
     this.isLoading.set(true);
-    this.promotionService.getPromotionBySlug(slug).subscribe({
-      next: (promotion) => {
-        this.promotion.set(promotion);
-        this.isLoading.set(false);
-      },
-      error: (err) => {
-        console.error('Failed to load promotion:', err);
-        this.error.set('promotions.errors.notFound');
-        this.isLoading.set(false);
-      }
+    this.error.set(null);
+    this.promotionService.getPromotionBySlug(slug)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (promotion) => {
+          if (seq !== this.loadSeq) return;
+          this.promotion.set(promotion);
+          this.isLoading.set(false);
+          this.applyPromotionSeo(promotion);
+        },
+        error: (err) => {
+          if (seq !== this.loadSeq) return;
+          console.error('Failed to load promotion:', err);
+          this.error.set('promotions.errors.notFound');
+          this.isLoading.set(false);
+          this.seo.setMeta({ titleKey: 'seo.promotion.notFoundTitle', descriptionKey: 'seo.promotion.notFoundDescription', robots: 'noindex,follow' });
+        }
+      });
+  }
+
+  private applyPromotionSeo(promotion: Promotion): void {
+    const origin = this.document.location.origin;
+    this.seo.setMeta({
+      title: promotion.name,
+      description: promotion.description,
+      image: promotion.bannerImageUrl ?? promotion.thumbnailImageUrl,
+      type: 'website',
+      robots: 'index,follow'
     });
+    this.structuredData.setProductListData(promotion.products ?? [], promotion.name, origin);
+    // M1: this page renders an inline breadcrumb, so it is the breadcrumb JSON-LD emitter.
+    this.structuredData.setBreadcrumbData([
+      { name: this.languageService.instant('nav.home'), url: `${origin}/` },
+      { name: this.languageService.instant('nav.promotions'), url: `${origin}/promotions` },
+      { name: promotion.name, url: `${origin}/promotions/${promotion.slug}` }
+    ]);
   }
 
   getDiscountText(): string {

@@ -23,6 +23,14 @@ export interface Product {
   warrantyMonths: number;
   requiresInstallation: boolean;
   createdAt: string;
+  // Authoritative product-level stock flag (mirrors ProductBrief.inStock). Optional because
+  // the detail payload (GetProductBySlugQuery) does not populate it — variant stock is the
+  // reliable detail-page signal; this is the no-variant fallback for SEO availability.
+  inStock?: boolean;
+  // B-044: curated SEO overrides. Optional — the backend only populates these once
+  // Wave B maps them; product-detail falls back to name / shortDescription meanwhile.
+  metaTitle?: string;
+  metaDescription?: string;
 }
 
 export interface ProductBrief {

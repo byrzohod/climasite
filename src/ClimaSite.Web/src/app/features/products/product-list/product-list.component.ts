@@ -1,5 +1,5 @@
 import { Component, inject, signal, computed, OnInit, OnDestroy, effect, ViewChild, ElementRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
@@ -7,6 +7,8 @@ import { Subject, takeUntil } from 'rxjs';
 import { ProductService } from '../../../core/services/product.service';
 import { CategoryService } from '../../../core/services/category.service';
 import { LanguageService } from '../../../core/services/language.service';
+import { SeoService } from '../../../core/services/seo.service';
+import { StructuredDataService } from '../../../core/services/structured-data.service';
 import { ProductBrief, FilterOptions, ProductFilter } from '../../../core/models/product.model';
 import { Category } from '../../../core/models/category.model';
 import { ProductCardComponent } from '../product-card/product-card.component';
@@ -1109,12 +1111,21 @@ export class ProductListComponent implements OnInit, OnDestroy {
   private readonly productService = inject(ProductService);
   private readonly categoryService = inject(CategoryService);
   private readonly languageService = inject(LanguageService);
+  private readonly seo = inject(SeoService);
+  private readonly structuredData = inject(StructuredDataService);
+  private readonly document = inject(DOCUMENT);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroy$ = new Subject<void>();
   private isInitialized = false;
   private lastLanguage: string | null = null;
   private previouslyFocusedElement: HTMLElement | null = null;
+  /** Monotonic fetch token — rejects stale out-of-order product responses (#91 pattern). */
+  private fetchSeq = 0;
+  /** Monotonic load token for the category-resolution layer above fetchProducts — a stale
+   *  getCategoryBySlug response must NOT set stale category/filters or trigger a fetch that
+   *  would then become the "latest" fetchSeq (#91 pattern). */
+  private loadSeq = 0;
 
   @ViewChild('filterSidebarRef') filterSidebarRef!: ElementRef<HTMLElement>;
 
@@ -1249,19 +1260,27 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   loadProducts(categorySlug?: string): void {
     this.loading.set(true);
+    // Guard the category-resolution layer: a slow getCategoryBySlug(A) landing after a newer
+    // load(B) — or after destroy — must not set stale category/filters or call fetchProducts(A)
+    // (which would make A the "latest" fetchSeq). takeUntil(destroy$) + the seq check cover both.
+    const seq = ++this.loadSeq;
 
     if (categorySlug) {
-      this.categoryService.getCategoryBySlug(categorySlug).subscribe({
-        next: (category) => {
-          this.category.set(category);
-          this.loadFilterOptions(categorySlug);
-          this.fetchProducts(category.id);
-        },
-        error: () => {
-          this.loading.set(false);
-          this.router.navigate(['/products']);
-        }
-      });
+      this.categoryService.getCategoryBySlug(categorySlug)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (category) => {
+            if (seq !== this.loadSeq) return;
+            this.category.set(category);
+            this.loadFilterOptions(categorySlug);
+            this.fetchProducts(category.id);
+          },
+          error: () => {
+            if (seq !== this.loadSeq) return;
+            this.loading.set(false);
+            this.router.navigate(['/products']);
+          }
+        });
     } else {
       this.category.set(null);
       this.loadFilterOptions();
@@ -1270,18 +1289,20 @@ export class ProductListComponent implements OnInit, OnDestroy {
   }
 
   loadFilterOptions(categorySlug?: string): void {
-    this.productService.getFilterOptions(categorySlug).subscribe({
-      next: (options) => this.filterOptions.set(options),
-      error: () => {
-        // Fallback to empty filter options if fetch fails
-        this.filterOptions.set({
-          brands: [],
-          priceRange: { min: 0, max: 10000 },
-          specifications: {},
-          tags: []
-        });
-      }
-    });
+    this.productService.getFilterOptions(categorySlug)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (options) => this.filterOptions.set(options),
+        error: () => {
+          // Fallback to empty filter options if fetch fails
+          this.filterOptions.set({
+            brands: [],
+            priceRange: { min: 0, max: 10000 },
+            specifications: {},
+            tags: []
+          });
+        }
+      });
   }
 
   fetchProducts(categoryId?: string): void {
@@ -1303,19 +1324,91 @@ export class ProductListComponent implements OnInit, OnDestroy {
       sortDescending: this.sortBy === 'price-desc' || this.sortBy === 'name-desc'
     };
 
-    this.productService.getProducts(filter).subscribe({
-      next: (result) => {
-        this.products.set(result.items);
-        this.totalCount.set(result.totalCount);
-        this.totalPages.set(result.totalPages);
-        this.loading.set(false);
-        this.error.set(null);
-      },
-      error: () => {
-        this.loading.set(false);
-        this.error.set('products.error.loadFailed');
-      }
-    });
+    // H2: takeUntil(destroy$) cancels on destroy (no post-navigation SEO leak); the
+    // monotonic `fetchSeq` guard additionally rejects a stale, out-of-order response so
+    // `updateListSeo()`/`setProductListData()` only apply for the latest fetch.
+    const seq = ++this.fetchSeq;
+    this.productService.getProducts(filter)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (result) => {
+          if (seq !== this.fetchSeq) return;
+          this.products.set(result.items);
+          this.totalCount.set(result.totalCount);
+          this.totalPages.set(result.totalPages);
+          this.loading.set(false);
+          this.error.set(null);
+          // Applied after the async fetch (so it runs AFTER the strategy's default meta on
+          // NavigationEnd and is never clobbered): thin/dup states get noindex; the ItemList
+          // JSON-LD reflects the loaded page.
+          this.updateListSeo();
+        },
+        error: () => {
+          if (seq !== this.fetchSeq) return;
+          this.loading.set(false);
+          this.error.set('products.error.loadFailed');
+        }
+      });
+  }
+
+  /**
+   * Thin/duplicate list states — pagination, filters, sort, or a search term — are
+   * `noindex,follow` (the clean `/products` and `/products/category/:slug` stay indexable).
+   * Marketing params (utm_*, gclid, fbclid) are NOT thin and never trigger noindex; the
+   * canonical strips them via SeoService. Deep products are discovered via the sitemap.
+   */
+  private isThinListState(): boolean {
+    return this.currentPage() > 1
+      || this.selectedBrand() !== null
+      || this.inStockOnly()
+      || this.onSaleOnly()
+      || this.minPrice !== null
+      || this.maxPrice !== null
+      || this.sortBy !== 'newest'
+      || !!this.searchQuery();
+  }
+
+  private updateListSeo(): void {
+    const robots = this.isThinListState() ? 'noindex,follow' : 'index,follow';
+    const cat = this.category();
+    const search = this.searchQuery();
+
+    if (search) {
+      this.seo.setMeta({
+        titleKey: 'seo.products.searchTitle',
+        descriptionKey: 'seo.products.searchDescription',
+        robots: 'noindex,follow'
+      });
+    } else if (cat) {
+      this.seo.setMeta({
+        title: cat.name,
+        description: cat.description || undefined,
+        descriptionKey: cat.description ? undefined : 'seo.products.description',
+        robots
+      });
+    } else {
+      this.seo.setMeta({
+        titleKey: 'seo.products.title',
+        descriptionKey: 'seo.products.description',
+        robots
+      });
+    }
+
+    const origin = this.document.location.origin;
+    const listName = cat?.name ?? this.languageService.instant('products.all');
+    this.structuredData.setProductListData(this.products(), listName, origin);
+
+    // M1: this page renders an inline breadcrumb, so it is the breadcrumb JSON-LD emitter.
+    const trail = [{ name: this.languageService.instant('nav.home'), url: `${origin}/` }];
+    if (search) {
+      trail.push({ name: this.languageService.instant('products.searchResults'), url: `${origin}/products` });
+    } else if (cat) {
+      trail.push({ name: this.languageService.instant('nav.products'), url: `${origin}/products` });
+      trail.push({ name: cat.name, url: `${origin}/products/category/${cat.slug}` });
+    } else {
+      trail.push({ name: this.languageService.instant('products.all'), url: `${origin}/products` });
+    }
+    this.structuredData.setBreadcrumbData(trail);
   }
 
   toggleBrand(brand: string): void {

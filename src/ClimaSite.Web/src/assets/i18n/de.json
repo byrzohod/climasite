@@ -1928,5 +1928,139 @@
       "off": "Aus",
       "description": "Steuern Sie Animationen und Bewegungseffekte. Wählen Sie „System“, um der Geräteeinstellung zu folgen, „Ein“, um Bewegung zu reduzieren, oder „Aus“, um Animationen immer anzuzeigen."
     }
+  },
+  "seo": {
+    "default": {
+      "title": "HLK, Heizung & Klimalösungen",
+      "description": "Erstklassige HLK-Lösungen — Klimaanlagen, Heizsysteme und Klimatechnik für Zuhause und Gewerbe."
+    },
+    "home": {
+      "title": "HLK, Heizung & Klimalösungen",
+      "description": "Kaufen Sie Klimaanlagen, Wärmepumpen und Heizsysteme mit fachgerechter Installation. Konfigurieren Sie das passende Gerät in Minuten."
+    },
+    "products": {
+      "title": "Alle Produkte",
+      "description": "Entdecken Sie unser komplettes Sortiment an Klimaanlagen, Wärmepumpen, Heiz- und Lüftungstechnik führender HLK-Marken.",
+      "searchTitle": "Suchergebnisse",
+      "searchDescription": "Durchsuchen Sie Klimaanlagen, Heizsysteme und HLK-Technik im ClimaSite-Katalog."
+    },
+    "product": {
+      "title": "Produkt",
+      "description": "Sehen Sie Spezifikationen, Preise und Verfügbarkeit für dieses HLK-Produkt — mit fachgerechten Installationsoptionen.",
+      "notFoundTitle": "Produkt nicht gefunden",
+      "notFoundDescription": "Dieses Produkt wurde nicht gefunden. Durchstöbern Sie stattdessen unseren HLK- und Klimatechnik-Katalog."
+    },
+    "categories": {
+      "title": "Kategorien",
+      "description": "Entdecken Sie die HLK-Produktkategorien — Klimatisierung, Heizung, Wärmepumpen, Lüftung und Zubehör."
+    },
+    "cart": {
+      "title": "Warenkorb",
+      "description": "Überprüfen Sie die Artikel in Ihrem ClimaSite-Warenkorb vor dem Bezahlen."
+    },
+    "wishlist": {
+      "title": "Wunschliste",
+      "description": "Die HLK-Produkte, die Sie auf Ihrer ClimaSite-Wunschliste gespeichert haben."
+    },
+    "wishlistShared": {
+      "title": "Geteilte Wunschliste",
+      "description": "Eine mit Ihnen geteilte Wunschliste mit HLK-Produkten auf ClimaSite."
+    },
+    "checkout": {
+      "title": "Kasse",
+      "description": "Schließen Sie Ihre ClimaSite-Bestellung sicher ab."
+    },
+    "checkoutConfirmation": {
+      "title": "Bestellbestätigung",
+      "description": "Bestätigung und Details Ihrer ClimaSite-Bestellung."
+    },
+    "login": {
+      "title": "Anmelden",
+      "description": "Melden Sie sich bei Ihrem ClimaSite-Konto an, um Bestellungen, Adressen und Ihre Wunschliste zu verwalten."
+    },
+    "register": {
+      "title": "Konto erstellen",
+      "description": "Erstellen Sie ein ClimaSite-Konto, um Bestellungen zu verfolgen, Favoriten zu speichern und schneller zu bezahlen."
+    },
+    "forgotPassword": {
+      "title": "Passwort vergessen",
+      "description": "Setzen Sie das Passwort für Ihr ClimaSite-Konto zurück."
+    },
+    "resetPassword": {
+      "title": "Passwort zurücksetzen",
+      "description": "Legen Sie ein neues Passwort für Ihr ClimaSite-Konto fest."
+    },
+    "account": {
+      "title": "Mein Konto",
+      "description": "Verwalten Sie Ihr ClimaSite-Konto, Bestellungen, Adressen und Benachrichtigungseinstellungen."
+    },
+    "admin": {
+      "title": "Administration",
+      "description": "Verwaltungsbereich von ClimaSite."
+    },
+    "contact": {
+      "title": "Kontakt",
+      "description": "Kontaktieren Sie das ClimaSite-Team für Produktberatung, Installation und Support."
+    },
+    "about": {
+      "title": "Über uns",
+      "description": "Erfahren Sie mehr über ClimaSite — Ihren Spezialisten für Klimatisierung, Heizung und Klimalösungen."
+    },
+    "promotions": {
+      "title": "Aktionen",
+      "description": "Aktuelle Angebote und Sonderaktionen für Klimaanlagen, Wärmepumpen und HLK-Technik."
+    },
+    "promotion": {
+      "title": "Aktion",
+      "description": "Details zu dieser ClimaSite-Aktion und den enthaltenen Produkten.",
+      "notFoundTitle": "Aktion nicht gefunden",
+      "notFoundDescription": "Diese Aktion wurde nicht gefunden oder ist abgelaufen. Sehen Sie sich stattdessen unsere aktuellen Angebote an."
+    },
+    "brands": {
+      "title": "Marken",
+      "description": "Kaufen Sie bei vertrauenswürdigen HLK-Marken — Klimatisierung, Heizung und Klimatechnik führender Hersteller."
+    },
+    "brand": {
+      "title": "Marke",
+      "description": "Entdecken Sie HLK-Produkte dieser Marke mit Spezifikationen, Preisen und Installationsoptionen.",
+      "notFoundTitle": "Marke nicht gefunden",
+      "notFoundDescription": "Diese Marke wurde nicht gefunden. Durchstöbern Sie stattdessen alle Marken auf ClimaSite."
+    },
+    "resources": {
+      "title": "Ratgeber",
+      "description": "Leitfäden, Kaufberatung und Ressourcen, die Ihnen bei Auswahl und Wartung Ihrer HLK-Technik helfen."
+    },
+    "faq": {
+      "title": "Häufig gestellte Fragen",
+      "description": "Antworten auf häufige Fragen zu HLK-Produkten, Lieferung, Installation und Garantie bei ClimaSite."
+    },
+    "terms": {
+      "title": "Nutzungsbedingungen",
+      "description": "Die Geschäftsbedingungen für die Nutzung von ClimaSite."
+    },
+    "privacy": {
+      "title": "Datenschutzerklärung",
+      "description": "Wie ClimaSite Ihre personenbezogenen Daten erhebt, verwendet und schützt."
+    },
+    "cookies": {
+      "title": "Cookie-Richtlinie",
+      "description": "Wie ClimaSite Cookies verwendet und wie Sie Ihre Einstellungen verwalten können."
+    },
+    "returns": {
+      "title": "Rückgabe & Erstattung",
+      "description": "Die Rückgabe- und Erstattungsrichtlinie von ClimaSite für HLK-Produkte."
+    },
+    "shipping": {
+      "title": "Versandinformationen",
+      "description": "Lieferoptionen, Kosten und Lieferzeiten für ClimaSite-Bestellungen."
+    },
+    "impressum": {
+      "title": "Impressum",
+      "description": "Rechtliche Angaben und Unternehmensinformationen zu ClimaSite."
+    },
+    "notFound": {
+      "title": "Seite nicht gefunden",
+      "description": "Die gesuchte Seite wurde nicht gefunden. Durchstöbern Sie stattdessen unseren HLK-Katalog."
+    }
   }
 }

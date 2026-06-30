@@ -1,6 +1,8 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, OnDestroy } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { StructuredDataService } from '../../core/services/structured-data.service';
 
 /**
  * Number of FAQ entries defined in i18n. Items are modelled as numbered keys
@@ -161,8 +163,9 @@ interface FaqItem {
     }
   `]
 })
-export class FaqComponent {
+export class FaqComponent implements OnDestroy {
   private readonly translate = inject(TranslateService);
+  private readonly structuredData = inject(StructuredDataService);
 
   private readonly openIndex = signal<number | null>(null);
   private readonly lang = signal(this.translate.currentLang);
@@ -181,7 +184,16 @@ export class FaqComponent {
   });
 
   constructor() {
-    this.translate.onLangChange.subscribe(event => this.lang.set(event.lang));
+    // takeUntilDestroyed (L1): tear the subscription down with the component.
+    this.translate.onLangChange
+      .pipe(takeUntilDestroyed())
+      .subscribe(event => this.lang.set(event.lang));
+    // B-044: emit FAQPage JSON-LD from the rendered Q&A; re-emits on language switch.
+    effect(() => this.structuredData.setFaqData(this.items()));
+  }
+
+  ngOnDestroy(): void {
+    this.structuredData.clearById('faq');
   }
 
   isOpen(index: number): boolean {

@@ -1,9 +1,11 @@
-import { Component, inject, computed, input } from '@angular/core';
+import { Component, inject, computed, effect, input, OnDestroy } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { Router, ActivatedRoute, NavigationEnd, RouterLink } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { filter, map, startWith } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { StructuredDataService } from '../../../core/services/structured-data.service';
+import { LanguageService } from '../../../core/services/language.service';
 
 export interface BreadcrumbItem {
   label: string;
@@ -17,33 +19,25 @@ export interface BreadcrumbItem {
   standalone: true,
   imports: [CommonModule, RouterLink, TranslateModule],
   template: `
-    <nav 
-      class="breadcrumb" 
+    <nav
+      class="breadcrumb"
       [attr.aria-label]="'common.aria.breadcrumb' | translate"
       data-testid="breadcrumb"
     >
-      <ol class="breadcrumb-list" itemscope itemtype="https://schema.org/BreadcrumbList">
+      <ol class="breadcrumb-list">
         @for (item of breadcrumbs(); track item.url; let i = $index; let last = $last) {
-          <li 
-            class="breadcrumb-item"
-            itemprop="itemListElement"
-            itemscope
-            itemtype="https://schema.org/ListItem"
-          >
+          <li class="breadcrumb-item">
             @if (!last) {
               <a
                 [routerLink]="item.url"
                 class="breadcrumb-link"
-                itemprop="item"
                 [attr.data-testid]="'breadcrumb-link-' + i"
               >
-                <span itemprop="name">
-                  @if (item.translationKey) {
-                    {{ item.translationKey | translate }}
-                  } @else {
-                    {{ item.label }}
-                  }
-                </span>
+                @if (item.translationKey) {
+                  {{ item.translationKey | translate }}
+                } @else {
+                  {{ item.label }}
+                }
               </a>
               <span class="breadcrumb-separator" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -51,31 +45,22 @@ export interface BreadcrumbItem {
                 </svg>
               </span>
             } @else {
-              <span 
-                class="breadcrumb-current" 
+              <span
+                class="breadcrumb-current"
                 aria-current="page"
-                itemprop="item"
                 [attr.data-testid]="'breadcrumb-current'"
               >
-                <span itemprop="name">
-                  @if (item.translationKey) {
-                    {{ item.translationKey | translate }}
-                  } @else {
-                    {{ item.label }}
-                  }
-                </span>
+                @if (item.translationKey) {
+                  {{ item.translationKey | translate }}
+                } @else {
+                  {{ item.label }}
+                }
               </span>
             }
-            <meta itemprop="position" [content]="(i + 1).toString()" />
           </li>
         }
       </ol>
     </nav>
-
-    <!-- JSON-LD Structured Data for SEO -->
-    @if (breadcrumbs().length > 0) {
-      <script type="application/ld+json" [innerHTML]="structuredData()"></script>
-    }
   `,
   styles: [`
     :host {
@@ -157,11 +142,13 @@ export interface BreadcrumbItem {
     }
   `]
 })
-export class BreadcrumbComponent {
+export class BreadcrumbComponent implements OnDestroy {
   private readonly router = inject(Router);
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly translateService = inject(TranslateService);
   private readonly document = inject(DOCUMENT);
+  private readonly structuredDataService = inject(StructuredDataService);
+  private readonly languageService = inject(LanguageService);
 
   /** Override breadcrumb items (optional - if not provided, auto-generates from route) */
   readonly items = input<BreadcrumbItem[] | null>(null);
@@ -185,25 +172,32 @@ export class BreadcrumbComponent {
     return this.autoBreadcrumbs();
   });
 
-  readonly structuredData = computed(() => {
-    const items = this.breadcrumbs();
-    const baseUrl = this.document.location?.origin || '';
-    
-    const itemListElement = items.map((item, index) => ({
-      '@type': 'ListItem',
-      position: index + 1,
-      name: item.translationKey 
-        ? this.translateService.instant(item.translationKey) 
-        : item.label,
-      item: item.url.startsWith('http') ? item.url : `${baseUrl}${item.url}`
-    }));
-
-    return JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement
+  constructor() {
+    // B-048: this component is the SOLE machine-readable breadcrumb emitter. It pushes a
+    // single BreadcrumbList JSON-LD block through the head service (re-resolving labels on
+    // language change); the inline microdata + template <script> were removed so there is
+    // no competing/duplicated breadcrumb markup.
+    effect(() => {
+      const items = this.breadcrumbs();
+      // Touch the language signal so labels re-resolve on EN <-> BG <-> DE switches.
+      this.languageService.currentLanguage();
+      if (items.length === 0) {
+        this.structuredDataService.clearById('breadcrumb');
+        return;
+      }
+      const baseUrl = this.document.location?.origin ?? '';
+      this.structuredDataService.setBreadcrumbData(
+        items.map(item => ({
+          name: item.translationKey ? this.translateService.instant(item.translationKey) : item.label,
+          url: item.url.startsWith('http') ? item.url : `${baseUrl}${item.url}`
+        }))
+      );
     });
-  });
+  }
+
+  ngOnDestroy(): void {
+    this.structuredDataService.clearById('breadcrumb');
+  }
 
   private buildBreadcrumbs(): BreadcrumbItem[] {
     const breadcrumbs: BreadcrumbItem[] = [];
