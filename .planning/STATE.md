@@ -4,15 +4,15 @@
 > `--resume`. Read **Next action** first. Kept fresh via `/checkpoint` at each unit/phase boundary.
 > LEAN — pointers, not prose. **This is the single entry point; everything else is linked below.**
 
-- **Last checkpoint**: 2026-06-30 (frontend follow-up cleanups in PR `fix/frontend-cleanups` — Codex council clean; everything before it merged to `main`)
+- **Last checkpoint**: 2026-06-30 (**B-044 SEO foundation** — Wave A frontend MERGED to `main` as **#92** `819fb18`; Wave B backend robots/sitemap in PR `feature/b-044-seo-backend`, council-clean, awaiting CI)
 
 ## Goal
 Production-grade multi-language (EN/BG/DE), multi-theme HVAC e-commerce platform — finish to production readiness with a hardened SDLC.
 
 ## Current position
-- **Phase**: maintenance / incremental hardening, working the triaged external-review register. **MERGED to `main`** (tip `4cb05f4`): PAY-IDEM (#84), triage (#85), SEC-05/B-011 (#86), **B-002 (#87)**, **backend quick-wins B-007/B-008/B-034/B-036/B-055 (#88)**, **B-018/B-020 frontend load-error states (#89)**, **FOUND-QW-admin-pagination (#90)**. Both real Highs DONE; all five backend quick wins DONE; the load-error UX + all auth-gated pagination clamping DONE.
-- **Frontend follow-up cleanups are in PR `fix/frontend-cleanups`** — three small follow-ups: **FOUND-B002-noimage** (repoint the 3 `no-image.svg` refs to the existing `fallbacks/no-product-image.svg`), **FOUND-B002-orphans** (delete the dead inverted-convention `frequently-bought` + `product-variants` components + specs), **FOUND-loaderr-race** (monotonic `loadSeq` guard on `loadCart`/`loadOrders` so a stale request can't re-show an error / overwrite fresh data). Codex council CLEAN (first round). FE suite 1724 green; `ng lint` clean; `/acceptance` PASS (asset serves 200). Awaiting CI → squash-merge.
-- **External review register: every confirmed item is now DONE or a tracked non-blocker.** The remaining queue is the bigger items: B-039 (Q&A vote ledger), B-016 (recommendation spec-key aliasing), B-001/B-014/B-042 (a11y dialogs/radios), B-044 (SEO robots/sitemap/meta), deploy-hardening F3/OPS-07/OPS-04. The only acknowledged Low left from this session's councils is the notifications `summary` `recentCount` (intentional "recent N").
+- **Phase**: maintenance / incremental hardening. The entire 2026-06-28 external-review register is CLEARED (every confirmed item DONE or a tracked non-blocker), and the frontend cleanups shipped as **#91** (`1a669df`).
+- **B-044 SEO foundation — in progress (2 waves).** **Wave A (frontend) MERGED as #92 (`819fb18`)**: `SeoService`+`TitleStrategy`+per-route title/canonical/OG/robots, `StructuredDataService` wired (home/product/list/FAQ/breadcrumb), `index.html` brand title + raster `og-default.png`, B-048 breadcrumb de-dup, B-033 html-lang, out-of-order `loadSeq`/`fetchSeq` guards. **A fatal NG0200 circular-DI (Router→TitleStrategy→Router) that broke ALL runtime SEO was caught only by `/acceptance`** (every unit test was green) → fixed via an app-initializer. **Wave B (backend) is in PR `feature/b-044-seo-backend`**: dynamic `~/robots.txt` + `~/sitemap.xml` (2285 URLs, host-injection-safe base, fail-closed 503 in prod-unset, `/products/category/{slug}`, `Uri.EscapeDataString` slugs), `X-Robots-Tag: noindex` on `/api`, nginx `=`-locations + private-prefix noindex, `[OutputCache(NoStore=true)]` poisoning-fix, M8 `MetaTitle/MetaDescription` passthrough. Diff council APPROVE-WITH-CHANGES → fixing 2 Mediums (slug-encode + nginx regex order); `/acceptance` PASS at `.planning/acceptance/B-044-seo-wave{A,B}.md`.
+- **NEXT queue (owner picks)**: B-039 (Q&A vote ledger), B-016 (recommendation spec-key aliasing), a11y batch B-001/B-014/B-042, deploy-hardening F3/OPS-07/OPS-04 (+Railway, owner-gated). Only acknowledged Low left = notifications `summary` `recentCount` (intentional "recent N").
 
 ## ✅ Done (all merged to `main`)
 1. **PROC-01 SDLC hardening** — all 7 waves, 18 PRs. Gated pipeline, CI gates, 80/70 coverage, branch protection, 163 integration tests, real-card Stripe E2E. Tracker: `docs/features/PROC-01/STATE.md`.
@@ -23,27 +23,29 @@ Production-grade multi-language (EN/BG/DE), multi-theme HVAC e-commerce platform
    - **UX-15 a11y: fixed + ENFORCED** — `--color-primary-surface` token + reduced-motion scans; `A11Y_ENFORCE=1` live in CI; both axe suites are hard gates (PR #60).
    - KG enriched (vault).
 
-## ▶ RESUME HERE (2026-06-29)
+## ▶ RESUME HERE (2026-06-30)
 
-**Branch `feature/pay-idem-stripe-keys` → PR #84 (PAY-IDEM) open.** Merged since this block's old content:
-#78 FTS, #79 dual-currency, #80 B3 specs, #81 Google OAuth, #82 split-text fix, #83 log-redaction. PAY-IDEM
-adds Stripe idempotency keys (client-supplied per-attempt key on create-intent + `re_v1_<sha256>` on refund;
-`MaxNetworkRetries=2`; key redacted in `LogSanitizer`; B-061 CancellationToken) — **proven LIVE** vs real
-Stripe test mode (same key → identical `pi_`, different key → different `pi_`); acceptance PASS at
-`.planning/acceptance/PAY-IDEM-stripe-keys.md`.
+**B-044 SEO foundation — Wave A merged (#92 `819fb18`); Wave B backend in PR `feature/b-044-seo-backend`.**
+Unit-plan: `.planning/units/B-044-seo/unit-plan.md` (Wave A items 1–10 + Wave B items 11–17; 3 design council
+rounds + both diffs councilled). `/acceptance` PASS for both waves (committed reports).
 
 **NEXT ACTION:**
-1. **Watch PR `fix/b-002-admin-price-inversion` CI → squash-merge when all six checks green.** Then refresh the
-   in-repo STATE tip hash in the next PR.
-2. **Then the quick wins** (council-ordered, both real Highs now done): **B-007** (order-email `$<guid>` 404, XS) ·
-   **B-036** (clamp public pagination bounds = PERF-02, S) · **B-055** (bound/charset-validate inbound
-   `X-Correlation-Id`, XS) · **B-034** (`[EnableRateLimiting("strict")]` on the install lead endpoint, XS) ·
-   **B-018/B-020** (real error+retry states for account-orders/cart instead of fake "empty", S) · **B-008-residual**
-   (stop echoing raw `ArgumentException.Message`, XS). Register: `EXTERNAL_REVIEW_TRIAGE.md`.
-3. Cheap cleanups surfaced by B-002: **FOUND-B002-noimage** (add the missing `no-image.svg`, XS) and
-   **FOUND-B002-orphans** (fix/delete the two dead-code inverted-convention components, S).
+1. **Finish Wave B:** the diff council returned APPROVE-WITH-CHANGES (2 Mediums) — apply the slug
+   `Uri.EscapeDataString` + the nginx private-prefix-before-static-asset regex reorder, re-verify
+   (`dotnet build` + Application + Api-SEO tests), then commit (with these doc updates — CHANGELOG/STATE/
+   backlog/PROJECT_STATUS), push, open the PR, get the green CI checks, and squash-merge.
+2. **Then OWNER picks the next larger item:** B-039 (Q&A vote per-voter ledger) · B-016 (recommendation
+   spec-key aliasing) · a11y batch B-001/B-014/B-042 (address dialogs + checkout radios) · deploy-hardening
+   F3/OPS-07/OPS-04 (+Railway, owner-gated).
 
-_(Historical SEARCH-01-fts / #77 resume notes below are SUPERSEDED — kept for context only.)_
+**Gotchas reconfirmed this unit:** `/acceptance` on the REAL running app is mandatory — it caught a fatal
+NG0200 circular-DI (Router injected into the Router-constructed `TitleStrategy`) that ALL 1764 unit tests
+missed. CRLF C# files: `git diff --check` flags CRLF as trailing-ws but the real gate `dotnet format
+--verify-no-changes` passes (`.editorconfig` leaves `end_of_line` unset). Local run: API `DATABASE_URL`/
+`ConnectionStrings__DefaultConnection` → shared-infra Postgres `:5432/climasite` (creds in
+`~/Projects/shared-infra/.env`); a fresh API build is needed per branch switch.
+
+_(Historical SEARCH-01-fts / #77 / PAY-IDEM resume notes below are SUPERSEDED — kept for context only.)_
 
 **What SEARCH-01-fts is:** public product search migrated ILIKE→**Postgres FTS**. Trigger-maintained
 denormalised `products.search_vector` (base + tags + ALL translations), `climasite_search` config
@@ -137,4 +139,4 @@ procedure, rollback, the 5 OPS-08 owner questions, known gaps).
 - Gotchas (memory): NEVER reintroduce `LoadState.NetworkIdle` in E2E; CRLF endings; classic branch protection is the gate.
 
 ## Open loops / checkpoints
-- none. main is clean (0 open PRs); all CI gates green.
+- **B-044 Wave B** (`feature/b-044-seo-backend`) — finishing 2 council Mediums → commit → PR → CI → squash-merge. Wave A is merged (#92).

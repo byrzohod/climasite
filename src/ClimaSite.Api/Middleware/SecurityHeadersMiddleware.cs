@@ -32,6 +32,15 @@ public class SecurityHeadersMiddleware
                 headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'";
             }
 
+            // B-044: keep API responses out of the search index (a JS-independent guard, layered over the
+            // SPA route-meta noindex) while leaving /api crawlable so Googlebot can render the CSR app. The
+            // crawler files themselves live at the site root (~/robots.txt, ~/sitemap.xml), not under /api,
+            // so they are intentionally NOT marked noindex.
+            if (context.Request.Path.StartsWithSegments("/api"))
+            {
+                headers["X-Robots-Tag"] = "noindex";
+            }
+
             return Task.CompletedTask;
         });
 

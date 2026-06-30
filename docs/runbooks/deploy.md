@@ -144,6 +144,20 @@ ASP.NET double-underscore form: **`Stripe__SecretKey`**, **`Minio__Endpoint`**, 
 | `API_URL` | **Web** | **Required** | config | Internal URL of the API service, e.g. `http://climasite-api.railway.internal:8080` (or the public API URL). nginx proxies `/api/` here. **Defaults to `http://localhost:8080` if unset (F5) → silent 502s.** | `docker-entrypoint.sh:8` |
 | `PORT` | Web (+API) | Injected by Railway | — | Railway sets it. Web honors it; API does not (F3). Do not set manually. | `docker-entrypoint.sh:5` |
 | `ASPNETCORE_ENVIRONMENT` | API | **Required** = `Production` | config | Set in `Dockerfile.api` already; keep `Production`. Gates seeding/admin-bootstrap/JWT-fail-fast behavior. | `DataSeeder.cs:45/127`, `Program.cs:299` |
+| `Seo__SiteBaseUrl` | API | **Required / acceptance-blocking** (any non-dev/test deploy) | config | The **single canonical public origin** (one host — pick apex **or** www and redirect the other), e.g. `https://www.climasite.com`. Used to build absolute `sitemap.xml` `<loc>` entries + the `robots.txt` `Sitemap:` line. **Must be an absolute `https://` URL.** When empty/invalid in Staging/Production the API **fails closed**: `GET /sitemap.xml` → **503** and `robots.txt` omits the `Sitemap:` line (logged), so the deploy never publishes canonical URLs from an untrusted request host. | `SeoController.cs`, `SeoBaseUrlResolver.cs` |
+
+> **SEO routing (B-044):** nginx proxies the crawler files to the API via two exact-match locations —
+> `location = /robots.txt` and `location = /sitemap.xml` — that set the real `Host $host` (so the API sees
+> the public canonical host) plus `X-Forwarded-Proto $scheme` (so the emitted `<loc>` URLs are `https`).
+> Private SPA prefixes (`/admin`, `/account`, `/checkout`, `/cart`, `/login`, `/register`,
+> `/forgot-password`, `/reset-password`, `/wishlist`) get an `X-Robots-Tag: noindex` nginx `location` block
+> (which re-declares the server security headers, since nginx `add_header` stops inheriting once a block
+> sets its own). That block is declared **before** the static-asset regex so an asset-like private path is
+> covered too — the nginx smoke should assert both a private page (`curl -I /admin` → `X-Robots-Tag` +
+> `X-Frame-Options`/`X-Content-Type-Options`/`X-XSS-Protection`) **and** an asset-like private path
+> (`curl -I /admin/x.js` → still carries `X-Robots-Tag`, not the cache-asset headers). `/api/*` responses
+> carry `X-Robots-Tag: noindex` from the API. The apex↔www canonical redirect and trailing-slash redirect
+> remain ops follow-ups (the in-app canonical covers the SEO signal).
 
 ### Object storage (product images) — required if storage is used; defaults are localhost
 

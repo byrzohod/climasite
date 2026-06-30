@@ -48,4 +48,42 @@ public class GetProductBySlugQueryHandlerTests
         result.IsOnSale.Should().BeFalse();
         result.DiscountPercentage.Should().Be(0m);
     }
+
+    [Fact]
+    public async Task Handle_PassesThroughCuratedMeta_WhenSet()
+    {
+        // B-044 (M8): curated SEO meta on the product must flow through the detail DTO so the frontend
+        // can prefer metaTitle/metaDescription over the name/short-description fallbacks.
+        var context = new MockDbContext();
+        var product = new Product("META-001", "Curated Unit", "curated-unit", 499.99m);
+        product.SetMetaTitle("Curated Unit — Quiet 12000 BTU Inverter AC | ClimaSite");
+        product.SetMetaDescription("Energy-efficient inverter air conditioner, whisper-quiet at 19 dB.");
+        product.SetActive(true);
+        context.AddProduct(product);
+
+        var handler = new GetProductBySlugQueryHandler(context);
+        var query = new GetProductBySlugQuery { Slug = "curated-unit" };
+
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        result.MetaTitle.Should().Be("Curated Unit — Quiet 12000 BTU Inverter AC | ClimaSite");
+        result.MetaDescription.Should().Be("Energy-efficient inverter air conditioner, whisper-quiet at 19 dB.");
+    }
+
+    [Fact]
+    public async Task Handle_LeavesMetaNull_WhenNoCuratedMetaSet()
+    {
+        var context = new MockDbContext();
+        var product = new Product("REG-002", "Plain Unit", "plain-unit", 599.99m);
+        product.SetActive(true);
+        context.AddProduct(product);
+
+        var handler = new GetProductBySlugQueryHandler(context);
+        var query = new GetProductBySlugQuery { Slug = "plain-unit" };
+
+        var result = await handler.Handle(query, CancellationToken.None);
+
+        result.MetaTitle.Should().BeNull();
+        result.MetaDescription.Should().BeNull();
+    }
 }

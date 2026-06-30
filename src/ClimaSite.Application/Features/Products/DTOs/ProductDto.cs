@@ -7,6 +7,10 @@ public record ProductDto
     public string Slug { get; init; } = string.Empty;
     public string? Description { get; init; }
     public string? ShortDescription { get; init; }
+    // B-044 (M8): curated per-language SEO meta. The frontend consumes these as metaTitle ?? name /
+    // metaDescription ?? shortDescription; null when no curated copy is set.
+    public string? MetaTitle { get; init; }
+    public string? MetaDescription { get; init; }
     public decimal BasePrice { get; init; }
     public decimal? SalePrice { get; init; }
     public bool IsOnSale { get; init; }
