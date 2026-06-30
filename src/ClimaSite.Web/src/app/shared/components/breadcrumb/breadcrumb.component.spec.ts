@@ -4,6 +4,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Router } from '@angular/router';
 import { By } from '@angular/platform-browser';
+import { DOCUMENT } from '@angular/common';
 import { Component } from '@angular/core';
 
 @Component({
@@ -46,9 +47,11 @@ describe('BreadcrumbComponent', () => {
     expect(nav).toBeTruthy();
   });
 
-  it('should have breadcrumb-list with correct schema.org markup', () => {
-    const list = fixture.debugElement.query(By.css('[itemtype="https://schema.org/BreadcrumbList"]'));
+  it('should render the visible ordered list (no inline microdata)', () => {
+    const list = fixture.debugElement.query(By.css('ol.breadcrumb-list'));
     expect(list).toBeTruthy();
+    // B-048: inline microdata removed — JSON-LD via the head service is the single source.
+    expect(fixture.debugElement.query(By.css('[itemtype="https://schema.org/BreadcrumbList"]'))).toBeNull();
   });
 
   it('should always include home as first item', fakeAsync(() => {
@@ -122,22 +125,30 @@ describe('BreadcrumbComponent', () => {
     expect(separators.length).toBeGreaterThan(0);
   }));
 
-  it('should have schema.org ListItem markup', fakeAsync(() => {
+  it('should emit a single BreadcrumbList JSON-LD via the head service', fakeAsync(() => {
     router.navigate(['/products']);
     tick();
     fixture.detectChanges();
-    
-    const listItems = fixture.debugElement.queryAll(By.css('[itemtype="https://schema.org/ListItem"]'));
-    expect(listItems.length).toBeGreaterThan(0);
+
+    const doc = TestBed.inject(DOCUMENT);
+    const scripts = doc.querySelectorAll('#structured-data-breadcrumb');
+    expect(scripts.length).toBe(1);
+    const data = JSON.parse(scripts[0].textContent || '{}');
+    expect(data['@type']).toBe('BreadcrumbList');
+    expect(data.itemListElement.length).toBeGreaterThan(0);
+    expect(data.itemListElement[0].position).toBe(1);
   }));
 
-  it('should include position meta tag for SEO', fakeAsync(() => {
+  it('should clear the breadcrumb JSON-LD on destroy', fakeAsync(() => {
     router.navigate(['/products']);
     tick();
     fixture.detectChanges();
-    
-    const positionMeta = fixture.debugElement.queryAll(By.css('meta[itemprop="position"]'));
-    expect(positionMeta.length).toBeGreaterThan(0);
+
+    const doc = TestBed.inject(DOCUMENT);
+    expect(doc.getElementById('structured-data-breadcrumb')).toBeTruthy();
+
+    fixture.destroy();
+    expect(doc.getElementById('structured-data-breadcrumb')).toBeFalsy();
   }));
 
   it('should convert URL segments to readable labels', fakeAsync(() => {

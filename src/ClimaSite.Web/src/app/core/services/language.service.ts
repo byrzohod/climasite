@@ -45,6 +45,12 @@ export class LanguageService {
     // Use stored or detected language
     const initialLang = this._currentLanguage();
     this.translate.use(initialLang);
+
+    // B-033: match <html lang> to the stored/detected language on first paint so a
+    // returning BG/DE user doesn't start on lang="en".
+    if (this.isBrowser) {
+      document.documentElement.lang = initialLang;
+    }
   }
 
   private getInitialLanguage(): SupportedLanguage {

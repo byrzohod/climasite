@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { ActivatedRoute, provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { Subject, of, throwError } from 'rxjs';
 
@@ -63,6 +63,11 @@ describe('BrandDetailComponent', () => {
   let currentSlug: string | null;
 
   const activatedRouteStub = {
+    // `paramMap` is read once at construction by toSignal; the getter reflects the
+    // per-test `currentSlug` set before create().
+    get paramMap() {
+      return of(convertToParamMap(currentSlug ? { slug: currentSlug } : {}));
+    },
     snapshot: { paramMap: { get: (key: string) => (key === 'slug' ? currentSlug : null) } }
   };
 

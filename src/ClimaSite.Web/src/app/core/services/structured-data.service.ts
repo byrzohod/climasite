@@ -31,9 +31,20 @@ export class StructuredDataService {
   private scriptElement: HTMLScriptElement | null = null;
 
   /**
-   * Set Product structured data (JSON-LD)
+   * Set Product structured data (JSON-LD).
+   *
+   * `basePrice` is the *effective* current selling price the customer pays (B-002:
+   * `salePrice` is the struck-through original/compare-at, not what is charged).
+   * Image URLs are absolutized against `baseUrl`. Availability uses real variant stock
+   * when variants exist (the authoritative detail-page signal); with no variants it falls
+   * back to the product-level `inStock` flag and is NEVER defaulted to InStock (council M2).
    */
   setProductData(product: Product, baseUrl: string): void {
+    const hasVariants = (product.variants?.length ?? 0) > 0;
+    const inStock = hasVariants
+      ? product.variants.some(v => v.isActive && v.availableQuantity > 0)
+      : (product.inStock ?? false);
+
     const data = {
       '@context': 'https://schema.org',
       '@type': 'Product',
@@ -44,14 +55,16 @@ export class StructuredDataService {
         '@type': 'Brand',
         name: product.brand
       } : undefined,
-      image: product.images?.map(img => img.url) || [],
+      image: (product.images ?? []).map(img => this.absoluteUrl(img.url, baseUrl)),
       offers: {
         '@type': 'Offer',
         url: `${baseUrl}/products/${product.slug}`,
         priceCurrency: 'EUR',
         price: product.basePrice,
         priceValidUntil: this.getDatePlusOneYear(),
-        availability: 'https://schema.org/InStock',
+        availability: inStock
+          ? 'https://schema.org/InStock'
+          : 'https://schema.org/OutOfStock',
         seller: {
           '@type': 'Organization',
           name: 'ClimaSite'
@@ -68,11 +81,11 @@ export class StructuredDataService {
 
     // Remove undefined values
     this.cleanObject(data);
-    this.setJsonLd(data);
+    this.setJsonLd(data, 'product');
   }
 
   /**
-   * Set Product List structured data for category pages
+   * Set Product List structured data for category / list / brand / promotion pages.
    */
   setProductListData(products: ProductBrief[], listName: string, baseUrl: string): void {
     const data = {
@@ -87,7 +100,7 @@ export class StructuredDataService {
           '@type': 'Product',
           name: product.name,
           url: `${baseUrl}/products/${product.slug}`,
-          image: product.primaryImageUrl,
+          image: product.primaryImageUrl ? this.absoluteUrl(product.primaryImageUrl, baseUrl) : undefined,
           offers: {
             '@type': 'Offer',
             priceCurrency: 'EUR',
@@ -100,7 +113,8 @@ export class StructuredDataService {
       }))
     };
 
-    this.setJsonLd(data);
+    this.cleanObject(data);
+    this.setJsonLd(data, 'product-list');
   }
 
   /**
@@ -158,7 +172,8 @@ export class StructuredDataService {
         '@type': 'SearchAction',
         target: {
           '@type': 'EntryPoint',
-          urlTemplate: `${searchUrl}?q={search_term_string}`
+          // The storefront search param is `search` (NOT `q`) — product-list reads `search`.
+          urlTemplate: `${searchUrl}?search={search_term_string}`
         },
         'query-input': 'required name=search_term_string'
       }
@@ -244,5 +259,12 @@ export class StructuredDataService {
     const date = new Date();
     date.setFullYear(date.getFullYear() + 1);
     return date.toISOString().split('T')[0];
+  }
+
+  /** Absolutize a possibly-relative asset/image URL against the site origin. */
+  private absoluteUrl(url: string, baseUrl: string): string {
+    if (!url) return url;
+    if (/^https?:\/\//i.test(url)) return url;
+    return `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
   }
 }

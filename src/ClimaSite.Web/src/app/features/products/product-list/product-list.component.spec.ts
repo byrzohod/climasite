@@ -7,6 +7,8 @@ import { ProductListComponent } from './product-list.component';
 import { ProductService } from '../../../core/services/product.service';
 import { CategoryService } from '../../../core/services/category.service';
 import { LanguageService } from '../../../core/services/language.service';
+import { SeoService } from '../../../core/services/seo.service';
+import { StructuredDataService } from '../../../core/services/structured-data.service';
 import { Category } from '../../../core/models/category.model';
 import { FilterOptions, PaginatedResult, ProductBrief, ProductFilter } from '../../../core/models/product.model';
 
@@ -71,6 +73,8 @@ describe('ProductListComponent', () => {
   let categoryService: jasmine.SpyObj<Pick<CategoryService, 'getCategoryBySlug'>>;
   let router: jasmine.SpyObj<Router>;
   let langSignal: WritableSignal<string>;
+  let seo: jasmine.SpyObj<SeoService>;
+  let structuredData: jasmine.SpyObj<StructuredDataService>;
   let routeParams: Subject<Record<string, string>>;
   let routeQueryParams: Subject<Record<string, string>>;
 
@@ -89,6 +93,8 @@ describe('ProductListComponent', () => {
 
     router = jasmine.createSpyObj<Router>('Router', ['navigate']);
     langSignal = signal('en');
+    seo = jasmine.createSpyObj<SeoService>('SeoService', ['setMeta']);
+    structuredData = jasmine.createSpyObj<StructuredDataService>('StructuredDataService', ['setProductListData', 'setBreadcrumbData']);
     routeParams = new Subject<Record<string, string>>();
     routeQueryParams = new Subject<Record<string, string>>();
 
@@ -96,7 +102,9 @@ describe('ProductListComponent', () => {
       providers: [
         { provide: ProductService, useValue: productService },
         { provide: CategoryService, useValue: categoryService },
-        { provide: LanguageService, useValue: { currentLanguage: langSignal } },
+        { provide: LanguageService, useValue: { currentLanguage: langSignal, instant: () => 'Products' } },
+        { provide: SeoService, useValue: seo },
+        { provide: StructuredDataService, useValue: structuredData },
         { provide: Router, useValue: router },
         {
           provide: ActivatedRoute,
@@ -189,6 +197,117 @@ describe('ProductListComponent', () => {
       const filter = productService.getProducts.calls.mostRecent().args[0] as ProductFilter;
       expect(filter.sortBy).toBe('newest');
       expect(filter.sortDescending).toBeFalse();
+    });
+  });
+
+  describe('SEO (B-044): robots + ItemList', () => {
+    function lastRobots(): string | undefined {
+      const args = seo.setMeta.calls.mostRecent().args[0] as { robots?: string };
+      return args.robots;
+    }
+
+    it('clean /products (no thin params) is index,follow', () => {
+      component.fetchProducts();
+      expect(lastRobots()).toBe('index,follow');
+    });
+
+    it('a category page with no thin params is index,follow and titled with the category name', () => {
+      component.category.set(mockCategory);
+      component.fetchProducts('cat-1');
+      const args = seo.setMeta.calls.mostRecent().args[0] as { robots?: string; title?: string };
+      expect(args.robots).toBe('index,follow');
+      expect(args.title).toBe('Air Conditioners');
+    });
+
+    it('paginated state (page > 1) is noindex,follow', () => {
+      component.currentPage.set(2);
+      component.fetchProducts();
+      expect(lastRobots()).toBe('noindex,follow');
+    });
+
+    it('a brand filter is noindex,follow', () => {
+      component.selectedBrand.set('Daikin');
+      component.fetchProducts();
+      expect(lastRobots()).toBe('noindex,follow');
+    });
+
+    it('a sort change is noindex,follow', () => {
+      component.sortBy = 'price-asc';
+      component.fetchProducts();
+      expect(lastRobots()).toBe('noindex,follow');
+    });
+
+    it('a search term is noindex,follow with the search title', () => {
+      component.searchQuery.set('inverter ac');
+      component.fetchProducts();
+      const args = seo.setMeta.calls.mostRecent().args[0] as { robots?: string; titleKey?: string };
+      expect(args.robots).toBe('noindex,follow');
+      expect(args.titleKey).toBe('seo.products.searchTitle');
+    });
+
+    it('does NOT noindex when only marketing params are present (utm_*/gclid/fbclid)', () => {
+      // Drive ngOnInit so the real param subscriptions are wired, then emit genuine
+      // marketing params: they must NOT flip robots to noindex (council R2 #2 / L2).
+      component.ngOnInit();
+      routeParams.next({});
+      routeQueryParams.next({ utm_source: 'newsletter', gclid: 'abc123', fbclid: 'fb789' });
+
+      const args = seo.setMeta.calls.mostRecent().args[0] as { robots?: string; canonicalPath?: string };
+      expect(args.robots).toBe('index,follow');
+      // The component sets no canonicalPath — SeoService strips the query for the canonical
+      // (proven in seo.service.spec 'strips the query string and fragment').
+      expect(args.canonicalPath).toBeUndefined();
+    });
+
+    it('emits the ItemList structured data for the loaded page', () => {
+      productService.getProducts.and.returnValue(of(page([brief('1'), brief('2')], 2, 1)));
+      component.fetchProducts();
+      expect(structuredData.setProductListData).toHaveBeenCalled();
+      const items = structuredData.setProductListData.calls.mostRecent().args[0];
+      expect(items.length).toBe(2);
+    });
+
+    it('rejects a stale out-of-order fetch response (fetchSeq guard)', () => {
+      // Two in-flight fetches: the LATER one (B) completes first, then the earlier (A)
+      // completes late. The guard must keep B and ignore A.
+      const subjectA = new Subject<PaginatedResult<ProductBrief>>();
+      const subjectB = new Subject<PaginatedResult<ProductBrief>>();
+      productService.getProducts.and.returnValues(subjectA, subjectB);
+
+      component.fetchProducts(); // seq 1 -> subjectA
+      component.fetchProducts(); // seq 2 -> subjectB
+
+      subjectB.next(page([brief('B1'), brief('B2')], 2, 1)); // latest lands first
+      subjectA.next(page([brief('A1')], 1, 1));              // stale lands late
+
+      expect(component.products().map(p => p.id)).toEqual(['B1', 'B2']);
+      const lastItems = structuredData.setProductListData.calls.mostRecent().args[0];
+      expect(lastItems.map(p => p.id)).toEqual(['B1', 'B2']);
+    });
+
+    it('rejects a stale out-of-order CATEGORY response (loadSeq guard)', () => {
+      // The category-resolution layer feeds fetchProducts. A stale getCategoryBySlug(A)
+      // landing after a newer load(B) must NOT set stale category or trigger fetchProducts(A)
+      // (which would otherwise become the latest fetchSeq and apply stale products/meta/JSON-LD).
+      const catA = { ...mockCategory, id: 'cat-A', slug: 'cat-a', name: 'Cat A' };
+      const catB = { ...mockCategory, id: 'cat-B', slug: 'cat-b', name: 'Cat B' };
+      const subjectCatA = new Subject<typeof mockCategory>();
+      const subjectCatB = new Subject<typeof mockCategory>();
+      categoryService.getCategoryBySlug.and.returnValues(subjectCatA, subjectCatB);
+      productService.getProducts.calls.reset();
+      productService.getProducts.and.returnValue(of(page([brief('B1')], 1, 1)));
+
+      component.loadProducts('cat-a'); // loadSeq 1 -> subjectCatA
+      component.loadProducts('cat-b'); // loadSeq 2 -> subjectCatB
+
+      subjectCatB.next(catB); // latest resolves first -> sets catB, fetches catB
+      subjectCatA.next(catA); // stale resolves late -> guarded out
+
+      expect(component.category()?.id).toBe('cat-B');
+      // fetchProducts must have been called only for the latest category (catB), never catA.
+      const fetchedCategoryIds = productService.getProducts.calls.allArgs().map(args => args[0]?.categoryId);
+      expect(fetchedCategoryIds).toContain('cat-B');
+      expect(fetchedCategoryIds).not.toContain('cat-A');
     });
   });
 

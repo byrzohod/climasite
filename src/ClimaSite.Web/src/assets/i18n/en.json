@@ -1928,5 +1928,139 @@
       "off": "Off",
       "description": "Control animations and motion effects. Choose System to follow your device setting, On to minimise motion, or Off to always show animations."
     }
+  },
+  "seo": {
+    "default": {
+      "title": "HVAC, Heating & Climate Solutions",
+      "description": "Premium HVAC solutions — air conditioners, heating systems and climate control for home and business."
+    },
+    "home": {
+      "title": "HVAC, Heating & Climate Solutions",
+      "description": "Shop air conditioners, heat pumps and heating systems with expert installation. Configure the right unit for your space in minutes."
+    },
+    "products": {
+      "title": "All Products",
+      "description": "Browse our full range of air conditioners, heat pumps, heating and ventilation equipment from leading HVAC brands.",
+      "searchTitle": "Search Results",
+      "searchDescription": "Search air conditioners, heating systems and HVAC equipment across the ClimaSite catalogue."
+    },
+    "product": {
+      "title": "Product",
+      "description": "View specifications, pricing and availability for this HVAC product, with expert installation options.",
+      "notFoundTitle": "Product Not Found",
+      "notFoundDescription": "This product could not be found. Browse our full catalogue of HVAC and climate equipment instead."
+    },
+    "categories": {
+      "title": "Categories",
+      "description": "Explore HVAC product categories — air conditioning, heating, heat pumps, ventilation and accessories."
+    },
+    "cart": {
+      "title": "Shopping Cart",
+      "description": "Review the items in your ClimaSite shopping cart before checkout."
+    },
+    "wishlist": {
+      "title": "Wishlist",
+      "description": "The HVAC products you have saved to your ClimaSite wishlist."
+    },
+    "wishlistShared": {
+      "title": "Shared Wishlist",
+      "description": "A wishlist of HVAC products shared with you on ClimaSite."
+    },
+    "checkout": {
+      "title": "Checkout",
+      "description": "Complete your ClimaSite order securely."
+    },
+    "checkoutConfirmation": {
+      "title": "Order Confirmation",
+      "description": "Your ClimaSite order confirmation and details."
+    },
+    "login": {
+      "title": "Sign In",
+      "description": "Sign in to your ClimaSite account to manage orders, addresses and your wishlist."
+    },
+    "register": {
+      "title": "Create Account",
+      "description": "Create a ClimaSite account to track orders, save favourites and check out faster."
+    },
+    "forgotPassword": {
+      "title": "Forgot Password",
+      "description": "Reset the password for your ClimaSite account."
+    },
+    "resetPassword": {
+      "title": "Reset Password",
+      "description": "Set a new password for your ClimaSite account."
+    },
+    "account": {
+      "title": "My Account",
+      "description": "Manage your ClimaSite account, orders, addresses and notification settings."
+    },
+    "admin": {
+      "title": "Admin",
+      "description": "ClimaSite administration area."
+    },
+    "contact": {
+      "title": "Contact Us",
+      "description": "Get in touch with the ClimaSite team for product advice, installation and support."
+    },
+    "about": {
+      "title": "About Us",
+      "description": "Learn about ClimaSite — your specialist for air conditioning, heating and climate solutions."
+    },
+    "promotions": {
+      "title": "Promotions",
+      "description": "Current deals and special offers on air conditioners, heat pumps and HVAC equipment."
+    },
+    "promotion": {
+      "title": "Promotion",
+      "description": "Details of this ClimaSite promotion and the products it includes.",
+      "notFoundTitle": "Promotion Not Found",
+      "notFoundDescription": "This promotion could not be found or has expired. See our current offers instead."
+    },
+    "brands": {
+      "title": "Brands",
+      "description": "Shop trusted HVAC brands — air conditioning, heating and climate equipment from leading manufacturers."
+    },
+    "brand": {
+      "title": "Brand",
+      "description": "Explore HVAC products from this brand, with specifications, pricing and installation options.",
+      "notFoundTitle": "Brand Not Found",
+      "notFoundDescription": "This brand could not be found. Browse all brands on ClimaSite instead."
+    },
+    "resources": {
+      "title": "Resources",
+      "description": "Guides, buying advice and resources to help you choose and maintain your HVAC equipment."
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "description": "Answers to common questions about HVAC products, delivery, installation and warranty at ClimaSite."
+    },
+    "terms": {
+      "title": "Terms of Service",
+      "description": "The terms and conditions governing your use of ClimaSite."
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "description": "How ClimaSite collects, uses and protects your personal data."
+    },
+    "cookies": {
+      "title": "Cookie Policy",
+      "description": "How ClimaSite uses cookies and how you can manage your preferences."
+    },
+    "returns": {
+      "title": "Returns & Refunds",
+      "description": "ClimaSite's returns and refunds policy for HVAC products."
+    },
+    "shipping": {
+      "title": "Shipping Information",
+      "description": "Delivery options, costs and timescales for ClimaSite orders."
+    },
+    "impressum": {
+      "title": "Impressum",
+      "description": "Legal disclosure and company information for ClimaSite."
+    },
+    "notFound": {
+      "title": "Page Not Found",
+      "description": "The page you are looking for could not be found. Browse our HVAC catalogue instead."
+    }
   }
 }

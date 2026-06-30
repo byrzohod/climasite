@@ -1,7 +1,8 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import type { Subscription } from 'rxjs';
 import { ThemeService } from '../../core/services/theme.service';
+import { StructuredDataService } from '../../core/services/structured-data.service';
 import { RecommendationsComponent } from './components/recommendations/recommendations.component';
 import { RoomPreviewComponent } from './components/room-preview/room-preview.component';
 import { SecondaryContentComponent } from './components/secondary-content/secondary-content.component';
@@ -38,6 +39,8 @@ export class HomeV3Component {
   private readonly state = inject(HomeWizardStateService);
   private readonly recommendationsService = inject(ProductRecommendationsService);
   private readonly themeService = inject(ThemeService);
+  private readonly structuredData = inject(StructuredDataService);
+  private readonly document = inject(DOCUMENT);
 
   readonly area = this.state.area;
   readonly roomType = this.state.roomType;
@@ -53,6 +56,17 @@ export class HomeV3Component {
   private hasObservedInitialState = false;
 
   constructor() {
+    // B-044: home is the canonical Organization + WebSite (SearchAction) emitter.
+    // Emitted once here (after the NavigationStart JSON-LD clear); the WebSite search
+    // target resolves to /products?search={term} (the real storefront search param).
+    const origin = this.document.location.origin;
+    this.structuredData.setOrganizationData({
+      name: 'ClimaSite',
+      url: origin,
+      logo: `${origin}/assets/images/og-default.png`,
+    });
+    this.structuredData.setWebsiteData('ClimaSite', origin, `${origin}/products`);
+
     // Watch wizard state and re-fetch recommendations after a short debounce.
     effect((onCleanup) => {
       const a = this.area();
