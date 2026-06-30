@@ -1,3 +1,4 @@
+using ClimaSite.Api.Common;
 using ClimaSite.Application.Features.Questions.Commands;
 using ClimaSite.Application.Features.Questions.Queries;
 using ClimaSite.Core.Entities;
@@ -29,8 +30,8 @@ public class AdminQuestionsController : ControllerBase
     {
         var query = new GetPendingModerationQuery
         {
-            PageNumber = pageNumber,
-            PageSize = pageSize
+            PageNumber = QueryBounds.PageNumber(pageNumber),
+            PageSize = QueryBounds.PageSize(pageSize)
         };
 
         var result = await _mediator.Send(query);
@@ -48,8 +49,8 @@ public class AdminQuestionsController : ControllerBase
     {
         var query = new GetPendingModerationQuery
         {
-            PageNumber = pageNumber,
-            PageSize = pageSize,
+            PageNumber = QueryBounds.PageNumber(pageNumber),
+            PageSize = QueryBounds.PageSize(pageSize),
             QuestionStatus = status
         };
 

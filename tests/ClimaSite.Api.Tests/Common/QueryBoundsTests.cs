@@ -49,6 +49,16 @@ public class QueryBoundsTests
     public void Days_ClampsTo_1_to_730(int input, int expected)
         => QueryBounds.Days(input).Should().Be(expected);
 
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(-1, 1)]      // negative would crash Take(-1)
+    [InlineData(10, 10)]
+    [InlineData(100, 100)]
+    [InlineData(101, 100)]   // above ceiling → 100
+    [InlineData(100_000, 100)]
+    public void DashboardCount_ClampsTo_1_to_100(int input, int expected)
+        => QueryBounds.DashboardCount(input).Should().Be(expected);
+
     [Fact]
     public void PageNumber_TimesMaxPageSize_StaysWithinInt32()
     {

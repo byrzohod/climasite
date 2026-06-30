@@ -20,6 +20,11 @@ public static class QueryBounds
     // a DateTime.AddDays(-n). 730 days = 2 years, more than any real UI range.
     public const int MaxLookbackDays = 730;
 
+    // Admin-dashboard "recent/top N" widgets have looser semantics than the public catalog Count (they may
+    // legitimately want more than 24), so they get their own generous cap — enough to stop a negative Take
+    // (a crash) and a fetch-all (a big response) without constraining a real "top 100" report.
+    public const int MaxDashboardCount = 100;
+
     public static int PageNumber(int value) => Math.Clamp(value, 1, MaxPageNumber);
 
     public static int PageSize(int value) => Math.Clamp(value, 1, MaxPageSize);
@@ -27,4 +32,6 @@ public static class QueryBounds
     public static int Count(int value) => Math.Clamp(value, 1, MaxItemCount);
 
     public static int Days(int value) => Math.Clamp(value, 1, MaxLookbackDays);
+
+    public static int DashboardCount(int value) => Math.Clamp(value, 1, MaxDashboardCount);
 }

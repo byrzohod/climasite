@@ -1,3 +1,4 @@
+using ClimaSite.Api.Common;
 using ClimaSite.Application.Features.Admin.Installation.Commands;
 using ClimaSite.Application.Features.Admin.Installation.Queries;
 using MediatR;
@@ -24,6 +25,13 @@ public class AdminInstallationController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetRequests([FromQuery] GetAdminInstallationRequestsQuery query)
     {
+        // Clamp untrusted pagination so a huge pageNumber (Skip overflow) / pageSize=0 can't 500 this admin
+        // list (FOUND-QW-admin-pagination). The handler lower-bounds pageNumber but not the overflow case.
+        query = query with
+        {
+            PageNumber = QueryBounds.PageNumber(query.PageNumber),
+            PageSize = QueryBounds.PageSize(query.PageSize)
+        };
         var result = await _mediator.Send(query);
         return Ok(result);
     }

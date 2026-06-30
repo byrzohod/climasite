@@ -1,3 +1,4 @@
+using ClimaSite.Api.Common;
 using ClimaSite.Application.Features.Inventory.Commands;
 using ClimaSite.Application.Features.Inventory.DTOs;
 using ClimaSite.Application.Features.Inventory.Queries;
@@ -22,6 +23,13 @@ public class InventoryController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetInventory([FromQuery] GetInventoryListQuery query)
     {
+        // Clamp untrusted pagination so pageSize=0 / a huge pageNumber can't 500 this admin list
+        // (FOUND-QW-admin-pagination — same edge guard as the public B-036 endpoints).
+        query = query with
+        {
+            PageNumber = QueryBounds.PageNumber(query.PageNumber),
+            PageSize = QueryBounds.PageSize(query.PageSize)
+        };
         var result = await _mediator.Send(query);
         return Ok(result);
     }
