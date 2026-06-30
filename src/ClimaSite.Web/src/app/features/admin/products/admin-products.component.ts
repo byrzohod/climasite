@@ -166,7 +166,7 @@ function emptyForm(): ProductForm {
                   <td>
                     <img
                       class="thumb"
-                      [src]="product.primaryImageUrl || 'assets/images/no-image.svg'"
+                      [src]="product.primaryImageUrl || 'assets/images/fallbacks/no-product-image.svg'"
                       [alt]="product.name"
                       loading="lazy" />
                   </td>

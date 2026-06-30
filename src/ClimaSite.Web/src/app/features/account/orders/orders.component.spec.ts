@@ -5,7 +5,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { TranslateModule } from '@ngx-translate/core';
 import { CheckoutService } from '../../../core/services/checkout.service';
-import { of, throwError } from 'rxjs';
+import { of, throwError, Subject } from 'rxjs';
 import { OrderBrief, PaginatedOrders } from '../../../core/models/order.model';
 import { EmptyStateComponent } from '../../../shared/components/empty-state';
 
@@ -142,6 +142,27 @@ describe('OrdersComponent', () => {
 
     expect(newComponent.loadError()).toBeFalse();
     expect(newFixture.nativeElement.querySelector('[data-testid="orders-list"]')).toBeTruthy();
+  });
+
+  it('ignores a stale failing load that resolves after a newer successful load (FOUND-loaderr-race)', () => {
+    const first = new Subject<PaginatedOrders>();
+    const second = new Subject<PaginatedOrders>();
+    checkoutServiceMock.getOrders.and.returnValues(first.asObservable(), second.asObservable());
+
+    const f = TestBed.createComponent(OrdersComponent);
+    const c = f.componentInstance;
+    f.detectChanges();   // ngOnInit → loadOrders #1 (subscribes to `first`)
+    c.loadOrders();      // loadOrders #2 (newer; subscribes to `second`)
+
+    // The newer load succeeds first…
+    second.next(mockPaginatedResponse);
+    second.complete();
+    // …then the stale older load errors — it must NOT flip loadError or blank the data.
+    first.error(new Error('stale'));
+    f.detectChanges();
+
+    expect(c.loadError()).toBeFalse();
+    expect(c.orders()).toEqual(mockOrders);
   });
 
   it('should display orders when loaded', () => {

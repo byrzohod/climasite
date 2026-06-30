@@ -22,6 +22,9 @@ export class CartService {
   // page-level "couldn't load your cart, Retry" branch fires ONLY on a real load failure (B-020) and a failed
   // quantity-update doesn't blank the cart/mini-cart.
   private readonly _loadFailed = signal(false);
+  // Monotonic load token: only the most recent loadCart() may write state, so an older request that
+  // resolves after a newer one can't re-show a stale error / overwrite fresh data (FOUND-loaderr-race).
+  private loadSeq = 0;
   private readonly _miniCartOpen = signal(false);
 
   // Public readonly signals
@@ -102,17 +105,20 @@ export class CartService {
     this._isLoading.set(true);
     this._error.set(null);
     this._loadFailed.set(false);
+    const seq = ++this.loadSeq;
 
     const sessionId = this.getSessionId();
     this.http.get<Cart>(`${this.apiUrl}?guestSessionId=${sessionId}${this.langSuffix()}`)
       .pipe(
         tap(cart => {
+          if (seq !== this.loadSeq) return; // superseded by a newer loadCart()
           this._cart.set(cart);
           this._loadFailed.set(false);
           this._isLoading.set(false);
         }),
         catchError(error => {
           console.error('Failed to load cart:', error);
+          if (seq !== this.loadSeq) return of(null); // a newer load is in flight — don't re-show a stale error
           // B-020: surface the failure instead of masking it as an empty cart. Flag loadFailed (the
           // page-level error+Retry branch renders) and DON'T clobber a previously-loaded cart with an
           // empty one — a first-load failure simply leaves the cart null, and loadFailed() is checked

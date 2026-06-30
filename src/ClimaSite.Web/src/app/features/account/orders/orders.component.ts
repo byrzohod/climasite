@@ -843,6 +843,9 @@ export class OrdersComponent implements OnInit {
   pageSize = 10;
 
   private searchDebounceTimer?: ReturnType<typeof setTimeout>;
+  // Only the most recent loadOrders() may write state — an older request that resolves after a newer one
+  // (rapid filter/page changes) must not re-show a stale error or overwrite fresh results (FOUND-loaderr-race).
+  private loadSeq = 0;
 
   ngOnInit(): void {
     this.loadStatuses();
@@ -862,14 +865,17 @@ export class OrdersComponent implements OnInit {
   loadOrders(): void {
     this.isLoading.set(true);
     this.loadError.set(false);
+    const seq = ++this.loadSeq;
     const params = this.buildFilterParams();
 
     this.checkoutService.getOrders(params).subscribe({
       next: (result) => {
+        if (seq !== this.loadSeq) return; // superseded by a newer loadOrders()
         this.paginatedOrders.set(result);
         this.isLoading.set(false);
       },
       error: () => {
+        if (seq !== this.loadSeq) return; // a newer load is in flight — don't re-show a stale error
         // B-018: flag the failure instead of setting an empty result (which would render the
         // "you have no orders" empty-state). The error+retry branch renders instead; a previously
         // loaded page is left untouched so a transient reload failure doesn't blank the list silently.
