@@ -141,6 +141,24 @@ describe('CartService', () => {
       expect(service.items().length).toBe(1); // preserved, not blanked into a fake empty cart
     }));
 
+    it('ignores a stale failing load that resolves after a newer successful load (FOUND-loaderr-race)', fakeAsync(() => {
+      service.loadCart(); // request A
+      service.loadCart(); // request B (newer)
+
+      const reqs = httpMock.match(r => r.url.includes('/api/cart'));
+      expect(reqs.length).toBe(2);
+
+      // B (the latest) succeeds first…
+      reqs[1].flush(mockCart);
+      tick();
+      // …then A (now stale) errors — it must NOT re-show an error or blank B's data.
+      reqs[0].error(new ErrorEvent('stale boom'));
+      tick();
+
+      expect(service.loadFailed()).toBeFalse();
+      expect(service.items().length).toBe(1);
+    }));
+
     it('should clear the error and loadFailed on a subsequent successful load', fakeAsync(() => {
       service.loadCart();
       tick();

@@ -61,7 +61,7 @@ import { DualPricePipe } from '../../../../../shared/pipes/dual-price.pipe';
                   </svg>
                 </span>
 <img
-                  [src]="relation.primaryImageUrl || 'assets/images/no-image.svg'"
+                  [src]="relation.primaryImageUrl || 'assets/images/fallbacks/no-product-image.svg'"
                   [alt]="relation.name"
                   class="product-image"
                   loading="lazy"
@@ -126,7 +126,7 @@ import { DualPricePipe } from '../../../../../shared/pipes/dual-price.pipe';
               @for (product of searchResults(); track product.id) {
                 <div class="search-result-item" (click)="addRelation(product.id)">
 <img
-                    [src]="product.primaryImageUrl || 'assets/images/no-image.svg'"
+                    [src]="product.primaryImageUrl || 'assets/images/fallbacks/no-product-image.svg'"
                     [alt]="product.name"
                     class="product-image"
                     loading="lazy"

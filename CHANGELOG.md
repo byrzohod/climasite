@@ -38,6 +38,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- **Frontend follow-up cleanups (no-image asset, dead components, load-race guard).** Three small follow-ups
+  from earlier councils/verifiers:
+  - **FOUND-B002-noimage** — the admin product list + related-products-manager referenced
+    `assets/images/no-image.svg`, which doesn't exist (a broken thumbnail for every imageless product). Repointed
+    the 3 references to the canonical `assets/images/fallbacks/no-product-image.svg` (served 200; verified live).
+  - **FOUND-B002-orphans** — deleted the dead `frequently-bought` + `product-variants` shared components (and
+    their specs), which used an inverted sale convention (`salePrice < price`) and were confirmed orphans (zero
+    template usages, zero imports, no routes/barrels), removing the latent landmine outright.
+  - **FOUND-loaderr-race** — `CartService.loadCart()` and `OrdersComponent.loadOrders()` had no latest-request
+    guard, so an older request resolving after a newer one (rapid filter/page changes) could re-show a stale
+    error or overwrite fresh data. Added a monotonic `loadSeq` token — only the most recent load writes state;
+    deterministic out-of-order tests (cart + orders) prove a stale failing load is ignored.
+
+  Frontend only; no backend change. Full FE suite 1724 green (orphan specs removed; +2 race tests); `ng lint`
+  clean. Cross-vendor Codex council clean. `/acceptance` PASS at `.planning/acceptance/frontend-cleanups.md`.
 - **FOUND-QW-admin-pagination — clamp pagination bounds on the admin list endpoints.** The public B-036 fix
   bounded every anonymous endpoint, but the auth-gated lists (admin products/orders/customers/questions/reviews/
   **inventory**/**installation-requests** + the authenticated **notifications** list) still drove their own
