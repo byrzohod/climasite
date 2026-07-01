@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
+import { Component, ElementRef, inject, signal, OnInit, OnDestroy, QueryList, ViewChildren } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -86,13 +86,22 @@ import { DualPricePipe } from '../../shared/pipes/dual-price.pipe';
                 <!-- Saved Addresses for Authenticated Users -->
                 @if (authService.isAuthenticated() && addressService.hasAddresses()) {
                   <div class="saved-addresses-section" data-testid="saved-addresses-section">
-                    <h3>{{ 'checkout.shipping.useSavedAddress' | translate }}</h3>
-                    <div class="saved-addresses-list">
-                      @for (address of addressService.addresses(); track address.id) {
+                    <h3 id="checkout-saved-addresses-heading">{{ 'checkout.shipping.useSavedAddress' | translate }}</h3>
+                    <div
+                      class="saved-addresses-list"
+                      role="radiogroup"
+                      aria-labelledby="checkout-saved-addresses-heading"
+                    >
+                      @for (address of addressService.addresses(); track address.id; let i = $index) {
                         <div
+                          #savedAddressCard
                           class="saved-address-card"
+                          role="radio"
                           [class.selected]="selectedAddressId() === address.id"
+                          [attr.aria-checked]="selectedAddressId() === address.id"
+                          [attr.tabindex]="savedAddressTabIndex(address.id, i)"
                           (click)="selectSavedAddress(address)"
+                          (keydown)="onSavedAddressKeydown($event, i)"
                           data-testid="saved-address-card"
                         >
                           @if (address.isDefault) {
@@ -181,9 +190,14 @@ import { DualPricePipe } from '../../shared/pipes/dual-price.pipe';
             <!-- Payment Step -->
             @if (checkoutService.currentStep() === 'payment') {
               <div class="checkout-section" data-testid="payment-section">
-                <h2>{{ 'checkout.shipping.method' | translate }}</h2>
+                <h2 id="checkout-shipping-method-heading">{{ 'checkout.shipping.method' | translate }}</h2>
 
-                <div class="shipping-methods" data-testid="shipping-methods">
+                <div
+                  class="shipping-methods"
+                  role="radiogroup"
+                  aria-labelledby="checkout-shipping-method-heading"
+                  data-testid="shipping-methods"
+                >
                   <label class="payment-option" [class.selected]="checkoutService.shippingMethod() === 'standard'">
                     <input type="radio" name="shippingMethod" value="standard" [checked]="checkoutService.shippingMethod() === 'standard'" (change)="selectShippingMethod('standard')" data-testid="shipping-standard" />
                     <span class="payment-icon"><app-icon name="package" size="lg" /></span>
@@ -209,9 +223,14 @@ import { DualPricePipe } from '../../shared/pipes/dual-price.pipe';
                   </label>
                 </div>
 
-                <h2 style="margin-top: 2rem;">{{ 'checkout.payment.title' | translate }}</h2>
+                <h2 id="checkout-payment-method-heading" style="margin-top: 2rem;">{{ 'checkout.payment.title' | translate }}</h2>
 
-                <div class="payment-methods">
+                <div
+                  class="payment-methods"
+                  role="radiogroup"
+                  aria-labelledby="checkout-payment-method-heading"
+                  data-testid="payment-methods"
+                >
                   <label class="payment-option" [class.selected]="checkoutService.paymentMethod() === 'card'">
                     <input type="radio" name="paymentMethod" value="card" [checked]="checkoutService.paymentMethod() === 'card'" (change)="selectPaymentMethod('card')" data-testid="payment-card" />
                     <span class="payment-icon"><app-icon name="credit-card" size="lg" /></span>
@@ -550,6 +569,12 @@ import { DualPricePipe } from '../../shared/pipes/dual-price.pipe';
         background-color: var(--color-primary-light);
       }
 
+      /* B-042: visible keyboard focus ring on the role=radio card. */
+      &:focus-visible {
+        outline: 2px solid var(--color-ring);
+        outline-offset: 2px;
+      }
+
       .default-badge {
         position: absolute;
         top: -8px;
@@ -704,7 +729,10 @@ import { DualPricePipe } from '../../shared/pipes/dual-price.pipe';
         transform: translateY(0) scale(0.99);
       }
 
-      &.selected {
+      /* Tie the selected look to the REAL radio state (:has(input:checked)) as well as the
+         [class.selected] mirror, so the visual selection is robust even if the class ever lags. */
+      &.selected,
+      &:has(input:checked) {
         border-color: var(--color-primary);
         background: var(--color-primary-light);
         box-shadow: 0 0 0 1px var(--color-primary);
@@ -723,12 +751,26 @@ import { DualPricePipe } from '../../shared/pipes/dual-price.pipe';
         color: var(--color-primary);
       }
 
-      &.selected .payment-icon {
+      &.selected .payment-icon,
+      &:has(input:checked) .payment-icon {
         color: var(--color-primary);
       }
 
+      /* B-014: keep the native radio in the tab order + a11y tree (arrow-key selection + SR
+         semantics). sr-only-but-FOCUSABLE — NOT display:none/visibility:hidden, which remove
+         focusability. The visible card below reflects :checked and the keyboard focus ring. */
       input {
-        display: none;
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        margin: 0;
+      }
+
+      /* Visible focus ring on the card when its radio is keyboard-focused. */
+      &:has(input:focus-visible) {
+        outline: 2px solid var(--color-ring);
+        outline-offset: 2px;
       }
     }
 
@@ -1138,6 +1180,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   // removed from the DOM on the review step, so we cannot confirm with the live element there).
   private cardPaymentMethodId: string | null = null;
 
+  // B-042: the saved-address cards form a role=radiogroup; these refs drive roving focus.
+  @ViewChildren('savedAddressCard') private savedAddressCards!: QueryList<ElementRef<HTMLElement>>;
+
 ngOnInit(): void {
     // Load saved addresses if user is authenticated
     if (this.authService.isAuthenticated()) {
@@ -1212,6 +1257,59 @@ ngOnInit(): void {
       country: address.country,
       phone: address.phone || ''
     });
+  }
+
+  /**
+   * B-042: roving tabindex for the saved-address radiogroup. Exactly one card is tab-reachable:
+   * the selected card, or — when nothing is selected yet — the first card, so the group is always
+   * reachable by keyboard. Arrow keys then move focus within it.
+   */
+  savedAddressTabIndex(addressId: string, index: number): number {
+    const selected = this.selectedAddressId();
+    if (selected === null) {
+      return index === 0 ? 0 : -1;
+    }
+    return selected === addressId ? 0 : -1;
+  }
+
+  /**
+   * B-042: keyboard support for the saved-address radiogroup. Enter/Space select the focused card;
+   * Arrow Up/Left and Down/Right move the roving focus to the previous/next card (wrap-around) and
+   * select it — the WAI-ARIA radiogroup pattern.
+   */
+  onSavedAddressKeydown(event: KeyboardEvent, index: number): void {
+    const addresses = this.addressService.addresses();
+    const count = addresses.length;
+    if (count === 0) return;
+
+    switch (event.key) {
+      case 'Enter':
+      case ' ':
+      case 'Spacebar':
+        event.preventDefault();
+        this.selectSavedAddress(addresses[index]);
+        break;
+      case 'ArrowDown':
+      case 'ArrowRight': {
+        event.preventDefault();
+        const next = (index + 1) % count;
+        this.selectSavedAddress(addresses[next]);
+        this.focusSavedAddress(next);
+        break;
+      }
+      case 'ArrowUp':
+      case 'ArrowLeft': {
+        event.preventDefault();
+        const prev = (index - 1 + count) % count;
+        this.selectSavedAddress(addresses[prev]);
+        this.focusSavedAddress(prev);
+        break;
+      }
+    }
+  }
+
+  private focusSavedAddress(index: number): void {
+    this.savedAddressCards?.get(index)?.nativeElement.focus();
   }
 
   submitShipping(): void {

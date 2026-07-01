@@ -1,15 +1,19 @@
-import { TestBed } from '@angular/core/testing';
-import { Subject, of, throwError } from 'rxjs';
-import { Router } from '@angular/router';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
+import { By } from '@angular/platform-browser';
+import { Subject, Observable, of, throwError } from 'rxjs';
+import { Router, provideRouter } from '@angular/router';
+import { TranslateLoader, TranslateModule, TranslateService } from '@ngx-translate/core';
 
 import { CheckoutComponent } from './checkout.component';
 import { CartService } from '../../core/services/cart.service';
-import { CheckoutService } from '../../core/services/checkout.service';
+import { CheckoutService, CheckoutStep } from '../../core/services/checkout.service';
 import { AddressService } from '../../core/services/address.service';
 import { AuthService } from '../../auth/services/auth.service';
 import { PaymentService, PaymentIntentResponse } from '../../core/services/payment.service';
 import { ConfettiService } from '../../core/services/confetti.service';
 import { Order } from '../../core/models/order.model';
+import { SavedAddress } from '../../core/models/address.model';
 
 /**
  * BUG-04: a rapid double-click on "Place order" must not fire two create-intent
@@ -549,5 +553,246 @@ describe('CheckoutComponent - per-attempt idempotency key rotation (PAY-IDEM)', 
     expect(secondKey.length).toBeGreaterThan(0);
     // Per-attempt rotation: the two attempts must NOT share a key (closes the refund-replay [High]).
     expect(firstKey).not.toBe(secondKey);
+  });
+});
+
+/**
+ * B-014 / B-042: accessible radiogroups on checkout. This block renders the REAL template (unlike the
+ * logic-only blocks above) to assert the DOM contract:
+ *  - B-014: the shipping-method and payment-method sets are role=radiogroup with an accessible name,
+ *    and their native <input type=radio> are focusable (sr-only, NOT display:none) so keyboard/SR
+ *    users can change the method; selecting via the radio updates the model.
+ *  - B-042: the saved-address cards are a role=radiogroup of role=radio with aria-checked + roving
+ *    tabindex, and a keydown handler that selects on Enter/Space and moves+selects on arrow keys.
+ */
+describe('CheckoutComponent - accessible radiogroups (B-014 / B-042)', () => {
+  let fixture: ComponentFixture<CheckoutComponent>;
+  let component: CheckoutComponent;
+  let checkoutService: {
+    currentStep: ReturnType<typeof signal<CheckoutStep>>;
+    shippingMethod: ReturnType<typeof signal<string>>;
+    paymentMethod: ReturnType<typeof signal<string>>;
+    shippingAddress: ReturnType<typeof signal<null>>;
+    error: ReturnType<typeof signal<string | null>>;
+    isProcessing: ReturnType<typeof signal<boolean>>;
+    lastOrderId: ReturnType<typeof signal<string | null>>;
+    setShippingMethod: jasmine.Spy;
+    setPaymentMethod: jasmine.Spy;
+    setStep: jasmine.Spy;
+    setError: jasmine.Spy;
+    getSessionId: () => string;
+  };
+
+  const translations: Record<string, string> = {
+    'checkout.shipping.method': 'Shipping Method',
+    'checkout.payment.title': 'Payment Method',
+    'checkout.shipping.useSavedAddress': 'Use a saved address'
+  };
+
+  class FakeTranslateLoader implements TranslateLoader {
+    getTranslation(_lang: string): Observable<Record<string, string>> {
+      return of(translations);
+    }
+  }
+
+  const addr1: SavedAddress = {
+    id: 'addr-1', fullName: 'Alice Example', addressLine1: '1 First St', city: 'Sofia',
+    postalCode: '1000', country: 'Bulgaria', countryCode: 'BG', isDefault: true, type: 'Shipping',
+    createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z'
+  };
+  const addr2: SavedAddress = {
+    id: 'addr-2', fullName: 'Bob Example', addressLine1: '2 Second St', city: 'Plovdiv',
+    postalCode: '4000', country: 'Bulgaria', countryCode: 'BG', isDefault: false, type: 'Shipping',
+    createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z'
+  };
+
+  beforeEach(async () => {
+    checkoutService = {
+      currentStep: signal<CheckoutStep>('payment'),
+      shippingMethod: signal('standard'),
+      paymentMethod: signal('bank'),
+      shippingAddress: signal(null),
+      error: signal<string | null>(null),
+      isProcessing: signal(false),
+      lastOrderId: signal<string | null>(null),
+      setShippingMethod: jasmine.createSpy('setShippingMethod'),
+      setPaymentMethod: jasmine.createSpy('setPaymentMethod'),
+      setStep: jasmine.createSpy('setStep'),
+      setError: jasmine.createSpy('setError'),
+      getSessionId: () => 'session-1'
+    };
+
+    const cartService = {
+      loadFailed: signal(false),
+      error: signal<string | null>(null),
+      isEmpty: signal(false),
+      items: signal<unknown[]>([]),
+      subtotal: signal(0),
+      cart: signal({ tax: 0 }),
+      loadCart: jasmine.createSpy('loadCart'),
+      clearCart: jasmine.createSpy('clearCart').and.returnValue(of(void 0))
+    };
+
+    const addressService = {
+      hasAddresses: signal(true),
+      addresses: signal<SavedAddress[]>([addr1, addr2]),
+      loadAddresses: jasmine.createSpy('loadAddresses')
+    };
+
+    const authService = { isAuthenticated: signal(true) };
+
+    const paymentService = {
+      isInitialized: signal(false),
+      error: signal<string | null>(null),
+      bankTransfer: signal(null),
+      initialize: jasmine.createSpy('initialize').and.returnValue(Promise.resolve(false)),
+      createElements: jasmine.createSpy('createElements'),
+      destroyElements: jasmine.createSpy('destroyElements'),
+      loadConfig: jasmine.createSpy('loadConfig').and.returnValue(Promise.resolve(null))
+    };
+
+    const confettiService = jasmine.createSpyObj<ConfettiService>('ConfettiService', ['burst', 'stop']);
+
+    await TestBed.configureTestingModule({
+      imports: [
+        CheckoutComponent,
+        TranslateModule.forRoot({ loader: { provide: TranslateLoader, useClass: FakeTranslateLoader } })
+      ],
+      providers: [
+        provideRouter([]),
+        { provide: CartService, useValue: cartService },
+        { provide: CheckoutService, useValue: checkoutService },
+        { provide: AddressService, useValue: addressService },
+        { provide: AuthService, useValue: authService },
+        { provide: PaymentService, useValue: paymentService },
+        { provide: ConfettiService, useValue: confettiService }
+      ]
+    }).compileComponents();
+
+    const translate = TestBed.inject(TranslateService);
+    translate.setTranslation('en', translations);
+    translate.use('en');
+
+    fixture = TestBed.createComponent(CheckoutComponent);
+    component = fixture.componentInstance;
+  });
+
+  // ---- B-014: method radiogroups ----
+  describe('B-014: shipping + payment method radiogroups', () => {
+    beforeEach(() => {
+      checkoutService.currentStep.set('payment');
+      fixture.detectChanges();
+    });
+
+    it('renders both method sets as role=radiogroup with an accessible name', () => {
+      const shippingGroup = fixture.debugElement.query(By.css('[data-testid="shipping-methods"]'));
+      const paymentGroup = fixture.debugElement.query(By.css('[data-testid="payment-methods"]'));
+
+      expect(shippingGroup.nativeElement.getAttribute('role')).toBe('radiogroup');
+      expect(paymentGroup.nativeElement.getAttribute('role')).toBe('radiogroup');
+
+      // Each group is named by its visible heading (aria-labelledby → an element that exists).
+      const shippingLabelId = shippingGroup.nativeElement.getAttribute('aria-labelledby');
+      const paymentLabelId = paymentGroup.nativeElement.getAttribute('aria-labelledby');
+      expect(shippingLabelId).toBeTruthy();
+      expect(paymentLabelId).toBeTruthy();
+      expect(document.getElementById(shippingLabelId!)?.textContent).toContain('Shipping Method');
+      expect(fixture.nativeElement.querySelector('#' + paymentLabelId)?.textContent).toContain('Payment Method');
+    });
+
+    it('keeps the native radios focusable (sr-only, NOT display:none)', () => {
+      const radio = fixture.debugElement.query(By.css('input[data-testid="shipping-standard"]')).nativeElement as HTMLInputElement;
+      expect(radio.type).toBe('radio');
+      // The regression: display:none removes the radio from the tab order + a11y tree.
+      expect(getComputedStyle(radio).display).not.toBe('none');
+      expect(getComputedStyle(radio).visibility).not.toBe('hidden');
+    });
+
+    it('updates the model when a method radio is selected', () => {
+      const express = fixture.debugElement.query(By.css('input[data-testid="shipping-express"]')).nativeElement as HTMLInputElement;
+      express.click();
+      expect(checkoutService.setShippingMethod).toHaveBeenCalledWith('express');
+
+      // 'bank' is the preselected method here, so toggle to the currently-unchecked 'card' radio —
+      // clicking an already-checked radio fires no change event.
+      const card = fixture.debugElement.query(By.css('input[data-testid="payment-card"]')).nativeElement as HTMLInputElement;
+      card.click();
+      expect(checkoutService.setPaymentMethod).toHaveBeenCalledWith('card');
+    });
+  });
+
+  // ---- B-042: saved-address radiogroup ----
+  describe('B-042: saved-address cards as a keyboard radiogroup', () => {
+    beforeEach(() => {
+      checkoutService.currentStep.set('shipping');
+      fixture.detectChanges();
+    });
+
+    function cards(): HTMLElement[] {
+      return fixture.debugElement.queryAll(By.css('[data-testid="saved-address-card"]')).map(d => d.nativeElement);
+    }
+
+    it('renders a role=radiogroup of role=radio named by its visible heading (WCAG 2.5.3)', () => {
+      const group = fixture.debugElement.query(By.css('.saved-addresses-list')).nativeElement as HTMLElement;
+      expect(group.getAttribute('role')).toBe('radiogroup');
+      // Accessible name comes from the visible <h3> (aria-labelledby), so name == visible label.
+      const labelId = group.getAttribute('aria-labelledby');
+      expect(labelId).toBeTruthy();
+      expect(document.getElementById(labelId!)?.textContent).toContain('Use a saved address');
+
+      const all = cards();
+      expect(all.length).toBe(2);
+      for (const card of all) {
+        expect(card.getAttribute('role')).toBe('radio');
+        expect(card.getAttribute('aria-checked')).not.toBeNull();
+      }
+    });
+
+    it('uses roving tabindex — the first card is reachable when nothing is selected', () => {
+      const all = cards();
+      expect(all[0].getAttribute('tabindex')).toBe('0');
+      expect(all[1].getAttribute('tabindex')).toBe('-1');
+    });
+
+    it('selects the focused card on Enter and reflects aria-checked', () => {
+      const all = cards();
+      all[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      fixture.detectChanges();
+
+      expect(component.selectedAddressId()).toBe('addr-1');
+      expect(cards()[0].getAttribute('aria-checked')).toBe('true');
+      // Roving tabindex now follows the selection.
+      expect(cards()[0].getAttribute('tabindex')).toBe('0');
+      expect(cards()[1].getAttribute('tabindex')).toBe('-1');
+    });
+
+    it('selects the focused card on Space', () => {
+      const all = cards();
+      all[1].dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+      fixture.detectChanges();
+
+      expect(component.selectedAddressId()).toBe('addr-2');
+      expect(cards()[1].getAttribute('aria-checked')).toBe('true');
+    });
+
+    it('moves + selects the next card on ArrowDown (wrap-around)', () => {
+      const all = cards();
+      all[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      fixture.detectChanges();
+      expect(component.selectedAddressId()).toBe('addr-2');
+
+      // Wrap from the last back to the first.
+      cards()[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      fixture.detectChanges();
+      expect(component.selectedAddressId()).toBe('addr-1');
+    });
+
+    it('moves + selects the previous card on ArrowUp (wrap-around)', () => {
+      const all = cards();
+      all[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+      fixture.detectChanges();
+      // From the first, ArrowUp wraps to the last.
+      expect(component.selectedAddressId()).toBe('addr-2');
+    });
   });
 });

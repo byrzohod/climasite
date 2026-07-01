@@ -313,6 +313,15 @@ export class ModalComponent implements AfterViewInit, OnDestroy {
     if (isPlatformBrowser(this.platformId)) {
       this.document.body.style.overflow = '';
       this.document.removeEventListener('keydown', this.boundKeydownHandler);
+
+      // Focus-restore on destroy: when a parent removes the modal via @if/*ngIf, the component is
+      // destroyed before the isOpen->false path (onClose) can run, so its focus-restore never fires
+      // and focus is left on <body> (a WCAG 2.4.3 focus-order gap). Restore here too. onClose nulls
+      // the ref after restoring, so this only fires for a destroyed-while-open modal — no double focus.
+      if (this.previouslyFocusedElement) {
+        this.previouslyFocusedElement.focus();
+        this.previouslyFocusedElement = null;
+      }
     }
   }
 
