@@ -108,7 +108,10 @@ export class CartService {
     const seq = ++this.loadSeq;
 
     const sessionId = this.getSessionId();
-    this.http.get<Cart>(`${this.apiUrl}?guestSessionId=${sessionId}${this.langSuffix()}`)
+    // withCredentials so the httpOnly cs_guest cookie flows on the cross-origin dev API calls (same-origin in
+    // prod). In A0 the cookie ships DARK — the server still keys the guest cart off the legacy guestSessionId
+    // param; Wave A flips keying to the signed cookie (with legacy-cart migration). Sending it now readies that.
+    this.http.get<Cart>(`${this.apiUrl}?guestSessionId=${sessionId}${this.langSuffix()}`, { withCredentials: true })
       .pipe(
         tap(cart => {
           if (seq !== this.loadSeq) return; // superseded by a newer loadCart()
@@ -158,7 +161,7 @@ export class CartService {
       guestSessionId: this.getSessionId()
     };
 
-    return this.http.post<Cart>(`${this.apiUrl}/items`, request)
+    return this.http.post<Cart>(`${this.apiUrl}/items`, request, { withCredentials: true })
       .pipe(
         tap(cart => {
           this._cart.set(cart);
@@ -179,7 +182,7 @@ export class CartService {
 
     const request = { quantity, guestSessionId: this.getSessionId() };
 
-    return this.http.put<Cart>(`${this.apiUrl}/items/${itemId}`, request)
+    return this.http.put<Cart>(`${this.apiUrl}/items/${itemId}`, request, { withCredentials: true })
       .pipe(
         tap(cart => {
           this._cart.set(cart);
@@ -199,7 +202,7 @@ export class CartService {
     this._error.set(null);
 
     const sessionId = this.getSessionId();
-    return this.http.delete<Cart>(`${this.apiUrl}/items/${itemId}?guestSessionId=${sessionId}`)
+    return this.http.delete<Cart>(`${this.apiUrl}/items/${itemId}?guestSessionId=${sessionId}`, { withCredentials: true })
       .pipe(
         tap(cart => {
           this._cart.set(cart);
@@ -219,7 +222,7 @@ export class CartService {
     this._error.set(null);
 
     const sessionId = this.getSessionId();
-    return this.http.delete<void>(`${this.apiUrl}?guestSessionId=${sessionId}`)
+    return this.http.delete<void>(`${this.apiUrl}?guestSessionId=${sessionId}`, { withCredentials: true })
       .pipe(
         tap(() => {
           this._cart.set(this.createEmptyCart());
@@ -250,7 +253,7 @@ export class CartService {
     this._isLoading.set(true);
 
     const guestSessionId = encodeURIComponent(this.getSessionId());
-    return this.http.post<Cart>(`${this.apiUrl}/merge?guestSessionId=${guestSessionId}`, { userId }, { headers: this.getHeaders() })
+    return this.http.post<Cart>(`${this.apiUrl}/merge?guestSessionId=${guestSessionId}`, { userId }, { headers: this.getHeaders(), withCredentials: true })
       .pipe(
         tap(cart => {
           this._cart.set(cart);

@@ -4,11 +4,13 @@ using ClimaSite.Api.BackgroundServices;
 using ClimaSite.Api.Configuration;
 using ClimaSite.Api.Middleware;
 using ClimaSite.Api.RateLimiting;
+using ClimaSite.Api.Services;
 using ClimaSite.Application;
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Options;
 using ClimaSite.Infrastructure;
 using ClimaSite.Infrastructure.Data;
+using ClimaSite.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
@@ -117,6 +119,21 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     // Current user service
     services.AddHttpContextAccessor();
     services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+    // Guest session (INV-01 Wave A0, shipped DARK): the signed guest cookie is minted + validated + published
+    // on IGuestSessionAccessor, but is NOT yet authoritative for cart-keying (that flip lands in Wave A).
+    // Derive the cookie signing key from the SAME resolved JWT secret so it inherits that secret's production
+    // fail-fast guarantee (JwtConfiguration.ResolveSecret) without introducing a new required secret. The
+    // accessor is exposed both as its concrete type (the middleware sets it) and as the read-only interface
+    // (Wave A consumes it), backed by ONE scoped instance per request.
+    services.AddSingleton<IGuestSessionTokenService>(new GuestSessionTokenService(jwtOptions.Secret));
+    services.AddSingleton<IGuestSessionMintLimiter, GuestSessionMintLimiter>();
+    services.AddScoped<GuestSessionAccessor>();
+    services.AddScoped<IGuestSessionAccessor>(sp => sp.GetRequiredService<GuestSessionAccessor>());
+
+    var guestSessionOptions = new GuestSessionOptions();
+    configuration.GetSection(GuestSessionOptions.SectionName).Bind(guestSessionOptions);
+    services.AddSingleton(guestSessionOptions);
 
     // CORS
     services.AddCors(options =>
@@ -371,6 +388,12 @@ void ConfigurePipeline(WebApplication app)
 
     // CORS
     app.UseCors("AllowAngular");
+
+    // Guest session (INV-01 Wave A0, shipped DARK): validate/mint the signed httpOnly cs_guest cookie and
+    // publish the verified id on IGuestSessionAccessor for Wave A to consume — it is NOT read for cart-keying
+    // yet. After CORS so the credentialed cross-origin response is negotiated, and before authentication since
+    // the guest identity is independent of the bearer principal.
+    app.UseGuestSession();
 
     // Authentication runs BEFORE the rate limiter so the per-user "strict-user" policy can read the
     // authenticated principal when partitioning; authorization stays AFTER the limiter so unauthenticated
