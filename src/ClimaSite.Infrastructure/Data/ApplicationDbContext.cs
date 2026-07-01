@@ -133,6 +133,26 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
                 s => s.SetProperty(v => v.StockQuantity, v => v.StockQuantity - quantity),
                 cancellationToken);
 
+    // INV-01 A1: a single set-based UPDATE re-keys the legacy guest cart onto the trusted cookie id. Bypasses
+    // the change tracker (and Cart.SessionId's private setter), and re-running it after the row is gone
+    // affects 0 rows — the idempotent no-op the migration relies on under EnableRetryOnFailure.
+    public Task<int> RekeyGuestCartAsync(string fromSessionId, string toSessionId, CancellationToken cancellationToken = default)
+        => Carts
+            .Where(c => c.SessionId == fromSessionId)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(c => c.SessionId, toSessionId),
+                cancellationToken);
+
+    // INV-01 A1: hashtextextended maps the cookie id to the bigint pg_advisory_xact_lock takes; the lock is
+    // transaction-scoped (auto-released on commit/rollback), so it serialises concurrent same-cookie migrations
+    // with no explicit unlock. Run as a query command purely for its lock side effect.
+    public Task AcquireGuestCartMigrationLockAsync(string cookieSessionId, CancellationToken cancellationToken = default)
+        => Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT pg_advisory_xact_lock(hashtextextended({cookieSessionId}, 0))",
+            cancellationToken);
+
+    public void ClearChangeTracker() => ChangeTracker.Clear();
+
     // ---- B-039: per-voter Q&A vote atomics (see IApplicationDbContext for the contract) ----
     // The INSERT uses ON CONFLICT DO NOTHING so a concurrent duplicate never throws (the transaction
     // stays alive); the rows it returns gate the caller's count delta. Counts are only ever mutated

@@ -1,3 +1,4 @@
+using ClimaSite.Api.Services;
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Options;
 using ClimaSite.Application.Features.Payments.Commands;
@@ -18,6 +19,7 @@ public class PaymentsController : ControllerBase
     private readonly IPaymentService _paymentService;
     private readonly IConfiguration _configuration;
     private readonly BankTransferOptions _bankTransferOptions;
+    private readonly IGuestCartIdentity _guestCart;
     private readonly ILogger<PaymentsController> _logger;
 
     public PaymentsController(
@@ -25,12 +27,14 @@ public class PaymentsController : ControllerBase
         IPaymentService paymentService,
         IConfiguration configuration,
         BankTransferOptions bankTransferOptions,
+        IGuestCartIdentity guestCart,
         ILogger<PaymentsController> logger)
     {
         _mediator = mediator;
         _paymentService = paymentService;
         _configuration = configuration;
         _bankTransferOptions = bankTransferOptions;
+        _guestCart = guestCart;
         _logger = logger;
     }
 
@@ -66,7 +70,10 @@ public class PaymentsController : ControllerBase
     [HttpPost("create-intent")]
     public async Task<IActionResult> CreatePaymentIntent([FromBody] CreatePaymentIntentCommand command)
     {
-        var result = await _mediator.Send(command);
+        // A1: resolve the cart via the trusted signed cookie (migrating a returning guest's legacy cart), so a
+        // guest who lands straight on checkout still pays for the cart the cookie owns.
+        var guestId = await _guestCart.ResolveAsync(command.GuestSessionId);
+        var result = await _mediator.Send(command with { GuestSessionId = guestId });
 
         if (!result.IsSuccess)
         {

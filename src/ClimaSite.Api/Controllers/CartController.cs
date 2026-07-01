@@ -1,3 +1,4 @@
+using ClimaSite.Api.Services;
 using ClimaSite.Application.Features.Cart.Commands;
 using ClimaSite.Application.Features.Cart.DTOs;
 using ClimaSite.Application.Features.Cart.Queries;
@@ -15,10 +16,12 @@ namespace ClimaSite.Api.Controllers;
 public class CartController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IGuestCartIdentity _guestCart;
 
-    public CartController(IMediator mediator)
+    public CartController(IMediator mediator, IGuestCartIdentity guestCart)
     {
         _mediator = mediator;
+        _guestCart = guestCart;
     }
 
     /// <summary>
@@ -28,11 +31,12 @@ public class CartController : ControllerBase
     [ProducesResponseType(typeof(CartDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCart([FromQuery] string? guestSessionId = null, [FromQuery] string lang = "en")
     {
+        var guestId = await _guestCart.ResolveAsync(guestSessionId);
         var userId = GetUserId();
         var query = new GetCartQuery
         {
             UserId = userId,
-            GuestSessionId = guestSessionId,
+            GuestSessionId = guestId,
             Language = lang
         };
 
@@ -48,7 +52,13 @@ public class CartController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> AddToCart([FromBody] AddToCartCommand command, [FromQuery] string lang = "en")
     {
-        var result = await _mediator.Send(command with { Language = lang });
+        var guestId = await _guestCart.ResolveAsync(command.GuestSessionId);
+
+        var result = await _mediator.Send(command with
+        {
+            Language = lang,
+            GuestSessionId = guestId
+        });
         if (!result.IsSuccess)
             return BadRequest(new { message = result.Error });
 
@@ -61,11 +71,13 @@ public class CartController : ControllerBase
         [FromBody] UpdateQuantityRequest request,
         [FromQuery] string lang = "en")
     {
+        var guestId = await _guestCart.ResolveAsync(request.GuestSessionId);
+
         var command = new UpdateCartItemCommand
         {
             ItemId = itemId,
             Quantity = request.Quantity,
-            GuestSessionId = request.GuestSessionId,
+            GuestSessionId = guestId,
             Language = lang
         };
 
@@ -81,10 +93,12 @@ public class CartController : ControllerBase
         Guid itemId,
         [FromQuery] string? guestSessionId = null)
     {
+        var guestId = await _guestCart.ResolveAsync(guestSessionId);
+
         var command = new RemoveFromCartCommand
         {
             ItemId = itemId,
-            GuestSessionId = guestSessionId
+            GuestSessionId = guestId
         };
 
         var result = await _mediator.Send(command);
@@ -97,9 +111,11 @@ public class CartController : ControllerBase
     [HttpDelete]
     public async Task<IActionResult> ClearCart([FromQuery] string? guestSessionId = null)
     {
+        var guestId = await _guestCart.ResolveAsync(guestSessionId);
+
         var command = new ClearCartCommand
         {
-            GuestSessionId = guestSessionId
+            GuestSessionId = guestId
         };
 
         var result = await _mediator.Send(command);
@@ -113,9 +129,11 @@ public class CartController : ControllerBase
     [HttpPost("merge")]
     public async Task<IActionResult> MergeGuestCart([FromQuery] string guestSessionId, [FromQuery] string lang = "en")
     {
+        var guestId = await _guestCart.ResolveAsync(guestSessionId);
+
         var command = new MergeGuestCartCommand
         {
-            GuestSessionId = guestSessionId,
+            GuestSessionId = guestId ?? string.Empty,
             Language = lang
         };
 

@@ -47,6 +47,30 @@ public interface IApplicationDbContext
     /// </summary>
     Task<int> TryDecrementVariantStockAsync(Guid variantId, int quantity, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Atomically re-keys every guest cart currently owned by <paramref name="fromSessionId"/> onto
+    /// <paramref name="toSessionId"/> in a single set-based UPDATE (no entity load). Returns rows affected
+    /// (0 = nothing to migrate → an idempotent no-op on a retry). Used by the guest-identity migration when a
+    /// returning guest's legacy cart must move onto the trusted signed-cookie id. (INV-01 A1)
+    /// </summary>
+    Task<int> RekeyGuestCartAsync(string fromSessionId, string toSessionId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Takes a transaction-scoped Postgres advisory lock keyed on the guest cookie id, serializing concurrent
+    /// same-cookie cart migrations so the merge branch never races (a duplicate <c>(cart_id, variant_id)</c>
+    /// insert on the shared cookie cart, or a 0-row legacy delete). Auto-released on commit/rollback; a no-op
+    /// off Postgres (unit tests are single-threaded). Must be called inside the migration transaction. (INV-01 A1)
+    /// </summary>
+    Task AcquireGuestCartMigrationLockAsync(string cookieSessionId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Detaches all tracked entities (resets the EF change tracker). <c>EnableRetryOnFailure</c> reuses the
+    /// request-scoped context across execution-strategy attempts and does NOT reset the tracker on a rollback,
+    /// so a retried multi-step operation must clear it at the top of each attempt to re-derive from committed
+    /// state rather than stale prior-attempt mutations. No-op on the in-memory test double. (INV-01 A1)
+    /// </summary>
+    void ClearChangeTracker();
+
     // ---- B-039: per-voter Q&A vote atomics ----
     // Conditional, rows-affected-gated SQL primitives for the vote ledger. The handler orchestrates the
     // transaction + gates each denormalised count delta on the rows these return; it never uses the

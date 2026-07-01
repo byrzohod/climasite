@@ -130,6 +130,9 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     services.AddSingleton<IGuestSessionMintLimiter, GuestSessionMintLimiter>();
     services.AddScoped<GuestSessionAccessor>();
     services.AddScoped<IGuestSessionAccessor>(sp => sp.GetRequiredService<GuestSessionAccessor>());
+    // A1: resolves the trusted guest id (migrating a returning guest's legacy cart onto the cookie id) for the
+    // cart, payments and orders controllers.
+    services.AddScoped<IGuestCartIdentity, GuestCartIdentity>();
 
     var guestSessionOptions = new GuestSessionOptions();
     configuration.GetSection(GuestSessionOptions.SectionName).Bind(guestSessionOptions);
