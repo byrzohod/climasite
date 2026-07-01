@@ -29,8 +29,8 @@ describe('WizardComponent', () => {
     const zoneButton = fixture.debugElement.query(By.css('[data-testid="home-v3-zone-B"]')).nativeElement as HTMLButtonElement;
     const zoneCButton = fixture.debugElement.query(By.css('[data-testid="home-v3-zone-C"]')).nativeElement as HTMLButtonElement;
 
-    expect(slider.value).toBe('24');
-    expect(slider.getAttribute('aria-valuenow')).toBe('24');
+    expect(slider.value).toBe('35');
+    expect(slider.getAttribute('aria-valuenow')).toBe('35');
     expect(livingButton.getAttribute('role')).toBe('radio');
     expect(livingButton.getAttribute('aria-checked')).toBe('true');
     expect(livingButton.getAttribute('tabindex')).toBe('0');

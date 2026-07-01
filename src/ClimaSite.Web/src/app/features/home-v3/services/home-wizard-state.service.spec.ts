@@ -9,8 +9,8 @@ describe('HomeWizardStateService', () => {
     service = TestBed.inject(HomeWizardStateService);
   });
 
-  it('starts with the default living-room / 24 m² / zone B configuration', () => {
-    expect(service.area()).toBe(24);
+  it('starts with the default living-room / 35 m² / zone B configuration', () => {
+    expect(service.area()).toBe(35);
     expect(service.roomType()).toBe('living');
     expect(service.zone()).toBe('B');
   });
@@ -39,20 +39,20 @@ describe('HomeWizardStateService', () => {
   it('updates zone independently of other state', () => {
     service.setZone('C');
     expect(service.zone()).toBe('C');
-    expect(service.area()).toBe(24);
+    expect(service.area()).toBe(35);
     expect(service.roomType()).toBe('living');
   });
 
-  it('estimates BTU using zone multipliers (A=90, B=110, C=140)', () => {
+  it('estimates BTU using zone multipliers (A=200, B=250, C=320)', () => {
     service.setArea(20);
     service.setZone('A');
-    expect(service.estimatedBtu()).toBe(1800);
+    expect(service.estimatedBtu()).toBe(4000);
 
     service.setZone('B');
-    expect(service.estimatedBtu()).toBe(2200);
+    expect(service.estimatedBtu()).toBe(5000);
 
     service.setZone('C');
-    expect(service.estimatedBtu()).toBe(2800);
+    expect(service.estimatedBtu()).toBe(6400);
   });
 
   it('returns a lower target inside temperature for bedrooms', () => {
@@ -73,7 +73,7 @@ describe('HomeWizardStateService', () => {
 
   it('estimates wattage as ~9% of BTU', () => {
     service.setArea(20);
-    service.setZone('B'); // 2200 BTU
-    expect(service.estimatedWatts()).toBe(Math.round(2200 * 0.09));
+    service.setZone('B'); // 5000 BTU
+    expect(service.estimatedWatts()).toBe(Math.round(5000 * 0.09));
   });
 });

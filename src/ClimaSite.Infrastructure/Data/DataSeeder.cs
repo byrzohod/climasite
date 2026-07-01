@@ -248,7 +248,11 @@ public class DataSeeder
                     { "SEER Rating", 21 },
                     { "Room Size", "Up to 550 sq ft" },
                     { "Noise Level", "22 dB" },
-                    { "Refrigerant", "R-32" }
+                    { "Refrigerant", "R-32" },
+                    // Canonical HVAC fields for recommendation fit-scoring (machine-only; hidden from the public PDP).
+                    { "isInverter", true },
+                    { "minTemp", -15 },
+                    { "recommendedRoomTypes", new[] { "living", "bedroom", "office" } }
                 },
                 new List<ProductFeature>
                 {
@@ -271,7 +275,11 @@ public class DataSeeder
                     { "SEER Rating", 18 },
                     { "Room Size", "Up to 400 sq ft" },
                     { "Noise Level", "26 dB" },
-                    { "Refrigerant", "R-410A" }
+                    { "Refrigerant", "R-410A" },
+                    // Canonical HVAC fields for recommendation fit-scoring (machine-only; hidden from the public PDP).
+                    { "isInverter", false },
+                    { "minTemp", -10 },
+                    { "recommendedRoomTypes", new[] { "bedroom", "office" } }
                 },
                 new List<ProductFeature>
                 {
@@ -293,7 +301,11 @@ public class DataSeeder
                     { "SEER Rating", 19 },
                     { "Room Size", "Up to 850 sq ft" },
                     { "Noise Level", "28 dB" },
-                    { "Refrigerant", "R-32" }
+                    { "Refrigerant", "R-32" },
+                    // Canonical HVAC fields for recommendation fit-scoring (machine-only; hidden from the public PDP).
+                    { "isInverter", false },
+                    { "minTemp", -10 },
+                    { "recommendedRoomTypes", new[] { "living", "commercial" } }
                 },
                 new List<ProductFeature>
                 {
@@ -316,7 +328,12 @@ public class DataSeeder
                     { "BTU Heating", 26000 },
                     { "SEER Rating", 22 },
                     { "HSPF", 10.5 },
-                    { "Operating Range", "-15°F to 115°F" }
+                    { "Operating Range", "-15°F to 115°F" },
+                    // Canonical HVAC fields for recommendation fit-scoring (machine-only; hidden from the public PDP).
+                    // btu resolves from "BTU Cooling" (cooling drives the sizing fit); minTemp in °C (−15°F ≈ −26°C).
+                    { "isInverter", true },
+                    { "minTemp", -26 },
+                    { "recommendedRoomTypes", new[] { "living", "commercial" } }
                 },
                 new List<ProductFeature>
                 {
@@ -339,7 +356,11 @@ public class DataSeeder
                     { "BTU Heating", 13000 },
                     { "SEER Rating", 20 },
                     { "HSPF", 9.5 },
-                    { "Operating Range", "-5°F to 110°F" }
+                    { "Operating Range", "-5°F to 110°F" },
+                    // Canonical HVAC fields for recommendation fit-scoring (machine-only; hidden from the public PDP).
+                    { "isInverter", false },
+                    { "minTemp", -21 },
+                    { "recommendedRoomTypes", new[] { "bedroom", "office", "living" } }
                 },
                 new List<ProductFeature>
                 {

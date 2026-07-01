@@ -132,6 +132,39 @@ public class GetFilterOptionsQueryHandlerTests
     }
 
     [Fact]
+    public async Task Handle_MergesDisplayAliasesToCanonicalFacet_AndDedupesPerProduct()
+    {
+        // Display key "SEER Rating" and canonical "seer" must land in ONE "seer" bucket (B-016 alias-aware facets).
+        var p1 = MakeProduct("A1", "a1", 100m, brand: "X");
+        p1.SetSpecifications(new Dictionary<string, object>
+        {
+            ["SEER Rating"] = 21,    // display alias
+            ["BTU Cooling"] = 12000  // display alias for btu (heat-pump style)
+        });
+        var p2 = MakeProduct("A2", "a2", 100m, brand: "X");
+        p2.SetSpecifications(new Dictionary<string, object>
+        {
+            ["seer"] = 21,           // canonical
+            ["SEER Rating"] = 21     // + its display alias on the SAME product → must count once (dedupe)
+        });
+        _context.AddProduct(p1);
+        _context.AddProduct(p2);
+
+        var result = await CreateHandler().Handle(new GetFilterOptionsQuery(), CancellationToken.None);
+
+        // Both products' "SEER 21" merge into ONE canonical bucket; p2's duplicate alias+canonical counts ONCE.
+        result.Specifications.Should().ContainKey("seer");
+        result.Specifications.Should().NotContainKey("SEER Rating");
+        var seer = result.Specifications["seer"].Should().ContainSingle().Subject;
+        seer.Value.Should().Be("21");
+        seer.Count.Should().Be(2); // NOT 3 — no double-count from the alias+canonical pair on p2
+
+        // "BTU Cooling" is grouped under canonical "btu".
+        result.Specifications.Should().ContainKey("btu");
+        result.Specifications["btu"].Should().ContainSingle().Which.Value.Should().Be("12000");
+    }
+
+    [Fact]
     public async Task Handle_UnknownCategorySlug_DoesNotFilterAndReturnsAllFacets()
     {
         _context.AddProduct(MakeProduct("ANY", "any", 100m, brand: "Anybrand"));

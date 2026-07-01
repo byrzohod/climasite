@@ -1,6 +1,6 @@
 #nullable enable
 
-using System.Text.Json;
+using ClimaSite.Application.Features.Products.Specifications;
 using ClimaSite.Core.Entities;
 
 namespace ClimaSite.Application.Features.Products.Scoring;
@@ -12,14 +12,16 @@ namespace ClimaSite.Application.Features.Products.Scoring;
 public class RecommendationScoringService
 {
     /// <summary>
-    /// Zone multipliers: required BTU per m² for different climate zones.
-    /// A = coastal/warm (90), B = temperate/default (110), C = alpine/cold (140).
+    /// Zone multipliers: required BTU per m² for different climate zones (realistic HVAC sizing — the
+    /// ~20 BTU/sqft ≈ 215 BTU/m² rule of thumb, adjusted per zone). A = coastal/warm (200), B = temperate/default
+    /// (250), C = alpine/cold (320 — heating-dominated load needs the largest capacity). These MUST stay in sync
+    /// with the frontend preview (home-wizard-state.service.ts) and <see cref="GetRecommendationsQueryHandler"/>.
     /// </summary>
-    private static readonly Dictionary<char, int> ZoneMultipliers = new()
+    public static readonly Dictionary<char, int> ZoneMultipliers = new()
     {
-        { 'A', 90 },
-        { 'B', 110 },
-        { 'C', 140 }
+        { 'A', 200 },
+        { 'B', 250 },
+        { 'C', 320 }
     };
 
     /// <summary>
@@ -37,11 +39,12 @@ public class RecommendationScoringService
         char climateZone,
         string roomType)
     {
-        // Extract HVAC specifications from JSONB
-        var btu = ExtractIntSpecification(product.Specifications, "btu");
-        var isInverter = ExtractBoolSpecification(product.Specifications, "isInverter");
-        var minTemp = ExtractIntSpecification(product.Specifications, "minTemp");
-        var recommendedRoomTypes = ExtractRoomTypesSpecification(product.Specifications, "recommendedRoomTypes");
+        // Extract HVAC specifications via the shared alias-aware resolver (handles display keys like "BTU"/
+        // "Noise Level"/"BTU Cooling" and JSONB round-tripped JsonElement values — see HvacSpecResolver).
+        var btu = HvacSpecResolver.GetInt(product.Specifications, "btu") ?? 0;
+        var isInverter = HvacSpecResolver.GetBool(product.Specifications, "isInverter") ?? false;
+        var minTemp = HvacSpecResolver.GetInt(product.Specifications, "minTemp") ?? 0;
+        var recommendedRoomTypes = HvacSpecResolver.GetStringList(product.Specifications, "recommendedRoomTypes");
         var inStock = CalculateInStock(product);
 
         // Early exit: out of stock products are excluded
@@ -182,78 +185,5 @@ public class RecommendationScoringService
     private bool CalculateInStock(Product product)
     {
         return product.Variants.Any(v => v.IsActive && v.StockQuantity > 0);
-    }
-
-    /// <summary>
-    /// Extract integer specification, returning 0 if missing or invalid.
-    /// </summary>
-    private int ExtractIntSpecification(Dictionary<string, object>? specs, string key)
-    {
-        if (specs == null || !specs.TryGetValue(key, out var value))
-            return 0;
-
-        if (value is int intVal)
-            return intVal;
-
-        if (value is long longVal)
-            return (int)longVal;
-
-        if (value is JsonElement jsonElement)
-        {
-            if (jsonElement.TryGetInt32(out var jsonInt))
-                return jsonInt;
-        }
-
-        return 0;
-    }
-
-    /// <summary>
-    /// Extract boolean specification, returning false if missing or invalid.
-    /// </summary>
-    private bool ExtractBoolSpecification(Dictionary<string, object>? specs, string key)
-    {
-        if (specs == null || !specs.TryGetValue(key, out var value))
-            return false;
-
-        if (value is bool boolVal)
-            return boolVal;
-
-        if (value is JsonElement jsonElement)
-        {
-            if (jsonElement.ValueKind == JsonValueKind.True)
-                return true;
-            if (jsonElement.ValueKind == JsonValueKind.False)
-                return false;
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Extract room types (JSON array) specification, returning empty list if missing.
-    /// </summary>
-    private List<string> ExtractRoomTypesSpecification(Dictionary<string, object>? specs, string key)
-    {
-        if (specs == null || !specs.TryGetValue(key, out var value))
-            return new List<string>();
-
-        if (value is List<string> listVal)
-            return listVal;
-
-        if (value is JsonElement jsonElement)
-        {
-            try
-            {
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                return JsonSerializer.Deserialize<List<string>>(jsonElement.GetRawText(), options)
-                    ?? new List<string>();
-            }
-            catch
-            {
-                return new List<string>();
-            }
-        }
-
-        return new List<string>();
     }
 }

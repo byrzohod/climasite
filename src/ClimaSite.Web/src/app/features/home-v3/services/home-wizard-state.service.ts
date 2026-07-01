@@ -12,7 +12,7 @@ import type { ClimateZone, RoomType, WizardState } from '../models/home-v3.model
 @Injectable({ providedIn: 'root' })
 export class HomeWizardStateService {
   private readonly _state = signal<WizardState>({
-    area: 24,
+    area: 35,
     roomType: 'living',
     zone: 'B',
   });
@@ -38,11 +38,12 @@ export class HomeWizardStateService {
   /**
    * BTU required for the current configuration.
    * Mirrors the backend zone multipliers so the UI can show a preview
-   * before the network response arrives (A=90, B=110, C=140 BTU/m²).
+   * before the network response arrives (A=200, B=250, C=320 BTU/m²).
+   * MUST stay in sync with RecommendationScoringService.ZoneMultipliers (backend).
    */
   readonly estimatedBtu = computed(() => {
     const s = this._state();
-    const multiplier = s.zone === 'A' ? 90 : s.zone === 'C' ? 140 : 110;
+    const multiplier = s.zone === 'A' ? 200 : s.zone === 'C' ? 320 : 250;
     return Math.round(s.area * multiplier);
   });
 

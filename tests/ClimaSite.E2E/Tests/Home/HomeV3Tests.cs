@@ -56,7 +56,7 @@ public class HomeV3Tests : IAsyncLifetime
             price: 999.99m,
             specifications: new Dictionary<string, object>
             {
-                ["btu"] = 2600,
+                ["btu"] = 8750,  // perfect fit for the default 35 m² Zone-B wizard state (35 × 250 BTU/m²)
                 ["isInverter"] = true,
                 ["minTemp"] = -15,
                 ["noiseLevel"] = 22,
@@ -93,7 +93,7 @@ public class HomeV3Tests : IAsyncLifetime
         var slider = _page.Locator("[data-testid='home-v3-area-slider']");
         await slider.FocusAsync();
         await _page.Keyboard.PressAsync("ArrowRight");
-        await Assertions.Expect(slider).ToHaveAttributeAsync("aria-valuenow", "25");
+        await Assertions.Expect(slider).ToHaveAttributeAsync("aria-valuenow", "36");
 
         var bedroom = _page.Locator("[data-testid='home-v3-room-bedroom']");
         var living = _page.Locator("[data-testid='home-v3-room-living']");
