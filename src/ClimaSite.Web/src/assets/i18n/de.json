@@ -1051,7 +1051,7 @@
       "items": {
         "sizing": {
           "question": "Woher weiß ich, welche HVAC-Systemgröße ich benötige?",
-          "answer": "Die Größe Ihres HVAC-Systems hängt von mehreren Faktoren ab, darunter die Quadratmeterzahl Ihres Hauses, die Isolierungsqualität, die Anzahl der Fenster und das lokale Klima. Ein Fachmann kann eine Lastberechnung nach Manual J durchführen, um die genaue benötigte Größe zu ermitteln. Im Allgemeinen benötigen Sie etwa 20 BTU pro Quadratmeter, aber dies kann je nach Ihrer spezifischen Situation erheblich variieren."
+          "answer": "Die Größe Ihres HVAC-Systems hängt von mehreren Faktoren ab, darunter die Quadratmeterzahl Ihres Hauses, die Isolierungsqualität, die Anzahl der Fenster und das lokale Klima. Ein Fachmann kann eine Lastberechnung nach Manual J durchführen, um die genaue benötigte Größe zu ermitteln. Im Allgemeinen benötigen Sie etwa 20 BTU pro Quadratfuß, aber dies kann je nach Ihrer spezifischen Situation erheblich variieren."
         },
         "maintenance": {
           "question": "Wie oft sollte ich mein HVAC-System warten lassen?",

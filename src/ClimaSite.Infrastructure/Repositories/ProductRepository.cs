@@ -1,4 +1,4 @@
-using System.Text.Json;
+using ClimaSite.Application.Features.Products.Specifications;
 using ClimaSite.Core.Entities;
 using ClimaSite.Core.Interfaces;
 using ClimaSite.Infrastructure.Data;
@@ -287,46 +287,29 @@ public class ProductRepository : BaseRepository<Product>, IProductRepository
     private Dictionary<string, IReadOnlyList<SpecificationOption>> ExtractSpecificationOptions(List<Product> products)
     {
         var specOptions = new Dictionary<string, List<SpecificationOption>>();
-        var hvacSpecKeys = new[] { "btu", "energyRating", "seer", "eer", "hspf", "voltage", "refrigerantType", "fuelType", "afue" };
 
         foreach (var product in products)
         {
-            foreach (var spec in product.Specifications)
+            // Resolve ONE value per canonical facet key via the shared resolver (alias precedence + dedupe):
+            // "SEER Rating"/"seer" → one "seer"; a heat pump's "BTU Cooling"/"BTU Heating" → a single "btu"
+            // (cooling wins). Each product contributes at most one option per canonical facet (B-016 council).
+            foreach (var (key, value) in HvacSpecResolver.ResolveFacets(product.Specifications))
             {
-                if (!hvacSpecKeys.Contains(spec.Key, StringComparer.OrdinalIgnoreCase))
-                    continue;
-
-                var key = spec.Key;
-                var value = spec.Value?.ToString() ?? string.Empty;
-
-                if (spec.Value is JsonElement jsonElement)
+                if (!specOptions.TryGetValue(key, out var options))
                 {
-                    value = jsonElement.ValueKind switch
-                    {
-                        JsonValueKind.String => jsonElement.GetString() ?? string.Empty,
-                        JsonValueKind.Number => jsonElement.GetRawText(),
-                        _ => jsonElement.GetRawText()
-                    };
+                    options = new List<SpecificationOption>();
+                    specOptions[key] = options;
                 }
 
-                if (string.IsNullOrWhiteSpace(value))
-                    continue;
-
-                if (!specOptions.ContainsKey(key))
-                {
-                    specOptions[key] = new List<SpecificationOption>();
-                }
-
-                var existingOption = specOptions[key].FirstOrDefault(o => o.Value == value);
+                var existingOption = options.FirstOrDefault(o => o.Value == value);
                 if (existingOption != null)
                 {
-                    var index = specOptions[key].IndexOf(existingOption);
-                    specOptions[key][index] = existingOption with { Count = existingOption.Count + 1 };
+                    var index = options.IndexOf(existingOption);
+                    options[index] = existingOption with { Count = existingOption.Count + 1 };
                 }
                 else
                 {
-                    var label = FormatSpecificationLabel(key, value);
-                    specOptions[key].Add(new SpecificationOption(value, label, 1));
+                    options.Add(new SpecificationOption(value, FormatSpecificationLabel(key, value), 1));
                 }
             }
         }

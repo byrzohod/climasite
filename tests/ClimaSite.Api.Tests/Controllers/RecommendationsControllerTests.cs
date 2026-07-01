@@ -65,7 +65,7 @@ public class RecommendationsControllerTests : IntegrationTestBase
         var livingRoomProduct = new Product("HVAC-001", "Perfect Living Room AC", "perfect-living-ac", 999m);
         livingRoomProduct.SetSpecifications(new Dictionary<string, object>
         {
-            { "btu", 2640 },  // Perfect for 24 m² at 110 BTU/m²
+            { "btu", 6000 },  // Perfect for 24 m² at 250 BTU/m²
             { "isInverter", true },
             { "minTemp", -5 },
             { "recommendedRoomTypes", new List<string> { "living", "bedroom" } },
@@ -78,7 +78,7 @@ public class RecommendationsControllerTests : IntegrationTestBase
         var economyProduct = new Product("HVAC-002", "Economy Living AC", "economy-living-ac", 599m);
         economyProduct.SetSpecifications(new Dictionary<string, object>
         {
-            { "btu", 2400 },  // Slightly under
+            { "btu", 5000 },  // Slightly under 6000 (non-inverter → ranks below the perfect fit)
             { "isInverter", false },
             { "minTemp", 0 },
             { "recommendedRoomTypes", new List<string> { "living" } },
@@ -158,7 +158,7 @@ public class RecommendationsControllerTests : IntegrationTestBase
             sku: "REC-PERFECT-OLDER",
             name: "Older Perfect Fit AC",
             slug: "older-perfect-fit-ac",
-            btu: 2640,
+            btu: 6000, // perfect fit for 24 m² at 250 BTU/m²
             isInverter: true,
             minTemp: -15,
             recommendedRoomTypes: ["living"],
@@ -187,7 +187,7 @@ public class RecommendationsControllerTests : IntegrationTestBase
         var coldCapable = new Product("HVAC-C-001", "Zone C Cold AC", "zone-c-cold-ac", 1299m);
         coldCapable.SetSpecifications(new Dictionary<string, object>
         {
-            { "btu", 3640 },  // 33 m² × 110 BTU/m²
+            { "btu", 10560 },  // 33 m² × 320 BTU/m² (Zone C)
             { "isInverter", false },
             { "minTemp", -20 },
             { "recommendedRoomTypes", new List<string> { "living" } }
@@ -199,7 +199,7 @@ public class RecommendationsControllerTests : IntegrationTestBase
         var notColdCapable = new Product("HVAC-C-002", "Zone C Warm AC", "zone-c-warm-ac", 899m);
         notColdCapable.SetSpecifications(new Dictionary<string, object>
         {
-            { "btu", 3640 },
+            { "btu", 10560 },
             { "isInverter", false },
             { "minTemp", 5 },  // Not suitable for Zone C
             { "recommendedRoomTypes", new List<string> { "living" } }

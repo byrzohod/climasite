@@ -57,7 +57,7 @@ describe('HomeV3Component', () => {
 
     expect(component.loading()).toBeTrue();
     tick(1200);
-    expect(recommendationsService.getRecommendations).toHaveBeenCalledOnceWith(24, 'living', 'B');
+    expect(recommendationsService.getRecommendations).toHaveBeenCalledOnceWith(35, 'living', 'B');
 
     state.setArea(36);
     fixture.detectChanges();

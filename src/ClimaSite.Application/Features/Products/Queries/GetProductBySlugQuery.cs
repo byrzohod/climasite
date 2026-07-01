@@ -3,6 +3,7 @@ using ClimaSite.Application.Common.Exceptions;
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Products.DTOs;
+using ClimaSite.Application.Features.Products.Specifications;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -67,7 +68,10 @@ public class GetProductBySlugQueryHandler : IRequestHandler<GetProductBySlugQuer
             Model = product.Model,
             AverageRating = 0, // Will be calculated from reviews
             ReviewCount = 0, // Will be calculated from reviews
-            Specifications = product.Specifications,
+            // Hide machine-only canonical HVAC keys (scoring inputs, not marketing specs) from the public PDP.
+            Specifications = product.Specifications
+                .Where(kvp => !HvacSpecResolver.IsMachineOnlyKey(kvp.Key))
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
             Features = product.Features?.ToDictionary(f => f.Title, f => (object)f.Description),
             CreatedAt = product.CreatedAt,
             Category = product.Category != null

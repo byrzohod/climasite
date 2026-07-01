@@ -1,10 +1,10 @@
 #nullable enable
 
-using System.Text.Json;
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Products.DTOs;
 using ClimaSite.Application.Features.Products.Scoring;
+using ClimaSite.Application.Features.Products.Specifications;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -87,10 +87,10 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
         // Get translated content
         var (name, shortDescription, _, _, _) = product.GetTranslatedContent(languageCode);
 
-        // Extract specifications
-        var btu = ExtractIntSpec(product.Specifications, "btu");
-        var isInverter = ExtractBoolSpec(product.Specifications, "isInverter");
-        var noiseLevel = ExtractIntSpec(product.Specifications, "noiseLevel");
+        // Extract specifications via the shared alias-aware resolver (display keys + JSONB round-trip safe).
+        var btu = HvacSpecResolver.GetInt(product.Specifications, "btu") ?? 0;
+        var isInverter = HvacSpecResolver.GetBool(product.Specifications, "isInverter") ?? false;
+        var noiseLevel = HvacSpecResolver.GetInt(product.Specifications, "noiseLevel") ?? 0;
 
         // Build match reason as a frontend i18n key.
         var matchReason = BuildMatchReasonKey(btu, areaM2, climateZone);
@@ -132,9 +132,9 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
         if (btu == 0)
             return "homeV3.matchReason.fallback";
 
-        var multipliers = new Dictionary<char, int> { { 'A', 90 }, { 'B', 110 }, { 'C', 140 } };
-        if (!multipliers.TryGetValue(climateZone, out var mult))
-            mult = 110;
+        // Single source of truth for zone multipliers (kept in sync with the scoring service + FE preview).
+        if (!RecommendationScoringService.ZoneMultipliers.TryGetValue(climateZone, out var mult))
+            mult = RecommendationScoringService.ZoneMultipliers['B'];
 
         var requiredBtu = areaM2 * mult;
         var percentage = requiredBtu > 0 ? (double)btu / requiredBtu : 0;
@@ -151,12 +151,12 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
 
     private int GetTiebreakerInverter(Core.Entities.Product product)
     {
-        return ExtractBoolSpec(product.Specifications, "isInverter") ? 1 : 0;
+        return (HvacSpecResolver.GetBool(product.Specifications, "isInverter") ?? false) ? 1 : 0;
     }
 
     private int GetTiebreakerQuietMode(Core.Entities.Product product)
     {
-        var noiseLevel = ExtractIntSpec(product.Specifications, "noiseLevel");
+        var noiseLevel = HvacSpecResolver.GetInt(product.Specifications, "noiseLevel") ?? 0;
         return noiseLevel > 0 && noiseLevel < 30 ? 1 : 0;
     }
 
@@ -165,41 +165,5 @@ public class GetRecommendationsQueryHandler : IRequestHandler<GetRecommendations
         return product.Variants
             .Where(v => v.StockQuantity > 0)
             .Max(v => (DateTime?)v.UpdatedAt) ?? DateTime.MinValue;
-    }
-
-    private int ExtractIntSpec(Dictionary<string, object>? specs, string key)
-    {
-        if (specs == null || !specs.TryGetValue(key, out var value))
-            return 0;
-
-        if (value is int intVal)
-            return intVal;
-
-        if (value is long longVal)
-            return (int)longVal;
-
-        if (value is JsonElement jsonElement && jsonElement.TryGetInt32(out var jsonInt))
-            return jsonInt;
-
-        return 0;
-    }
-
-    private bool ExtractBoolSpec(Dictionary<string, object>? specs, string key)
-    {
-        if (specs == null || !specs.TryGetValue(key, out var value))
-            return false;
-
-        if (value is bool boolVal)
-            return boolVal;
-
-        if (value is JsonElement jsonElement)
-        {
-            if (jsonElement.ValueKind == JsonValueKind.True)
-                return true;
-            if (jsonElement.ValueKind == JsonValueKind.False)
-                return false;
-        }
-
-        return false;
     }
 }
