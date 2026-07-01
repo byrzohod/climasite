@@ -7,6 +7,9 @@ public class QuestionDto
     public string QuestionText { get; set; } = string.Empty;
     public string? AskerName { get; set; }
     public int HelpfulCount { get; set; }
+
+    /// <summary>Whether the CURRENT user has cast a helpful vote on this question (false when anonymous).</summary>
+    public bool HasVotedHelpful { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? AnsweredAt { get; set; }
     public int AnswerCount { get; set; }
@@ -22,6 +25,9 @@ public class AnswerDto
     public bool IsOfficial { get; set; }
     public int HelpfulCount { get; set; }
     public int UnhelpfulCount { get; set; }
+
+    /// <summary>The CURRENT user's own vote: true = helpful, false = unhelpful, null = no vote / anonymous.</summary>
+    public bool? UserVoteHelpful { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 

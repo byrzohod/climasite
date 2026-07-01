@@ -88,6 +88,28 @@ public class ProductQuestionTests
     }
 
     [Fact]
+    public void RemoveHelpfulVote_DecrementsCount()
+    {
+        var question = CreateValid();
+        question.AddHelpfulVote();
+        question.AddHelpfulVote();
+
+        question.RemoveHelpfulVote();
+
+        question.HelpfulCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void RemoveHelpfulVote_AtZero_FloorsAtZero()
+    {
+        var question = CreateValid();
+
+        question.RemoveHelpfulVote();
+
+        question.HelpfulCount.Should().Be(0, "the count must never go negative");
+    }
+
+    [Fact]
     public void MarkAsAnswered_SetsAnsweredAt()
     {
         var question = CreateValid();

@@ -118,6 +118,30 @@ public class ProductAnswerTests
     }
 
     [Fact]
+    public void RemoveHelpfulVote_DecrementsAndFloorsAtZero()
+    {
+        var answer = CreateValid();
+        answer.AddHelpfulVote();
+
+        answer.RemoveHelpfulVote();
+        answer.RemoveHelpfulVote(); // already zero — must not go negative
+
+        answer.HelpfulCount.Should().Be(0);
+    }
+
+    [Fact]
+    public void RemoveUnhelpfulVote_DecrementsAndFloorsAtZero()
+    {
+        var answer = CreateValid();
+        answer.AddUnhelpfulVote();
+
+        answer.RemoveUnhelpfulVote();
+        answer.RemoveUnhelpfulVote(); // already zero — must not go negative
+
+        answer.UnhelpfulCount.Should().Be(0);
+    }
+
+    [Fact]
     public void TotalVotes_SumsHelpfulAndUnhelpful()
     {
         var answer = CreateValid();

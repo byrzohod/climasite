@@ -17,10 +17,14 @@ public record GetProductQuestionsQuery : IRequest<ProductQuestionsDto>
 public class GetProductQuestionsQueryHandler : IRequestHandler<GetProductQuestionsQuery, ProductQuestionsDto>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUserService;
 
-    public GetProductQuestionsQueryHandler(IApplicationDbContext context)
+    public GetProductQuestionsQueryHandler(
+        IApplicationDbContext context,
+        ICurrentUserService currentUserService)
     {
         _context = context;
+        _currentUserService = currentUserService;
     }
 
     public async Task<ProductQuestionsDto> Handle(
@@ -46,6 +50,31 @@ public class GetProductQuestionsQueryHandler : IRequestHandler<GetProductQuestio
             .Take(request.PageSize)
             .ToListAsync(cancellationToken);
 
+        // Batch-load the current user's own votes for the page (no per-row join / N+1). Anonymous
+        // callers get an empty lookup, so every question/answer surfaces as not-yet-voted. (B-039)
+        var votedQuestionIds = new HashSet<Guid>();
+        var answerVotes = new Dictionary<Guid, bool>();
+        var userId = _currentUserService.UserId;
+        if (userId.HasValue && questions.Count > 0)
+        {
+            var questionIds = questions.Select(q => q.Id).ToList();
+            var answerIds = questions.SelectMany(q => q.Answers.Select(a => a.Id)).ToList();
+
+            votedQuestionIds = (await _context.ProductQuestionVotes
+                .AsNoTracking()
+                .Where(v => v.UserId == userId.Value && questionIds.Contains(v.QuestionId))
+                .Select(v => v.QuestionId)
+                .ToListAsync(cancellationToken)).ToHashSet();
+
+            if (answerIds.Count > 0)
+            {
+                answerVotes = await _context.ProductAnswerVotes
+                    .AsNoTracking()
+                    .Where(v => v.UserId == userId.Value && answerIds.Contains(v.AnswerId))
+                    .ToDictionaryAsync(v => v.AnswerId, v => v.IsHelpful, cancellationToken);
+            }
+        }
+
         return new ProductQuestionsDto
         {
             ProductId = request.ProductId,
@@ -58,6 +87,7 @@ public class GetProductQuestionsQueryHandler : IRequestHandler<GetProductQuestio
                 QuestionText = q.QuestionText,
                 AskerName = q.AskerName ?? "Anonymous",
                 HelpfulCount = q.HelpfulCount,
+                HasVotedHelpful = votedQuestionIds.Contains(q.Id),
                 CreatedAt = q.CreatedAt,
                 AnsweredAt = q.AnsweredAt,
                 AnswerCount = q.Answers.Count,
@@ -74,6 +104,7 @@ public class GetProductQuestionsQueryHandler : IRequestHandler<GetProductQuestio
                         IsOfficial = a.IsOfficial,
                         HelpfulCount = a.HelpfulCount,
                         UnhelpfulCount = a.UnhelpfulCount,
+                        UserVoteHelpful = answerVotes.TryGetValue(a.Id, out var isHelpful) ? isHelpful : null,
                         CreatedAt = a.CreatedAt
                     }).ToList()
             }).ToList()

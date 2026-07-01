@@ -98,6 +98,16 @@ import { apiErrorToTranslationKey } from '../../../../core/utils/translation-key
         }
       </div>
 
+      <!-- Vote error (e.g. session expired mid-session) -->
+      @if (voteError()) {
+        <div class="vote-error" role="alert" data-testid="qa-vote-error">
+          <span>{{ voteError()! | translate }}</span>
+          <a [routerLink]="['/login']" class="login-link" data-testid="qa-vote-login-link">
+            {{ 'products.qa.loginNow' | translate }}
+          </a>
+        </div>
+      }
+
       <!-- Questions List -->
       @if (questions().length > 0) {
         <div class="questions-list">
@@ -112,9 +122,17 @@ import { apiErrorToTranslationKey } from '../../../../core/utils/translation-key
                 <p class="question-text">{{ question.questionText }}</p>
                 <div class="question-actions">
                   <button
+                    type="button"
                     class="helpful-btn"
+                    [class.active]="question.hasVotedHelpful"
+                    [attr.aria-pressed]="isAuthenticated() ? question.hasVotedHelpful : null"
+                    [attr.aria-busy]="votePending().has(question.id)"
+                    [disabled]="!isAuthenticated() || votePending().has(question.id)"
+                    [title]="(question.hasVotedHelpful
+                      ? 'products.qa.youFoundHelpful'
+                      : (isAuthenticated() ? 'products.qa.helpful' : 'products.qa.loginToVote')) | translate"
                     (click)="voteQuestion(question)"
-                    [disabled]="votedQuestions().has(question.id)">
+                    data-testid="question-vote-btn">
                     <span class="thumb-icon">&#128077;</span>
                     {{ 'products.qa.helpful' | translate }} ({{ question.helpfulCount }})
                   </button>
@@ -195,15 +213,35 @@ import { apiErrorToTranslationKey } from '../../../../core/utils/translation-key
                       <p class="answer-text">{{ answer.answerText }}</p>
                       <div class="answer-actions">
                         <button
+                          type="button"
                           class="vote-btn helpful"
+                          [class.active]="answer.userVoteHelpful === true"
+                          [attr.aria-pressed]="isAuthenticated() ? (answer.userVoteHelpful === true) : null"
+                          [attr.aria-label]="(answer.userVoteHelpful === true
+                            ? 'products.qa.youFoundHelpful' : 'products.qa.markHelpful') | translate"
+                          [attr.aria-busy]="votePending().has(answer.id)"
+                          [disabled]="!isAuthenticated() || votePending().has(answer.id)"
+                          [title]="(answer.userVoteHelpful === true
+                            ? 'products.qa.youFoundHelpful'
+                            : (isAuthenticated() ? 'products.qa.markHelpful' : 'products.qa.loginToVote')) | translate"
                           (click)="voteAnswer(answer, true)"
-                          [disabled]="votedAnswers().has(answer.id)">
+                          data-testid="answer-helpful-btn">
                           <span class="thumb-icon">&#128077;</span> {{ answer.helpfulCount }}
                         </button>
                         <button
+                          type="button"
                           class="vote-btn unhelpful"
+                          [class.active]="answer.userVoteHelpful === false"
+                          [attr.aria-pressed]="isAuthenticated() ? (answer.userVoteHelpful === false) : null"
+                          [attr.aria-label]="(answer.userVoteHelpful === false
+                            ? 'products.qa.youFoundUnhelpful' : 'products.qa.markUnhelpful') | translate"
+                          [attr.aria-busy]="votePending().has(answer.id)"
+                          [disabled]="!isAuthenticated() || votePending().has(answer.id)"
+                          [title]="(answer.userVoteHelpful === false
+                            ? 'products.qa.youFoundUnhelpful'
+                            : (isAuthenticated() ? 'products.qa.markUnhelpful' : 'products.qa.loginToVote')) | translate"
                           (click)="voteAnswer(answer, false)"
-                          [disabled]="votedAnswers().has(answer.id)">
+                          data-testid="answer-unhelpful-btn">
                           <span class="thumb-icon">&#128078;</span> {{ answer.unhelpfulCount }}
                         </button>
                       </div>
@@ -634,8 +672,45 @@ import { apiErrorToTranslationKey } from '../../../../core/utils/translation-key
         cursor: not-allowed;
       }
 
+      /* The current user's own vote — pressed/active state. */
+      &.active {
+        background: var(--color-primary-light);
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+        font-weight: 600;
+      }
+
       .thumb-icon {
         font-size: 1rem;
+      }
+    }
+
+    .vote-error {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding: 0.875rem 1.25rem;
+      background: var(--color-error-light);
+      border: 1px solid var(--color-error);
+      border-radius: 8px;
+      color: var(--color-error-dark);
+      font-size: 0.875rem;
+
+      .login-link {
+        margin-left: auto;
+        padding: 0.5rem 1rem;
+        background: var(--color-primary);
+        color: var(--color-text-inverse);
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 500;
+        white-space: nowrap;
+        transition: background 0.2s;
+
+        &:hover {
+          background: var(--color-primary-dark);
+        }
       }
     }
 
@@ -783,8 +858,13 @@ export class ProductQaComponent {
   questionError = signal<string | null>(null);
   answerError = signal<string | null>(null);
 
-  votedQuestions = signal<Set<string>>(new Set());
-  votedAnswers = signal<Set<string>>(new Set());
+  // Shown when a vote fails because the session expired mid-session (401).
+  voteError = signal<string | null>(null);
+
+  // Question-/answer-ids with a vote request currently in flight. Guards against
+  // overlapping requests (rapid double-click / helpful↔unhelpful flip): a stale,
+  // out-of-order response can otherwise clobber the newer authoritative state.
+  votePending = signal<Set<string>>(new Set());
 
   questionForm: FormGroup;
   answerForm: FormGroup;
@@ -798,9 +878,6 @@ export class ProductQaComponent {
     this.answerForm = this.fb.group({
       answerText: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(5000)]]
     });
-
-    // Load voted items from localStorage
-    this.loadVotedItems();
 
     // Reload questions when productId changes
     effect(() => {
@@ -903,25 +980,157 @@ export class ProductQaComponent {
   }
 
   voteQuestion(question: Question): void {
-    if (this.votedQuestions().has(question.id)) return;
+    // Voting requires auth; the button is disabled for anonymous users, but guard here too.
+    // Ignore while a vote for this question is already in flight (prevents overlapping,
+    // out-of-order responses that could clobber the newer authoritative state).
+    if (!this.isAuthenticated() || this.votePending().has(question.id)) return;
+    this.voteError.set(null);
+
+    const wasVoted = question.hasVotedHelpful;
+    // Optimistic toggle for instant feedback; reconciled with the authoritative response below.
+    this.patchQuestion(question.id, {
+      hasVotedHelpful: !wasVoted,
+      helpfulCount: Math.max(0, question.helpfulCount + (wasVoted ? -1 : 1))
+    });
+    this.addVotePending(question.id);
 
     this.questionsService.voteQuestion(question.id).subscribe({
       next: (result) => {
-        question.helpfulCount = result.helpfulCount;
-        this.addVotedQuestion(question.id);
+        // Reconcile with the authoritative server state.
+        this.patchQuestion(question.id, {
+          hasVotedHelpful: result.hasVotedHelpful,
+          helpfulCount: result.helpfulCount
+        });
+        this.removeVotePending(question.id);
+      },
+      error: (err) => {
+        // Roll back the optimistic update.
+        this.patchQuestion(question.id, {
+          hasVotedHelpful: wasVoted,
+          helpfulCount: question.helpfulCount
+        });
+        this.removeVotePending(question.id);
+        if (err.status === 401) {
+          this.voteError.set('products.qa.errors.sessionExpired');
+        }
       }
     });
   }
 
   voteAnswer(answer: Answer, isHelpful: boolean): void {
-    if (this.votedAnswers().has(answer.id)) return;
+    // Ignore while a vote for this answer is already in flight — this also guards the
+    // helpful↔unhelpful flip race (both buttons share the answer id).
+    if (!this.isAuthenticated() || this.votePending().has(answer.id)) return;
+    this.voteError.set(null);
+
+    // Snapshot for rollback on failure.
+    const previous: Partial<Answer> = {
+      userVoteHelpful: answer.userVoteHelpful ?? null,
+      helpfulCount: answer.helpfulCount,
+      unhelpfulCount: answer.unhelpfulCount
+    };
+
+    // Optimistic toggle/flip; reconciled with the authoritative response below.
+    this.patchAnswer(answer.questionId, answer.id, this.computeAnswerVote(answer, isHelpful));
+    this.addVotePending(answer.id);
 
     this.questionsService.voteAnswer(answer.id, isHelpful).subscribe({
       next: (result) => {
-        answer.helpfulCount = result.helpfulCount;
-        answer.unhelpfulCount = result.unhelpfulCount || 0;
-        this.addVotedAnswer(answer.id);
+        this.patchAnswer(answer.questionId, answer.id, {
+          helpfulCount: result.helpfulCount,
+          unhelpfulCount: result.unhelpfulCount,
+          userVoteHelpful: result.userVoteHelpful ?? null
+        });
+        this.removeVotePending(answer.id);
+      },
+      error: (err) => {
+        this.patchAnswer(answer.questionId, answer.id, previous);
+        this.removeVotePending(answer.id);
+        if (err.status === 401) {
+          this.voteError.set('products.qa.errors.sessionExpired');
+        }
       }
+    });
+  }
+
+  /** Mark a question-/answer-id as having a vote request in flight. */
+  private addVotePending(id: string): void {
+    this.votePending.update(pending => {
+      const next = new Set(pending);
+      next.add(id);
+      return next;
+    });
+  }
+
+  /** Clear the in-flight marker for a question-/answer-id once its vote settles. */
+  private removeVotePending(id: string): void {
+    this.votePending.update(pending => {
+      const next = new Set(pending);
+      next.delete(id);
+      return next;
+    });
+  }
+
+  /**
+   * Pure toggle/flip transition for an answer vote (mirrors the backend semantics):
+   * same vote again → un-vote; opposite vote → flip; no vote → add.
+   */
+  private computeAnswerVote(answer: Answer, isHelpful: boolean): Partial<Answer> {
+    const current = answer.userVoteHelpful ?? null;
+    let helpfulCount = answer.helpfulCount;
+    let unhelpfulCount = answer.unhelpfulCount;
+    let userVoteHelpful: boolean | null;
+
+    if (current === isHelpful) {
+      // Same vote again → un-vote.
+      if (isHelpful) helpfulCount = Math.max(0, helpfulCount - 1);
+      else unhelpfulCount = Math.max(0, unhelpfulCount - 1);
+      userVoteHelpful = null;
+    } else if (current === null) {
+      // First vote.
+      if (isHelpful) helpfulCount += 1;
+      else unhelpfulCount += 1;
+      userVoteHelpful = isHelpful;
+    } else {
+      // Flip to the opposite vote.
+      if (isHelpful) {
+        helpfulCount += 1;
+        unhelpfulCount = Math.max(0, unhelpfulCount - 1);
+      } else {
+        unhelpfulCount += 1;
+        helpfulCount = Math.max(0, helpfulCount - 1);
+      }
+      userVoteHelpful = isHelpful;
+    }
+
+    return { userVoteHelpful, helpfulCount, unhelpfulCount };
+  }
+
+  /** Immutably patch a single question in the questions signal. */
+  private patchQuestion(questionId: string, patch: Partial<Question>): void {
+    this.questionsData.update(data => {
+      if (!data) return data;
+      return {
+        ...data,
+        questions: data.questions.map(q =>
+          q.id === questionId ? { ...q, ...patch } : q
+        )
+      };
+    });
+  }
+
+  /** Immutably patch a single answer within its parent question in the questions signal. */
+  private patchAnswer(questionId: string, answerId: string, patch: Partial<Answer>): void {
+    this.questionsData.update(data => {
+      if (!data) return data;
+      return {
+        ...data,
+        questions: data.questions.map(q =>
+          q.id === questionId
+            ? { ...q, answers: q.answers.map(a => a.id === answerId ? { ...a, ...patch } : a) }
+            : q
+        )
+      };
     });
   }
 
@@ -945,42 +1154,5 @@ export class ProductQaComponent {
 
   trackAnswer(index: number, answer: Answer): string {
     return answer.id;
-  }
-
-  private loadVotedItems(): void {
-    try {
-      const votedQs = localStorage.getItem('climasite_voted_questions');
-      const votedAs = localStorage.getItem('climasite_voted_answers');
-      if (votedQs) {
-        this.votedQuestions.set(new Set(JSON.parse(votedQs)));
-      }
-      if (votedAs) {
-        this.votedAnswers.set(new Set(JSON.parse(votedAs)));
-      }
-    } catch {
-      // Ignore localStorage errors
-    }
-  }
-
-  private addVotedQuestion(questionId: string): void {
-    const updated = new Set(this.votedQuestions());
-    updated.add(questionId);
-    this.votedQuestions.set(updated);
-    try {
-      localStorage.setItem('climasite_voted_questions', JSON.stringify([...updated]));
-    } catch {
-      // Ignore localStorage errors
-    }
-  }
-
-  private addVotedAnswer(answerId: string): void {
-    const updated = new Set(this.votedAnswers());
-    updated.add(answerId);
-    this.votedAnswers.set(updated);
-    try {
-      localStorage.setItem('climasite_voted_answers', JSON.stringify([...updated]));
-    } catch {
-      // Ignore localStorage errors
-    }
   }
 }
