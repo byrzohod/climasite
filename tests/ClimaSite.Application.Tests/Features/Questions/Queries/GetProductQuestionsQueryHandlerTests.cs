@@ -32,7 +32,7 @@ public class GetProductQuestionsQueryHandlerTests
             var answer = new ProductAnswer(question.Id, "An approved, helpful answer.");
             answer.SetStatus(AnswerStatus.Approved);
             question.Answers.Add(answer);
-            question.MarkAsAnswered();
+            question.RefreshAnsweredState();
         }
         _context.ProductQuestions.Add(question);
         return question;
@@ -160,5 +160,36 @@ public class GetProductQuestionsQueryHandlerTests
         var dto = result.Questions.Single();
         dto.HasVotedHelpful.Should().BeTrue();
         dto.Answers.Single().UserVoteHelpful.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Handle_TreatsQuestionWithoutApprovedAnswer_AsUnanswered_EvenIfAnsweredAtSet()
+    {
+        // Simulates legacy dirty data (B-038): AnsweredAt is stamped but only a Pending answer exists. The
+        // read side derives answered-state from approved-answer existence, so this counts/filters as
+        // UNANSWERED, suppresses the answered timestamp, and exposes no answers.
+        var productId = Guid.NewGuid();
+        var question = new ProductQuestion(productId, "Dirty-data question with only a pending answer?");
+        question.SetStatus(QuestionStatus.Approved);
+        question.Answers.Add(new ProductAnswer(question.Id, "A pending, unapproved answer."));
+        // Force the legacy-inconsistent state directly (bypassing the RefreshAnsweredState reconciler).
+        typeof(ProductQuestion).GetProperty(nameof(ProductQuestion.AnsweredAt))!
+            .SetValue(question, DateTime.UtcNow);
+        _context.ProductQuestions.Add(question);
+
+        var all = await CreateHandler().Handle(
+            new GetProductQuestionsQuery { ProductId = productId }, CancellationToken.None);
+
+        all.AnsweredQuestions.Should().Be(0, "no approved answer exists");
+        var dto = all.Questions.Single();
+        dto.AnsweredAt.Should().BeNull("the answered timestamp is suppressed without an approved answer");
+        dto.AnswerCount.Should().Be(0);
+        dto.Answers.Should().BeEmpty();
+
+        var filtered = await CreateHandler().Handle(
+            new GetProductQuestionsQuery { ProductId = productId, IncludeUnanswered = false },
+            CancellationToken.None);
+
+        filtered.Questions.Should().BeEmpty("a question without an approved answer is excluded from the answered-only view");
     }
 }

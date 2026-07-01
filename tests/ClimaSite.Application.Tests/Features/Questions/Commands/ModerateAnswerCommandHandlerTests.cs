@@ -12,14 +12,17 @@ public class ModerateAnswerCommandHandlerTests
     private ModerateAnswerCommandHandler CreateHandler() => new(_context);
 
     /// <summary>
-    /// Seeds an answer with its <c>Question</c> navigation wired via reflection — the MockDbContext
-    /// does not perform EF Include joins, so the handler's <c>answer.Question.*</c> access must be
-    /// satisfied manually.
+    /// Seeds an answer with the object graph the handler's
+    /// <c>Include(a =&gt; a.Question).ThenInclude(q =&gt; q.Answers)</c> would materialize — the MockDbContext
+    /// does not perform EF Include joins, so both the <c>answer.Question</c> back-reference AND the
+    /// <c>question.Answers</c> forward collection (which <c>RefreshAnsweredState</c> reads) are wired here,
+    /// pointing at the SAME answer instance the way EF's identity map would.
     /// </summary>
     private ProductAnswer SeedAnswer(ProductQuestion question)
     {
         var answer = new ProductAnswer(question.Id, "A pending answer awaiting moderation.");
         typeof(ProductAnswer).GetProperty(nameof(ProductAnswer.Question))!.SetValue(answer, question);
+        question.Answers.Add(answer);
         _context.ProductAnswers.Add(answer);
         return answer;
     }
@@ -85,5 +88,49 @@ public class ModerateAnswerCommandHandlerTests
         result.IsSuccess.Should().BeTrue();
         answer.Status.Should().Be(AnswerStatus.Rejected);
         question.AnsweredAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_UnapprovingLastApprovedAnswer_ClearsAnsweredAt()
+    {
+        var question = new ProductQuestion(Guid.NewGuid(), "Is the remote backlit?");
+        _context.ProductQuestions.Add(question);
+        var answer = SeedAnswer(question);
+
+        // Approve the only answer → the question becomes answered.
+        await CreateHandler().Handle(
+            new ModerateAnswerCommand { AnswerId = answer.Id, NewStatus = AnswerStatus.Approved },
+            CancellationToken.None);
+        question.AnsweredAt.Should().NotBeNull("precondition: approving the only answer marks it answered");
+
+        // Then reject that same (only) approved answer → the question returns to unanswered (B-038 self-heal).
+        var result = await CreateHandler().Handle(
+            new ModerateAnswerCommand { AnswerId = answer.Id, NewStatus = AnswerStatus.Rejected },
+            CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        answer.Status.Should().Be(AnswerStatus.Rejected);
+        question.AnsweredAt.Should().BeNull("un-approving the last approved answer clears answered-state");
+    }
+
+    [Fact]
+    public async Task Handle_ApprovingSecondAnswer_KeepsOriginalAnsweredAt()
+    {
+        var question = new ProductQuestion(Guid.NewGuid(), "Does it support scheduling?");
+        _context.ProductQuestions.Add(question);
+        var first = SeedAnswer(question);
+        var second = SeedAnswer(question);
+
+        await CreateHandler().Handle(
+            new ModerateAnswerCommand { AnswerId = first.Id, NewStatus = AnswerStatus.Approved },
+            CancellationToken.None);
+        var originalAnsweredAt = question.AnsweredAt;
+        originalAnsweredAt.Should().NotBeNull();
+
+        await CreateHandler().Handle(
+            new ModerateAnswerCommand { AnswerId = second.Id, NewStatus = AnswerStatus.Approved },
+            CancellationToken.None);
+
+        question.AnsweredAt.Should().Be(originalAnsweredAt, "a second approval keeps the original answered timestamp");
     }
 }

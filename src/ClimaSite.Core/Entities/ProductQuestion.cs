@@ -54,18 +54,33 @@ public class ProductQuestion : BaseEntity
 
     public void SetStatus(QuestionStatus status)
     {
+        // A question's status transition must NOT guess answered-state: answered-state is owned solely by
+        // RefreshAnsweredState (driven off approved-answer existence at the answer-moderation boundary).
         Status = status;
-        if (status == QuestionStatus.Approved && !AnsweredAt.HasValue && Answers.Any())
-        {
-            AnsweredAt = DateTime.UtcNow;
-        }
         SetUpdatedAt();
     }
 
-    public void MarkAsAnswered()
+    /// <summary>
+    /// Reconciles <see cref="AnsweredAt"/> with the presence of an approved answer, derived from the loaded
+    /// <see cref="Answers"/> collection. Idempotent: stamps the timestamp on the first approved answer,
+    /// clears it when the last approved answer is removed/un-approved, and never overwrites an existing
+    /// timestamp. This is the SINGLE writer of answered-state — a still-<c>Pending</c> answer can no longer
+    /// flag the question as answered (B-038). Callers MUST have the <see cref="Answers"/> collection loaded
+    /// (e.g. via <c>Include(...).ThenInclude(...)</c>). See <c>ModerateAnswerCommand</c>.
+    /// </summary>
+    public void RefreshAnsweredState()
     {
-        AnsweredAt = DateTime.UtcNow;
-        SetUpdatedAt();
+        var hasApprovedAnswer = Answers.Any(a => a.Status == AnswerStatus.Approved);
+        if (hasApprovedAnswer && !AnsweredAt.HasValue)
+        {
+            AnsweredAt = DateTime.UtcNow;
+            SetUpdatedAt();
+        }
+        else if (!hasApprovedAnswer && AnsweredAt.HasValue)
+        {
+            AnsweredAt = null;
+            SetUpdatedAt();
+        }
     }
 
     public void AddHelpfulVote()

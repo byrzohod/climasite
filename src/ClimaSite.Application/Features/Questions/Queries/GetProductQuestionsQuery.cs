@@ -36,13 +36,17 @@ public class GetProductQuestionsQueryHandler : IRequestHandler<GetProductQuestio
             .Include(q => q.Answers.Where(a => a.Status == AnswerStatus.Approved))
             .Where(q => q.ProductId == request.ProductId && q.Status == QuestionStatus.Approved);
 
+        // Answered-state is derived from APPROVED-answer existence, never from the denormalized AnsweredAt
+        // column — so this read heals any legacy/racy AnsweredAt drift (B-038): a question counts/filters as
+        // answered iff it actually has an approved answer.
         if (!request.IncludeUnanswered)
         {
-            query = query.Where(q => q.AnsweredAt.HasValue);
+            query = query.Where(q => q.Answers.Any(a => a.Status == AnswerStatus.Approved));
         }
 
         var totalQuestions = await query.CountAsync(cancellationToken);
-        var answeredQuestions = await query.CountAsync(q => q.AnsweredAt.HasValue, cancellationToken);
+        var answeredQuestions = await query.CountAsync(
+            q => q.Answers.Any(a => a.Status == AnswerStatus.Approved), cancellationToken);
 
         var questions = await query
             .OrderByDescending(q => q.CreatedAt)
@@ -89,9 +93,12 @@ public class GetProductQuestionsQueryHandler : IRequestHandler<GetProductQuestio
                 HelpfulCount = q.HelpfulCount,
                 HasVotedHelpful = votedQuestionIds.Contains(q.Id),
                 CreatedAt = q.CreatedAt,
-                AnsweredAt = q.AnsweredAt,
-                AnswerCount = q.Answers.Count,
+                // Expose the answered timestamp only when an approved answer actually exists, so the DTO is
+                // internally consistent even if the persisted AnsweredAt drifted (B-038).
+                AnsweredAt = q.Answers.Any(a => a.Status == AnswerStatus.Approved) ? q.AnsweredAt : null,
+                AnswerCount = q.Answers.Count(a => a.Status == AnswerStatus.Approved),
                 Answers = q.Answers
+                    .Where(a => a.Status == AnswerStatus.Approved)
                     .OrderByDescending(a => a.IsOfficial)
                     .ThenByDescending(a => a.HelpfulCount)
                     .ThenBy(a => a.CreatedAt)

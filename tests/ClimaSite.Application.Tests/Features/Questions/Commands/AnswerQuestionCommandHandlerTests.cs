@@ -30,8 +30,9 @@ public class AnswerQuestionCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_CreatesAnswer_AndMarksQuestionAnswered()
+    public async Task Handle_CreatesAnswer_DoesNotMarkAnswered_ForPendingAnswer()
     {
+        // B-038: a newly-submitted answer is Pending (un-moderated) and must NOT flag the question answered.
         var question = SeedQuestion();
 
         var id = await CreateHandler().Handle(
@@ -49,15 +50,22 @@ public class AnswerQuestionCommandHandlerTests
         answer.QuestionId.Should().Be(question.Id);
         answer.AnswererName.Should().Be("Support Team");
         answer.IsOfficial.Should().BeTrue();
-        question.AnsweredAt.Should().NotBeNull();
+        answer.Status.Should().Be(AnswerStatus.Pending);
+        question.AnsweredAt.Should().BeNull("a still-Pending answer never marks the question answered (B-038)");
     }
 
     [Fact]
-    public async Task Handle_SecondAnswer_DoesNotOverwriteAnsweredAt()
+    public async Task Handle_DoesNotTouchAnsweredAt_WhenQuestionAlreadyAnswered()
     {
+        // Establish an already-answered question the correct way (an approved answer + reconciliation),
+        // then submit a second (Pending) answer — the command must leave AnsweredAt untouched.
         var question = SeedQuestion();
-        question.MarkAsAnswered();
+        var approved = new ProductAnswer(question.Id, "The first, approved answer.");
+        approved.SetStatus(AnswerStatus.Approved);
+        question.Answers.Add(approved);
+        question.RefreshAnsweredState();
         var firstAnsweredAt = question.AnsweredAt;
+        firstAnsweredAt.Should().NotBeNull("precondition: the question is already answered");
 
         await CreateHandler().Handle(
             new AnswerQuestionCommand
@@ -67,8 +75,7 @@ public class AnswerQuestionCommandHandlerTests
             },
             CancellationToken.None);
 
-        question.AnsweredAt.Should().Be(firstAnsweredAt, "an already-answered question keeps its original timestamp");
-        _context.ProductAnswers.Should().ContainSingle();
+        question.AnsweredAt.Should().Be(firstAnsweredAt, "submitting another answer never changes answered-state");
     }
 
     [Fact]

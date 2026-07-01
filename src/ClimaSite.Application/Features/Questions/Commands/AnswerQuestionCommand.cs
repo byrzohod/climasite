@@ -70,12 +70,9 @@ public class AnswerQuestionCommandHandler : IRequestHandler<AnswerQuestionComman
 
         _context.ProductAnswers.Add(answer);
 
-        // Mark question as answered if this is the first answer
-        if (!question.AnsweredAt.HasValue)
-        {
-            question.MarkAsAnswered();
-        }
-
+        // A newly-submitted answer is Pending (un-moderated) — it must NOT flag the question as answered.
+        // Answered-state is established only when an answer is APPROVED, via ModerateAnswerCommand →
+        // ProductQuestion.RefreshAnsweredState (B-038). Submitting an answer no longer touches AnsweredAt.
         await _context.SaveChangesAsync(cancellationToken);
 
         return answer.Id;

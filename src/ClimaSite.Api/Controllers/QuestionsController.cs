@@ -126,7 +126,7 @@ public class QuestionsController : ControllerBase
     /// removes the vote. Returns the authoritative count and the caller's own vote state.
     /// </summary>
     [Authorize]
-    [EnableRateLimiting("strict")]
+    [EnableRateLimiting("strict-user")]
     [HttpPost("{questionId:guid}/vote")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -157,7 +157,7 @@ public class QuestionsController : ControllerBase
     /// authoritative counts and the caller's own vote state.
     /// </summary>
     [Authorize]
-    [EnableRateLimiting("strict")]
+    [EnableRateLimiting("strict-user")]
     [HttpPost("answers/{answerId:guid}/vote")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
