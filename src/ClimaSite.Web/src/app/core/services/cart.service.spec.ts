@@ -579,4 +579,56 @@ describe('CartService', () => {
       newHttpMock.verify();
     });
   });
+
+  // INV-01 A0: cart calls must send credentials so the httpOnly cs_guest cookie flows on the cross-origin
+  // dev API (same-origin in prod). Without withCredentials the browser would neither send nor store it.
+  describe('withCredentials (guest-session cookie)', () => {
+    it('loadCart GET uses withCredentials', fakeAsync(() => {
+      service.loadCart();
+      tick();
+      const req = httpMock.expectOne(r => r.url.includes('/api/cart') && r.method === 'GET');
+      expect(req.request.withCredentials).toBeTrue();
+      req.flush(emptyCart);
+    }));
+
+    it('addToCart POST uses withCredentials', fakeAsync(() => {
+      service.addToCart('product-1', 1).subscribe();
+      tick();
+      const req = httpMock.expectOne(`${apiUrl}/items`);
+      expect(req.request.withCredentials).toBeTrue();
+      req.flush(mockCart);
+    }));
+
+    it('updateQuantity PUT uses withCredentials', fakeAsync(() => {
+      service.updateQuantity('item-1', 3).subscribe();
+      tick();
+      const req = httpMock.expectOne(`${apiUrl}/items/item-1`);
+      expect(req.request.withCredentials).toBeTrue();
+      req.flush(mockCart);
+    }));
+
+    it('removeItem DELETE uses withCredentials', fakeAsync(() => {
+      service.removeItem('item-1').subscribe();
+      tick();
+      const req = httpMock.expectOne(r => r.url.includes(`${apiUrl}/items/item-1`));
+      expect(req.request.withCredentials).toBeTrue();
+      req.flush(emptyCart);
+    }));
+
+    it('clearCart DELETE uses withCredentials', fakeAsync(() => {
+      service.clearCart().subscribe();
+      tick();
+      const req = httpMock.expectOne(r => r.url.includes(apiUrl) && !r.url.includes('/items'));
+      expect(req.request.withCredentials).toBeTrue();
+      req.flush(null);
+    }));
+
+    it('mergeCart POST uses withCredentials', fakeAsync(() => {
+      service.mergeCart('user-1').subscribe();
+      tick();
+      const req = httpMock.expectOne(`${apiUrl}/merge?guestSessionId=sess_test123`);
+      expect(req.request.withCredentials).toBeTrue();
+      req.flush(mockCart);
+    }));
+  });
 });
