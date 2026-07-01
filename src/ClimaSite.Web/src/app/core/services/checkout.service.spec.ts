@@ -189,6 +189,8 @@ describe('CheckoutService', () => {
 
       const req = httpMock.expectOne(apiUrl);
       expect(req.request.method).toBe('POST');
+      // INV-01 A1: credentials must flow so the httpOnly guest cookie reaches the create-order endpoint.
+      expect(req.request.withCredentials).toBeTrue();
       expect(req.request.body.customerEmail).toBe('test@example.com');
       expect(req.request.body.shippingAddress).toEqual(mockAddress);
       expect(req.request.body.shippingMethod).toBe('standard');

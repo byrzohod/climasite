@@ -175,6 +175,8 @@ describe('PaymentService', () => {
 
       const req = httpMock.expectOne(createIntentUrl);
       expect(req.request.method).toBe('POST');
+      // INV-01 A1: credentials must flow so the httpOnly guest cookie reaches the create-intent endpoint.
+      expect(req.request.withCredentials).toBeTrue();
       expect(req.request.body).toEqual({
         shippingMethod: 'express',
         guestSessionId: 'sess_guest_1'

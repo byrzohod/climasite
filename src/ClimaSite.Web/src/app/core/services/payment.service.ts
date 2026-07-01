@@ -154,7 +154,9 @@ export class PaymentService {
     if (idempotencyKey !== undefined) {
       body.idempotencyKey = idempotencyKey;
     }
-    return this.http.post<PaymentIntentResponse>(`${this.apiUrl}/create-intent`, body);
+    // withCredentials so the httpOnly guest cookie flows on the cross-origin dev API (same-origin in prod);
+    // the server resolves the guest cart via the trusted cookie for direct-to-checkout guests (INV-01 A1).
+    return this.http.post<PaymentIntentResponse>(`${this.apiUrl}/create-intent`, body, { withCredentials: true });
   }
 
   async confirmPayment(clientSecret: string, billingDetails?: {

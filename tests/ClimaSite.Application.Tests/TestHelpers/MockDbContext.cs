@@ -198,6 +198,31 @@ public class MockDbContext : IApplicationDbContext
         return Task.FromResult(1);
     }
 
+    // INV-01 A1: mirror the set-based cart re-key. Cart.SessionId has a private setter (the real path uses a
+    // raw UPDATE that bypasses it), so the in-memory mirror sets it via reflection — consistent with how this
+    // mock already sets protected navigation properties.
+    public Task<int> RekeyGuestCartAsync(string fromSessionId, string toSessionId, CancellationToken cancellationToken = default)
+    {
+        var matches = _carts.Where(c => c.SessionId == fromSessionId).ToList();
+        var sessionIdProperty = typeof(Cart).GetProperty(nameof(Cart.SessionId))!;
+        foreach (var cart in matches)
+        {
+            sessionIdProperty.SetValue(cart, toSessionId);
+        }
+
+        return Task.FromResult(matches.Count);
+    }
+
+    // No-op off Postgres: the unit tests are single-threaded, so there is nothing to serialise.
+    public Task AcquireGuestCartMigrationLockAsync(string cookieSessionId, CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
+
+    // No-op: the in-memory lists model committed state, not a pending-change tracker, so there is nothing to
+    // reset between simulated retry attempts.
+    public void ClearChangeTracker()
+    {
+    }
+
     // ---- B-039: in-memory simulations of the atomic Q&A vote SQL primitives (mirror the real
     // ON CONFLICT / conditional DELETE / conditional UPDATE / floored count-adjust semantics). ----
 

@@ -110,7 +110,9 @@ export class CheckoutService {
       guestSessionId: this.getSessionId() || undefined
     };
 
-    return this.http.post<Order>(this.apiUrl, request, { headers: this.getHeaders() })
+    // withCredentials so the httpOnly guest cookie flows on the cross-origin dev API (same-origin in prod);
+    // the server resolves the guest cart via the trusted cookie for direct-to-checkout guests (INV-01 A1).
+    return this.http.post<Order>(this.apiUrl, request, { headers: this.getHeaders(), withCredentials: true })
       .pipe(
         tap((order) => {
           this._isProcessing.set(false);

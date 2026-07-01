@@ -1,4 +1,5 @@
 using ClimaSite.Api.Common;
+using ClimaSite.Api.Services;
 using ClimaSite.Application.Common.Models;
 using ClimaSite.Application.Features.Orders.Commands;
 using ClimaSite.Application.Features.Orders.DTOs;
@@ -15,10 +16,12 @@ namespace ClimaSite.Api.Controllers;
 public class OrdersController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IGuestCartIdentity _guestCart;
 
-    public OrdersController(IMediator mediator)
+    public OrdersController(IMediator mediator, IGuestCartIdentity guestCart)
     {
         _mediator = mediator;
+        _guestCart = guestCart;
     }
 
     /// <summary>
@@ -32,7 +35,11 @@ public class OrdersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderCommand command)
     {
-        var result = await _mediator.Send(command);
+        // A1: resolve the cart via the trusted signed cookie (migrating a returning guest's legacy cart) so a
+        // direct-to-checkout guest order is placed against the cart the cookie owns. Ignored for authenticated
+        // users (the handler keys the order on the user's own cart).
+        var guestId = await _guestCart.ResolveAsync(command.GuestSessionId);
+        var result = await _mediator.Send(command with { GuestSessionId = guestId });
         if (!result.IsSuccess)
             return BadRequest(new { message = result.Error });
 
