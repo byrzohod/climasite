@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { AddressService } from '../../../core/services/address.service';
 import { AddressType, SavedAddress, CreateAddressRequest } from '../../../core/models/address.model';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
 
 @Component({
   selector: 'app-addresses',
   standalone: true,
-  imports: [CommonModule, FormsModule, TranslateModule],
+  imports: [CommonModule, FormsModule, TranslateModule, ModalComponent],
   template: `
     <div class="addresses-container">
       <div class="addresses-header">
@@ -86,14 +87,18 @@ import { AddressType, SavedAddress, CreateAddressRequest } from '../../../core/m
         </div>
       }
 
-      <!-- Add/Edit Modal -->
+      <!-- Add/Edit Modal (shared accessible dialog: role=dialog, aria-modal, Escape, focus-trap + restore) -->
       @if (showModal()) {
-        <div class="modal-overlay" (click)="closeModal()">
-          <div class="modal-content" (click)="$event.stopPropagation()" data-testid="address-modal">
-            <div class="modal-header">
-              <h2>{{ editingAddress() ? ('account.addresses.editAddress' | translate) : ('account.addresses.addAddress' | translate) }}</h2>
-              <button class="close-btn" (click)="closeModal()" [attr.aria-label]="'common.close' | translate">&times;</button>
-            </div>
+        <app-modal
+          [isOpen]="showModal()"
+          [hasFooter]="false"
+          testId="address-modal"
+          (closed)="closeModal()"
+        >
+          <ng-container modal-header>
+            {{ editingAddress() ? ('account.addresses.editAddress' | translate) : ('account.addresses.addAddress' | translate) }}
+          </ng-container>
+          <ng-container modal-body>
             <form (ngSubmit)="saveAddress()" #addressForm="ngForm">
               <div class="form-grid">
                 <div class="form-group full-width">
@@ -238,33 +243,37 @@ import { AddressType, SavedAddress, CreateAddressRequest } from '../../../core/m
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </ng-container>
+        </app-modal>
       }
 
-      <!-- Delete Confirmation Modal -->
+      <!-- Delete Confirmation Modal (shared accessible dialog) -->
       @if (showDeleteConfirm()) {
-        <div class="modal-overlay" (click)="cancelDelete()">
-          <div class="modal-content modal-sm" (click)="$event.stopPropagation()">
-            <div class="modal-header">
-              <h2>{{ 'account.addresses.confirmDelete' | translate }}</h2>
-            </div>
+        <app-modal
+          [isOpen]="showDeleteConfirm()"
+          testId="delete-address-modal"
+          (closed)="cancelDelete()"
+        >
+          <ng-container modal-header>
+            {{ 'account.addresses.confirmDelete' | translate }}
+          </ng-container>
+          <ng-container modal-body>
             <p>{{ 'account.addresses.confirmDeleteMessage' | translate }}</p>
-            <div class="modal-actions">
-              <button type="button" class="btn btn-outline" (click)="cancelDelete()">
-                {{ 'common.cancel' | translate }}
-              </button>
-              <button
-                type="button"
-                class="btn btn-danger"
-                (click)="deleteAddress()"
-                data-testid="confirm-delete-btn"
-              >
-                {{ 'common.delete' | translate }}
-              </button>
-            </div>
-          </div>
-        </div>
+          </ng-container>
+          <ng-container modal-footer>
+            <button type="button" class="btn btn-outline" (click)="cancelDelete()">
+              {{ 'common.cancel' | translate }}
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger"
+              (click)="deleteAddress()"
+              data-testid="confirm-delete-btn"
+            >
+              {{ 'common.delete' | translate }}
+            </button>
+          </ng-container>
+        </app-modal>
       }
     </div>
   `,
@@ -449,57 +458,8 @@ import { AddressType, SavedAddress, CreateAddressRequest } from '../../../core/m
       }
     }
 
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 1rem;
-    }
-
-    .modal-content {
-      background-color: var(--color-bg-primary);
-      border-radius: 12px;
-      width: 100%;
-      max-width: 600px;
-      max-height: 90vh;
-      overflow-y: auto;
-      padding: 1.5rem;
-
-      &.modal-sm {
-        max-width: 400px;
-      }
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-
-      h2 {
-        margin: 0;
-        color: var(--color-text-primary);
-      }
-
-      .close-btn {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        cursor: pointer;
-        color: var(--color-text-secondary);
-
-        &:hover {
-          color: var(--color-text-primary);
-        }
-      }
-    }
+    /* Dialog chrome (overlay/container/header/close) now comes from the shared <app-modal>.
+       Only the projected form/confirm content is styled here. */
 
     .form-grid {
       display: grid;
