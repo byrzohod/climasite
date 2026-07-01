@@ -331,11 +331,17 @@ jobs:
         run: |
           out="$(dotnet list ClimaSite.NoE2E.slnf package --vulnerable --include-transitive 2>&1)"
           echo "$out"
-          if echo "$out" | grep -qiE 'has the following vulnerable|>\s*(Critical|High|Moderate|Low)\b'; then
+          # Allowlist (tracked under SEC-12): GHSA-v5pm-xwqc-g5wc = Microsoft.OpenApi 2.3.0, a transitive
+          # dependency of Swashbuckle. Swagger is Dev-only (SEC-06 gates UseSwagger behind IsDevelopment),
+          # so this advisory is NOT reachable in Production/Staging. It's also suppressed at the csproj
+          # (NuGetAuditSuppress). Drop only that advisory's line, then fail on ANY remaining vulnerable
+          # PACKAGE line. `dotnet list --vulnerable` prints `   > <pkg> <version> <Severity> <url>`, so the
+          # severity is the 3rd column (after `>`), not immediately after it. Remove once SEC-12 upgrades it.
+          if echo "$out" | grep -v 'GHSA-v5pm-xwqc-g5wc' | grep -qiE '^\s*>\s+\S+\s+\S+\s+(Critical|High|Moderate|Low)\b'; then
             echo "::error::Vulnerable .NET packages found — update them before merge."
             exit 1
           fi
-          echo "No vulnerable .NET packages."
+          echo "No vulnerable .NET packages (excluding the SEC-12-tracked allowlist)."
 
       - name: Secret scan (gitleaks — informational until allowlisted, SEC-13)
         uses: gitleaks/gitleaks-action@v2

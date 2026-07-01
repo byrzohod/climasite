@@ -5,7 +5,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <!-- NU1903: Microsoft.OpenApi 2.3.0 flows in transitively from the ClimaSite.Api project reference
+         (Swashbuckle). Swagger is Dev-only (SEC-06); suppressed to unblock CI; upgrade tracked under SEC-12. -->
+    <NoWarn>$(NoWarn);NU1903</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-v5pm-xwqc-g5wc" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Bogus" Version="35.6.1" />
