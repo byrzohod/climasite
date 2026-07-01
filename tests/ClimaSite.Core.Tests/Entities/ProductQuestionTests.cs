@@ -110,36 +110,74 @@ public class ProductQuestionTests
     }
 
     [Fact]
-    public void MarkAsAnswered_SetsAnsweredAt()
+    public void SetStatus_DoesNotTouchAnsweredState_EvenWithApprovedAnswer()
+    {
+        // B-038: answered-state moved out of SetStatus — a status transition must not stamp AnsweredAt.
+        var question = CreateValid();
+        var approved = new ProductAnswer(question.Id, "Yes it does");
+        approved.SetStatus(AnswerStatus.Approved);
+        question.Answers.Add(approved);
+
+        question.SetStatus(QuestionStatus.Approved);
+
+        question.AnsweredAt.Should().BeNull("SetStatus no longer owns answered-state — RefreshAnsweredState does");
+    }
+
+    [Fact]
+    public void RefreshAnsweredState_WithApprovedAnswer_SetsAnsweredAt()
     {
         var question = CreateValid();
+        var approved = new ProductAnswer(question.Id, "An approved, helpful answer.");
+        approved.SetStatus(AnswerStatus.Approved);
+        question.Answers.Add(approved);
 
-        question.MarkAsAnswered();
+        question.RefreshAnsweredState();
 
         question.AnsweredAt.Should().NotBeNull();
     }
 
     [Fact]
-    public void SetStatus_ApprovedWithApprovedAnswer_SetsAnsweredAt()
+    public void RefreshAnsweredState_WithOnlyPendingAnswers_LeavesAnsweredNull()
     {
+        // The B-038 invariant at the domain level: a still-Pending answer never flags the question answered.
         var question = CreateValid();
-        var answer = new ProductAnswer(question.Id, "Yes it does");
-        answer.SetStatus(AnswerStatus.Approved);
-        question.Answers.Add(answer);
+        question.Answers.Add(new ProductAnswer(question.Id, "A pending answer awaiting moderation."));
 
-        question.SetStatus(QuestionStatus.Approved);
-
-        question.AnsweredAt.Should().NotBeNull();
-    }
-
-    [Fact]
-    public void SetStatus_ApprovedWithNoAnswers_DoesNotSetAnsweredAt()
-    {
-        var question = CreateValid();
-
-        question.SetStatus(QuestionStatus.Approved);
+        question.RefreshAnsweredState();
 
         question.AnsweredAt.Should().BeNull();
+    }
+
+    [Fact]
+    public void RefreshAnsweredState_WhenLastApprovedAnswerRemoved_ClearsAnsweredAt()
+    {
+        var question = CreateValid();
+        var approved = new ProductAnswer(question.Id, "An approved, helpful answer.");
+        approved.SetStatus(AnswerStatus.Approved);
+        question.Answers.Add(approved);
+        question.RefreshAnsweredState();
+        question.AnsweredAt.Should().NotBeNull("precondition: the question is answered");
+
+        // The only approved answer is un-approved (e.g. rejected on re-moderation).
+        approved.SetStatus(AnswerStatus.Rejected);
+        question.RefreshAnsweredState();
+
+        question.AnsweredAt.Should().BeNull("clearing the last approved answer returns the question to unanswered");
+    }
+
+    [Fact]
+    public void RefreshAnsweredState_IsIdempotent_KeepsOriginalTimestamp()
+    {
+        var question = CreateValid();
+        var approved = new ProductAnswer(question.Id, "An approved, helpful answer.");
+        approved.SetStatus(AnswerStatus.Approved);
+        question.Answers.Add(approved);
+        question.RefreshAnsweredState();
+        var firstAnsweredAt = question.AnsweredAt;
+
+        question.RefreshAnsweredState();
+
+        question.AnsweredAt.Should().Be(firstAnsweredAt, "reconciliation never overwrites an existing timestamp");
     }
 
     [Fact]

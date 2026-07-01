@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using ClimaSite.Api.BackgroundServices;
 using ClimaSite.Api.Configuration;
 using ClimaSite.Api.Middleware;
+using ClimaSite.Api.RateLimiting;
 using ClimaSite.Application;
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Options;
@@ -272,10 +273,28 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
                     QueueLimit = 0
                 }));
 
-        // Strict policy for sensitive operations: 5 requests per minute per IP
+        // Strict policy for sensitive ANONYMOUS operations (contact form, installation lead, guest
+        // create-payment-intent): 5 requests per minute per IP. Kept IP-partitioned on purpose — these
+        // endpoints accept anonymous callers, so a user key here would let anyone widen their budget by
+        // presenting any bearer token / farming accounts.
         options.AddPolicy("strict", context =>
             RateLimitPartition.GetFixedWindowLimiter(
                 partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 5,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0
+                }));
+
+        // Strict policy for AUTHENTICATED sensitive operations (Q&A votes): 5 requests per minute,
+        // partitioned per user (falling back to client IP for the anonymous requests that [Authorize] then
+        // rejects) so signed-in users behind one NAT/CGNAT IP each get an independent bucket instead of
+        // sharing (and exhausting) one. Only apply this to [Authorize] endpoints. (B-039 follow-up)
+        options.AddPolicy("strict-user", context =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: RateLimitPartitioning.UserOrIpKey(context),
                 factory: _ => new FixedWindowRateLimiterOptions
                 {
                     PermitLimit = 5,
@@ -353,8 +372,25 @@ void ConfigurePipeline(WebApplication app)
     // CORS
     app.UseCors("AllowAngular");
 
-    // Rate limiting (skip in Testing environment)
-    if (!app.Environment.IsEnvironment("Testing"))
+    // Authentication runs BEFORE the rate limiter so the per-user "strict-user" policy can read the
+    // authenticated principal when partitioning; authorization stays AFTER the limiter so unauthenticated
+    // requests are still rate-limited (by IP) before being rejected. (B-039 follow-up)
+    app.UseAuthentication();
+
+    // Rate limiting. In the deployed envs (Production/Staging) it is ALWAYS on and cannot be disabled by
+    // config (fail-closed). In local/dev/test it defaults on except the Testing integration env (so tests
+    // aren't throttled) and is config-overridable, so a targeted integration test can re-enable it
+    // (RateLimiting:Enabled=true) to drive the real limiter pipeline. (B-039 follow-up)
+    //
+    // Accepted tradeoff: UseAuthentication runs before UseRateLimiter (above) so the per-user "strict-user"
+    // policy can key on the authenticated principal. A bogus-token flood therefore incurs a cheap JWT
+    // signature check before the global IP limiter sheds it — but the global 100/min/IP limiter still runs
+    // before the controllers, so the expensive downstream (handlers/DB) stays shielded; only the microsecond
+    // HMAC verify is unbounded. Documented rather than split into a separate pre-auth IP shield.
+    var isDeployedEnv = app.Environment.IsProduction() || app.Environment.IsStaging();
+    var rateLimitingEnabled = isDeployedEnv
+        || app.Configuration.GetValue("RateLimiting:Enabled", !app.Environment.IsEnvironment("Testing"));
+    if (rateLimitingEnabled)
     {
         app.UseRateLimiter();
     }
@@ -363,8 +399,7 @@ void ConfigurePipeline(WebApplication app)
     app.UseResponseCaching();
     app.UseOutputCache();
 
-    // Auth
-    app.UseAuthentication();
+    // Authorization
     app.UseAuthorization();
 
     // Health checks

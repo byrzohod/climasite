@@ -55,7 +55,11 @@ public class GetPendingModerationQueryHandler : IRequestHandler<GetPendingModera
                 Status = q.Status,
                 HelpfulCount = q.HelpfulCount,
                 CreatedAt = q.CreatedAt,
-                AnsweredAt = q.AnsweredAt,
+                // Mirror the public read: expose the answered timestamp only when an approved answer exists,
+                // so the admin queue never trusts a legacy/racy AnsweredAt drift either (B-038).
+                AnsweredAt = q.Answers.Any(a => a.Status == Core.Entities.AnswerStatus.Approved)
+                    ? q.AnsweredAt
+                    : (DateTime?)null,
                 TotalAnswers = q.Answers.Count,
                 PendingAnswers = q.Answers.Count(a => a.Status == Core.Entities.AnswerStatus.Pending)
             })
