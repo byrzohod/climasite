@@ -74,6 +74,20 @@ public class ProductQuestion : BaseEntity
         SetUpdatedAt();
     }
 
+    /// <summary>
+    /// Decrements the helpful count, floored at zero. Kept for the count-floor invariant and admin
+    /// paths only — the per-voter vote handler mutates the count via atomic SQL, never this method
+    /// (a load-decrement-save would lose concurrent updates). See B-039 unit-plan §9.
+    /// </summary>
+    public void RemoveHelpfulVote()
+    {
+        if (HelpfulCount > 0)
+        {
+            HelpfulCount--;
+        }
+        SetUpdatedAt();
+    }
+
     public bool HasApprovedAnswer => Answers.Any(a => a.Status == AnswerStatus.Approved);
     public int AnswerCount => Answers.Count(a => a.Status == AnswerStatus.Approved);
 }

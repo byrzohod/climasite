@@ -130,6 +130,18 @@ public class DeleteUserDataCommandHandler : IRequestHandler<DeleteUserDataComman
                     .ToListAsync(cancellationToken);
                 _context.ReviewVotes.RemoveRange(reviewVotes);
 
+                // Delete Q&A votes (mirror review votes): hard-delete the user's per-voter ledger rows
+                // but leave the denormalised helpful counts as anonymized historical aggregates. (B-039)
+                var questionVotes = await _context.ProductQuestionVotes
+                    .Where(v => v.UserId == userId.Value)
+                    .ToListAsync(cancellationToken);
+                _context.ProductQuestionVotes.RemoveRange(questionVotes);
+
+                var answerVotes = await _context.ProductAnswerVotes
+                    .Where(v => v.UserId == userId.Value)
+                    .ToListAsync(cancellationToken);
+                _context.ProductAnswerVotes.RemoveRange(answerVotes);
+
                 // 2. Anonymize data that has legal retention requirements
 
                 // Anonymize reviews (keep for product integrity but remove personal info)

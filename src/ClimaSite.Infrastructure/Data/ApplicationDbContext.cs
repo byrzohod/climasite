@@ -48,6 +48,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<CategoryTranslation> CategoryTranslations => Set<CategoryTranslation>();
     public DbSet<ProductQuestion> ProductQuestions => Set<ProductQuestion>();
     public DbSet<ProductAnswer> ProductAnswers => Set<ProductAnswer>();
+    public DbSet<ProductQuestionVote> ProductQuestionVotes => Set<ProductQuestionVote>();
+    public DbSet<ProductAnswerVote> ProductAnswerVotes => Set<ProductAnswerVote>();
     public DbSet<InstallationRequest> InstallationRequests => Set<InstallationRequest>();
     public DbSet<ProductPriceHistory> ProductPriceHistory => Set<ProductPriceHistory>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
@@ -130,4 +132,72 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
             .ExecuteUpdateAsync(
                 s => s.SetProperty(v => v.StockQuantity, v => v.StockQuantity - quantity),
                 cancellationToken);
+
+    // ---- B-039: per-voter Q&A vote atomics (see IApplicationDbContext for the contract) ----
+    // The INSERT uses ON CONFLICT DO NOTHING so a concurrent duplicate never throws (the transaction
+    // stays alive); the rows it returns gate the caller's count delta. Counts are only ever mutated
+    // via these atomic statements, never a tracked load-increment-save.
+
+    public Task<int> TryInsertQuestionVoteAsync(Guid questionId, Guid userId, CancellationToken cancellationToken = default)
+        => Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            INSERT INTO product_question_votes (id, question_id, user_id, created_at, updated_at)
+            VALUES ({Guid.NewGuid()}, {questionId}, {userId}, NOW(), NOW())
+            ON CONFLICT (question_id, user_id) DO NOTHING
+            """,
+            cancellationToken);
+
+    public Task<int> DeleteQuestionVoteAsync(Guid questionId, Guid userId, CancellationToken cancellationToken = default)
+        => ProductQuestionVotes
+            .Where(v => v.QuestionId == questionId && v.UserId == userId)
+            .ExecuteDeleteAsync(cancellationToken);
+
+    // A vote-tally change intentionally does NOT bump the parent's content updated_at (it tracks when
+    // the question/answer text was last edited, not its helpful count) — only the ledger row's
+    // updated_at moves on a flip below. The `delta >= 0 || count > 0` guard floors a decrement at zero
+    // so it can never unwind past the legacy anonymous baseline.
+    public Task<int> AdjustQuestionHelpfulCountAsync(Guid questionId, int delta, CancellationToken cancellationToken = default)
+        => ProductQuestions
+            .Where(q => q.Id == questionId && (delta >= 0 || q.HelpfulCount > 0))
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(q => q.HelpfulCount, q => q.HelpfulCount + delta),
+                cancellationToken);
+
+    public Task<int> TryInsertAnswerVoteAsync(Guid answerId, Guid userId, bool isHelpful, CancellationToken cancellationToken = default)
+        => Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            INSERT INTO product_answer_votes (id, answer_id, user_id, is_helpful, created_at, updated_at)
+            VALUES ({Guid.NewGuid()}, {answerId}, {userId}, {isHelpful}, NOW(), NOW())
+            ON CONFLICT (answer_id, user_id) DO NOTHING
+            """,
+            cancellationToken);
+
+    public Task<int> DeleteAnswerVoteAsync(Guid answerId, Guid userId, bool isHelpful, CancellationToken cancellationToken = default)
+        => ProductAnswerVotes
+            .Where(v => v.AnswerId == answerId && v.UserId == userId && v.IsHelpful == isHelpful)
+            .ExecuteDeleteAsync(cancellationToken);
+
+    // The ledger row genuinely changed, so bump its updated_at too (the raw ExecuteUpdate bypasses the
+    // SaveChanges hook that would otherwise set it via the tracked ChangeVote()).
+    public Task<int> FlipAnswerVoteAsync(Guid answerId, Guid userId, bool fromHelpful, bool toHelpful, CancellationToken cancellationToken = default)
+        => ProductAnswerVotes
+            .Where(v => v.AnswerId == answerId && v.UserId == userId && v.IsHelpful == fromHelpful)
+            .ExecuteUpdateAsync(
+                s => s
+                    .SetProperty(v => v.IsHelpful, toHelpful)
+                    .SetProperty(v => v.UpdatedAt, DateTime.UtcNow),
+                cancellationToken);
+
+    public Task<int> AdjustAnswerVoteCountAsync(Guid answerId, bool helpful, int delta, CancellationToken cancellationToken = default)
+        => helpful
+            ? ProductAnswers
+                .Where(a => a.Id == answerId && (delta >= 0 || a.HelpfulCount > 0))
+                .ExecuteUpdateAsync(
+                    s => s.SetProperty(a => a.HelpfulCount, a => a.HelpfulCount + delta),
+                    cancellationToken)
+            : ProductAnswers
+                .Where(a => a.Id == answerId && (delta >= 0 || a.UnhelpfulCount > 0))
+                .ExecuteUpdateAsync(
+                    s => s.SetProperty(a => a.UnhelpfulCount, a => a.UnhelpfulCount + delta),
+                    cancellationToken);
 }

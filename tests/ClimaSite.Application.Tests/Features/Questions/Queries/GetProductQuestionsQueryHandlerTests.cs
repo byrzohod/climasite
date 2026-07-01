@@ -1,15 +1,19 @@
+using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Features.Questions.Queries;
 using ClimaSite.Application.Tests.TestHelpers;
 using ClimaSite.Core.Entities;
 using FluentAssertions;
+using Moq;
 
 namespace ClimaSite.Application.Tests.Features.Questions.Queries;
 
 public class GetProductQuestionsQueryHandlerTests
 {
+    private readonly Mock<ICurrentUserService> _currentUserServiceMock = new();
     private readonly MockDbContext _context = new();
 
-    private GetProductQuestionsQueryHandler CreateHandler() => new(_context);
+    private GetProductQuestionsQueryHandler CreateHandler() =>
+        new(_context, _currentUserServiceMock.Object);
 
     private ProductQuestion SeedApprovedQuestion(
         Guid productId,
@@ -117,5 +121,44 @@ public class GetProductQuestionsQueryHandlerTests
 
         result.TotalQuestions.Should().Be(5);
         result.Questions.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task Handle_WhenAnonymous_LeavesVoteStateUnset()
+    {
+        var productId = Guid.NewGuid();
+        var question = SeedApprovedQuestion(productId, "Anonymous should see no vote state?", answered: true);
+        _currentUserServiceMock.Setup(x => x.UserId).Returns((Guid?)null);
+
+        var result = await CreateHandler().Handle(
+            new GetProductQuestionsQuery { ProductId = productId },
+            CancellationToken.None);
+
+        var dto = result.Questions.Single();
+        dto.HasVotedHelpful.Should().BeFalse();
+        dto.Answers.Single().UserVoteHelpful.Should().BeNull();
+        question.Id.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task Handle_ReflectsTheCurrentUsersOwnVotes()
+    {
+        var userId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+        var question = SeedApprovedQuestion(productId, "Does the caller's vote surface here?", answered: true);
+        var answer = question.Answers.Single();
+
+        // The current user voted helpful on the question and unhelpful on the answer.
+        _context.ProductQuestionVotes.Add(new ProductQuestionVote(question.Id, userId));
+        _context.ProductAnswerVotes.Add(new ProductAnswerVote(answer.Id, userId, isHelpful: false));
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+
+        var result = await CreateHandler().Handle(
+            new GetProductQuestionsQuery { ProductId = productId },
+            CancellationToken.None);
+
+        var dto = result.Questions.Single();
+        dto.HasVotedHelpful.Should().BeTrue();
+        dto.Answers.Single().UserVoteHelpful.Should().BeFalse();
     }
 }

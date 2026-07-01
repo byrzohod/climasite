@@ -112,9 +112,9 @@ describe('QuestionsService', () => {
   });
 
   describe('voteQuestion', () => {
-    it('should vote a question as helpful', () => {
+    it('should vote a question as helpful and return the authoritative state', () => {
       const questionId = '123e4567-e89b-12d3-a456-426614174000';
-      const mockResponse = { helpfulCount: 5 };
+      const mockResponse = { helpfulCount: 5, hasVotedHelpful: true };
 
       service.voteQuestion(questionId).subscribe(result => {
         expect(result).toEqual(mockResponse);
@@ -127,9 +127,9 @@ describe('QuestionsService', () => {
   });
 
   describe('voteAnswer', () => {
-    it('should vote an answer as helpful', () => {
+    it('should vote an answer as helpful and return the authoritative state', () => {
       const answerId = '123e4567-e89b-12d3-a456-426614174000';
-      const mockResponse = { helpfulCount: 10, unhelpfulCount: 2 };
+      const mockResponse = { helpfulCount: 10, unhelpfulCount: 2, userVoteHelpful: true };
 
       service.voteAnswer(answerId, true).subscribe(result => {
         expect(result).toEqual(mockResponse);
@@ -141,9 +141,9 @@ describe('QuestionsService', () => {
       req.flush(mockResponse);
     });
 
-    it('should vote an answer as unhelpful', () => {
+    it('should vote an answer as unhelpful and return the authoritative state', () => {
       const answerId = '123e4567-e89b-12d3-a456-426614174000';
-      const mockResponse = { helpfulCount: 10, unhelpfulCount: 3 };
+      const mockResponse = { helpfulCount: 10, unhelpfulCount: 3, userVoteHelpful: false };
 
       service.voteAnswer(answerId, false).subscribe(result => {
         expect(result).toEqual(mockResponse);
@@ -152,6 +152,19 @@ describe('QuestionsService', () => {
       const req = httpMock.expectOne(`${environment.apiUrl}/api/questions/answers/${answerId}/vote`);
       expect(req.request.method).toBe('POST');
       expect(req.request.body).toEqual({ isHelpful: false });
+      req.flush(mockResponse);
+    });
+
+    it('should omit userVoteHelpful when the user has no vote after the operation', () => {
+      const answerId = '123e4567-e89b-12d3-a456-426614174000';
+      const mockResponse = { helpfulCount: 9, unhelpfulCount: 2 };
+
+      service.voteAnswer(answerId, true).subscribe(result => {
+        expect(result.userVoteHelpful).toBeUndefined();
+        expect(result.helpfulCount).toBe(9);
+      });
+
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/questions/answers/${answerId}/vote`);
       req.flush(mockResponse);
     });
   });

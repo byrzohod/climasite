@@ -211,6 +211,31 @@ public class DeleteUserDataCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WithValidRequest_HardDeletesTheUsersQaVotes_LeavingOthers()
+    {
+        var userId = Guid.NewGuid();
+        var otherUserId = Guid.NewGuid();
+        SeedAuthenticatedUser(userId);
+
+        var questionId = Guid.NewGuid();
+        var answerId = Guid.NewGuid();
+        _context.ProductQuestionVotes.Add(new ProductQuestionVote(questionId, userId));
+        _context.ProductQuestionVotes.Add(new ProductQuestionVote(questionId, otherUserId));
+        _context.ProductAnswerVotes.Add(new ProductAnswerVote(answerId, userId, isHelpful: true));
+        _context.ProductAnswerVotes.Add(new ProductAnswerVote(answerId, otherUserId, isHelpful: false));
+
+        var result = await CreateHandler().Handle(ValidCommand(), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+
+        // The user's own Q&A vote ledger rows are hard-deleted; other users' rows are untouched.
+        (await _context.ProductQuestionVotes.ToListAsync()).Should().ContainSingle()
+            .Which.UserId.Should().Be(otherUserId);
+        (await _context.ProductAnswerVotes.ToListAsync()).Should().ContainSingle()
+            .Which.UserId.Should().Be(otherUserId);
+    }
+
+    [Fact]
     public async Task Handle_WithValidRequest_RemovesWishlistAndItsItems()
     {
         var userId = Guid.NewGuid();

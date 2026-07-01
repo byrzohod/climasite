@@ -5,6 +5,7 @@ using ClimaSite.Api.Tests.Infrastructure;
 using ClimaSite.Core.Entities;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ClimaSite.Api.Tests.Controllers;
@@ -94,6 +95,26 @@ public class QuestionsControllerTests : IntegrationTestBase
         var token = body.GetProperty("accessToken").GetString();
         SetAuthToken(token!);
     }
+
+    /// <summary>Registers + logs in a fresh user (token applied to <see cref="Client"/>) and returns their id.</summary>
+    private async Task<Guid> AuthenticateAndGetUserIdAsync(string? email = null)
+    {
+        email ??= $"voter-{Guid.NewGuid()}@test.com";
+        await AuthenticateAsync(email);
+
+        using var scope = Factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await userManager.FindByEmailAsync(email);
+        user.Should().NotBeNull();
+        return user!.Id;
+    }
+
+    private async Task<int> QuestionHelpfulCountAsync(Guid questionId) =>
+        await DbContext.ProductQuestions
+            .AsNoTracking()
+            .Where(q => q.Id == questionId)
+            .Select(q => q.HelpfulCount)
+            .FirstAsync();
 
     #region GetProductQuestions
 
@@ -244,11 +265,27 @@ public class QuestionsControllerTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task VoteQuestion_IncrementsHelpfulCount()
+    public async Task VoteQuestion_Returns401_WhenUnauthenticated()
+    {
+        // Arrange
+        var product = await SeedProductAsync();
+        var question = await SeedApprovedQuestionAsync(product.Id, "Is anonymous voting allowed anymore?");
+        ClearAuthToken();
+
+        // Act
+        var response = await Client.PostAsync($"/api/questions/{question.Id}/vote", null);
+
+        // Assert - voting now requires authentication (B-039)
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task VoteQuestion_RecordsVote_ForAuthenticatedUser()
     {
         // Arrange
         var product = await SeedProductAsync();
         var question = await SeedApprovedQuestionAsync(product.Id, "How energy efficient is this unit?");
+        await AuthenticateAndGetUserIdAsync();
 
         // Act
         var response = await Client.PostAsync($"/api/questions/{question.Id}/vote", null);
@@ -257,26 +294,182 @@ public class QuestionsControllerTests : IntegrationTestBase
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var content = await response.Content.ReadAsStringAsync();
         content.Should().Contain("\"helpfulCount\":1");
+        content.Should().Contain("\"hasVotedHelpful\":true");
+        (await QuestionHelpfulCountAsync(question.Id)).Should().Be(1);
     }
 
     [Fact]
-    public async Task VoteAnswer_ReturnsUpdatedCounts()
+    public async Task VoteQuestion_Repeat_TogglesOff_WithoutInflating()
+    {
+        // Arrange
+        var product = await SeedProductAsync();
+        var question = await SeedApprovedQuestionAsync(product.Id, "Does a second click toggle the vote off?");
+        await AuthenticateAndGetUserIdAsync();
+
+        // Act - vote, then vote again
+        await Client.PostAsync($"/api/questions/{question.Id}/vote", null);
+        var second = await Client.PostAsync($"/api/questions/{question.Id}/vote", null);
+
+        // Assert - the second vote toggles off rather than inflating to 2
+        second.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await second.Content.ReadAsStringAsync();
+        content.Should().Contain("\"helpfulCount\":0");
+        content.Should().Contain("\"hasVotedHelpful\":false");
+        (await QuestionHelpfulCountAsync(question.Id)).Should().Be(0);
+        (await DbContext.ProductQuestionVotes.CountAsync(v => v.QuestionId == question.Id)).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task VoteQuestion_Returns404_WhenQuestionNotApproved()
+    {
+        // Arrange - a pending question is not publicly votable
+        var product = await SeedProductAsync();
+        var pending = new ProductQuestion(product.Id, "A pending, non-votable question here?");
+        DbContext.ProductQuestions.Add(pending);
+        await DbContext.SaveChangesAsync();
+        await AuthenticateAndGetUserIdAsync();
+
+        // Act
+        var response = await Client.PostAsync($"/api/questions/{pending.Id}/vote", null);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task VoteQuestion_Returns400_WhenVotingOnOwnQuestion()
+    {
+        // Arrange - the authenticated user authors the (approved) question, then tries to vote it
+        var product = await SeedProductAsync();
+        var userId = await AuthenticateAndGetUserIdAsync();
+        var ownQuestion = new ProductQuestion(product.Id, "Can I upvote my very own question?");
+        ownQuestion.SetUser(userId);
+        ownQuestion.SetStatus(QuestionStatus.Approved);
+        DbContext.ProductQuestions.Add(ownQuestion);
+        await DbContext.SaveChangesAsync();
+
+        // Act
+        var response = await Client.PostAsync($"/api/questions/{ownQuestion.Id}/vote", null);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task VoteQuestion_ConcurrentDoublePost_AppliesDeltaAtMostOnce()
+    {
+        // Arrange
+        var product = await SeedProductAsync();
+        var question = await SeedApprovedQuestionAsync(product.Id, "Do parallel clicks double the count?");
+        await AuthenticateAndGetUserIdAsync();
+
+        // Act - fire two votes for the same (user, question) in parallel
+        var responses = await Task.WhenAll(
+            Client.PostAsync($"/api/questions/{question.Id}/vote", null),
+            Client.PostAsync($"/api/questions/{question.Id}/vote", null));
+
+        // Assert - no 500s, and the ledger + count stay consistent and are never inflated past 1.
+        responses.Should().OnlyContain(r => r.StatusCode == HttpStatusCode.OK);
+        var ledgerRows = await DbContext.ProductQuestionVotes.CountAsync(v => v.QuestionId == question.Id);
+        var helpfulCount = await QuestionHelpfulCountAsync(question.Id);
+        ledgerRows.Should().BeLessThanOrEqualTo(1, "the unique constraint permits at most one row per (user, question)");
+        helpfulCount.Should().Be(ledgerRows, "the denormalised count must match the ledger — no lost/double update");
+    }
+
+    [Fact]
+    public async Task VoteAnswer_Returns401_WhenUnauthenticated()
     {
         // Arrange
         var product = await SeedProductAsync();
         var question = await SeedApprovedQuestionAsync(product.Id, "Can it be wall mounted?");
         var answer = await SeedApprovedAnswerAsync(question.Id, "Yes, it ships with a wall-mount bracket.");
+        ClearAuthToken();
 
         // Act
-        var response = await Client.PostAsJsonAsync($"/api/questions/answers/{answer.Id}/vote", new
-        {
-            isHelpful = true
-        });
+        var response = await Client.PostAsJsonAsync($"/api/questions/answers/{answer.Id}/vote", new { isHelpful = true });
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task VoteAnswer_RecordsVote_ForAuthenticatedUser()
+    {
+        // Arrange
+        var product = await SeedProductAsync();
+        var question = await SeedApprovedQuestionAsync(product.Id, "Can it be wall mounted?");
+        var answer = await SeedApprovedAnswerAsync(question.Id, "Yes, it ships with a wall-mount bracket.");
+        await AuthenticateAndGetUserIdAsync();
+
+        // Act
+        var response = await Client.PostAsJsonAsync($"/api/questions/answers/{answer.Id}/vote", new { isHelpful = true });
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var content = await response.Content.ReadAsStringAsync();
         content.Should().Contain("\"helpfulCount\":1");
+        content.Should().Contain("\"userVoteHelpful\":true");
+    }
+
+    [Fact]
+    public async Task VoteAnswer_FlipHelpfulToUnhelpful_MovesTallyOnRealDatabase()
+    {
+        // Arrange
+        var product = await SeedProductAsync();
+        var question = await SeedApprovedQuestionAsync(product.Id, "Does flipping a vote move the tally?");
+        var answer = await SeedApprovedAnswerAsync(question.Id, "Yes — a single ledger row flips direction.");
+        await AuthenticateAndGetUserIdAsync();
+
+        // Act - vote helpful, then flip to unhelpful
+        await Client.PostAsJsonAsync($"/api/questions/answers/{answer.Id}/vote", new { isHelpful = true });
+        var flip = await Client.PostAsJsonAsync($"/api/questions/answers/{answer.Id}/vote", new { isHelpful = false });
+
+        // Assert - helpful moved to unhelpful, one ledger row (flipped, not duplicated)
+        flip.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await flip.Content.ReadAsStringAsync();
+        content.Should().Contain("\"helpfulCount\":0");
+        content.Should().Contain("\"unhelpfulCount\":1");
+        content.Should().Contain("\"userVoteHelpful\":false");
+        (await DbContext.ProductAnswerVotes.CountAsync(v => v.AnswerId == answer.Id)).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GetProductQuestions_PopulatesVoteState_ForAuthedCaller()
+    {
+        // Arrange - the caller votes on a question and its answer, then reads the list back.
+        var product = await SeedProductAsync();
+        var question = await SeedApprovedQuestionAsync(product.Id, "Does the caller's own vote surface in the list?");
+        var answer = await SeedApprovedAnswerAsync(question.Id, "Yes — the API returns your own vote state.");
+        await AuthenticateAndGetUserIdAsync();
+
+        await Client.PostAsync($"/api/questions/{question.Id}/vote", null);
+        await Client.PostAsJsonAsync($"/api/questions/answers/{answer.Id}/vote", new { isHelpful = false });
+
+        // Act - the GET carries the same bearer token, so the query resolves the current user.
+        var response = await Client.GetAsync($"/api/questions/product/{product.Id}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await response.Content.ReadAsStringAsync();
+        content.Should().Contain("\"hasVotedHelpful\":true");
+        content.Should().Contain("\"userVoteHelpful\":false");
+    }
+
+    [Fact]
+    public async Task GetProductQuestions_LeavesVoteStateUnset_ForAnonymousCaller()
+    {
+        // Arrange
+        var product = await SeedProductAsync();
+        await SeedApprovedQuestionAsync(product.Id, "Anonymous callers should see no vote state?");
+        ClearAuthToken();
+
+        // Act
+        var response = await Client.GetAsync($"/api/questions/product/{product.Id}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await response.Content.ReadAsStringAsync();
+        content.Should().Contain("\"hasVotedHelpful\":false");
     }
 
     #endregion

@@ -12,6 +12,11 @@ export interface Answer {
   helpfulCount: number;
   unhelpfulCount: number;
   createdAt: string;
+  /**
+   * The current user's own vote on this answer, from authoritative server state:
+   * `true` = voted helpful, `false` = voted unhelpful, `null`/absent = no vote (or anonymous).
+   */
+  userVoteHelpful?: boolean | null;
 }
 
 export interface Question {
@@ -24,6 +29,8 @@ export interface Question {
   answeredAt: string | null;
   answerCount: number;
   answers: Answer[];
+  /** Whether the current user has cast a "helpful" vote on this question (`false` when anonymous). */
+  hasVotedHelpful: boolean;
 }
 
 export interface ProductQuestions {
@@ -45,9 +52,20 @@ export interface AnswerQuestionRequest {
   answererName?: string;
 }
 
-export interface VoteResult {
+/** Authoritative result of a question vote toggle. */
+export interface QuestionVoteResult {
   helpfulCount: number;
-  unhelpfulCount?: number;
+  hasVotedHelpful: boolean;
+}
+
+/**
+ * Authoritative result of an answer vote toggle/flip.
+ * `userVoteHelpful` is omitted by the API when the user has no vote after the operation.
+ */
+export interface AnswerVoteResult {
+  helpfulCount: number;
+  unhelpfulCount: number;
+  userVoteHelpful?: boolean;
 }
 
 @Injectable({
@@ -88,12 +106,14 @@ export class QuestionsService {
     );
   }
 
-  voteQuestion(questionId: string): Observable<VoteResult> {
-    return this.http.post<VoteResult>(`${this.apiUrl}/${questionId}/vote`, {});
+  /** Toggle the current user's "helpful" vote on a question (requires auth; 401 otherwise). */
+  voteQuestion(questionId: string): Observable<QuestionVoteResult> {
+    return this.http.post<QuestionVoteResult>(`${this.apiUrl}/${questionId}/vote`, {});
   }
 
-  voteAnswer(answerId: string, isHelpful: boolean): Observable<VoteResult> {
-    return this.http.post<VoteResult>(
+  /** Toggle/flip the current user's vote on an answer (requires auth; 401 otherwise). */
+  voteAnswer(answerId: string, isHelpful: boolean): Observable<AnswerVoteResult> {
+    return this.http.post<AnswerVoteResult>(
       `${this.apiUrl}/answers/${answerId}/vote`,
       { isHelpful }
     );

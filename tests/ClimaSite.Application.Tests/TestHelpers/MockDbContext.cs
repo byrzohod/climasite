@@ -39,6 +39,8 @@ public class MockDbContext : IApplicationDbContext
     private readonly List<CategoryTranslation> _categoryTranslations = [];
     private readonly List<ProductQuestion> _productQuestions = [];
     private readonly List<ProductAnswer> _productAnswers = [];
+    private readonly List<ProductQuestionVote> _productQuestionVotes = [];
+    private readonly List<ProductAnswerVote> _productAnswerVotes = [];
     private readonly List<InstallationRequest> _installationRequests = [];
     private readonly List<ProductPriceHistory> _productPriceHistory = [];
     private readonly List<ReviewVote> _reviewVotes = [];
@@ -47,9 +49,16 @@ public class MockDbContext : IApplicationDbContext
 
     public DatabaseFacade Database { get; }
 
+    /// <summary>
+    /// How many times the execution-strategy delegate is invoked. Defaults to 1 (pass-through). Tests set
+    /// this to 2 to SIMULATE a commit-unknown retry (EnableRetryOnFailure) and assert the net effect is
+    /// applied exactly once — the critical idempotency case for the toggle/flip vote paths.
+    /// </summary>
+    public int ExecutionStrategyAttempts { get; set; } = 1;
+
     public MockDbContext()
     {
-        Database = CreateMockDatabaseFacade();
+        Database = CreateMockDatabaseFacade(() => ExecutionStrategyAttempts);
     }
 
     public DbSet<Product> Products => CreateMockDbSet(_products);
@@ -78,6 +87,8 @@ public class MockDbContext : IApplicationDbContext
     public DbSet<CategoryTranslation> CategoryTranslations => CreateMockDbSet(_categoryTranslations);
     public DbSet<ProductQuestion> ProductQuestions => CreateMockDbSet(_productQuestions);
     public DbSet<ProductAnswer> ProductAnswers => CreateMockDbSet(_productAnswers);
+    public DbSet<ProductQuestionVote> ProductQuestionVotes => CreateMockDbSet(_productQuestionVotes);
+    public DbSet<ProductAnswerVote> ProductAnswerVotes => CreateMockDbSet(_productAnswerVotes);
     public DbSet<InstallationRequest> InstallationRequests => CreateMockDbSet(_installationRequests);
     public DbSet<ProductPriceHistory> ProductPriceHistory => CreateMockDbSet(_productPriceHistory);
     public DbSet<OutboxMessage> OutboxMessages => CreateMockDbSet(_outboxMessages);
@@ -187,7 +198,104 @@ public class MockDbContext : IApplicationDbContext
         return Task.FromResult(1);
     }
 
-    private static DatabaseFacade CreateMockDatabaseFacade()
+    // ---- B-039: in-memory simulations of the atomic Q&A vote SQL primitives (mirror the real
+    // ON CONFLICT / conditional DELETE / conditional UPDATE / floored count-adjust semantics). ----
+
+    public Task<int> TryInsertQuestionVoteAsync(Guid questionId, Guid userId, CancellationToken cancellationToken = default)
+    {
+        if (_productQuestionVotes.Any(v => v.QuestionId == questionId && v.UserId == userId))
+        {
+            return Task.FromResult(0); // ON CONFLICT DO NOTHING
+        }
+
+        _productQuestionVotes.Add(new ProductQuestionVote(questionId, userId));
+        return Task.FromResult(1);
+    }
+
+    public Task<int> DeleteQuestionVoteAsync(Guid questionId, Guid userId, CancellationToken cancellationToken = default)
+    {
+        var removed = _productQuestionVotes.RemoveAll(v => v.QuestionId == questionId && v.UserId == userId);
+        return Task.FromResult(removed);
+    }
+
+    public Task<int> AdjustQuestionHelpfulCountAsync(Guid questionId, int delta, CancellationToken cancellationToken = default)
+    {
+        var question = _productQuestions.FirstOrDefault(q => q.Id == questionId);
+        if (question is null || (delta < 0 && question.HelpfulCount == 0))
+        {
+            return Task.FromResult(0);
+        }
+
+        for (var i = 0; i < Math.Abs(delta); i++)
+        {
+            if (delta > 0) question.AddHelpfulVote();
+            else question.RemoveHelpfulVote();
+        }
+        return Task.FromResult(1);
+    }
+
+    public Task<int> TryInsertAnswerVoteAsync(Guid answerId, Guid userId, bool isHelpful, CancellationToken cancellationToken = default)
+    {
+        if (_productAnswerVotes.Any(v => v.AnswerId == answerId && v.UserId == userId))
+        {
+            return Task.FromResult(0); // ON CONFLICT DO NOTHING
+        }
+
+        _productAnswerVotes.Add(new ProductAnswerVote(answerId, userId, isHelpful));
+        return Task.FromResult(1);
+    }
+
+    public Task<int> DeleteAnswerVoteAsync(Guid answerId, Guid userId, bool isHelpful, CancellationToken cancellationToken = default)
+    {
+        var removed = _productAnswerVotes.RemoveAll(
+            v => v.AnswerId == answerId && v.UserId == userId && v.IsHelpful == isHelpful);
+        return Task.FromResult(removed);
+    }
+
+    public Task<int> FlipAnswerVoteAsync(Guid answerId, Guid userId, bool fromHelpful, bool toHelpful, CancellationToken cancellationToken = default)
+    {
+        var vote = _productAnswerVotes.FirstOrDefault(
+            v => v.AnswerId == answerId && v.UserId == userId && v.IsHelpful == fromHelpful);
+        if (vote is null)
+        {
+            return Task.FromResult(0);
+        }
+
+        vote.ChangeVote(toHelpful);
+        return Task.FromResult(1);
+    }
+
+    public Task<int> AdjustAnswerVoteCountAsync(Guid answerId, bool helpful, int delta, CancellationToken cancellationToken = default)
+    {
+        var answer = _productAnswers.FirstOrDefault(a => a.Id == answerId);
+        if (answer is null)
+        {
+            return Task.FromResult(0);
+        }
+
+        var current = helpful ? answer.HelpfulCount : answer.UnhelpfulCount;
+        if (delta < 0 && current == 0)
+        {
+            return Task.FromResult(0);
+        }
+
+        for (var i = 0; i < Math.Abs(delta); i++)
+        {
+            if (helpful)
+            {
+                if (delta > 0) answer.AddHelpfulVote();
+                else answer.RemoveHelpfulVote();
+            }
+            else
+            {
+                if (delta > 0) answer.AddUnhelpfulVote();
+                else answer.RemoveUnhelpfulVote();
+            }
+        }
+        return Task.FromResult(1);
+    }
+
+    private static DatabaseFacade CreateMockDatabaseFacade(Func<int> attemptsProvider)
     {
         var mockTransaction = new Mock<IDbContextTransaction>();
         mockTransaction.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>()))
@@ -201,10 +309,11 @@ public class MockDbContext : IApplicationDbContext
         var mockFacade = new Mock<DatabaseFacade>(mockDbContext.Object);
         mockFacade.Setup(f => f.BeginTransactionAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(mockTransaction.Object);
-        // Provide a pass-through execution strategy so production code can call
-        // strategy.ExecuteAsync(...) without a real database provider.
+        // Provide an execution strategy so production code can call strategy.ExecuteAsync(...) without a
+        // real provider. It invokes the delegate attemptsProvider() times (default 1) so tests can
+        // simulate a retry (2 invocations) and prove the vote paths are idempotent.
         mockFacade.Setup(f => f.CreateExecutionStrategy())
-            .Returns(new PassThroughExecutionStrategy());
+            .Returns(() => new ConfigurableExecutionStrategy(attemptsProvider));
 
         return mockFacade.Object;
     }
@@ -293,12 +402,21 @@ public class MockDbContext : IApplicationDbContext
 }
 
 /// <summary>
-/// A non-retrying execution strategy that simply invokes the supplied operation.
-/// Lets unit tests exercise production code paths that call
-/// <c>Database.CreateExecutionStrategy().ExecuteAsync(...)</c> without a real provider.
+/// An execution strategy that invokes the supplied operation a configurable number of times. With the
+/// default of 1 it is a plain pass-through (lets unit tests exercise
+/// <c>Database.CreateExecutionStrategy().ExecuteAsync(...)</c> without a real provider). With 2 it
+/// simulates a commit-unknown retry (as <c>EnableRetryOnFailure</c> would do), so tests can prove the
+/// vote paths are idempotent — the from-state-guarded conditional ops must apply the net effect once.
 /// </summary>
-internal sealed class PassThroughExecutionStrategy : IExecutionStrategy
+internal sealed class ConfigurableExecutionStrategy : IExecutionStrategy
 {
+    private readonly Func<int> _attemptsProvider;
+
+    public ConfigurableExecutionStrategy(Func<int> attemptsProvider)
+    {
+        _attemptsProvider = attemptsProvider;
+    }
+
     public bool RetriesOnFailure => false;
 
     public TResult Execute<TState, TResult>(
@@ -306,16 +424,28 @@ internal sealed class PassThroughExecutionStrategy : IExecutionStrategy
         Func<DbContext, TState, TResult> operation,
         Func<DbContext, TState, ExecutionResult<TResult>>? verifySucceeded)
     {
-        return operation(null!, state);
+        var attempts = Math.Max(1, _attemptsProvider());
+        TResult result = default!;
+        for (var i = 0; i < attempts; i++)
+        {
+            result = operation(null!, state);
+        }
+        return result;
     }
 
-    public Task<TResult> ExecuteAsync<TState, TResult>(
+    public async Task<TResult> ExecuteAsync<TState, TResult>(
         TState state,
         Func<DbContext, TState, CancellationToken, Task<TResult>> operation,
         Func<DbContext, TState, CancellationToken, Task<ExecutionResult<TResult>>>? verifySucceeded,
         CancellationToken cancellationToken = default)
     {
-        return operation(null!, state, cancellationToken);
+        var attempts = Math.Max(1, _attemptsProvider());
+        TResult result = default!;
+        for (var i = 0; i < attempts; i++)
+        {
+            result = await operation(null!, state, cancellationToken);
+        }
+        return result;
     }
 }
 

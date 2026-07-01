@@ -37,6 +37,11 @@ class FakeTranslateLoader implements TranslateLoader {
       'products.qa.errors.submitQuestionFailed': 'Question submit failed',
       'products.qa.errors.submitAnswerFailed': 'Answer submit failed',
       'products.qa.helpful': 'Helpful',
+      'products.qa.markHelpful': 'Mark as helpful',
+      'products.qa.markUnhelpful': 'Mark as unhelpful',
+      'products.qa.youFoundHelpful': 'You found this helpful',
+      'products.qa.youFoundUnhelpful': 'You found this unhelpful',
+      'products.qa.loginToVote': 'Log in to vote',
       'products.qa.answer': 'Answer',
       'products.qa.answerPlaceholder': 'Type your answer here...',
       'products.qa.submitAnswer': 'Submit',
@@ -84,6 +89,7 @@ describe('ProductQaComponent', () => {
         createdAt: '2024-01-15T10:00:00Z',
         answeredAt: '2024-01-16T14:00:00Z',
         answerCount: 1,
+        hasVotedHelpful: false,
         answers: [
           {
             id: 'a1',
@@ -93,7 +99,8 @@ describe('ProductQaComponent', () => {
             isOfficial: true,
             helpfulCount: 10,
             unhelpfulCount: 0,
-            createdAt: '2024-01-16T14:00:00Z'
+            createdAt: '2024-01-16T14:00:00Z',
+            userVoteHelpful: null
           }
         ]
       },
@@ -106,16 +113,13 @@ describe('ProductQaComponent', () => {
         createdAt: '2024-01-14T09:00:00Z',
         answeredAt: null,
         answerCount: 0,
+        hasVotedHelpful: false,
         answers: []
       }
     ]
   };
 
   beforeEach(async () => {
-    // Clear localStorage before each test
-    localStorage.removeItem('climasite_voted_questions');
-    localStorage.removeItem('climasite_voted_answers');
-
     await TestBed.configureTestingModule({
       imports: [
         TestHostComponent,
@@ -349,73 +353,267 @@ describe('ProductQaComponent', () => {
     expect(component.showAnswerFormFor()).toBeNull();
   }));
 
-  it('should vote on a question', fakeAsync(() => {
-    fixture.detectChanges();
-    const req = httpMock.expectOne(req => req.url.includes('/questions/product/'));
+  const loadInitialQuestions = (fix = fixture): void => {
+    fix.detectChanges();
+    const req = httpMock.expectOne(r => r.url.includes('/questions/product/'));
     req.flush(mockQuestions);
     tick();
-    fixture.detectChanges();
+    fix.detectChanges();
+  };
 
-    const question = component.questions()[0];
-    const initialCount = question.helpfulCount;
+  it('should vote on a question and reconcile with the authoritative server state', fakeAsync(() => {
+    loadInitialQuestions();
 
-    component.voteQuestion(question);
+    expect(component.questions()[0].hasVotedHelpful).toBeFalse();
+    expect(component.questions()[0].helpfulCount).toBe(5);
+
+    component.voteQuestion(component.questions()[0]);
     fixture.detectChanges();
 
     const voteReq = httpMock.expectOne(`${environment.apiUrl}/api/questions/q1/vote`);
-    voteReq.flush({ helpfulCount: initialCount + 1 });
+    expect(voteReq.request.method).toBe('POST');
+    // Server is authoritative — return a count that differs from a naive +1.
+    voteReq.flush({ helpfulCount: 9, hasVotedHelpful: true });
     tick();
     fixture.detectChanges();
 
-    expect(question.helpfulCount).toBe(initialCount + 1);
-    expect(component.votedQuestions().has('q1')).toBeTruthy();
+    expect(component.questions()[0].helpfulCount).toBe(9);
+    expect(component.questions()[0].hasVotedHelpful).toBeTrue();
   }));
 
-  it('should not allow double voting on question', fakeAsync(() => {
-    fixture.detectChanges();
-    const req = httpMock.expectOne(req => req.url.includes('/questions/product/'));
-    req.flush(mockQuestions);
+  it('should toggle a question vote off on a second click (no localStorage block)', fakeAsync(() => {
+    loadInitialQuestions();
+
+    // First click votes helpful.
+    component.voteQuestion(component.questions()[0]);
+    let voteReq = httpMock.expectOne(`${environment.apiUrl}/api/questions/q1/vote`);
+    voteReq.flush({ helpfulCount: 6, hasVotedHelpful: true });
     tick();
     fixture.detectChanges();
 
-    // Add q1 to voted set
+    expect(component.questions()[0].hasVotedHelpful).toBeTrue();
+    expect(component.questions()[0].helpfulCount).toBe(6);
+
+    // Second click toggles the vote off — a NEW request is made (not blocked).
     component.voteQuestion(component.questions()[0]);
+    voteReq = httpMock.expectOne(`${environment.apiUrl}/api/questions/q1/vote`);
+    voteReq.flush({ helpfulCount: 5, hasVotedHelpful: false });
+    tick();
+    fixture.detectChanges();
+
+    expect(component.questions()[0].hasVotedHelpful).toBeFalse();
+    expect(component.questions()[0].helpfulCount).toBe(5);
+  }));
+
+  it('should ignore an overlapping question vote while one is in flight (single POST, aria-busy)', fakeAsync(() => {
+    loadInitialQuestions();
+
+    // First click — request is now in flight (not yet flushed).
+    component.voteQuestion(component.questions()[0]);
+    fixture.detectChanges();
+
+    const questionBtn: HTMLButtonElement =
+      fixture.nativeElement.querySelector('[data-testid="question-vote-btn"]');
+    expect(questionBtn.disabled).toBeTrue();
+    expect(questionBtn.getAttribute('aria-busy')).toBe('true');
+
+    // Rapid second click while pending — must be ignored (no second POST).
+    component.voteQuestion(component.questions()[0]);
+    tick();
+
+    // expectOne asserts EXACTLY ONE outstanding request was ever made for this id.
     const voteReq = httpMock.expectOne(`${environment.apiUrl}/api/questions/q1/vote`);
-    voteReq.flush({ helpfulCount: 6 });
+    voteReq.flush({ helpfulCount: 6, hasVotedHelpful: true });
     tick();
+    fixture.detectChanges();
 
-    // Try to vote again - should be blocked
-    const initialHelpfulCount = component.questions()[0].helpfulCount;
-    component.voteQuestion(component.questions()[0]);
-    tick();
-
-    // Should not make another HTTP request
-    httpMock.expectNone(`${environment.apiUrl}/api/questions/q1/vote`);
-
-    // Helpful count should remain the same
-    expect(component.questions()[0].helpfulCount).toBe(initialHelpfulCount);
+    // Reconciled to the single authoritative response (6, not a double-applied 7),
+    // and the button is no longer busy/disabled.
+    expect(component.questions()[0].helpfulCount).toBe(6);
+    expect(component.questions()[0].hasVotedHelpful).toBeTrue();
+    expect(questionBtn.disabled).toBeFalse();
+    expect(questionBtn.getAttribute('aria-busy')).toBe('false');
   }));
 
-  it('should vote on an answer', fakeAsync(() => {
+  it('should not let a stale in-flight answer response clobber the newer authoritative state', fakeAsync(() => {
+    loadInitialQuestions();
+
+    const answer = component.questions()[0].answers[0];
+
+    // First click (helpful) — in flight.
+    component.voteAnswer(answer, true);
     fixture.detectChanges();
-    const req = httpMock.expectOne(req => req.url.includes('/questions/product/'));
-    req.flush(mockQuestions);
+
+    // While pending, BOTH answer vote controls are disabled/busy — this guards the
+    // helpful↔unhelpful flip race (a slower first response arriving after a flip).
+    const helpfulBtn: HTMLButtonElement =
+      fixture.nativeElement.querySelector('[data-testid="answer-helpful-btn"]');
+    const unhelpfulBtn: HTMLButtonElement =
+      fixture.nativeElement.querySelector('[data-testid="answer-unhelpful-btn"]');
+    expect(helpfulBtn.disabled).toBeTrue();
+    expect(unhelpfulBtn.disabled).toBeTrue();
+    expect(helpfulBtn.getAttribute('aria-busy')).toBe('true');
+
+    // Rapid flip attempt while the first is still pending — ignored (no second POST).
+    component.voteAnswer(component.questions()[0].answers[0], false);
+    tick();
+
+    const voteReq = httpMock.expectOne(`${environment.apiUrl}/api/questions/answers/a1/vote`);
+    expect(voteReq.request.body.isHelpful).toBeTrue();
+    voteReq.flush({ helpfulCount: 11, unhelpfulCount: 0, userVoteHelpful: true });
+    tick();
+    fixture.detectChanges();
+
+    // Final state is the single authoritative "helpful" response, not a stale flip.
+    const settled = component.questions()[0].answers[0];
+    expect(settled.helpfulCount).toBe(11);
+    expect(settled.unhelpfulCount).toBe(0);
+    expect(settled.userVoteHelpful).toBeTrue();
+    expect(helpfulBtn.disabled).toBeFalse();
+    expect(helpfulBtn.getAttribute('aria-busy')).toBe('false');
+  }));
+
+  it('should reflect the user\'s own vote as an active/pressed button in the DOM', fakeAsync(() => {
+    fixture.detectChanges();
+    const req = httpMock.expectOne(r => r.url.includes('/questions/product/'));
+    // A payload where the current user has already voted the question + answer helpful.
+    req.flush({
+      ...mockQuestions,
+      questions: [
+        {
+          ...mockQuestions.questions[0],
+          hasVotedHelpful: true,
+          answers: [{ ...mockQuestions.questions[0].answers[0], userVoteHelpful: true }]
+        },
+        mockQuestions.questions[1]
+      ]
+    });
+    tick();
+    fixture.detectChanges();
+
+    const questionBtn: HTMLButtonElement =
+      fixture.nativeElement.querySelector('[data-testid="question-vote-btn"]');
+    expect(questionBtn.classList.contains('active')).toBeTrue();
+    expect(questionBtn.getAttribute('aria-pressed')).toBe('true');
+
+    const helpfulBtn: HTMLButtonElement =
+      fixture.nativeElement.querySelector('[data-testid="answer-helpful-btn"]');
+    expect(helpfulBtn.classList.contains('active')).toBeTrue();
+    expect(helpfulBtn.getAttribute('aria-pressed')).toBe('true');
+
+    const unhelpfulBtn: HTMLButtonElement =
+      fixture.nativeElement.querySelector('[data-testid="answer-unhelpful-btn"]');
+    expect(unhelpfulBtn.classList.contains('active')).toBeFalse();
+    expect(unhelpfulBtn.getAttribute('aria-pressed')).toBe('false');
+  }));
+
+  it('should vote an answer helpful and reconcile counts + userVoteHelpful from the server', fakeAsync(() => {
+    loadInitialQuestions();
+
+    component.voteAnswer(component.questions()[0].answers[0], true);
+    fixture.detectChanges();
+
+    const voteReq = httpMock.expectOne(`${environment.apiUrl}/api/questions/answers/a1/vote`);
+    expect(voteReq.request.body.isHelpful).toBeTrue();
+    voteReq.flush({ helpfulCount: 11, unhelpfulCount: 0, userVoteHelpful: true });
     tick();
     fixture.detectChanges();
 
     const answer = component.questions()[0].answers[0];
+    expect(answer.helpfulCount).toBe(11);
+    expect(answer.userVoteHelpful).toBeTrue();
+  }));
 
-    component.voteAnswer(answer, true);
+  it('should flip an answer vote from helpful to unhelpful', fakeAsync(() => {
     fixture.detectChanges();
-
-    const voteReq = httpMock.expectOne(`${environment.apiUrl}/api/questions/answers/a1/vote`);
-    expect(voteReq.request.body.isHelpful).toBeTruthy();
-    voteReq.flush({ helpfulCount: 11, unhelpfulCount: 0 });
+    const req = httpMock.expectOne(r => r.url.includes('/questions/product/'));
+    req.flush({
+      ...mockQuestions,
+      questions: [
+        {
+          ...mockQuestions.questions[0],
+          answers: [{ ...mockQuestions.questions[0].answers[0], helpfulCount: 10, unhelpfulCount: 0, userVoteHelpful: true }]
+        },
+        mockQuestions.questions[1]
+      ]
+    });
     tick();
     fixture.detectChanges();
 
-    expect(answer.helpfulCount).toBe(11);
-    expect(component.votedAnswers().has('a1')).toBeTruthy();
+    // Click "unhelpful" while currently voted "helpful" → flip.
+    component.voteAnswer(component.questions()[0].answers[0], false);
+    const voteReq = httpMock.expectOne(`${environment.apiUrl}/api/questions/answers/a1/vote`);
+    expect(voteReq.request.body.isHelpful).toBeFalse();
+    voteReq.flush({ helpfulCount: 9, unhelpfulCount: 1, userVoteHelpful: false });
+    tick();
+    fixture.detectChanges();
+
+    const answer = component.questions()[0].answers[0];
+    expect(answer.helpfulCount).toBe(9);
+    expect(answer.unhelpfulCount).toBe(1);
+    expect(answer.userVoteHelpful).toBeFalse();
+  }));
+
+  it('should not vote and should disable vote buttons when anonymous', fakeAsync(() => {
+    (component as unknown as { authService: MockAuthService }).authService.isAuthenticated.set(false);
+    loadInitialQuestions();
+
+    const questionBtn: HTMLButtonElement =
+      fixture.nativeElement.querySelector('[data-testid="question-vote-btn"]');
+    const helpfulBtn: HTMLButtonElement =
+      fixture.nativeElement.querySelector('[data-testid="answer-helpful-btn"]');
+    const unhelpfulBtn: HTMLButtonElement =
+      fixture.nativeElement.querySelector('[data-testid="answer-unhelpful-btn"]');
+
+    expect(questionBtn.disabled).toBeTrue();
+    expect(helpfulBtn.disabled).toBeTrue();
+    expect(unhelpfulBtn.disabled).toBeTrue();
+
+    // Calling the handlers directly is also guarded — no HTTP request is issued.
+    component.voteQuestion(component.questions()[0]);
+    component.voteAnswer(component.questions()[0].answers[0], true);
+    tick();
+
+    httpMock.expectNone(`${environment.apiUrl}/api/questions/q1/vote`);
+    httpMock.expectNone(`${environment.apiUrl}/api/questions/answers/a1/vote`);
+  }));
+
+  it('should surface a session-expired error and roll back on a 401 vote', fakeAsync(() => {
+    loadInitialQuestions();
+
+    component.voteQuestion(component.questions()[0]);
+    const voteReq = httpMock.expectOne(`${environment.apiUrl}/api/questions/q1/vote`);
+    voteReq.flush({}, { status: 401, statusText: 'Unauthorized' });
+    tick();
+    fixture.detectChanges();
+
+    expect(component.voteError()).toBe('products.qa.errors.sessionExpired');
+    // Optimistic update rolled back to the pre-vote state.
+    expect(component.questions()[0].hasVotedHelpful).toBeFalse();
+    expect(component.questions()[0].helpfulCount).toBe(5);
+
+    const banner: HTMLElement = fixture.nativeElement.querySelector('[data-testid="qa-vote-error"]');
+    expect(banner).toBeTruthy();
+  }));
+
+  it('should not read or write the retired localStorage vote-tracking keys', fakeAsync(() => {
+    const setItemSpy = spyOn(Storage.prototype, 'setItem').and.callThrough();
+    loadInitialQuestions();
+
+    component.voteQuestion(component.questions()[0]);
+    let voteReq = httpMock.expectOne(`${environment.apiUrl}/api/questions/q1/vote`);
+    voteReq.flush({ helpfulCount: 6, hasVotedHelpful: true });
+    tick();
+
+    component.voteAnswer(component.questions()[0].answers[0], true);
+    voteReq = httpMock.expectOne(`${environment.apiUrl}/api/questions/answers/a1/vote`);
+    voteReq.flush({ helpfulCount: 11, unhelpfulCount: 0, userVoteHelpful: true });
+    tick();
+
+    expect(setItemSpy).not.toHaveBeenCalledWith('climasite_voted_questions', jasmine.anything());
+    expect(setItemSpy).not.toHaveBeenCalledWith('climasite_voted_answers', jasmine.anything());
+    expect(localStorage.getItem('climasite_voted_questions')).toBeNull();
+    expect(localStorage.getItem('climasite_voted_answers')).toBeNull();
   }));
 
   it('should display empty state when no questions', fakeAsync(() => {
@@ -505,6 +703,7 @@ describe('ProductQaComponent', () => {
       createdAt: '2024-01-01',
       answeredAt: null,
       answerCount: 0,
+      hasVotedHelpful: false,
       answers: []
     };
 

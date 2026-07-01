@@ -1,9 +1,11 @@
 using ClimaSite.Api.Common;
+using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Features.Questions.Commands;
 using ClimaSite.Application.Features.Questions.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace ClimaSite.Api.Controllers;
 
@@ -12,10 +14,12 @@ namespace ClimaSite.Api.Controllers;
 public class QuestionsController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly ICurrentUserService _currentUserService;
 
-    public QuestionsController(IMediator mediator)
+    public QuestionsController(IMediator mediator, ICurrentUserService currentUserService)
     {
         _mediator = mediator;
+        _currentUserService = currentUserService;
     }
 
     /// <summary>
@@ -57,6 +61,9 @@ public class QuestionsController : ControllerBase
         var command = new AskQuestionCommand
         {
             ProductId = request.ProductId,
+            // Capture the authenticated author so per-voter self-vote prevention is meaningful; still
+            // anonymous-capable (null for anonymous askers). (B-039)
+            UserId = _currentUserService.UserId,
             QuestionText = request.QuestionText,
             AskerName = request.AskerName,
             AskerEmail = request.AskerEmail
@@ -80,6 +87,9 @@ public class QuestionsController : ControllerBase
         var command = new AnswerQuestionCommand
         {
             QuestionId = questionId,
+            // Capture the authenticated author (null for anonymous answerers) so self-vote prevention
+            // on the answer is meaningful. (B-039)
+            UserId = _currentUserService.UserId,
             AnswerText = request.AnswerText,
             AnswererName = request.AnswererName,
             IsOfficial = false
@@ -101,6 +111,7 @@ public class QuestionsController : ControllerBase
         var command = new AnswerQuestionCommand
         {
             QuestionId = questionId,
+            UserId = _currentUserService.UserId,
             AnswerText = request.AnswerText,
             AnswererName = "ClimaSite Support",
             IsOfficial = true
@@ -111,20 +122,47 @@ public class QuestionsController : ControllerBase
     }
 
     /// <summary>
-    /// Vote a question as helpful
+    /// Toggle the current user's "helpful" vote on a question. Authenticated-only; voting again
+    /// removes the vote. Returns the authoritative count and the caller's own vote state.
     /// </summary>
+    [Authorize]
+    [EnableRateLimiting("strict")]
     [HttpPost("{questionId:guid}/vote")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> VoteQuestion(Guid questionId)
     {
         var command = new VoteQuestionCommand { QuestionId = questionId };
-        var helpfulCount = await _mediator.Send(command);
-        return Ok(new { helpfulCount });
+        var result = await _mediator.Send(command);
+
+        if (!result.IsSuccess)
+        {
+            if (result.Error?.Contains("not found") == true)
+                return NotFound(new { message = result.Error });
+            return BadRequest(new { message = result.Error });
+        }
+
+        return Ok(new
+        {
+            helpfulCount = result.Value!.HelpfulCount,
+            hasVotedHelpful = result.Value.HasVotedHelpful
+        });
     }
 
     /// <summary>
-    /// Vote an answer as helpful or unhelpful
+    /// Toggle/flip the current user's helpful-or-unhelpful vote on an answer. Authenticated-only;
+    /// voting the same way again removes the vote, the opposite way flips it. Returns the
+    /// authoritative counts and the caller's own vote state.
     /// </summary>
+    [Authorize]
+    [EnableRateLimiting("strict")]
     [HttpPost("answers/{answerId:guid}/vote")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> VoteAnswer(
         Guid answerId,
         [FromBody] VoteAnswerRequest request)
@@ -136,7 +174,20 @@ public class QuestionsController : ControllerBase
         };
 
         var result = await _mediator.Send(command);
-        return Ok(result);
+
+        if (!result.IsSuccess)
+        {
+            if (result.Error?.Contains("not found") == true)
+                return NotFound(new { message = result.Error });
+            return BadRequest(new { message = result.Error });
+        }
+
+        return Ok(new
+        {
+            helpfulCount = result.Value!.HelpfulCount,
+            unhelpfulCount = result.Value.UnhelpfulCount,
+            userVoteHelpful = result.Value.UserVoteHelpful
+        });
     }
 }
 
