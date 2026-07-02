@@ -285,9 +285,9 @@ After EVERY change, you MUST:
    ```
    The full E2E suite (`dotnet test tests/ClimaSite.E2E`) needs a running API on **:5029** plus `ng serve` on **:4200**; CI runs it for you. See `docs/project-plan/DEV_WORKFLOW.md` for the exact local E2E commands and env vars.
 
-3. **Open a PR to `main`.** CI runs six required checks — **Unit Tests, Integration Tests, Frontend Unit Tests, Build Verification, E2E Tests, Test Summary**. **CI (not a local test run) is the evidence of record.**
+3. **Open a PR to `main`.** CI runs many jobs; **six are branch-protection-required** — **Unit Tests, Integration Tests, Frontend Unit Tests, Build Verification, E2E Tests, Test Summary**. **Test Summary is the aggregating gate** — it also fails unless **Lint & Format, Dependency Audit, ADR Gate, Test-Design Coverage Lint, Coverage Gate (enforces 80%/70%) and PR Checklist** pass (Lighthouse runs but is intentionally non-blocking). **CI (not a local test run) is the evidence of record.**
 
-4. **Merge only when all six checks are green.** Use conventional-commit messages. When a feature lands or a convention changes, update the canonical docs per the doc-update table in `docs/project-plan/DEV_WORKFLOW.md` — typically `CHANGELOG.md`, `docs/project-plan/PRIORITIZED_BACKLOG.md`, `.planning/STATE.md`, and the relevant `docs/project-plan/` doc (status is NOT tracked in this file — see "Project status & history" above).
+4. **Merge only when Test Summary (and thus all of them) is green.** Use conventional-commit messages. When a feature lands or a convention changes, update the canonical docs per the doc-update table in `docs/project-plan/DEV_WORKFLOW.md` — typically `CHANGELOG.md`, `docs/project-plan/PRIORITIZED_BACKLOG.md`, `.planning/STATE.md`, and the relevant `docs/project-plan/` doc (status is NOT tracked in this file — see "Project status & history" above).
 
 **This workflow is NON-NEGOTIABLE. Never push to `main`; never merge on red CI.**
 
@@ -683,11 +683,8 @@ Plans 01-11 have been completed and archived. They covered:
 
 ### Active Plans
 
-| Plan | Task IDs | Description | Status |
-|------|----------|-------------|--------|
-| 12-notifications-system.md | NOT-001 to NOT-020 | Email, in-app notifications | Partial |
-| archive/13-wishlist.md | WISH-001 to WISH-019, WISH-100 to WISH-108 | Wishlist, sharing | Complete |
-| 17-future-enhancements.md | Various | Related products, translations | Complete |
+Active-vs-archived plan index: `docs/plans/README.md`. Current work is tracked in
+`.planning/STATE.md` + `docs/project-plan/PRIORITIZED_BACKLOG.md`, not in a table here.
 
 ---
 

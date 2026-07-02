@@ -4,7 +4,7 @@ gate: acceptance
 result: PASS
 date: 2026-07-02
 branch: feature/inv-01-b-bank-transfer-hold
-commit: <squash-merge tip of PR feature/inv-01-b-bank-transfer-hold>
+commit: 9dbe3ff
 env: Development, real API on :5029 (+ background reservation sweeper) against shared-infra Postgres :5432 + Redis :6379
 ---
 

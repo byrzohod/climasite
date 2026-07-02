@@ -1,9 +1,10 @@
 ---
 unit: INV-01-checkout-reservations
 type: NORMAL
-status: approved
+status: done
 created: 2026-07-01
 approved: 2026-07-01
+completed: 2026-07-02
 plan_status: approved
 design: ./design-brief.md
 council: >
@@ -146,7 +147,7 @@ invariant; safe because the lock serializes it vs P1/P2/P3). Emit a drift metric
   APPROVE-WITH-CHANGES (all applied). Tests: token 18, middleware 5, limiter 4, FE 38 (Core 430/App 986/Api 488).
   `/acceptance` PASS at `.planning/acceptance/INV-01-a0-guest-token.md`.
 
-## Wave A — card checkout reservations (PR 2; the core)
+## Wave A — card checkout reservations (PR 2; the core) ✅ DONE — #100/#101 `06bcae7`/`51fd8bf`
 - **Guest-identity switch (from A0's dark ship — do this FIRST in Wave A):** flip cart + checkout
   (`CartController`, `PaymentsController` create-intent, `OrdersController` create-order) to key the guest off the
   server-trusted `IGuestSessionAccessor` id; FE payment/checkout services send `withCredentials`; add
@@ -186,7 +187,7 @@ invariant; safe because the lock serializes it vs P1/P2/P3). Emit a drift metric
 - **MockDbContext + IApplicationDbContext:** in-memory mirrors of P1/P2/P3/reserved-aware-decrement/R (necessary,
   NOT sufficient — see test gates).
 
-## Wave B — bank-transfer hold-with-expiry (PR 3)
+## Wave B — bank-transfer hold-with-expiry (PR 3) ✅ DONE — #102 `9dbe3ff`
 - Bank order-create **reserves only** (a `Kind=BankTransfer` hold via P1, respecting `available = stock − reserved`
   so it can't steal a card hold; loop **sorted by variant_id**), linked to the order, `ExpiresAt=now()+N days`
   (config) — **no physical `stock_quantity` decrement at order-create.** Payment-confirmed (admin mark-paid) → the
@@ -197,14 +198,14 @@ invariant; safe because the lock serializes it vs P1/P2/P3). Emit a drift metric
   order → **atomic `ExecuteUpdate(stock += qty)`** restock (not tracked `AdjustStock`); Active bank hold → P3 release.
 
 ## Acceptance criteria (per wave; all break-probe-verified)
-- [ ] **A:** N concurrent create-intents for the last unit → exactly ONE reserve succeeds; the others fail **before
+- [x] **A:** N concurrent create-intents for the last unit → exactly ONE reserve succeeds; the others fail **before
       any Stripe charge**; `reserved_quantity` never exceeds stock and equals `Σ Active` after settle; two
       independent carts race → one winner. A card hold is NOT drainable by a concurrent bank order or admin edit
       (reserved-aware). Abandon → hold swept → unit returns to availability. Order-create is idempotent under retry
       (exactly one order, zero spurious refund). PDP/cart show `available = stock − reserved`. Light+dark, EN/BG/DE.
-- [ ] **A0:** guest checkout works via the signed cookie; a forged/tampered cookie is rejected; a legacy id cannot
+- [x] **A0:** guest checkout works via the signed cookie; a forged/tampered cookie is rejected; a legacy id cannot
       create a hold; per-IP mint + per-variant/per-user hold caps enforced (429 / rejected past budget).
-- [ ] **B:** an unpaid bank order's hold auto-expires and the order auto-cancels (stock never leaked); mark-paid
+- [x] **B:** an unpaid bank order's hold auto-expires and the order auto-cancels (stock never leaked); mark-paid
       consumes the hold (stock−1); cancel of a Consumed card order restocks atomically.
 
 ## Test / verification plan

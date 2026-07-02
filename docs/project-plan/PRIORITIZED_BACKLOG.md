@@ -1,6 +1,6 @@
 # ClimaSite — Prioritized Backlog
 
-**Date:** 2026-06-11
+**Created:** 2026-06-11 · **Last updated:** 2026-07-02 (INV-01 checkout stock-reservations marked DONE; 2 follow-ups filed)
 **Sources:** All ten verified review files in `docs/project-plan/_review/` plus the wave-1 documents (`SECURITY_REVIEW.md`, `TESTING_STRATEGY.md`, `UI_UX_REVIEW.md`, `BUGS_AND_TECH_DEBT.md`, `ARCHITECTURE_REVIEW.md`, `DECISIONS.md`, `DEV_WORKFLOW.md`).
 
 **How to use this document:** This is THE actionable, deduplicated task list for ClimaSite — one task may close findings from several review dimensions, and every task lists the findings it closes so nothing is double-worked. Categories are ordered by the urgency of their highest-priority items, and tasks within each category are ordered P0→P3, but the **"Next 10 tasks"** section at the end is the strict execution order — start there. Each task carries ID, priority (P0 critical blocker / P1 important / P2 useful / P3 polish), complexity (Small/Medium/Large), affected files, acceptance criteria, and dependencies; full evidence and `file:line` proof live in the cited `_review/*.md` finding and wave-1 docs — do not re-derive analysis, just execute. `BUG-nn` and `TS-nn` IDs deliberately match `BUGS_AND_TECH_DEBT.md` and `TESTING_STRATEGY.md`; `SR-nn` refers to findings in `SECURITY_REVIEW.md`; `D-nnn`/`O-n` refer to `DECISIONS.md`. Anything marked **Needs confirmation** requires owner input before (or while) starting.
@@ -19,7 +19,7 @@ Per the owner's standing convention, these are **owner decisions**, recorded as 
 
 | Ref | Decision | Gates |
 |---|---|---|
-| DEC-CURRENCY | **Store currency: EUR or BGN?** Code currently mixes EUR (orders/display), BGN (Stripe charge), USD (cart/checkout pipes). Single most blocking decision in the repo (`_review/bugs.md` open question 1). | BUG-01, BUG-02, BUG-11, BUG-13 |
+| ~~DEC-CURRENCY~~ | ✅ RESOLVED: **store currency = EUR** (charge in EUR; transitional dual EUR/BGN display at the 1.95583 peg via UX-16). Implemented across BUG-01/BUG-02 (server-side EUR charge), BUG-11 (`DEFAULT_CURRENCY_CODE='EUR'`), UX-16 (dual display); INV-01 reserves/charges against EUR orders. | BUG-01/02/11/13 (done) |
 | DEC-GUEST | Guest checkout in scope for v1? Backend half-supports it; route guard blocks it; docs claim it works. | GAP-07, TS-13 |
 | DEC-SHIPPING | ✅ RESOLVED 2026-06-27: **free standard shipping over a €50 subtotal**, €5.99 below (express €15.99 / overnight €19.99 unchanged). Implemented server-side (`CheckoutPricing.GetShippingCost(method, subtotal)`, threshold €50) + UI mirror; displayed==charged verified (cross-vendor council). | BUG-11 (done) |
 | O-1 | Background-job mechanism (BackgroundService + DB outbox vs Hangfire vs RabbitMQ from shared-infra) | ARCH-05, GAP-09, GAP-03 (reliability) |
@@ -172,14 +172,16 @@ IDs match `docs/project-plan/BUGS_AND_TECH_DEBT.md` exactly; full evidence there
 - **Acceptance:** E2E (TS-03): guest adds 2 items, logs in, both items present, quantities combine when overlapping, guest cart row removed server-side.
 - **Depends on:** None.
 
-### BUG-04 — Order-before-charge (or compensation) + double-submit guard (P1, Medium)
+### BUG-04 — Order-before-charge (or compensation) + double-submit guard (P1, Medium) — 🚧 PARTIAL (INV-01 A2)
+- **Status:** 🚧 PARTIAL — INV-01 A2 (#100, 2026-07-02) reserves stock at checkout-start (create-intent) and blocks the losing last-unit buyer BEFORE the Stripe charge (the "reserve/order before charge" half). Verify against the A2 diff whether the double-submit guard (processing flag at the top of `placeOrder()`) and compensation-on-order-failure (`CancelPaymentIntentAsync` on `createOrder` failure) are also covered; if not, keep this item open scoped to just those two.
 - **Description:** `placeOrder()` confirms the Stripe payment before creating the order; order-creation failure (stock-out, validation) leaves a captured charge with no order and no refund; the processing flag is set too late, allowing double-charges from double-clicks. Create the order (Pending) first and derive the intent from it, or auto-cancel/refund on `createOrder` failure (`CancelPaymentIntentAsync` exists server-side, never called); set the processing flag at the top of `placeOrder()`.
 - **Closes:** `_review/bugs.md` #4; `_review/product.md` #11; SR-07.
 - **Affected:** `src/ClimaSite.Web/src/app/features/checkout/checkout.component.ts`, `checkout.service.ts`, `CreateOrderCommand.cs`, `PaymentsController.cs`.
 - **Acceptance:** Rapid double-click yields exactly one intent and one order; forced order failure after charge leaves no uncompensated captured intent (integration test).
 - **Depends on:** BUG-01, BUG-02.
 
-### BUG-05 — Stock decrement concurrency control (oversell) (P1, Medium)
+### BUG-05 — Stock decrement concurrency control (oversell) (P1, Medium) — ✅ DONE 2026-07-02 (INV-01)
+- **Status:** ✅ DONE (2026-07-02, INV-01 waves A0–B, #98–#102). Real stock reservations now exist: checkout-start atomically reserves stock (per-variant `SELECT … FOR UPDATE` lock + a clock-independent `reserved_quantity` counter = Σ Active holds) BEFORE payment, so exactly one concurrent checkout wins the last unit and the loser is blocked before the Stripe charge (#100); a background sweeper is the sole releaser of expired holds; bank-transfer orders place a hold-with-expiry (#102); reservation-aware availability is surfaced on the PDP + cart (#101). Reserved-aware stock accounting is honored by every stock writer. Closes the CLAUDE.md "reservations" doc-drift. Concurrency proven by mandatory Testcontainers break-probes + the committed INV-01 `/acceptance` reports (`.planning/acceptance/INV-01-*.md`). Follow-up filed: **FOUND-INV01-paid-cancel** (below) — paid-order admin-status cancel does not yet restock/release.
 - **Description:** Order creation validates and decrements stock with read-then-write under ReadCommitted — concurrent checkouts oversell the last unit; the documented "stock reservations" do not exist anywhere. Add a Postgres `xmin` concurrency token on `product_variants` with retry, or decrement atomically (`ExecuteUpdateAsync` with `stock >= qty` guard). Same pattern exists in the admin path (`AdjustStockCommand.cs:47-62`) — fix both.
 - **Closes:** `_review/bugs.md` #5; CLAUDE.md "reservations" doc-drift (with DOC-02).
 - **Affected:** `src/ClimaSite.Application/Features/Orders/Commands/CreateOrderCommand.cs:128-146`, `src/ClimaSite.Core/Entities/ProductVariant.cs`, `src/ClimaSite.Api/Controllers/InventoryController.cs`.
@@ -797,6 +799,7 @@ Detail: `_review/docs.md` (incl. the full per-file Disposition Table) and `_revi
 These are the **genuinely-new, CONFIRMED-real** findings from the 2026-06-28 external review that **no existing `SEC/BUG/GAP/OPS/UX/PERF/ARCH/TS/DOC` task already tracks** — full triage + council notes in [`EXTERNAL_REVIEW_TRIAGE.md`](EXTERNAL_REVIEW_TRIAGE.md). IDs keep their review `B-nnn` and carry a suggested home. **All B-IDs that map onto an existing task are NOT re-listed here** — the register cross-references them (e.g. B-005→UX-01, B-036→PERF-02, B-041→UX-03, B-018→UX-05, B-060→UX-06, B-008→ARCH-04/SR-18, B-003→SEC-12, B-058→OPS-06, B-059→TS-16, B-051→ARCH-03). Nothing is deployed yet (OPS-08), so deploy-conditional items are latent.
 
 ### NEW-BUG (functional defects)
+- **FOUND-INV01-paid-cancel (Medium, S) — OPEN (filed 2026-07-02, INV-01 follow-up):** Cancelling a **paid** order via the admin status endpoint (`UpdateOrderStatusCommand` → `Cancelled`) does NOT restock/release the decremented card stock — pre-existing, affects all order types (the bank-transfer branch releases its Active hold, but a Paid card order's consumed stock is never returned). **Fix:** route the admin status-cancel transition through the same restock/release path as `CancelOrderCommand`; integration-test that cancelling a paid order restores available stock. Relates to BUG-05 / INV-01 (KG risk R-010).
 - **FOUND-B002-orphans (Low, S — latent/dead-code) ✅ DONE 2026-06-30:** Confirmed dead (zero `<app-*>` usages, zero imports, no routes/barrels) → **deleted** `frequently-bought` + `product-variants` components + specs, removing the inverted-convention landmine outright. (frontend-cleanups.)
 - **FOUND-B002-noimage (Low, XS — cosmetic) ✅ DONE 2026-06-30:** Repointed the 3 `assets/images/no-image.svg` references to the existing canonical `assets/images/fallbacks/no-product-image.svg` (served 200, verified live). (frontend-cleanups.)
 - **B-007 (Medium, XS) ✅ DONE 2026-06-29:** Order email CTAs built `/account/orders/$<guid>` (literal `$`) → 404. Fixed via a single `EmailService.BuildOrderUrl` helper (no `$`) used by both order emails; unit-tested. (QW-backend-batch.)
@@ -828,20 +831,27 @@ These are the **genuinely-new, CONFIRMED-real** findings from the 2026-06-28 ext
 - **B-047 (Low, XS):** `src/assets/config.json` (`{ "apiUrl":"/api" }`) advertises runtime API config but is referenced nowhere (services read `environment.apiUrl`) — an operator edit-trap. **Fix:** delete it (+ the dist copy), or wire a real runtime-config app-initializer; document the single config path.
 - **B-056 (Low, S):** `specs-table.component.ts:8` and `share-product.component.ts:64` accept/render icon strings via `[innerHTML]` — inputs are static today (Angular auto-sanitizes; no live XSS), but it's a data-driven-HTML API smell. **Fix:** accept a typed icon-name (or `ng-template` outlet) + a lint rule forbidding new data-driven `[innerHTML]`.
 - **B-026 (Low, S):** No single-command local E2E orchestrator (start API+web → healthcheck → run → teardown) and the card-E2E self-skip (`CardPaymentE2ETests.cs:83,117`) isn't surfaced in the CI Test Summary. **Fix:** add `scripts/e2e-local.sh`; emit a CI step-summary line when card E2E self-skips. *(The PAY-IDEM acceptance report is the in-flight unit's own pre-merge gate, not tracked here.)*
+- **FOUND-INV01-e2e-flake (Low, S) — OPEN (filed 2026-07-02, INV-01 follow-up):** Two E2E tests are flaky and forced CI re-runs during INV-01: `CardPaymentE2ETests.FillStripeCardAsync` (Stripe iframe intermittently exceeds the 30s timeout) and `AdminPanelTests.AdminDashboard_NonAdminUser_IsRedirectedOrDenied` (redirect-timing race). **Fix:** await the Stripe FrameLocator's readiness explicitly before filling, and assert the non-admin redirect on a stable post-redirect signal rather than a timing wait; if the third-party iframe is irreducibly slow, wrap only that one test in a bounded `[RetryFact]` (already used elsewhere) rather than loosening assertions. Relates to TS-11 E2E reliability.
 
 ---
 
-## Next 10 tasks — the strict execution order
+## Next up — current execution queue (owner-picks)
 
-1. **OPS-01 — Commit, push, and PR the wishlist slice.** Four days of finished multi-layer work is one `git checkout .` from non-recoverable loss, and every status doc already claims it as done; the PR's CI run also closes the missing test evidence (TS-01). Take SEC-10/BUG-09/BUG-10/UX-02 as riders if cheap.
-2. **SEC-01 — Gate DataSeeder admin credentials and demo data** (with OPS-08's "is anything live?" check). The repo is public, so `admin@climasite.local` / `Admin123!` is a published backdoor the moment any deploy happens; not tracked by Plan 18 at all.
-3. **OPS-02 — Protect `main` and fix CLAUDE.md's direct-push step.** Five-minute change that turns the entire CI investment from advisory into a gate before the wave of fixes below starts landing.
-4. **DOC-01 — Fix the test commands/ports/paths docs.** Every subsequent task (human or agent) needs runnable commands; today the mandatory workflow fails as written and bare `dotnet test` produces 200+ false failures.
-5. **BUG-02 — Server-side payment amount/currency (ask DEC-CURRENCY first).** Every honest card order currently underpays ~49% and omits shipping, and €0.01 manipulation is trivially exploitable — nothing about the shop is sellable until the charge is right.
-6. **BUG-01 — Persist `paymentIntentId` and make webhooks reconcile orders** (BUG-18 rider). Without it 100% of card orders are charged-but-stuck-Pending with no recovery path; pairs with BUG-02 in the same PR plus TS-03 regression tests.
-7. **BUG-03 — Fix the guest-cart merge 400.** Deterministic, silent cart loss for every first-time customer who logs in — the single worst conversion bug in the product, and a Small fix.
-8. **SEC-03 — `UseForwardedHeaders` before the rate limiter.** In the deployed topology the whole store shares one 100 req/min bucket — a guaranteed self-inflicted outage at the first modest traffic, invisible in local testing.
-9. **BUG-07 — Send the password-reset email and stop logging the token.** Users are silently locked out forever while live reset tokens sit in the logs; Small fix that also closes security finding SR-05.
-10. **GAP-01 — Admin orders page (status + tracking).** After the money path works, the shop still cannot be operated: no UI exists to fulfill an order. This is the minimum-operability slice and unblocks shipped-email notifications (GAP-03).
+> **The original (2026-06-11) "Next 10 tasks" execution order is COMPLETE.** OPS-01, SEC-01, OPS-02, DOC-01,
+> BUG-02, BUG-01, BUG-03, SEC-03, BUG-07, GAP-01 all shipped (see their Status lines above), as did the
+> follow-on batch (SEC-02, TS-04, GAP-03/04/05, ARCH-01, UX-01) and the OPS-03/04/05 first-deploy-safety work.
+> The money path, guest-cart merge, admin fulfillment, transactional emails, legal pages, observability floor,
+> and infra-gating are done; **INV-01 checkout stock-reservations (BUG-05) shipped 2026-07-02 (#98–#102)**.
 
-**Immediately after the ten:** SEC-02 (order-by-number IDOR), TS-04 (Stripe card-path coverage), GAP-03 (transactional emails), GAP-04/GAP-05 (EU legal pages + real contact endpoint), ARCH-01 (dead auth tree), UX-01 (checkout form errors), then OPS-03/04/05 to make the first deploy safe.
+**Current queue — all remaining items are deferred / non-blocking; the owner picks the next one:**
+1. **Deploy-hardening** — OPS-04 (move EF migrations to a pre-deploy step vs auto-migrate-on-startup), OPS-07
+   (non-root containers), F3 (`Dockerfile.api` honor Railway `$PORT`), and the owner-gated Railway deploy
+   (OPS-08 / OPS-03's `deploy.yml`) — needs the Railway project + `RAILWAY_TOKEN` + secrets.
+2. **SEC-12** — Angular 19 → current major upgrade to clear the high-severity npm advisories, incl. the
+   Microsoft.OpenApi/Swashbuckle bump the B-039 CI allowlist defers.
+3. **Plan-19 B3** — remaining frontend test-quality / spec coverage.
+4. **FOUND-INV01-paid-cancel** — paid-order admin-status cancel should restock/release (above).
+5. **FOUND-INV01-e2e-flake** — harden the two flaky INV-01 E2E tests (above).
+
+Lower-priority polish remains scattered through the category sections above (B-049, B-029, B-053, B-047, B-056,
+SEC-13 gitleaks-enforce, Lighthouse warn→enforce, OPS-11 merge queue [paid-plan-blocked]).

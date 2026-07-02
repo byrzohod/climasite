@@ -82,16 +82,19 @@ user cart on login.
 ## Known gaps / divergences (feed Risks/Questions)
 
 Open risks live in `Knowledge/climasite/Risks/` and the repo backlog `docs/project-plan/PRIORITIZED_BACKLOG.md`:
+
+> _Gaps as of 2026-06-23; several since resolved — see `CHANGELOG.md` / `docs/project-plan/PRIORITIZED_BACKLOG.md` for current status._
+
 - **R-001 / Q-002** No observability beyond console logging (no APM/metrics/tracing/error-monitoring).
-- **R-002 (SEC-14) / Q-005** GDPR erasure leaves Orders PII (email/phone/addresses) — needs a retention ADR + scrub.
+- **R-002 (SEC-14) / Q-005** GDPR erasure leaves Orders PII (email/phone/addresses) — needs a retention ADR + scrub. — RESOLVED (SEC-14 anonymize-but-retain, ADR-0004, #69).
 - **R-003 (SEC-12)** 7+ high-severity npm advisories (Angular 19 major upgrade pending).
 - **R-004 (SEC-13)** gitleaks informational, not enforced.
-- **R-005 (UX-15)** 3 serious dark-theme contrast violations (axe).
+- **R-005 (UX-15)** 3 serious dark-theme contrast violations (axe). — RESOLVED (fixed + A11Y_ENFORCE=1).
 - **R-006** API errors are a custom shape, not RFC-7807 ProblemDetails.
 - **R-007** Outbox worker is per-instance (no locking) — not safe for multi-instance deploys.
-- **R-008 / Q-004** Config resolves from a mix of env vars + appsettings (dummy Stripe keys committed); prod-secret ownership undocumented.
+- **R-008 / Q-004** Config resolves from a mix of env vars + appsettings (dummy Stripe keys committed); prod-secret ownership undocumented. — PARTIAL (committed dummy Stripe keys removed via SEC-07; the config-precedence + secrets-ownership matrix is still undocumented — R-008 / Q-004 remain open).
 - **Q-001** Nothing is deployed (Railway config exists, no live URL).
-- **Q-003 (VERIFY)** Stock reservation: docs claim reservations but the field may be unused; confirm oversell protection.
+- **Q-003 (VERIFY)** Stock reservation: docs claim reservations but the field may be unused; confirm oversell protection. — RESOLVED (shipped as INV-01 #98–#102).
 - **Q-006 (VERIFY)** SalePrice mapping flagged by the inventory pass; confirm against current code.
 
 > **Already fixed — NOT open** (the adoption fanout read some stale paths; verified resolved in

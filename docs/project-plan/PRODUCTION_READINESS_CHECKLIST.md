@@ -1,5 +1,7 @@
 # ClimaSite — Production Readiness Checklist
 
+> ⚠️ STALE SNAPSHOT (2026-06-11). Most Section-0 P0 launch blockers listed below as open are FIXED — Stripe money path (BUG-01/02/18), admin CRUD (GAP-01/02), env-gated DataSeeder + removed committed JWT secret (SEC-01/SEC-05), forwarded-headers/rate-limiter (SEC-03), guest cart-merge (BUG-03), inventory reservations (INV-01, #98–#102). See `PROJECT_STATUS.md` + `CHANGELOG.md` for current status. Remaining TRUE launch blockers: OPS-08 deploy, OPS-05 observability, SEC-11 pen-test.
+
 **Date:** 2026-06-11
 **Sources:** Verified review findings in `docs/project-plan/_review/` (status, product, uiux, security, architecture, bugs, testing, performance, docs, devops). Companion documents: `docs/project-plan/PRIORITIZED_BACKLOG.md` (task-level backlog), `SECURITY_REVIEW.md`, `TESTING_STRATEGY.md`, `BUGS_AND_TECH_DEBT.md`, `DEV_WORKFLOW.md`, `DECISIONS.md` (owner decisions referenced below). This checklist supersedes the inline security checklist in `_review/security.md` and complements (does not replace) `docs/plans/18-project-completion.md` Phase 5 (SEC-100..107) and Phase 7 (PROD-100..107) — Plan 18's open items verified accurate against code; its task IDs are cited where they overlap. Note that Plan 18 does NOT track the production seeding blocker (#4 below) — it is tracked here and in the backlog only.
 

@@ -4,7 +4,7 @@ gate: acceptance
 result: PASS
 date: 2026-07-02
 branch: feature/inv-01-a3-availability-display
-commit: <squash-merge tip of PR feature/inv-01-a3-availability-display>
+commit: 51fd8bf
 env: Development, real API on :5029 against shared-infra Postgres :5432 + Redis :6379
 ---
 
