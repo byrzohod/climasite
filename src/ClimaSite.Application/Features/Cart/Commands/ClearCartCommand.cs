@@ -14,13 +14,16 @@ public class ClearCartCommandHandler : IRequestHandler<ClearCartCommand, Result>
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IStockReservationService _reservations;
 
     public ClearCartCommandHandler(
         IApplicationDbContext context,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IStockReservationService reservations)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _reservations = reservations;
     }
 
     public async Task<Result> Handle(ClearCartCommand request, CancellationToken cancellationToken)
@@ -46,6 +49,11 @@ public class ClearCartCommandHandler : IRequestHandler<ClearCartCommand, Result>
         {
             return Result.Success();
         }
+
+        // INV-01 A2: release any Active checkout holds this cart owns (usually a no-op pre-checkout) BEFORE the
+        // clear — release runs its own execution-strategy transaction and clears the tracker, so it must precede
+        // the tracked cart mutation below.
+        await _reservations.ReleaseCartAsync(cart.Id, cancellationToken);
 
         cart.Clear();
         await _context.SaveChangesAsync(cancellationToken);

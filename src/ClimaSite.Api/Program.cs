@@ -68,6 +68,20 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     // register unconditionally; integration tests set Enabled=false and drive the processor directly.
     services.AddHostedService<EmailOutboxBackgroundService>();
 
+    // INV-01 A2 stock-reservation expiry sweeper — the SOLE releaser of expired holds. Fail-fast at startup if
+    // disabled in Production (an unswept store leaks stock forever). The worker itself self-guards on the same
+    // flag and skips the Testing env (tests drive the sweep directly for determinism).
+    var reservationOptions = new ReservationOptions();
+    configuration.GetSection(ReservationOptions.SectionName).Bind(reservationOptions);
+    if (environment.IsProduction() && !reservationOptions.Sweeper.Enabled)
+    {
+        throw new InvalidOperationException(
+            "Reservations:Sweeper:Enabled must be true in Production — the stock-reservation sweeper is the sole "
+            + "releaser of expired holds; disabling it leaks stock permanently.");
+    }
+
+    services.AddHostedService<StockReservationSweeperBackgroundService>();
+
     // JWT Authentication (SEC-05 / B-011) — resolve + validate the signing secret ONCE here, then bind a
     // single JwtOptions used by BOTH the bearer validation below AND TokenService issuance, so the two
     // provably share one secret/issuer/audience. ResolveSecret fail-fasts in every non-Development/Testing

@@ -33,13 +33,16 @@ public class UpdateCartItemCommandHandler : IRequestHandler<UpdateCartItemComman
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IStockReservationService _reservations;
 
     public UpdateCartItemCommandHandler(
         IApplicationDbContext context,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IStockReservationService reservations)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _reservations = reservations;
     }
 
     public async Task<Result<CartDto>> Handle(
@@ -78,6 +81,11 @@ public class UpdateCartItemCommandHandler : IRequestHandler<UpdateCartItemComman
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        // INV-01 A2: shrink/release any Active checkout holds to the cart's new quantities (a decrease or removal;
+        // never grows). Usually a no-op pre-checkout. Runs after SaveChanges so the ledger reflects the new state.
+        var quantities = cart.Items.ToDictionary(i => i.VariantId, i => i.Quantity);
+        await _reservations.ReconcileCartToQuantitiesAsync(cart.Id, quantities, cancellationToken);
 
         return Result<CartDto>.Success(await MapCartToDto(cart, request.Language, cancellationToken));
     }

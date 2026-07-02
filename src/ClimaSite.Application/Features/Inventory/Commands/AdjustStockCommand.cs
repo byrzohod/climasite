@@ -44,10 +44,12 @@ public class AdjustStockCommandHandler : IRequestHandler<AdjustStockCommand, Res
 
     public async Task<Result> Handle(AdjustStockCommand request, CancellationToken cancellationToken)
     {
-        // BUG-05: adjust stock atomically with a non-negative guard so concurrent
-        // adjustments can't race the old read-then-write into a wrong/negative quantity.
+        // BUG-05 + INV-01 A2: adjust stock atomically, guarded so it can never drop below the units currently held
+        // by open checkouts (reserved_quantity). Because reserved_quantity is always >= 0, `stock + change >=
+        // reserved` also subsumes the old non-negative guard. This prevents an admin from stranding a valid card
+        // holder's consume (which would force a charge-then-refund — the exact defect INV-01 eliminates).
         var affected = await _context.ProductVariants
-            .Where(v => v.Id == request.VariantId && v.StockQuantity + request.QuantityChange >= 0)
+            .Where(v => v.Id == request.VariantId && v.StockQuantity + request.QuantityChange >= v.ReservedQuantity)
             .ExecuteUpdateAsync(
                 s => s.SetProperty(v => v.StockQuantity, v => v.StockQuantity + request.QuantityChange),
                 cancellationToken);
@@ -57,11 +59,11 @@ public class AdjustStockCommandHandler : IRequestHandler<AdjustStockCommand, Res
             return Result.Success();
         }
 
-        // No row updated: either the variant doesn't exist or the change would go below zero.
+        // No row updated: either the variant doesn't exist or the change would drop stock below the reserved units.
         var exists = await _context.ProductVariants
             .AnyAsync(v => v.Id == request.VariantId, cancellationToken);
         return exists
-            ? Result.Failure("Cannot reduce stock below zero.")
+            ? Result.Failure("Cannot reduce stock below the units currently held by open checkouts.")
             : Result.Failure("Product variant not found");
     }
 }

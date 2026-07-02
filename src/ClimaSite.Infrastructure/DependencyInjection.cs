@@ -92,6 +92,12 @@ public static class DependencyInjection
         configuration.GetSection(BankTransferOptions.SectionName).Bind(bankTransferOptions);
         services.AddSingleton(bankTransferOptions);
 
+        // Stock-reservation options (INV-01 A2), bound from the "Reservations" configuration section. Consumed by
+        // StockReservationService (Application layer) and the expiry sweeper background worker (API layer).
+        var reservationOptions = new ReservationOptions();
+        configuration.GetSection(ReservationOptions.SectionName).Bind(reservationOptions);
+        services.AddSingleton(reservationOptions);
+
         // MinIO Storage
         services.Configure<MinioStorageSettings>(options =>
         {

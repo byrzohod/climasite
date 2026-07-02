@@ -8,6 +8,14 @@ public class ProductVariant : BaseEntity
     public decimal PriceAdjustment { get; private set; }
     public Dictionary<string, object> Attributes { get; private set; } = new();
     public int StockQuantity { get; private set; }
+
+    /// <summary>
+    /// Denormalized count of units currently held by <c>Active</c> stock reservations (INV-01 A2). Maintained
+    /// atomically by the reservation SQL primitives (never a tracked load-increment-save); equals the sum of
+    /// this variant's Active holds. Available-to-sell is <c>GREATEST(StockQuantity - ReservedQuantity, 0)</c>.
+    /// </summary>
+    public int ReservedQuantity { get; private set; }
+
     public int LowStockThreshold { get; private set; } = 5;
     public bool IsActive { get; private set; } = true;
     public int SortOrder { get; private set; }
@@ -83,6 +91,17 @@ public class ProductVariant : BaseEntity
             throw new InvalidOperationException($"Cannot reduce stock below zero. Current: {StockQuantity}, Adjustment: {adjustment}");
 
         StockQuantity = newQuantity;
+        SetUpdatedAt();
+    }
+
+    /// <summary>Sets the denormalized reserved-quantity counter. Used by the in-memory test double and the
+    /// reconciler mirror; the production path adjusts <c>reserved_quantity</c> via atomic SQL.</summary>
+    public void SetReservedQuantity(int reservedQuantity)
+    {
+        if (reservedQuantity < 0)
+            throw new ArgumentException("Reserved quantity cannot be negative", nameof(reservedQuantity));
+
+        ReservedQuantity = reservedQuantity;
         SetUpdatedAt();
     }
 

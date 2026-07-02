@@ -54,6 +54,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<ProductPriceHistory> ProductPriceHistory => Set<ProductPriceHistory>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
+    public DbSet<StockReservation> StockReservations => Set<StockReservation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -126,11 +127,26 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
         return base.SaveChangesAsync(cancellationToken);
     }
 
+    // INV-01 A2: reserved-aware. The universal physical-decrement guard now honours Active holds — a
+    // non-consume decrement (bank order-create, any future path) may take only units NOT held by another cart:
+    // (stock - reserved) >= qty. (P2 consume decrements stock AND reserved together, converting its OWN hold, so
+    // it uses TryConsumeVariantStockAsync and is unaffected by this guard.) With reserved_quantity == 0 this is
+    // byte-identical to the old stock >= qty gate, so the pre-reservations oversell guard is preserved.
     public Task<int> TryDecrementVariantStockAsync(Guid variantId, int quantity, CancellationToken cancellationToken = default)
         => ProductVariants
-            .Where(v => v.Id == variantId && v.StockQuantity >= quantity)
+            .Where(v => v.Id == variantId && v.StockQuantity - v.ReservedQuantity >= quantity)
             .ExecuteUpdateAsync(
                 s => s.SetProperty(v => v.StockQuantity, v => v.StockQuantity - quantity),
+                cancellationToken);
+
+    // INV-01 A2: reserved-aware absolute set for admin bulk stock edits — the single-statement WHERE makes it
+    // atomic, so a reserve committing between an admin read and this write can never strand a card holder
+    // (stock < reserved). rows==0 ⇒ the set would drop below the held units (or the variant is missing).
+    public Task<int> TrySetVariantStockAtOrAboveReservedAsync(Guid variantId, int newQuantity, CancellationToken cancellationToken = default)
+        => ProductVariants
+            .Where(v => v.Id == variantId && newQuantity >= v.ReservedQuantity)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(v => v.StockQuantity, newQuantity),
                 cancellationToken);
 
     // INV-01 A1: a single set-based UPDATE re-keys the legacy guest cart onto the trusted cookie id. Bypasses
@@ -220,4 +236,106 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
                 .ExecuteUpdateAsync(
                     s => s.SetProperty(a => a.UnhelpfulCount, a => a.UnhelpfulCount + delta),
                     cancellationToken);
+
+    // ---- INV-01 A2: stock-reservation atomic primitives (see IApplicationDbContext for the contract) ----
+    // Counter moves go through ExecuteUpdate with a from-state guard in the WHERE; the ledger status transitions
+    // use raw CAS SQL (NOW() in the predicate for the expiry check, unambiguous string enum literals). All run
+    // inside the caller's transaction (routed through the ambient transaction), under the P0 variant-row lock.
+
+    public Task LockVariantForUpdateAsync(Guid variantId, CancellationToken cancellationToken = default)
+        => Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT id FROM product_variants WHERE id = {variantId} FOR UPDATE",
+            cancellationToken);
+
+    public Task<int> TryIncrementReservedQuantityAsync(Guid variantId, int quantity, CancellationToken cancellationToken = default)
+        => ProductVariants
+            .Where(v => v.Id == variantId && v.StockQuantity - v.ReservedQuantity >= quantity)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(v => v.ReservedQuantity, v => v.ReservedQuantity + quantity),
+                cancellationToken);
+
+    public Task<int> TryDecrementReservedQuantityAsync(Guid variantId, int quantity, CancellationToken cancellationToken = default)
+        => ProductVariants
+            .Where(v => v.Id == variantId && v.ReservedQuantity >= quantity)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(v => v.ReservedQuantity, v => v.ReservedQuantity - quantity),
+                cancellationToken);
+
+    public Task<int> TryConsumeVariantStockAsync(Guid variantId, int quantity, CancellationToken cancellationToken = default)
+        => ProductVariants
+            .Where(v => v.Id == variantId && v.StockQuantity >= quantity && v.ReservedQuantity >= quantity)
+            .ExecuteUpdateAsync(
+                s => s
+                    .SetProperty(v => v.StockQuantity, v => v.StockQuantity - quantity)
+                    .SetProperty(v => v.ReservedQuantity, v => v.ReservedQuantity - quantity),
+                cancellationToken);
+
+    public Task<int> SetVariantReservedQuantityAsync(Guid variantId, int value, CancellationToken cancellationToken = default)
+        => ProductVariants
+            .Where(v => v.Id == variantId)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(v => v.ReservedQuantity, value),
+                cancellationToken);
+
+    public async Task<int> SumActiveReservedQuantityAsync(Guid variantId, CancellationToken cancellationToken = default)
+        => await StockReservations
+            .Where(r => r.VariantId == variantId && r.Status == ReservationStatus.Active)
+            .SumAsync(r => r.Quantity, cancellationToken);
+
+    public Task<int> InsertActiveReservationAsync(Guid id, Guid variantId, Guid? cartId, int quantity, DateTime expiresAt, string kind, CancellationToken cancellationToken = default)
+        => Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            INSERT INTO stock_reservations (id, variant_id, quantity, status, expires_at, cart_id, kind, created_at, updated_at)
+            VALUES ({id}, {variantId}, {quantity}, 'Active', {expiresAt}, {cartId}, {kind}, NOW(), NOW())
+            ON CONFLICT (cart_id, variant_id) WHERE status = 'Active' DO NOTHING
+            """,
+            cancellationToken);
+
+    public Task<int> SetReservationQuantityAndExpiryAsync(Guid reservationId, int quantity, DateTime expiresAt, CancellationToken cancellationToken = default)
+        => Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            UPDATE stock_reservations SET quantity = {quantity}, expires_at = {expiresAt}, updated_at = NOW()
+            WHERE id = {reservationId} AND status = 'Active'
+            """,
+            cancellationToken);
+
+    public Task<int> RefreshReservationExpiryAsync(Guid reservationId, DateTime expiresAt, CancellationToken cancellationToken = default)
+        => Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            UPDATE stock_reservations SET expires_at = {expiresAt}, updated_at = NOW()
+            WHERE id = {reservationId} AND status = 'Active'
+            """,
+            cancellationToken);
+
+    public Task<int> TryExpireReservationAsync(Guid reservationId, CancellationToken cancellationToken = default)
+        => Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            UPDATE stock_reservations SET status = 'Expired', updated_at = NOW()
+            WHERE id = {reservationId} AND status = 'Active' AND expires_at <= NOW()
+            """,
+            cancellationToken);
+
+    public Task<int> TryReleaseReservationAsync(Guid reservationId, CancellationToken cancellationToken = default)
+        => Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            UPDATE stock_reservations SET status = 'Released', updated_at = NOW()
+            WHERE id = {reservationId} AND status = 'Active'
+            """,
+            cancellationToken);
+
+    public Task<int> TryConsumeReservationRowAsync(Guid reservationId, Guid orderId, CancellationToken cancellationToken = default)
+        => Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            UPDATE stock_reservations SET status = 'Consumed', order_id = {orderId}, updated_at = NOW()
+            WHERE id = {reservationId} AND status = 'Active'
+            """,
+            cancellationToken);
+
+    public Task<int> StampReservationsPaymentIntentAsync(Guid cartId, string paymentIntentId, CancellationToken cancellationToken = default)
+        => Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            UPDATE stock_reservations SET payment_intent_id = {paymentIntentId}, updated_at = NOW()
+            WHERE cart_id = {cartId} AND status = 'Active'
+            """,
+            cancellationToken);
 }

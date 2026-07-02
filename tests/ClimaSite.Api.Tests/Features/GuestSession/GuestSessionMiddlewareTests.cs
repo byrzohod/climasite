@@ -1,4 +1,5 @@
 using System.Net;
+using ClimaSite.Api.Services;
 using ClimaSite.Api.Tests.Infrastructure;
 using ClimaSite.Application.Common.Interfaces;
 using FluentAssertions;
@@ -27,7 +28,18 @@ public class GuestSessionMiddlewareTests : IntegrationTestBase
 
     public GuestSessionMiddlewareTests(TestWebApplicationFactory factory) : base(factory)
     {
-        _isolatedFactory = factory.WithWebHostBuilder(_ => { });
+        // This suite exercises the REAL per-IP mint cap through the pipeline, so restore the production
+        // GuestSessionMintLimiter that the base factory replaces with an always-allow one (which the other
+        // guest-checkout tests need so the shared-loopback-IP suite doesn't exhaust the budget). Each test's
+        // isolated factory still gets its own fresh mint-counter cache.
+        _isolatedFactory = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+            {
+                var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(IGuestSessionMintLimiter));
+                if (descriptor != null)
+                    services.Remove(descriptor);
+                services.AddSingleton<IGuestSessionMintLimiter, GuestSessionMintLimiter>();
+            }));
     }
 
     public override async Task DisposeAsync()

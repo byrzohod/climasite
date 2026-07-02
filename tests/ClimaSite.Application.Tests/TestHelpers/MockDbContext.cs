@@ -46,6 +46,7 @@ public class MockDbContext : IApplicationDbContext
     private readonly List<ReviewVote> _reviewVotes = [];
     private readonly List<OutboxMessage> _outboxMessages = [];
     private readonly List<ContactMessage> _contactMessages = [];
+    private readonly List<StockReservation> _stockReservations = [];
 
     public DatabaseFacade Database { get; }
 
@@ -93,6 +94,7 @@ public class MockDbContext : IApplicationDbContext
     public DbSet<ProductPriceHistory> ProductPriceHistory => CreateMockDbSet(_productPriceHistory);
     public DbSet<OutboxMessage> OutboxMessages => CreateMockDbSet(_outboxMessages);
     public DbSet<ContactMessage> ContactMessages => CreateMockDbSet(_contactMessages);
+    public DbSet<StockReservation> StockReservations => CreateMockDbSet(_stockReservations);
 
     public void AddProduct(Product product)
     {
@@ -151,6 +153,12 @@ public class MockDbContext : IApplicationDbContext
 
     public void AddInstallationRequest(InstallationRequest request) => _installationRequests.Add(request);
 
+    /// <summary>Registers a standalone variant (without a parent product) for the reservation-primitive tests.</summary>
+    public void AddProductVariant(ProductVariant variant) => _productVariants.Add(variant);
+
+    /// <summary>Seeds an existing reservation ledger row for the reservation-primitive tests.</summary>
+    public void AddStockReservation(StockReservation reservation) => _stockReservations.Add(reservation);
+
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken)
     {
         // Sync any new items that might have been added to navigation properties
@@ -186,15 +194,30 @@ public class MockDbContext : IApplicationDbContext
         return Task.FromResult(1);
     }
 
+    // INV-01 A2: reserved-aware mirror — a non-consume decrement may take only units not held by another cart.
+    // With reserved==0 this is identical to the old stock >= qty gate.
     public Task<int> TryDecrementVariantStockAsync(Guid variantId, int quantity, CancellationToken cancellationToken = default)
     {
         var variant = _productVariants.FirstOrDefault(v => v.Id == variantId);
-        if (variant is null || variant.StockQuantity < quantity)
+        if (variant is null || variant.StockQuantity - variant.ReservedQuantity < quantity)
         {
             return Task.FromResult(0);
         }
 
         variant.AdjustStock(-quantity);
+        return Task.FromResult(1);
+    }
+
+    // INV-01 A2: reserved-aware absolute set mirror — set only when newQuantity stays at/above the held units.
+    public Task<int> TrySetVariantStockAtOrAboveReservedAsync(Guid variantId, int newQuantity, CancellationToken cancellationToken = default)
+    {
+        var variant = _productVariants.FirstOrDefault(v => v.Id == variantId);
+        if (variant is null || newQuantity < variant.ReservedQuantity)
+        {
+            return Task.FromResult(0);
+        }
+
+        variant.SetStockQuantity(newQuantity);
         return Task.FromResult(1);
     }
 
@@ -318,6 +341,168 @@ public class MockDbContext : IApplicationDbContext
             }
         }
         return Task.FromResult(1);
+    }
+
+    // ---- INV-01 A2: in-memory mirrors of the stock-reservation atomic SQL primitives. Each mirrors the real
+    // statement's from-state-gated rows-affected semantics over _stockReservations + _productVariants; the mock
+    // cannot model FOR UPDATE (single-threaded), so LockVariantForUpdateAsync is a no-op. These are
+    // necessary-not-sufficient — the concurrency proof lives in the Testcontainers integration break-probes. ----
+
+    // No-op off Postgres: the unit tests are single-threaded, so there is nothing to serialise.
+    public Task LockVariantForUpdateAsync(Guid variantId, CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
+
+    // reserved += qty WHERE (stock - reserved) >= qty
+    public Task<int> TryIncrementReservedQuantityAsync(Guid variantId, int quantity, CancellationToken cancellationToken = default)
+    {
+        var variant = _productVariants.FirstOrDefault(v => v.Id == variantId);
+        if (variant is null || variant.StockQuantity - variant.ReservedQuantity < quantity)
+        {
+            return Task.FromResult(0);
+        }
+
+        variant.SetReservedQuantity(variant.ReservedQuantity + quantity);
+        return Task.FromResult(1);
+    }
+
+    // reserved -= qty WHERE reserved >= qty (no GREATEST floor — a 0 return signals drift)
+    public Task<int> TryDecrementReservedQuantityAsync(Guid variantId, int quantity, CancellationToken cancellationToken = default)
+    {
+        var variant = _productVariants.FirstOrDefault(v => v.Id == variantId);
+        if (variant is null || variant.ReservedQuantity < quantity)
+        {
+            return Task.FromResult(0);
+        }
+
+        variant.SetReservedQuantity(variant.ReservedQuantity - quantity);
+        return Task.FromResult(1);
+    }
+
+    // stock -= qty, reserved -= qty WHERE stock >= qty AND reserved >= qty (the physical sale, converting a hold)
+    public Task<int> TryConsumeVariantStockAsync(Guid variantId, int quantity, CancellationToken cancellationToken = default)
+    {
+        var variant = _productVariants.FirstOrDefault(v => v.Id == variantId);
+        if (variant is null || variant.StockQuantity < quantity || variant.ReservedQuantity < quantity)
+        {
+            return Task.FromResult(0);
+        }
+
+        variant.AdjustStock(-quantity);
+        variant.SetReservedQuantity(variant.ReservedQuantity - quantity);
+        return Task.FromResult(1);
+    }
+
+    public Task<int> SetVariantReservedQuantityAsync(Guid variantId, int value, CancellationToken cancellationToken = default)
+    {
+        var variant = _productVariants.FirstOrDefault(v => v.Id == variantId);
+        if (variant is null)
+        {
+            return Task.FromResult(0);
+        }
+
+        variant.SetReservedQuantity(value);
+        return Task.FromResult(1);
+    }
+
+    public Task<int> SumActiveReservedQuantityAsync(Guid variantId, CancellationToken cancellationToken = default)
+        => Task.FromResult(_stockReservations
+            .Where(r => r.VariantId == variantId && r.Status == ReservationStatus.Active)
+            .Sum(r => r.Quantity));
+
+    // INSERT ... ON CONFLICT (cart_id, variant_id) WHERE status='Active' DO NOTHING. Wave A always supplies a
+    // non-null cartId, so simple equality mirrors the partial-unique conflict faithfully.
+    public Task<int> InsertActiveReservationAsync(Guid id, Guid variantId, Guid? cartId, int quantity, DateTime expiresAt, string kind, CancellationToken cancellationToken = default)
+    {
+        if (_stockReservations.Any(r => r.CartId == cartId && r.VariantId == variantId && r.Status == ReservationStatus.Active))
+        {
+            return Task.FromResult(0);
+        }
+
+        var reservation = new StockReservation(variantId, cartId, quantity, expiresAt, Enum.Parse<ReservationKind>(kind));
+        // Id has a protected setter (production inserts the app-supplied id via raw SQL); reflection mirrors that,
+        // consistent with how this mock already sets other non-public members.
+        typeof(BaseEntity).GetProperty(nameof(BaseEntity.Id))!.SetValue(reservation, id);
+        _stockReservations.Add(reservation);
+        return Task.FromResult(1);
+    }
+
+    public Task<int> SetReservationQuantityAndExpiryAsync(Guid reservationId, int quantity, DateTime expiresAt, CancellationToken cancellationToken = default)
+    {
+        var reservation = _stockReservations.FirstOrDefault(r => r.Id == reservationId && r.Status == ReservationStatus.Active);
+        if (reservation is null)
+        {
+            return Task.FromResult(0);
+        }
+
+        reservation.SetQuantity(quantity);
+        reservation.SetExpiresAt(expiresAt);
+        return Task.FromResult(1);
+    }
+
+    public Task<int> RefreshReservationExpiryAsync(Guid reservationId, DateTime expiresAt, CancellationToken cancellationToken = default)
+    {
+        var reservation = _stockReservations.FirstOrDefault(r => r.Id == reservationId && r.Status == ReservationStatus.Active);
+        if (reservation is null)
+        {
+            return Task.FromResult(0);
+        }
+
+        reservation.SetExpiresAt(expiresAt);
+        return Task.FromResult(1);
+    }
+
+    // CAS status='Expired' WHERE status='Active' AND expires_at <= now()
+    public Task<int> TryExpireReservationAsync(Guid reservationId, CancellationToken cancellationToken = default)
+    {
+        var reservation = _stockReservations.FirstOrDefault(
+            r => r.Id == reservationId && r.Status == ReservationStatus.Active && r.ExpiresAt <= DateTime.UtcNow);
+        if (reservation is null)
+        {
+            return Task.FromResult(0);
+        }
+
+        reservation.SetStatus(ReservationStatus.Expired);
+        return Task.FromResult(1);
+    }
+
+    // CAS status='Released' WHERE status='Active'
+    public Task<int> TryReleaseReservationAsync(Guid reservationId, CancellationToken cancellationToken = default)
+    {
+        var reservation = _stockReservations.FirstOrDefault(r => r.Id == reservationId && r.Status == ReservationStatus.Active);
+        if (reservation is null)
+        {
+            return Task.FromResult(0);
+        }
+
+        reservation.SetStatus(ReservationStatus.Released);
+        return Task.FromResult(1);
+    }
+
+    // CAS status='Consumed', order_id=@o WHERE status='Active'
+    public Task<int> TryConsumeReservationRowAsync(Guid reservationId, Guid orderId, CancellationToken cancellationToken = default)
+    {
+        var reservation = _stockReservations.FirstOrDefault(r => r.Id == reservationId && r.Status == ReservationStatus.Active);
+        if (reservation is null)
+        {
+            return Task.FromResult(0);
+        }
+
+        reservation.SetStatus(ReservationStatus.Consumed);
+        reservation.SetOrderId(orderId);
+        return Task.FromResult(1);
+    }
+
+    public Task<int> StampReservationsPaymentIntentAsync(Guid cartId, string paymentIntentId, CancellationToken cancellationToken = default)
+    {
+        var matches = _stockReservations
+            .Where(r => r.CartId == cartId && r.Status == ReservationStatus.Active)
+            .ToList();
+        foreach (var reservation in matches)
+        {
+            reservation.SetPaymentIntentId(paymentIntentId);
+        }
+
+        return Task.FromResult(matches.Count);
     }
 
     private static DatabaseFacade CreateMockDatabaseFacade(Func<int> attemptsProvider)

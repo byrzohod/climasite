@@ -48,6 +48,17 @@ public class Order : BaseEntity
         SetCustomerEmail(customerEmail);
     }
 
+    /// <summary>
+    /// Creates an order with a caller-supplied deterministic id (INV-01 A2). CreateOrderCommand generates the id
+    /// OUTSIDE its retried transaction so a commit-unknown retry (or a concurrent sibling) re-derives the SAME id
+    /// — the orders PK then rejects the duplicate and the idempotency lookup returns the already-placed order.
+    /// </summary>
+    public Order(Guid id, string orderNumber, string customerEmail) : base(id)
+    {
+        SetOrderNumber(orderNumber);
+        SetCustomerEmail(customerEmail);
+    }
+
     public void SetOrderNumber(string orderNumber)
     {
         if (string.IsNullOrWhiteSpace(orderNumber))

@@ -1,5 +1,7 @@
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Options;
 using ClimaSite.Application.Features.Cart.Commands;
+using ClimaSite.Application.Features.Reservations;
 using ClimaSite.Application.Tests.TestHelpers;
 using ClimaSite.Core.Entities;
 using FluentAssertions;
@@ -14,7 +16,7 @@ public class MergeGuestCartCommandHandlerTests
     private readonly MockDbContext _context = new();
 
     private MergeGuestCartCommandHandler CreateHandler() =>
-        new(_context, _currentUserServiceMock.Object);
+        new(_context, _currentUserServiceMock.Object, new StockReservationService(_context, new ReservationOptions()));
 
     private (Product product, ProductVariant variant) SeedProduct(string sku, int stock)
     {

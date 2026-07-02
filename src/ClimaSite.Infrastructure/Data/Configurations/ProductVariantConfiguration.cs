@@ -54,6 +54,11 @@ public class ProductVariantConfiguration : IEntityTypeConfiguration<ProductVaria
             .HasColumnName("stock_quantity")
             .HasDefaultValue(0);
 
+        // INV-01 A2: denormalized count of units held by Active stock reservations. NOT NULL default 0.
+        builder.Property(v => v.ReservedQuantity)
+            .HasColumnName("reserved_quantity")
+            .HasDefaultValue(0);
+
         builder.Property(v => v.LowStockThreshold)
             .HasColumnName("low_stock_threshold")
             .HasDefaultValue(5);

@@ -5,6 +5,7 @@ using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Orders.Commands;
 using ClimaSite.Application.Features.Orders.DTOs;
 using ClimaSite.Application.Features.Outbox;
+using ClimaSite.Application.Features.Reservations;
 using ClimaSite.Application.Tests.TestHelpers;
 using ClimaSite.Core.Entities;
 using FluentAssertions;
@@ -51,6 +52,7 @@ public class CreateOrderCommandHandlerTests
         _currentUserServiceMock.Object,
         _paymentServiceMock.Object,
         new EmailOutbox(_context),
+        new StockReservationService(_context, new ReservationOptions()),
         BankOptions,
         _loggerMock.Object);
 
@@ -393,6 +395,51 @@ public class CreateOrderCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_NoIdentity_WithChargedIntent_RefundsOrphanedCharge()
+    {
+        // INV-01 A2 (council Medium): the pre-delegate identity failure must not orphan a charge — a card intent
+        // present with no identity (and no already-placed order for it) is refunded with the deterministic key.
+        _currentUserServiceMock.Setup(x => x.UserId).Returns((Guid?)null);
+        var handler = CreateHandler();
+        var command = CreateValidCommand() with { PaymentIntentId = "pi_orphan", PaymentMethod = "card" }; // no GuestSessionId
+
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Contain("authentication or guest session");
+        _paymentServiceMock.Verify(
+            x => x.RefundAsync("pi_orphan", PaymentIdempotency.ForRefund("pi_orphan"), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_NoIdentity_WithIntentOfAlreadyPlacedOrder_ReturnsOrder_NoRefund()
+    {
+        // INV-01 A2 (council Medium): if an order for the intent already exists, the pre-delegate path returns it
+        // idempotently rather than refunding a placed order.
+        _currentUserServiceMock.Setup(x => x.UserId).Returns((Guid?)null);
+        var product = CreateProduct();
+        var variant = product.Variants.First();
+        _context.AddProduct(product);
+
+        var placed = new Order(Guid.NewGuid(), "ORD-PLACED", "placed@test.com");
+        placed.SetPaymentInfo("pi_placed", "card");
+        placed.AddItem(product.Id, variant.Id, product.Name, variant.Name ?? "", variant.Sku, 1, 100m);
+        _context.AddOrder(placed);
+
+        var handler = CreateHandler();
+        var command = CreateValidCommand() with { PaymentIntentId = "pi_placed", PaymentMethod = "card" };
+
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.OrderNumber.Should().Be("ORD-PLACED");
+        _paymentServiceMock.Verify(
+            x => x.RefundAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task Handle_CalculatesShippingCostCorrectly()
     {
         // Arrange
@@ -451,6 +498,35 @@ public class CreateOrderCommandHandlerTests
         result.Value!.Items.Should().HaveCount(2);
         variant1.StockQuantity.Should().Be(7); // 10 - 3
         variant2.StockQuantity.Should().Be(15); // 20 - 5
+    }
+
+    [Fact]
+    public async Task Handle_IsIdempotentUnderRetry_PlacesExactlyOneOrder_AndConsumesStockOnce()
+    {
+        // INV-01 A2: a commit-unknown retry re-runs the whole delegate. Because order.Id is generated OUTSIDE it,
+        // the second attempt's top-of-delegate idempotency lookup finds the already-placed order and returns it
+        // without re-consuming — exactly one order, stock decremented once.
+        _context.ExecutionStrategyAttempts = 2;
+        var userId = Guid.NewGuid();
+        var product = CreateProduct();
+        var variant = product.Variants.First();
+        variant.SetStockQuantity(10);
+
+        var cart = new Cart(userId, null);
+        cart.AddItem(product.Id, variant.Id, 2, 299.99m);
+
+        _context.AddProduct(product);
+        _context.AddCart(cart);
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        var handler = CreateHandler();
+        var command = CreateValidCommand();
+
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        (await _context.Orders.ToListAsync()).Should().HaveCount(1);
+        variant.StockQuantity.Should().Be(8); // decremented once despite two attempts
     }
 
     [Fact]
@@ -831,6 +907,58 @@ public class CreateOrderCommandHandlerTests
                 PaymentIdempotency.ForRefund("pi_test_123"),
                 It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_WhenSiblingPlacesOrderMidFlight_ReturnsItIdempotently_WithoutRefundingPlacedOrder()
+    {
+        // INV-01 A2 (S): deterministic double-submit. A concurrent sibling commits the order for THIS intent
+        // AFTER this request's top-of-delegate lookup but BEFORE it would refund — simulated by injecting the
+        // committed sibling during the (about-to-fail) payment verification. RefundOrFailAsync must re-query and
+        // return the placed order rather than refund it (which would ship it for free).
+        var userId = Guid.NewGuid();
+        var product = CreateProduct();
+        var variant = product.Variants.First();
+        variant.SetStockQuantity(10);
+
+        var cart = new Cart(userId, null);
+        cart.AddItem(product.Id, variant.Id, 1, 100m);
+        _context.AddProduct(product);
+        _context.AddCart(cart);
+
+        const string intentId = "pi_sibling_race";
+        // The verification returns a WRONG amount so control reaches a refund site — but by then the sibling
+        // order (same intent) has been committed by the mock, so the guard must return it instead of refunding.
+        _paymentServiceMock
+            .Setup(x => x.GetPaymentIntentAsync(intentId))
+            .Returns(() =>
+            {
+                var sibling = new Order(Guid.NewGuid(), "ORD-SIBLING", "sibling@test.com");
+                sibling.SetPaymentInfo(intentId, "card");
+                sibling.AddItem(product.Id, variant.Id, product.Name, variant.Name ?? "", variant.Sku, 1, 100m);
+                _context.AddOrder(sibling);
+                return Task.FromResult(new PaymentIntentResult
+                {
+                    Succeeded = true,
+                    PaymentIntentId = intentId,
+                    Status = "succeeded",
+                    Currency = "eur",
+                    Amount = 1 // deliberately wrong → drives control to RefundOrFailAsync
+                });
+            });
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        var handler = CreateHandler();
+        var command = CreateValidCommand() with { PaymentIntentId = intentId, PaymentMethod = "card" };
+
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        // The already-placed sibling order is returned idempotently and is NEVER refunded.
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.OrderNumber.Should().Be("ORD-SIBLING");
+        _paymentServiceMock.Verify(
+            x => x.RefundAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     #endregion

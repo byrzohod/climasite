@@ -2,6 +2,7 @@ using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Models;
 using ClimaSite.Application.Common.Payments;
 using ClimaSite.Application.Common.Pricing;
+using ClimaSite.Core.Entities;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -64,15 +65,21 @@ public class CreatePaymentIntentCommandHandler
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly IPaymentService _paymentService;
+    private readonly IStockReservationService _reservations;
+    private readonly IGuestSessionAccessor _guestSession;
 
     public CreatePaymentIntentCommandHandler(
         IApplicationDbContext context,
         ICurrentUserService currentUserService,
-        IPaymentService paymentService)
+        IPaymentService paymentService,
+        IStockReservationService reservations,
+        IGuestSessionAccessor guestSession)
     {
         _context = context;
         _currentUserService = currentUserService;
         _paymentService = paymentService;
+        _reservations = reservations;
+        _guestSession = guestSession;
     }
 
     public async Task<Result<PaymentIntentDto>> Handle(
@@ -88,11 +95,20 @@ public class CreatePaymentIntentCommandHandler
                 .Include(c => c.Items)
                 .FirstOrDefaultAsync(c => c.UserId == userId, cancellationToken);
         }
-        else if (!string.IsNullOrEmpty(request.GuestSessionId))
+        else
         {
+            // INV-01 A2 legacy-reject: a reservation-bearing flow requires the server-trusted signed guest cookie.
+            // A guest presenting only a spoofable legacy id (accessor null) cannot create a hold.
+            var trustedGuestId = _guestSession.GuestSessionId;
+            if (string.IsNullOrEmpty(trustedGuestId))
+            {
+                return Result<PaymentIntentDto>.Failure(
+                    "A valid checkout session is required. Please refresh the page and try again.");
+            }
+
             cart = await _context.Carts
                 .Include(c => c.Items)
-                .FirstOrDefaultAsync(c => c.SessionId == request.GuestSessionId, cancellationToken);
+                .FirstOrDefaultAsync(c => c.SessionId == trustedGuestId, cancellationToken);
         }
 
         if (cart == null || !cart.Items.Any())
@@ -117,6 +133,34 @@ public class CreatePaymentIntentCommandHandler
             metadata["userId"] = userId.Value.ToString();
         }
 
+        // INV-01 A2: reserve the WHOLE cart atomically BEFORE the Stripe call — a hold per line under a per-variant
+        // FOR UPDATE lock. Any short line rolls the batch back and returns a failure naming it, so the losing
+        // last-unit buyer is never charged (kills charge-then-refund).
+        var productIds = cart.Items.Select(i => i.ProductId).Distinct().ToList();
+        var products = await _context.Products
+            .Include(p => p.Variants)
+            .Where(p => productIds.Contains(p.Id))
+            .ToListAsync(cancellationToken);
+
+        var reservationLines = cart.Items
+            .Select(i =>
+            {
+                var product = products.FirstOrDefault(p => p.Id == i.ProductId);
+                var variant = product?.Variants.FirstOrDefault(v => v.Id == i.VariantId);
+                var displayName = string.IsNullOrWhiteSpace(variant?.Name)
+                    ? product?.Name ?? "item"
+                    : $"{product?.Name} ({variant!.Name})";
+                return new ReservationRequestLine(i.VariantId, i.Quantity, displayName);
+            })
+            .ToList();
+
+        var reservation = await _reservations.ReserveCartAsync(
+            cart.Id, reservationLines, ReservationKind.Card, userId, cancellationToken);
+        if (!reservation.Succeeded)
+        {
+            return Result<PaymentIntentDto>.Failure(reservation.Error ?? "Unable to reserve stock for checkout.");
+        }
+
         // Per-attempt key (namespaced ci_<clientKey>); null when the client supplied none.
         var idemKey = PaymentIdempotency.NormalizeClientKey(request.IdempotencyKey);
 
@@ -131,6 +175,9 @@ public class CreatePaymentIntentCommandHandler
         {
             return Result<PaymentIntentDto>.Failure(result.ErrorMessage ?? "Failed to create payment intent");
         }
+
+        // Link the created intent onto the cart's Active holds (payment linkage + diagnostics). Idempotent.
+        await _reservations.StampPaymentIntentAsync(cart.Id, result.PaymentIntentId, cancellationToken);
 
         return Result<PaymentIntentDto>.Success(new PaymentIntentDto
         {
