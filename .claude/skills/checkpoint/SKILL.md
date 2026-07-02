@@ -66,6 +66,7 @@ Invoke this skill:
 ## Anti-patterns
 
 - **Dumping instead of pointing.** `STATE.md` is not a log, a diary, or a design doc -- it's injected verbatim every session start. Long narratives, pasted code, or full decision rationale belong in the Knowledge graph or the unit-plan; `STATE.md` links to them.
+- **Appending a new dated block on top of the old.** `/checkpoint` **REWRITES** the file in place -- it never stacks a "2026-07-02 update" section above last week's. Per-PR history goes to `CHANGELOG.md`, not `STATE.md`. (The SessionStart hook now injects only `STATE.md`'s **live top** -- it stops at the first `## Recently done` / `## ✅ Done` / `## ▶ RESUME HERE` section -- so any history left below is dropped from resume anyway; don't create it.)
 - **More than one Next action.** Multiple "next" steps mean none is *the* next step. Pick one; the rest are the plan (in `unit-plan.md` / `ROADMAP.md`).
 - **Letting it drift.** A `STATE.md` pointing at a closed unit or a missing plan is worse than none -- it confidently misdirects every injected session. Reconcile against git every time.
 - **Folding the Knowledge graph into it.** Decisions/risks/components are durable graph nodes (`/kb-capture`), not ephemeral state. Keep the layers separate.
@@ -74,7 +75,7 @@ Invoke this skill:
 ## See also
 
 - **`templates/STATE.md.template`** -- the canonical resume-contract shape this skill writes to (single source of truth for the sections).
-- **`hooks/state-prime.sh`** (SessionStart) -- injects `STATE.md` on `startup|resume|clear|compact`; the mechanism that makes a good checkpoint self-heal automatically.
+- **`hooks/state-prime.sh`** (SessionStart) -- injects `STATE.md` on `startup|resume|clear|compact`; the mechanism that makes a good checkpoint self-heal automatically. **Injects only the live top** (stops at the first archived / `## Recently done` / `## ✅ Done` / `## ▶ RESUME HERE` section) so stray history never re-enters a fresh context -- a backstop; keeping `STATE.md` lean here is still the primary mechanism.
 - **`hooks/pre-compact-checkpoint.sh`** (PreCompact) -- the safety-net breadcrumb that tells the next context to re-verify; `/checkpoint` is the primary mechanism it backstops.
 - **`hooks/workflow-check.sh`** (Stop) -- warns "code changed but `.planning/STATE.md` not updated" -- the nudge to run this.
 - `/goal` -- the **long-horizon driver** that loops over units and calls this skill after each one to refresh `STATE.md` (this template's `skills/goal.md`). Note: a *different* skill also named `/goal` lives in the project-discovery workflow (`AI/project-discovery/skills/goal.md`) and only sets the discovery north-star goal -- they share the name across the two workflows but are not the same skill.

@@ -1,0 +1,16 @@
+# Dependency-audit allowlist — read by scripts/ci/dependency-audit.sh (CI "Dependency Audit" job).
+#
+# Each ACTIVE entry suppresses ONE advisory id from the `dotnet list --vulnerable` gate.
+# The gate STILL fails on any vulnerable package whose advisory id is NOT listed here, and it
+# ALSO fails if today is past an entry's <expiry> — so a stale suppression surfaces instead of
+# silently outliving its fix. `NuGetAuditSuppress` in a .csproj does NOT affect this gate
+# (`dotnet list --vulnerable` ignores it), which is why the allowlist lives here.
+#
+# Format (pipe-delimited, one entry per line):
+#   <advisory-id> | <package version> | <reason> | <tracking> | <expiry YYYY-MM-DD>
+# Lines starting with # and blank lines are ignored.
+#
+# To renew an entry: re-verify the advisory is still not reachable, then bump <expiry>.
+# To retire an entry: fix/upgrade the dependency, then delete the line.
+
+GHSA-v5pm-xwqc-g5wc | Microsoft.OpenApi 2.3.0 | Transitive via Swashbuckle; Swagger is Dev-only (SEC-06 gates UseSwagger behind IsDevelopment) so this advisory is unreachable in Production/Staging | SEC-12 (Swashbuckle 2.x->3.x upgrade) | 2026-10-01
