@@ -159,6 +159,17 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
 
         var isBankTransfer = string.Equals(request.PaymentMethod, BankPaymentMethod, StringComparison.OrdinalIgnoreCase);
 
+        // INV-01 B [council High]: a bank-transfer order must NEVER carry a PaymentIntent. Bank orders RESERVE a
+        // hold (no physical decrement) and are consumed at admin mark-paid UNDER the order lock; a PI-backed order
+        // is instead flipped straight to Paid by HandleStripeWebhookCommand (no order lock, no ConsumeBankOrderAsync)
+        // — so a bank order with a PI would go Paid with stock never taken and the hold leaked. Reject the invalid
+        // combination here, BEFORE creating the order or reserving any hold (a real bank order has no PI; a real card
+        // order always does and consumes at order-create, so the webhook → Paid is correct only for card).
+        if (isBankTransfer && !string.IsNullOrWhiteSpace(request.PaymentIntentId))
+        {
+            return Result<OrderDto>.Failure("A bank-transfer order cannot carry a payment intent.");
+        }
+
         // INV-01 A2: generate the order identity OUTSIDE the retried delegate so a commit-unknown retry (or a
         // concurrent sibling sharing the intent) re-derives the SAME order.Id — the top-of-delegate idempotency
         // lookup and the orders PK guard then return the already-placed order instead of double-creating.
@@ -348,17 +359,18 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
             // variant_id order — the lock-ordering CONTRACT that prevents deadlocks with any other multi-variant path.
             if (isBankTransfer)
             {
-                // Wave A: a bank order still hard-decrements at create (reserved-aware, so it can't take a unit a
-                // card hold owns). Wave B reworks this into a Kind=BankTransfer hold with a long TTL.
-                foreach (var cartItem in cart.Items.OrderBy(i => i.VariantId))
+                // Wave B: a bank order RESERVES a Kind=BankTransfer hold (no physical decrement) — the order
+                // commits Pending holding its stock, the hold is consumed at admin mark-paid, and auto-expired +
+                // the order auto-cancelled if the wire never arrives. Reserved-aware, so it can't take a unit a
+                // card checkout holds. Any short line rolls the whole (uncommitted) order back.
+                var reservationLines = cart.Items
+                    .Select(i => new ReservationRequestLine(
+                        i.VariantId, i.Quantity, products.First(p => p.Id == i.ProductId).Name))
+                    .ToList();
+                var held = await _reservations.ReserveBankOrderAsync(order.Id, reservationLines, cancellationToken);
+                if (!held.Succeeded)
                 {
-                    var stockUpdated = await _context.TryDecrementVariantStockAsync(
-                        cartItem.VariantId, cartItem.Quantity, cancellationToken);
-                    if (stockUpdated == 0)
-                    {
-                        var product = products.First(p => p.Id == cartItem.ProductId);
-                        return await RefundOrFailAsync($"Insufficient stock for '{product.Name}'");
-                    }
+                    return await RefundOrFailAsync(held.Error ?? "Insufficient stock");
                 }
             }
             else

@@ -384,6 +384,223 @@ public sealed class StockReservationService : IStockReservationService
         return expired;
     }
 
+    // ---- INV-01 Wave B: bank-transfer hold-with-expiry ----
+
+    /// <inheritdoc />
+    public async Task<ReservationResult> ReserveBankOrderAsync(
+        Guid orderId,
+        IReadOnlyList<ReservationRequestLine> lines,
+        CancellationToken cancellationToken = default)
+    {
+        // Runs INSIDE the caller's (order-create's) open execution-strategy transaction — no new transaction here.
+        // A fresh order has no holds, but the (order, variant) idempotency check makes a commit-unknown retry a
+        // no-op (belt-and-suspenders: order-create's top-of-delegate FindPlacedOrder already short-circuits).
+        var expiresAt = DateTime.UtcNow.AddDays(_options.EffectiveBankHoldExpiryDays);
+
+        // Lock-ordering CONTRACT: ascending variant_id, matching every other multi-variant loop (reserve, consume,
+        // release, sweep, reconcile) so a bank reserve never deadlocks against them.
+        foreach (var line in lines.OrderBy(l => l.VariantId))
+        {
+            await _context.LockVariantForUpdateAsync(line.VariantId, cancellationToken);
+
+            var existing = await _context.StockReservations.AsNoTracking().AnyAsync(
+                r => r.OrderId == orderId && r.VariantId == line.VariantId
+                  && r.Kind == ReservationKind.BankTransfer && r.Status == ReservationStatus.Active,
+                cancellationToken);
+            if (existing)
+            {
+                // Idempotent: this order already holds this variant — reuse it, do not re-increment the counter.
+                continue;
+            }
+
+            // Available-gated so a bank hold can take only units NOT held by a card checkout (reserved-aware).
+            if (await _context.TryIncrementReservedQuantityAsync(line.VariantId, line.Quantity, cancellationToken) == 0)
+            {
+                // Insufficient available stock — the caller's transaction rolls back the whole batch (never commits).
+                return ReservationResult.Failure($"Insufficient stock for '{line.DisplayName}'.");
+            }
+
+            await _context.InsertActiveBankReservationAsync(
+                Guid.NewGuid(), line.VariantId, orderId, line.Quantity, expiresAt, cancellationToken);
+        }
+
+        return ReservationResult.Success();
+    }
+
+    /// <inheritdoc />
+    public async Task<BankConsumeResult> ConsumeBankOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
+    {
+        // Runs INSIDE the caller's (mark-paid's) open transaction, with the caller HOLDING THE ORDER LOCK so no
+        // concurrent transition can add/expire this order's holds mid-loop. Returns (expected, consumed) so the
+        // caller can enforce ALL-OR-NOTHING and commit Paid only when EVERY line sold, else roll the tx back.
+        //
+        // expected = every bank hold that still represents an UNSOLD line (any status except Consumed): if even one
+        // line's hold has gone Expired/Released, the order can't be fully fulfilled and mark-paid must fail. Only
+        // Active holds are consumable, so a pre-expired line makes consumed < expected ⇒ NOT AllConsumed.
+        var expected = await _context.StockReservations.AsNoTracking().CountAsync(
+            r => r.OrderId == orderId && r.Kind == ReservationKind.BankTransfer
+              && r.Status != ReservationStatus.Consumed,
+            cancellationToken);
+
+        var holds = await _context.StockReservations.AsNoTracking()
+            .Where(r => r.OrderId == orderId && r.Kind == ReservationKind.BankTransfer
+                     && r.Status == ReservationStatus.Active)
+            .Select(r => new { r.Id, r.VariantId })
+            .OrderBy(r => r.VariantId)
+            .ToListAsync(cancellationToken);
+
+        var consumed = 0;
+        foreach (var hold in holds)
+        {
+            await _context.LockVariantForUpdateAsync(hold.VariantId, cancellationToken);
+
+            // Re-read under the lock (never trust the pre-lock snapshot).
+            var current = await _context.StockReservations.AsNoTracking().FirstOrDefaultAsync(
+                r => r.Id == hold.Id, cancellationToken);
+            if (current is not { Status: ReservationStatus.Active })
+            {
+                continue;
+            }
+
+            // Decrement stock AND reserved together (converting THIS hold), by the hold's own quantity, BEFORE the
+            // status flip so a failure leaves the hold Active (recoverable) rather than phantom-Consumed.
+            if (await _context.TryConsumeVariantStockAsync(hold.VariantId, current.Quantity, cancellationToken) == 0)
+            {
+                continue;
+            }
+
+            await _context.TryConsumeReservationRowAsync(hold.Id, orderId, cancellationToken);
+            consumed++;
+        }
+
+        return new BankConsumeResult(expected, consumed);
+    }
+
+    /// <inheritdoc />
+    public async Task ReleaseBankOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
+    {
+        // Runs INSIDE the caller's (cancel's) open transaction. Release each Active bank hold (ascending
+        // variant_id) — drop the counter, flip Released. NO restock: a held bank order was never decremented.
+        var variantIds = await _context.StockReservations
+            .Where(r => r.OrderId == orderId && r.Kind == ReservationKind.BankTransfer
+                     && r.Status == ReservationStatus.Active)
+            .Select(r => r.VariantId)
+            .Distinct()
+            .OrderBy(v => v)
+            .ToListAsync(cancellationToken);
+
+        foreach (var variantId in variantIds)
+        {
+            await _context.LockVariantForUpdateAsync(variantId, cancellationToken);
+
+            var hold = await _context.StockReservations.AsNoTracking().FirstOrDefaultAsync(
+                r => r.OrderId == orderId && r.VariantId == variantId
+                  && r.Kind == ReservationKind.BankTransfer && r.Status == ReservationStatus.Active,
+                cancellationToken);
+            if (hold is null)
+            {
+                continue;
+            }
+
+            if (await _context.TryReleaseReservationAsync(hold.Id, cancellationToken) == 1)
+            {
+                await _context.TryDecrementReservedQuantityAsync(variantId, hold.Quantity, cancellationToken);
+            }
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<int> SweepExpiredBankHoldsAsync(int batchSize, CancellationToken cancellationToken = default)
+    {
+        var dueOrderIds = await _context.StockReservations
+            .Where(r => r.Status == ReservationStatus.Active
+                     && r.Kind == ReservationKind.BankTransfer
+                     && r.ExpiresAt <= DateTime.UtcNow
+                     && r.OrderId != null)
+            .OrderBy(r => r.ExpiresAt)
+            .Select(r => r.OrderId!.Value)
+            .Distinct()
+            .Take(batchSize)
+            .ToListAsync(cancellationToken);
+
+        var cancelledOrders = 0;
+
+        foreach (var orderId in dueOrderIds)
+        {
+            var strategy = _context.Database.CreateExecutionStrategy();
+            var didCancel = await strategy.ExecuteAsync(async () =>
+            {
+                // Re-derive from committed state each attempt (the retry reuses this scoped context).
+                _context.ClearChangeTracker();
+                await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+                // ORDER LOCK FIRST — serialise against a concurrent mark-paid / cancel of THIS order (each also
+                // takes the order lock before any variant lock). Under it, this order's Active-hold set is stable.
+                await _context.LockOrderForUpdateAsync(orderId, cancellationToken);
+
+                var holds = await _context.StockReservations.AsNoTracking()
+                    .Where(r => r.OrderId == orderId && r.Kind == ReservationKind.BankTransfer
+                             && r.Status == ReservationStatus.Active)
+                    .Select(r => new { r.Id, r.VariantId })
+                    .OrderBy(r => r.VariantId)
+                    .ToListAsync(cancellationToken);
+
+                var expiredAny = false;
+                var touched = new HashSet<Guid>();
+                foreach (var hold in holds)
+                {
+                    await _context.LockVariantForUpdateAsync(hold.VariantId, cancellationToken);
+
+                    var current = await _context.StockReservations.AsNoTracking().FirstOrDefaultAsync(
+                        r => r.Id == hold.Id, cancellationToken);
+                    if (current is { Status: ReservationStatus.Active }
+                        && await _context.TryExpireReservationAsync(hold.Id, cancellationToken) == 1)
+                    {
+                        await _context.TryDecrementReservedQuantityAsync(hold.VariantId, current.Quantity, cancellationToken);
+                        expiredAny = true;
+                    }
+
+                    touched.Add(hold.VariantId);
+                }
+
+                var orderCancelled = false;
+                if (expiredAny)
+                {
+                    // We actually expired holds ⇒ the wire never arrived. Cancel the order — but only from a
+                    // cancellable state (a concurrent mark-paid would have CONSUMED the holds under the same
+                    // variant lock, so expiredAny would be false and we would not be here).
+                    var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
+                    if (order is { Status: OrderStatus.Pending })
+                    {
+                        order.SetCancellationReason("Bank transfer not received before the payment window elapsed.");
+                        order.SetStatus(OrderStatus.Cancelled, "Auto-cancelled: bank-transfer hold expired");
+                        orderCancelled = true;
+                    }
+
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+
+                // Self-heal: reconcile each touched variant's counter to Σ Active (clock-independent), under its lock.
+                foreach (var variantId in touched.OrderBy(v => v))
+                {
+                    await _context.LockVariantForUpdateAsync(variantId, cancellationToken);
+                    var sum = await _context.SumActiveReservedQuantityAsync(variantId, cancellationToken);
+                    await _context.SetVariantReservedQuantityAsync(variantId, sum, cancellationToken);
+                }
+
+                await transaction.CommitAsync(cancellationToken);
+                return orderCancelled;
+            });
+
+            if (didCancel)
+            {
+                cancelledOrders++;
+            }
+        }
+
+        return cancelledOrders;
+    }
+
     /// <summary>Releases one (cart, variant) Active hold under its lock, dropping the counter by its live quantity.
     /// The caller must already be inside a transaction; the variant is re-read AFTER the lock.</summary>
     private async Task ReleaseOneAsync(Guid cartId, Guid variantId, CancellationToken cancellationToken)

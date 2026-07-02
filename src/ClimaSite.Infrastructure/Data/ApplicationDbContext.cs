@@ -247,6 +247,13 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
             $"SELECT id FROM product_variants WHERE id = {variantId} FOR UPDATE",
             cancellationToken);
 
+    // INV-01 B: the order-row lock serialises all status transitions of one order (mark-paid / cancel / sweep).
+    // Always taken BEFORE any variant lock so the global lock order is order → ascending variant_id (no deadlock).
+    public Task LockOrderForUpdateAsync(Guid orderId, CancellationToken cancellationToken = default)
+        => Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT id FROM orders WHERE id = {orderId} FOR UPDATE",
+            cancellationToken);
+
     public Task<int> TryIncrementReservedQuantityAsync(Guid variantId, int quantity, CancellationToken cancellationToken = default)
         => ProductVariants
             .Where(v => v.Id == variantId && v.StockQuantity - v.ReservedQuantity >= quantity)
@@ -290,6 +297,26 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
             ON CONFLICT (cart_id, variant_id) WHERE status = 'Active' DO NOTHING
             """,
             cancellationToken);
+
+    // INV-01 B: bank hold keyed on the ORDER (cart_id null). Its own filtered-unique index dedupes it — the
+    // card index's ON CONFLICT (cart_id, variant_id) never fires for a null cart_id (Postgres NULLs are distinct).
+    public Task<int> InsertActiveBankReservationAsync(Guid id, Guid variantId, Guid orderId, int quantity, DateTime expiresAt, CancellationToken cancellationToken = default)
+        => Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            INSERT INTO stock_reservations (id, variant_id, quantity, status, expires_at, order_id, kind, created_at, updated_at)
+            VALUES ({id}, {variantId}, {quantity}, 'Active', {expiresAt}, {orderId}, 'BankTransfer', NOW(), NOW())
+            ON CONFLICT (order_id, variant_id) WHERE status = 'Active' AND kind = 'BankTransfer' DO NOTHING
+            """,
+            cancellationToken);
+
+    // INV-01 B: atomic restock for order cancellation. A single set-based UPDATE (no reserved guard — restock
+    // only adds physical stock back) so a concurrent decrement can't be lost the way a tracked read-modify-save would.
+    public Task<int> IncrementVariantStockAsync(Guid variantId, int quantity, CancellationToken cancellationToken = default)
+        => ProductVariants
+            .Where(v => v.Id == variantId)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(v => v.StockQuantity, v => v.StockQuantity + quantity),
+                cancellationToken);
 
     public Task<int> SetReservationQuantityAndExpiryAsync(Guid reservationId, int quantity, DateTime expiresAt, CancellationToken cancellationToken = default)
         => Database.ExecuteSqlInterpolatedAsync(

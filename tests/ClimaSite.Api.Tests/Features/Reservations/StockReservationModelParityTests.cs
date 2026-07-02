@@ -59,6 +59,22 @@ public class StockReservationModelParityTests : IntegrationTestBase
                   AND indexdef ILIKE '%Active%')
             """))
             .Should().BeTrue("the filtered UNIQUE (cart_id, variant_id) WHERE status='Active' index must exist");
+
+        // INV-01 B: the bank-transfer hold's own filtered-unique index (order_id, variant_id) — bank holds have a
+        // null cart_id so the cart index never dedupes them.
+        (await ScalarBoolAsync(
+            """
+            SELECT EXISTS (
+                SELECT 1 FROM pg_indexes
+                WHERE tablename = 'stock_reservations'
+                  AND indexdef ILIKE '%UNIQUE%'
+                  AND indexdef ILIKE '%order_id%'
+                  AND indexdef ILIKE '%variant_id%'
+                  AND indexdef ILIKE '%WHERE%'
+                  AND indexdef ILIKE '%Active%'
+                  AND indexdef ILIKE '%BankTransfer%')
+            """))
+            .Should().BeTrue("the filtered UNIQUE (order_id, variant_id) WHERE status='Active' AND kind='BankTransfer' index must exist");
     }
 
     private async Task<bool> ScalarBoolAsync(string sql)

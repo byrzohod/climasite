@@ -1,8 +1,11 @@
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Options;
 using ClimaSite.Application.Features.Orders.Commands;
+using ClimaSite.Application.Features.Reservations;
 using ClimaSite.Application.Tests.TestHelpers;
 using ClimaSite.Core.Entities;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 
 namespace ClimaSite.Application.Tests.Features.Orders.Commands;
@@ -23,7 +26,10 @@ public class CancelOrderCommandTests
     {
         // Arrange
         _currentUserServiceMock.Setup(x => x.UserId).Returns(Guid.NewGuid());
-        var handler = new CancelOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = new CancelOrderCommandHandler(
+            _context,
+            _currentUserServiceMock.Object,
+            new StockReservationService(_context, new ReservationOptions()));
         var command = new CancelOrderCommand { OrderId = Guid.NewGuid() };
 
         // Act
@@ -49,7 +55,10 @@ public class CancelOrderCommandTests
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(differentUserId);
         _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
-        var handler = new CancelOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = new CancelOrderCommandHandler(
+            _context,
+            _currentUserServiceMock.Object,
+            new StockReservationService(_context, new ReservationOptions()));
         var command = new CancelOrderCommand { OrderId = order.Id };
 
         // Act
@@ -75,7 +84,10 @@ public class CancelOrderCommandTests
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(adminUserId);
         _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(true);
-        var handler = new CancelOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = new CancelOrderCommandHandler(
+            _context,
+            _currentUserServiceMock.Object,
+            new StockReservationService(_context, new ReservationOptions()));
         var command = new CancelOrderCommand { OrderId = order.Id, CancellationReason = "Admin cancellation" };
 
         // Act
@@ -100,7 +112,10 @@ public class CancelOrderCommandTests
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
         _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
-        var handler = new CancelOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = new CancelOrderCommandHandler(
+            _context,
+            _currentUserServiceMock.Object,
+            new StockReservationService(_context, new ReservationOptions()));
         var command = new CancelOrderCommand
         {
             OrderId = order.Id,
@@ -132,7 +147,10 @@ public class CancelOrderCommandTests
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
         _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
-        var handler = new CancelOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = new CancelOrderCommandHandler(
+            _context,
+            _currentUserServiceMock.Object,
+            new StockReservationService(_context, new ReservationOptions()));
         var command = new CancelOrderCommand { OrderId = order.Id };
 
         // Act
@@ -163,7 +181,10 @@ public class CancelOrderCommandTests
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
         _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
-        var handler = new CancelOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = new CancelOrderCommandHandler(
+            _context,
+            _currentUserServiceMock.Object,
+            new StockReservationService(_context, new ReservationOptions()));
         var command = new CancelOrderCommand { OrderId = order.Id };
 
         // Act
@@ -195,7 +216,10 @@ public class CancelOrderCommandTests
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
         _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
-        var handler = new CancelOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = new CancelOrderCommandHandler(
+            _context,
+            _currentUserServiceMock.Object,
+            new StockReservationService(_context, new ReservationOptions()));
         var command = new CancelOrderCommand { OrderId = order.Id };
 
         // Act
@@ -221,7 +245,10 @@ public class CancelOrderCommandTests
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
         _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
-        var handler = new CancelOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = new CancelOrderCommandHandler(
+            _context,
+            _currentUserServiceMock.Object,
+            new StockReservationService(_context, new ReservationOptions()));
         var command = new CancelOrderCommand { OrderId = order.Id };
 
         // Act
@@ -252,7 +279,10 @@ public class CancelOrderCommandTests
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
         _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
-        var handler = new CancelOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = new CancelOrderCommandHandler(
+            _context,
+            _currentUserServiceMock.Object,
+            new StockReservationService(_context, new ReservationOptions()));
         var command = new CancelOrderCommand { OrderId = order.Id };
 
         // Act
@@ -290,7 +320,10 @@ public class CancelOrderCommandTests
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
         _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
-        var handler = new CancelOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = new CancelOrderCommandHandler(
+            _context,
+            _currentUserServiceMock.Object,
+            new StockReservationService(_context, new ReservationOptions()));
         var command = new CancelOrderCommand { OrderId = order.Id };
 
         // Act
@@ -316,7 +349,10 @@ public class CancelOrderCommandTests
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
         _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
-        var handler = new CancelOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = new CancelOrderCommandHandler(
+            _context,
+            _currentUserServiceMock.Object,
+            new StockReservationService(_context, new ReservationOptions()));
         var command = new CancelOrderCommand
         {
             OrderId = order.Id,
@@ -344,7 +380,10 @@ public class CancelOrderCommandTests
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
         _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
-        var handler = new CancelOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = new CancelOrderCommandHandler(
+            _context,
+            _currentUserServiceMock.Object,
+            new StockReservationService(_context, new ReservationOptions()));
         var command = new CancelOrderCommand { OrderId = order.Id };
 
         // Act
@@ -370,7 +409,10 @@ public class CancelOrderCommandTests
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
         _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
-        var handler = new CancelOrderCommandHandler(_context, _currentUserServiceMock.Object);
+        var handler = new CancelOrderCommandHandler(
+            _context,
+            _currentUserServiceMock.Object,
+            new StockReservationService(_context, new ReservationOptions()));
         var command = new CancelOrderCommand { OrderId = order.Id };
 
         // Act
@@ -385,6 +427,40 @@ public class CancelOrderCommandTests
         result.Value.Items.Should().HaveCount(1);
         result.Value.Subtotal.Should().Be(300m); // 2 * 150
         result.Value.ShippingCost.Should().Be(10m);
+    }
+
+    [Fact]
+    public async Task Handle_UnpaidBankOrderWithActiveHold_ReleasesHold_DoesNotRestock()
+    {
+        // INV-01 B: an unpaid bank order still HOLDS its stock (reserved, never physically decremented). Cancelling
+        // it must RELEASE the hold (reserved → 0) and NOT restock (there was no physical decrement to reverse).
+        var userId = Guid.NewGuid();
+        var product = CreateProduct();
+        var variant = product.Variants.First();
+        variant.SetStockQuantity(10);
+
+        var order = CreateOrder("ORD-BANK", "user@test.com", userId);
+        order.SetPaymentMethod("bank");
+        AddOrderItem(order, product, 2);
+
+        _context.AddProduct(product);
+        _context.AddOrder(order);
+
+        var reservations = new StockReservationService(_context, new ReservationOptions());
+        await reservations.ReserveBankOrderAsync(order.Id, new[] { new ReservationRequestLine(variant.Id, 2, "AC") });
+        variant.ReservedQuantity.Should().Be(2);
+        variant.StockQuantity.Should().Be(10);
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        _currentUserServiceMock.Setup(x => x.IsAdmin).Returns(false);
+        var handler = new CancelOrderCommandHandler(_context, _currentUserServiceMock.Object, reservations);
+
+        var result = await handler.Handle(new CancelOrderCommand { OrderId = order.Id }, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        variant.ReservedQuantity.Should().Be(0, "the bank hold is released on cancel");
+        variant.StockQuantity.Should().Be(10, "an unpaid bank order was never decremented — cancel must NOT restock");
+        (await _context.StockReservations.SingleAsync()).Status.Should().Be(ReservationStatus.Released);
     }
 
     [Fact]
