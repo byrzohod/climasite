@@ -1,4 +1,3 @@
-using ClimaSite.Application.Common.Behaviors;
 using ClimaSite.Application.Common.Exceptions;
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Pricing;
@@ -9,13 +8,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClimaSite.Application.Features.Products.Queries;
 
-public record GetProductBySlugQuery : IRequest<ProductDto>, ICacheableQuery
+// INV-01 A3: deliberately NOT ICacheableQuery. The PDP DTO now embeds volatile reservation state
+// (ReservedQuantity / AvailableQuantity = stock − reserved), so response-caching it would serve stale
+// availability (and stale Product JSON-LD) for up to the cache TTL after a hold is taken/released —
+// defeating honest availability. The PDP is not a hot-enough path to need the cache.
+public record GetProductBySlugQuery : IRequest<ProductDto>
 {
     public string Slug { get; init; } = string.Empty;
     public string? LanguageCode { get; init; }
-
-    public string CacheKey => $"product_slug_{Slug}_{LanguageCode ?? "en"}";
-    public TimeSpan? CacheDuration => TimeSpan.FromMinutes(10);
 }
 
 public class GetProductBySlugQueryHandler : IRequestHandler<GetProductBySlugQuery, ProductDto>
@@ -90,7 +90,9 @@ public class GetProductBySlugQueryHandler : IRequestHandler<GetProductBySlugQuer
                 IsPrimary = i.IsPrimary,
                 SortOrder = i.SortOrder
             }).ToList(),
-            Variants = product.Variants.Select(v => new ProductVariantDto
+            // INV-01 A3: deterministic order (SortOrder, Id) so the PDP's default-variant availability matches
+            // add-to-cart's default-variant selection (both take the first active variant in this same order).
+            Variants = product.Variants.OrderBy(v => v.SortOrder).ThenBy(v => v.Id).Select(v => new ProductVariantDto
             {
                 Id = v.Id,
                 Sku = v.Sku,
@@ -98,8 +100,11 @@ public class GetProductBySlugQueryHandler : IRequestHandler<GetProductBySlugQuer
                 Price = product.BasePrice + v.PriceAdjustment,
                 SalePrice = null,
                 StockQuantity = v.StockQuantity,
-                ReservedQuantity = 0,
-                AvailableQuantity = v.StockQuantity,
+                // INV-01 A3: honest availability on the PDP — subtract units held by Active checkout
+                // reservations so shoppers don't see/add stock another checkout already holds. Computed
+                // in-memory on the materialized variant (this Select runs after FirstOrDefaultAsync).
+                ReservedQuantity = v.ReservedQuantity,
+                AvailableQuantity = Math.Max(v.StockQuantity - v.ReservedQuantity, 0),
                 IsActive = v.IsActive,
                 Attributes = v.Attributes?.ToDictionary(
                     kvp => kvp.Key,

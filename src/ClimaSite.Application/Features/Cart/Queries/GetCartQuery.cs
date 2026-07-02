@@ -71,6 +71,10 @@ public class GetCartQueryHandler : IRequestHandler<GetCartQuery, CartDto?>
             .Where(p => productIds.Contains(p.Id))
             .ToListAsync(cancellationToken);
 
+        // INV-01 A3: add this cart's OWN Active holds back into each line's ceiling so a held cart's
+        // MaxQuantity never sits below what it already holds (0 for the common pre-checkout cart).
+        var ownHolds = await CartReservationAvailability.GetOwnActiveHoldsAsync(_context, cart.Id, cancellationToken);
+
         var items = cart.Items.Select(item =>
         {
             var product = products.FirstOrDefault(p => p.Id == item.ProductId);
@@ -114,7 +118,12 @@ public class GetCartQueryHandler : IRequestHandler<GetCartQuery, CartDto?>
                 EffectivePrice = item.UnitPrice,
                 Quantity = item.Quantity,
                 LineTotal = item.UnitPrice * item.Quantity,
-                AvailableStock = variant?.StockQuantity ?? 0,
+                // INV-01 A3: per-line available cap excludes units held by OTHER carts' Active reservations,
+                // but adds back this cart's own hold so the FE qty cap never falls below its held quantity.
+                AvailableStock = Math.Max(
+                    (variant?.StockQuantity ?? 0) - (variant?.ReservedQuantity ?? 0)
+                        + ownHolds.GetValueOrDefault(item.VariantId),
+                    0),
                 IsAvailable = variant != null && variant.IsActive && product.IsActive
             };
         }).ToList();

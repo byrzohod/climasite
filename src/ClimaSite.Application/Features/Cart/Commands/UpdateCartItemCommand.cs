@@ -69,12 +69,27 @@ public class UpdateCartItemCommandHandler : IRequestHandler<UpdateCartItemComman
         }
         else
         {
-            var variant = await _context.ProductVariants
-                .FirstOrDefaultAsync(v => v.Id == item.VariantId, cancellationToken);
-
-            if (variant != null && variant.StockQuantity < request.Quantity)
+            // INV-01 A3: only an INCREASE needs an availability check. A decrease/no-change never needs
+            // more stock, and guarding it against (stock − reserved) would wrongly block shrinking a cart
+            // that itself holds the reservation (e.g. this cart holds 7/10 and wants to drop to 4). The
+            // reservation-aware ceiling is advisory (no hold is taken here) and applies to growth only.
+            if (request.Quantity > item.Quantity)
             {
-                return Result<CartDto>.Failure($"Only {variant.StockQuantity} items available in stock.");
+                var variant = await _context.ProductVariants
+                    .FirstOrDefaultAsync(v => v.Id == item.VariantId, cancellationToken);
+
+                if (variant != null)
+                {
+                    // Add back this cart's OWN Active hold so re-growing up to what it already holds isn't
+                    // blocked by its own reservation (0 for a pre-checkout cart with no hold).
+                    var ownHolds = await CartReservationAvailability.GetOwnActiveHoldsAsync(_context, cart.Id, cancellationToken);
+                    var ownHold = ownHolds.GetValueOrDefault(item.VariantId);
+                    var availableStock = Math.Max(variant.StockQuantity - variant.ReservedQuantity + ownHold, 0);
+                    if (availableStock < request.Quantity)
+                    {
+                        return Result<CartDto>.Failure($"Only {availableStock} items available in stock.");
+                    }
+                }
             }
 
             item.SetQuantity(request.Quantity);
@@ -122,6 +137,9 @@ public class UpdateCartItemCommandHandler : IRequestHandler<UpdateCartItemComman
             .Where(p => productIds.Contains(p.Id))
             .ToListAsync(cancellationToken);
 
+        // INV-01 A3: this cart's own Active holds so every returned line's available cap adds them back.
+        var ownHolds = await CartReservationAvailability.GetOwnActiveHoldsAsync(_context, cart.Id, cancellationToken);
+
         var items = cart.Items.Select(item =>
         {
             var product = products.FirstOrDefault(p => p.Id == item.ProductId);
@@ -143,7 +161,8 @@ public class UpdateCartItemCommandHandler : IRequestHandler<UpdateCartItemComman
                 EffectivePrice = item.UnitPrice,
                 Quantity = item.Quantity,
                 LineTotal = item.UnitPrice * item.Quantity,
-                AvailableStock = variant?.StockQuantity ?? 0,
+                // INV-01 A3: reservation-aware per-line cap (adds back this cart's own hold), consistent with GetCartQuery.
+                AvailableStock = CartReservationAvailability.LineAvailable(variant, item.VariantId, ownHolds),
                 IsAvailable = variant != null && variant.IsActive && (product?.IsActive ?? false)
             };
         }).ToList();

@@ -11,7 +11,7 @@ import { ProductService } from '../../../core/services/product.service';
 import { WishlistService } from '../../../core/services/wishlist.service';
 import { SeoService } from '../../../core/services/seo.service';
 import { StructuredDataService } from '../../../core/services/structured-data.service';
-import { Product } from '../../../core/models/product.model';
+import { Product, ProductVariant } from '../../../core/models/product.model';
 import { ProductDetailComponent } from './product-detail.component';
 
 const translations: Record<string, string> = {
@@ -23,6 +23,20 @@ class FakeTranslateLoader implements TranslateLoader {
   getTranslation(_lang: string): Observable<Record<string, string>> {
     return of(translations);
   }
+}
+
+function makeVariant(overrides: Partial<ProductVariant> = {}): ProductVariant {
+  return {
+    id: 'var-1',
+    sku: 'AC-001-STD',
+    name: 'Standard',
+    price: 599,
+    stockQuantity: 10,
+    reservedQuantity: 0,
+    availableQuantity: 10,
+    isActive: true,
+    ...overrides
+  };
 }
 
 function makeProduct(overrides: Partial<Product> = {}): Product {
@@ -223,5 +237,74 @@ describe('ProductDetailComponent', () => {
     expect(component.product()?.name).toBe('Product B');
     const lastTitle = (seo.setMeta.calls.mostRecent().args[0] as { title?: string }).title;
     expect(lastTitle).toBe('Product B');
+  }));
+
+  // INV-01 A3: the PDP availability indicator is derived from the reservation-adjusted
+  // `availableQuantity` (stock − reserved), NOT raw stock.
+  function loadProductWithVariants(variants: ProductVariant[]): void {
+    productService.getProductBySlug.and.returnValue(of(makeProduct({ variants })));
+    setSlug('stock-test');
+    createComponent();
+    tick();
+  }
+
+  it('reports out-of-stock when a variant is fully reserved despite raw stock remaining', fakeAsync(() => {
+    // availableQuantity 0 while stockQuantity 10 -> shoppers must see out-of-stock, not "in stock".
+    loadProductWithVariants([makeVariant({ stockQuantity: 10, reservedQuantity: 10, availableQuantity: 0 })]);
+
+    expect(component.availableQuantity()).toBe(0);
+    expect(component.stockState()).toBe('out-of-stock');
+  }));
+
+  it('reports low-stock when reservation-adjusted availability is at/below the threshold', fakeAsync(() => {
+    loadProductWithVariants([makeVariant({ stockQuantity: 12, reservedQuantity: 9, availableQuantity: 3 })]);
+
+    expect(component.availableQuantity()).toBe(3);
+    expect(component.stockState()).toBe('low-stock');
+  }));
+
+  it('reports in-stock when ample reservation-adjusted availability remains', fakeAsync(() => {
+    loadProductWithVariants([makeVariant({ stockQuantity: 20, reservedQuantity: 4, availableQuantity: 16 })]);
+
+    expect(component.availableQuantity()).toBe(16);
+    expect(component.stockState()).toBe('in-stock');
+  }));
+
+  it('uses the DEFAULT variant availability, not the sum across variants', fakeAsync(() => {
+    // Aggregate would be 2 + 8 = 10 (plenty), but add-to-cart uses the first available variant (v1, 2 units).
+    // The PDP must advertise v1's lower availability so it never promises a qty a single variant can't fill.
+    loadProductWithVariants([
+      makeVariant({ id: 'v1', availableQuantity: 2 }),
+      makeVariant({ id: 'v2', availableQuantity: 8 })
+    ]);
+
+    expect(component.availableQuantity()).toBe(2, 'default (first available) variant, not the 10-unit sum');
+    expect(component.stockState()).toBe('low-stock');
+  }));
+
+  it('skips a fully-reserved first variant to the first available one (mirrors add-to-cart)', fakeAsync(() => {
+    loadProductWithVariants([
+      makeVariant({ id: 'v1', stockQuantity: 5, reservedQuantity: 5, availableQuantity: 0 }),
+      makeVariant({ id: 'v2', stockQuantity: 8, reservedQuantity: 2, availableQuantity: 6 })
+    ]);
+
+    expect(component.availableQuantity()).toBe(6, 'first active variant WITH availability is the default');
+    expect(component.stockState()).toBe('in-stock');
+  }));
+
+  it('falls back to the first active variant (out-of-stock) when none has availability', fakeAsync(() => {
+    loadProductWithVariants([
+      makeVariant({ id: 'v1', stockQuantity: 5, reservedQuantity: 5, availableQuantity: 0 }),
+      makeVariant({ id: 'v2', stockQuantity: 3, reservedQuantity: 3, availableQuantity: 0 })
+    ]);
+
+    expect(component.availableQuantity()).toBe(0);
+    expect(component.stockState()).toBe('out-of-stock');
+  }));
+
+  it('hides the indicator (state "none") when the product exposes no active variant', fakeAsync(() => {
+    loadProductWithVariants([]);
+
+    expect(component.stockState()).toBe('none');
   }));
 });

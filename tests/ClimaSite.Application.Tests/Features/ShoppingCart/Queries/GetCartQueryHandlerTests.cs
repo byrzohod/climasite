@@ -87,6 +87,30 @@ public class GetCartQueryHandlerTests
     }
 
     [Fact]
+    public async Task Handle_VariantWithActiveReservations_AvailableStockExcludesReserved()
+    {
+        // INV-01 A3: the cart's per-line available cap (AvailableStock / MaxQuantity) must exclude units
+        // held by an in-flight checkout, so it reads stock − reserved, not raw stock.
+        var userId = Guid.NewGuid();
+        var product = new Product("GC-RSV", "GC-RSV AC", "gc-rsv-ac", 250m);
+        var variant = new ProductVariant(product.Id, "GC-RSV-STD", "Standard");
+        variant.SetStockQuantity(8);
+        variant.SetReservedQuantity(3);
+        product.Variants.Add(variant);
+        _context.AddProduct(product);
+        var cart = new Core.Entities.Cart(userId, null);
+        cart.AddItem(product.Id, variant.Id, 2, 250m);
+        _context.AddCart(cart);
+
+        var result = await CreateHandler().Handle(
+            new GetCartQuery { UserId = userId },
+            CancellationToken.None);
+
+        result!.Items.Should().ContainSingle();
+        result.Items.First().AvailableStock.Should().Be(5, "8 stock − 3 reserved");
+    }
+
+    [Fact]
     public async Task Handle_WhenProductMissing_MarksItemUnavailable()
     {
         var userId = Guid.NewGuid();

@@ -65,7 +65,12 @@ public class ProductsController : ControllerBase
     /// <summary>
     /// Get a product by its URL slug.
     /// </summary>
+    // INV-01 A3: opt this action out of the global 5-min output-cache base policy. The PDP DTO carries
+    // volatile reservation-adjusted availability (AvailableQuantity = stock − reserved), so a cached HTTP
+    // response would show stale availability after a hold is taken/released. Pairs with GetProductBySlugQuery
+    // not being an ICacheableQuery (the MediatR/Redis cache layer). The PDP is not a hot-enough path to cache.
     [HttpGet("{slug}")]
+    [OutputCache(NoStore = true)]
     [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProductBySlug(string slug, [FromQuery] string? lang = null)

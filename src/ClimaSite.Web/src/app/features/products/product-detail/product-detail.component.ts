@@ -97,6 +97,31 @@ import { DualPricePipe } from '../../../shared/pipes/dual-price.pipe';
                 }
               </div>
 
+              <!-- INV-01 A3: reservation-adjusted availability (stock − held-by-checkout) -->
+              @if (stockState() !== 'none') {
+                <div
+                  class="stock-indicator"
+                  [class.in-stock]="stockState() === 'in-stock'"
+                  [class.low-stock]="stockState() === 'low-stock'"
+                  [class.out-of-stock]="stockState() === 'out-of-stock'"
+                  role="status"
+                  data-testid="stock-indicator"
+                >
+                  <span class="stock-dot" aria-hidden="true"></span>
+                  @switch (stockState()) {
+                    @case ('out-of-stock') {
+                      <span>{{ 'products.stock.outOfStock' | translate }}</span>
+                    }
+                    @case ('low-stock') {
+                      <span>{{ 'products.stock.lowStock' | translate:{ count: availableQuantity() } }}</span>
+                    }
+                    @default {
+                      <span>{{ 'products.stock.inStock' | translate }}</span>
+                    }
+                  }
+                </div>
+              }
+
               @if (product()?.shortDescription) {
                 <p class="product-description">{{ product()?.shortDescription }}</p>
               }
@@ -121,7 +146,7 @@ import { DualPricePipe } from '../../../shared/pipes/dual-price.pipe';
                 [warrantyMonths]="product()?.warrantyMonths || 0"
                 [returnDays]="30"
                 [freeShipping]="(product()?.basePrice || 0) >= 500"
-                [inStock]="true"
+                [inStock]="!hasActiveVariants() || availableQuantity() > 0"
                 [installationAvailable]="product()?.requiresInstallation || false" />
 
               <!-- Energy Rating (if available) -->
@@ -159,7 +184,7 @@ import { DualPricePipe } from '../../../shared/pipes/dual-price.pipe';
                 <button
                   class="btn-add-to-cart"
                   [class.added]="addedToCart()"
-                  [disabled]="isAddingToCart()"
+                  [disabled]="isAddingToCart() || stockState() === 'out-of-stock'"
                   (click)="addToCart()"
                   data-testid="add-to-cart"
                 >
@@ -167,6 +192,8 @@ import { DualPricePipe } from '../../../shared/pipes/dual-price.pipe';
                     {{ 'common.loading' | translate }}
                   } @else if (addedToCart()) {
                     ✓ {{ 'cart.item.added' | translate }}
+                  } @else if (stockState() === 'out-of-stock') {
+                    {{ 'products.stock.outOfStock' | translate }}
                   } @else {
                     {{ 'products.details.addToCart' | translate }}
                   }
@@ -475,6 +502,35 @@ import { DualPricePipe } from '../../../shared/pipes/dual-price.pipe';
         .meta-value {
           color: var(--color-text-primary);
         }
+      }
+    }
+
+    .stock-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+
+      .stock-dot {
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 50%;
+        background: currentColor;
+        flex-shrink: 0;
+      }
+
+      &.in-stock {
+        color: var(--color-success);
+      }
+
+      &.low-stock {
+        color: var(--color-warning);
+      }
+
+      &.out-of-stock {
+        color: var(--color-error);
       }
     }
 
@@ -875,6 +931,47 @@ export class ProductDetailComponent {
     return this.wishlistService.isInWishlist(prod.id);
   });
 
+  /**
+   * INV-01 A3: low-stock display threshold. At/below this many (reservation-adjusted) units the PDP
+   * shows "Only N left". Mirrors the variant default LowStockThreshold on the backend.
+   */
+  readonly lowStockThreshold = 5;
+
+  /** True once the loaded product exposes any active variant to derive availability from. */
+  hasActiveVariants = computed<boolean>(() =>
+    (this.product()?.variants ?? []).some(v => v.isActive));
+
+  /**
+   * INV-01 A3: the variant no-variant add-to-cart will actually use. Mirrors AddToCartCommand's server
+   * selection exactly — the first active variant with reservation-adjusted availability, else the first
+   * active variant (fallback). The PDP has no variant selector, so availability must reflect THIS variant,
+   * not a sum across variants (a sum could advertise a qty no single default variant can satisfy).
+   */
+  private defaultVariant = computed(() => {
+    const active = (this.product()?.variants ?? []).filter(v => v.isActive);
+    return active.find(v => (v.availableQuantity ?? 0) > 0) ?? active[0] ?? null;
+  });
+
+  /**
+   * INV-01 A3: units available to buy right now on the default variant, using the DTO's reservation-adjusted
+   * `availableQuantity` (stock − reserved) — NOT raw stock — so units held by another in-flight checkout are
+   * not offered. Matches what add-to-cart will accept for qty > 1.
+   */
+  availableQuantity = computed<number>(() =>
+    Math.max(this.defaultVariant()?.availableQuantity ?? 0, 0));
+
+  /**
+   * Stock badge state for the PDP indicator. 'none' hides the indicator (product has no active
+   * variant data, e.g. an accessory with no variants) and preserves the pre-A3 trust-badge display.
+   */
+  stockState = computed<'in-stock' | 'low-stock' | 'out-of-stock' | 'none'>(() => {
+    if (!this.hasActiveVariants()) return 'none';
+    const available = this.availableQuantity();
+    if (available <= 0) return 'out-of-stock';
+    if (available <= this.lowStockThreshold) return 'low-stock';
+    return 'in-stock';
+  });
+
   constructor() {
     // H7/H3/H5: ONE reactive load trigger keyed on (slug, lang). Combining the route
     // param signal with the language signal in a single effect — deduped against the
@@ -1014,7 +1111,7 @@ export class ProductDetailComponent {
 
   addToCart(): void {
     const prod = this.product();
-    if (!prod || this.isAddingToCart()) return;
+    if (!prod || this.isAddingToCart() || this.stockState() === 'out-of-stock') return;
 
     this.isAddingToCart.set(true);
     this.addedToCart.set(false);
