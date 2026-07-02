@@ -1,7 +1,9 @@
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Options;
 using ClimaSite.Application.Common.Payments;
 using ClimaSite.Application.Common.Pricing;
 using ClimaSite.Application.Features.Payments.Commands;
+using ClimaSite.Application.Features.Reservations;
 using ClimaSite.Application.Tests.TestHelpers;
 using ClimaSite.Core.Entities;
 using FluentAssertions;
@@ -13,19 +15,23 @@ public class CreatePaymentIntentCommandHandlerTests
 {
     private readonly Mock<ICurrentUserService> _currentUserServiceMock;
     private readonly Mock<IPaymentService> _paymentServiceMock;
+    private readonly Mock<IGuestSessionAccessor> _guestSessionMock;
     private readonly MockDbContext _context;
 
     public CreatePaymentIntentCommandHandlerTests()
     {
         _currentUserServiceMock = new Mock<ICurrentUserService>();
         _paymentServiceMock = new Mock<IPaymentService>();
+        _guestSessionMock = new Mock<IGuestSessionAccessor>();
         _context = new MockDbContext();
     }
 
     private CreatePaymentIntentCommandHandler CreateHandler() => new(
         _context,
         _currentUserServiceMock.Object,
-        _paymentServiceMock.Object);
+        _paymentServiceMock.Object,
+        new StockReservationService(_context, new ReservationOptions()),
+        _guestSessionMock.Object);
 
     [Fact]
     public async Task Handle_WithCartAndShippingMethod_ComputesEurTotalServerSide()
@@ -96,6 +102,9 @@ public class CreatePaymentIntentCommandHandlerTests
             .ReturnsAsync(PaymentIntentResult.Success("pi_guest", "pi_guest_secret", "requires_payment_method"));
 
         _currentUserServiceMock.Setup(x => x.UserId).Returns((Guid?)null);
+        // A2 legacy-reject: the handler keys the guest cart off the server-trusted signed cookie, not the raw
+        // request id — so the accessor must publish the session id for a guest checkout to find its cart.
+        _guestSessionMock.Setup(x => x.GuestSessionId).Returns(sessionId);
         var handler = CreateHandler();
         var command = new CreatePaymentIntentCommand
         {

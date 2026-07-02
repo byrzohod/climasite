@@ -4,7 +4,7 @@
 > `--resume`. Read **Next action** first. Kept fresh via `/checkpoint` at each unit/phase boundary.
 > LEAN — pointers, not prose. **This is the single entry point; everything else is linked below.**
 
-- **Last checkpoint**: 2026-07-01 (**INV-01 Wave A1 (guest-identity switch — cookie now AUTHORITATIVE + legacy-cart migration) CODE-COMPLETE + council-clean + `/acceptance` PASS**, on branch `feature/inv-01-a1-identity-switch`, opening PR. Diff R1 REWORK→R2 APPROVE-WITH-CHANGES (advisory lock for the concurrent-merge race + ChangeTracker-clear on retry). Core 430/App 996/Api 493/FE 62, format clean. **A0 MERGED `02e700b` (#98).** Wave A split into A1 (this) + A2 (reservations core, NEXT).)
+- **Last checkpoint**: 2026-07-02 (**INV-01 Wave A2 (reservations CORE + sweeper) CODE-COMPLETE + council-clean + `/acceptance` PASS**, on branch `feature/inv-01-a2-reservations-core`, opening PR. Diff R1 REWORK (2 Highs: stale-consumed under-sell + admin-bypass; Codex + Claude verifier) → R2 APPROVE-WITH-CHANGES (bulk-atomic + orphan tests) → all applied. Core 430/App 1020/Api 509, format clean. **Live `/acceptance` proved the headline: two concurrent buyers race the last unit → LOSER GETS 400 BEFORE ANY STRIPE CHARGE (not charged-then-refunded); reserved=1 not 2; abandoned hold auto-expired by the sweeper in <10s.** A0 #98 + A1 #99 merged. Remaining: A3 (availability DISPLAY on PDP/cart) + B (bank-transfer hold).)
 
 ## Goal
 Production-grade multi-language (EN/BG/DE), multi-theme HVAC e-commerce platform — finish to production readiness with a hardened SDLC.

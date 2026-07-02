@@ -1,3 +1,4 @@
+using ClimaSite.Api.Services;
 using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Infrastructure.Data;
 using DotNet.Testcontainers.Builders;
@@ -117,6 +118,18 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
 
             services.AddSingleton<IGoogleTokenValidator>(GoogleTokenValidator);
 
+            // INV-01 A2: every in-process test "guest" shares one loopback IP, so the per-IP guest-cookie mint
+            // limiter (20/min) would exhaust across the suite and starve later guests of the signed cookie that
+            // A2 checkout now requires — flaking guest create-intent/order tests. Replace it with an always-allow
+            // limiter (each test guest is a distinct real client). Config can't do this: GuestSessionOptions is
+            // bound while the host is still building, before the test config merges (same as the JWT secret).
+            var mintLimiterDescriptor = services.SingleOrDefault(
+                d => d.ServiceType == typeof(IGuestSessionMintLimiter));
+            if (mintLimiterDescriptor != null)
+                services.Remove(mintLimiterDescriptor);
+
+            services.AddSingleton<IGuestSessionMintLimiter>(new AlwaysAllowMintLimiter());
+
             // Replace production health checks so integration tests don't depend on local services.
             services.Configure<HealthCheckServiceOptions>(options => options.Registrations.Clear());
             services.AddHealthChecks()
@@ -139,4 +152,11 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>, IAsyncL
         await _redisContainer.DisposeAsync();
         await _dbContainer.DisposeAsync();
     }
+}
+
+/// <summary>Always-allow guest-cookie mint limiter for integration tests (see the registration comment): the
+/// per-IP production cap would otherwise flake guest checkout across the shared-loopback-IP suite.</summary>
+internal sealed class AlwaysAllowMintLimiter : IGuestSessionMintLimiter
+{
+    public bool TryReserveMint(string clientIp) => true;
 }

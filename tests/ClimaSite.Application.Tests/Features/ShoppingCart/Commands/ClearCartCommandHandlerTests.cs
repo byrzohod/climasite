@@ -1,5 +1,7 @@
 using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Options;
 using ClimaSite.Application.Features.Cart.Commands;
+using ClimaSite.Application.Features.Reservations;
 using ClimaSite.Application.Tests.TestHelpers;
 using ClimaSite.Core.Entities;
 using FluentAssertions;
@@ -14,7 +16,7 @@ public class ClearCartCommandHandlerTests
     private readonly MockDbContext _context = new();
 
     private ClearCartCommandHandler CreateHandler() =>
-        new(_context, _currentUserServiceMock.Object);
+        new(_context, _currentUserServiceMock.Object, new StockReservationService(_context, new ReservationOptions()));
 
     [Fact]
     public async Task Handle_WhenNoCart_ReturnsSuccess_Noop()

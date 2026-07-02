@@ -7,6 +7,7 @@ using ClimaSite.Application.Features.Orders.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace ClimaSite.Api.Controllers;
 
@@ -30,6 +31,7 @@ public class OrdersController : ControllerBase
     /// The handler validates that either the user is authenticated OR a GuestSessionId is provided.
     /// </summary>
     [AllowAnonymous]
+    [EnableRateLimiting("strict")]
     [HttpPost]
     [ProducesResponseType(typeof(OrderDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

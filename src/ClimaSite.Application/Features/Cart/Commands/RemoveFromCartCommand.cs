@@ -25,13 +25,16 @@ public class RemoveFromCartCommandHandler : IRequestHandler<RemoveFromCartComman
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IStockReservationService _reservations;
 
     public RemoveFromCartCommandHandler(
         IApplicationDbContext context,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IStockReservationService reservations)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _reservations = reservations;
     }
 
     public async Task<Result> Handle(RemoveFromCartCommand request, CancellationToken cancellationToken)
@@ -63,6 +66,10 @@ public class RemoveFromCartCommandHandler : IRequestHandler<RemoveFromCartComman
         {
             return Result.Failure("Cart item not found.");
         }
+
+        // INV-01 A2: release this variant's Active checkout hold (usually a no-op pre-checkout) BEFORE removing
+        // the line — release runs its own transaction and clears the tracker, so it must precede the mutation.
+        await _reservations.ReleaseCartVariantAsync(cart.Id, item.VariantId, cancellationToken);
 
         cart.Items.Remove(item);
         await _context.SaveChangesAsync(cancellationToken);

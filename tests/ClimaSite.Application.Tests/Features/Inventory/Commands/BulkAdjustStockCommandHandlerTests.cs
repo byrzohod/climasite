@@ -94,6 +94,44 @@ public class BulkAdjustStockCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_RejectsSettingStockBelowReservedUnits()
+    {
+        // INV-01 A2 (council High #2): an absolute set below the units currently held by open checkouts
+        // (reserved_quantity) must be skipped + reported, never applied — it would strand a card holder's consume.
+        var v = SeedVariant("BULK-RSV", stock: 10);
+        v.SetReservedQuantity(3); // 3 units held by open checkouts
+
+        var result = await CreateHandler().Handle(new BulkAdjustStockCommand
+        {
+            Reason = StockAdjustmentReason.Correction,
+            Adjustments = [new StockAdjustmentItem { VariantId = v.Id, NewQuantity = 2 }] // below reserved
+        }, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.SuccessCount.Should().Be(0);
+        result.Value.FailureCount.Should().Be(1);
+        result.Value.Errors.Should().ContainSingle().Which.Should().Contain("held by open checkouts");
+        v.StockQuantity.Should().Be(10); // unchanged
+    }
+
+    [Fact]
+    public async Task Handle_AllowsSettingStockDownToReservedUnits()
+    {
+        var v = SeedVariant("BULK-RSV-OK", stock: 10);
+        v.SetReservedQuantity(3);
+
+        var result = await CreateHandler().Handle(new BulkAdjustStockCommand
+        {
+            Reason = StockAdjustmentReason.Correction,
+            Adjustments = [new StockAdjustmentItem { VariantId = v.Id, NewQuantity = 3 }] // exactly at reserved
+        }, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.SuccessCount.Should().Be(1);
+        v.StockQuantity.Should().Be(3);
+    }
+
+    [Fact]
     public async Task Handle_DecrementToZero_IsAllowed()
     {
         var a = SeedVariant("BULK-ZERO", stock: 50);

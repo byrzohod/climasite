@@ -65,7 +65,8 @@ public class BulkAdjustStockCommandHandler : IRequestHandler<BulkAdjustStockComm
         var successCount = 0;
         var errors = new List<string>();
 
-        foreach (var adjustment in request.Adjustments)
+        // Process in ascending variant_id order (lock-ordering consistency with the reservation loops).
+        foreach (var adjustment in request.Adjustments.OrderBy(a => a.VariantId))
         {
             if (!variants.TryGetValue(adjustment.VariantId, out var variant))
             {
@@ -73,22 +74,21 @@ public class BulkAdjustStockCommandHandler : IRequestHandler<BulkAdjustStockComm
                 continue;
             }
 
-            try
+            // INV-01 A2: the WRITE is a single atomic reserved-aware set — never drop stock below the units held by
+            // open checkouts (reserved_quantity), which would strand a card holder's consume (charge-then-refund).
+            // rows==0 ⇒ the set would go below the held units (the guard re-checks reserved AT write time, so a
+            // reserve committing after the load above can't sneak the stock below reserved). Skip + report per line.
+            var rows = await _context.TrySetVariantStockAtOrAboveReservedAsync(
+                adjustment.VariantId, adjustment.NewQuantity, cancellationToken);
+            if (rows > 0)
             {
-                variant.SetStockQuantity(adjustment.NewQuantity);
                 successCount++;
             }
-            // Catching generic Exception is intentional for bulk operations to ensure
-            // partial success - we want to continue processing remaining items even if one fails
-            catch (Exception ex)
+            else
             {
-                errors.Add($"Variant {adjustment.VariantId}: {ex.Message}");
+                errors.Add(
+                    $"Variant {adjustment.VariantId}: cannot set stock below the {variant.ReservedQuantity} unit(s) currently held by open checkouts");
             }
-        }
-
-        if (successCount > 0)
-        {
-            await _context.SaveChangesAsync(cancellationToken);
         }
 
         return Result<BulkAdjustStockResult>.Success(new BulkAdjustStockResult

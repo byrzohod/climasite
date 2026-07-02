@@ -1,8 +1,10 @@
 using System.Reflection;
 using ClimaSite.Application.Common.Behaviors;
+using ClimaSite.Application.Common.Interfaces;
 using ClimaSite.Application.Common.Mappings;
 using ClimaSite.Application.Features.Outbox;
 using ClimaSite.Application.Features.Products.Scoring;
+using ClimaSite.Application.Features.Reservations;
 using ClimaSite.Application.Features.Wishlist.Services;
 using FluentValidation;
 using Mapster;
@@ -37,6 +39,10 @@ public static class DependencyInjection
         // Email outbox (ARCH-05): enqueue + drain. The hosted polling shell lives in the API layer.
         services.AddScoped<IEmailOutbox, EmailOutbox>();
         services.AddScoped<IOutboxProcessor, OutboxProcessor>();
+
+        // Stock reservations (INV-01 A2): P1 reserve / P2 consume / P3 release / R reconcile over the atomic
+        // primitives. ReservationOptions is bound from configuration in the Infrastructure layer.
+        services.AddScoped<IStockReservationService, StockReservationService>();
 
         return services;
     }

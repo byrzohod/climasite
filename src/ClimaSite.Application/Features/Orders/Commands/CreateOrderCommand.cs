@@ -91,6 +91,7 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
     private readonly ICurrentUserService _currentUserService;
     private readonly IPaymentService _paymentService;
     private readonly IEmailOutbox _emailOutbox;
+    private readonly IStockReservationService _reservations;
     private readonly BankTransferOptions _bankTransferOptions;
     private readonly ILogger<CreateOrderCommandHandler> _logger;
 
@@ -99,6 +100,7 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
         ICurrentUserService currentUserService,
         IPaymentService paymentService,
         IEmailOutbox emailOutbox,
+        IStockReservationService reservations,
         BankTransferOptions bankTransferOptions,
         ILogger<CreateOrderCommandHandler> logger)
     {
@@ -106,6 +108,7 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
         _currentUserService = currentUserService;
         _paymentService = paymentService;
         _emailOutbox = emailOutbox;
+        _reservations = reservations;
         _bankTransferOptions = bankTransferOptions;
         _logger = logger;
     }
@@ -119,8 +122,48 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
         // Validate user context - either authenticated user OR guest session required
         if (!userId.HasValue && string.IsNullOrEmpty(request.GuestSessionId))
         {
+            // This returns BEFORE the execution-strategy delegate, so it is NOT covered by the in-delegate
+            // RefundOrFailAsync. A card intent already charged client-side that somehow arrives here without an
+            // identity would otherwise orphan the charge — return an already-placed order for the intent if one
+            // exists, else refund. (Practically unreachable: card create-intent requires the signed guest cookie.)
+            if (!string.IsNullOrWhiteSpace(request.PaymentIntentId))
+            {
+                var existing = await _context.Orders
+                    .Include(o => o.Items)
+                    .FirstOrDefaultAsync(o => o.PaymentIntentId == request.PaymentIntentId, cancellationToken);
+                if (existing is not null)
+                {
+                    var existingProductIds = existing.Items.Select(i => i.ProductId).Distinct().ToList();
+                    var existingProducts = await _context.Products
+                        .Include(p => p.Variants)
+                        .Include(p => p.Images)
+                        .Where(p => existingProductIds.Contains(p.Id))
+                        .ToListAsync(cancellationToken);
+                    return Result<OrderDto>.Success(MapToDto(existing, existingProducts));
+                }
+
+                var refund = await _paymentService.RefundAsync(
+                    request.PaymentIntentId,
+                    PaymentIdempotency.ForRefund(request.PaymentIntentId),
+                    cancellationToken: cancellationToken);
+                if (!refund.Succeeded)
+                {
+                    _logger.LogError(
+                        "Failed to refund orphaned charge for PaymentIntent {PaymentIntentId}: {Error}",
+                        request.PaymentIntentId, refund.ErrorMessage);
+                }
+            }
+
             return Result<OrderDto>.Failure("Either user authentication or guest session ID is required");
         }
+
+        var isBankTransfer = string.Equals(request.PaymentMethod, BankPaymentMethod, StringComparison.OrdinalIgnoreCase);
+
+        // INV-01 A2: generate the order identity OUTSIDE the retried delegate so a commit-unknown retry (or a
+        // concurrent sibling sharing the intent) re-derives the SAME order.Id — the top-of-delegate idempotency
+        // lookup and the orders PK guard then return the already-placed order instead of double-creating.
+        var orderId = Guid.NewGuid();
+        var orderNumber = GenerateUniqueOrderNumber();
 
         var strategy = _context.Database.CreateExecutionStrategy();
         return strategy is null
@@ -129,8 +172,20 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
 
         async Task<Result<OrderDto>> CreateOrderAsync()
         {
+            // Re-derive from committed state on every execution-strategy attempt (the retry reuses this scoped
+            // context and does not reset the tracker on a rollback).
+            _context.ClearChangeTracker();
+
             // Use explicit transaction with proper isolation to ensure data integrity
             await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+            // Idempotency: a prior attempt or a concurrent sibling may already have committed this order (by the
+            // deterministic id, or by the shared payment_intent_id). Return it without refunding or re-consuming.
+            var alreadyPlaced = await FindPlacedOrderAsync();
+            if (alreadyPlaced is not null)
+            {
+                return Result<OrderDto>.Success(alreadyPlaced);
+            }
 
             // Get cart
             Core.Entities.Cart? cart = null;
@@ -149,10 +204,9 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
 
             if (cart == null || !cart.Items.Any())
             {
-                // Cart could have been cleared (another tab) after the card was charged;
-                // refund rather than orphan the charge.
-                await RefundOrphanedChargeAsync(request.PaymentIntentId);
-                return Result<OrderDto>.Failure("Cart is empty");
+                // Cart could have been cleared (another tab, or a sibling that already placed THIS order) after
+                // the card was charged; RefundOrFailAsync returns that sibling's order instead of refunding it.
+                return await RefundOrFailAsync("Cart is empty");
             }
 
             // Validate stock and get product data
@@ -170,15 +224,13 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
                 {
                     // The card may already be charged (the client confirms before this call);
                     // refund rather than orphan the charge if the product is now unavailable.
-                    await RefundOrphanedChargeAsync(request.PaymentIntentId);
-                    return Result<OrderDto>.Failure($"Product '{item.ProductId}' is no longer available");
+                    return await RefundOrFailAsync($"Product '{item.ProductId}' is no longer available");
                 }
 
                 var variant = product.Variants.FirstOrDefault(v => v.Id == item.VariantId);
                 if (variant == null || !variant.IsActive)
                 {
-                    await RefundOrphanedChargeAsync(request.PaymentIntentId);
-                    return Result<OrderDto>.Failure("Product variant is no longer available");
+                    return await RefundOrFailAsync("Product variant is no longer available");
                 }
 
                 // BUG-04: do NOT short-circuit on stock here. The card is already charged by
@@ -188,11 +240,8 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
                 // stock" before verification and leave the charge orphaned.
             }
 
-            // Generate order number using timestamp + random suffix for uniqueness (race-condition safe)
-            var orderNumber = GenerateUniqueOrderNumber();
-
-            // Create order
-            var order = new Order(orderNumber, request.CustomerEmail);
+            // Create order with the deterministic id generated above (idempotency key across retries/siblings).
+            var order = new Order(orderId, orderNumber, request.CustomerEmail);
             order.SetUser(userId);
 
             // GAP-07: guest orders get a high-entropy access token so the buyer can view their
@@ -263,8 +312,7 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
 
                 if (!pi.Succeeded || pi.Status != "succeeded")
                 {
-                    await RefundOrphanedChargeAsync(request.PaymentIntentId);
-                    return Result<OrderDto>.Failure("Payment could not be verified");
+                    return await RefundOrFailAsync("Payment could not be verified");
                 }
 
                 if (!string.Equals(pi.Currency, CheckoutPricing.Currency, StringComparison.OrdinalIgnoreCase))
@@ -272,8 +320,7 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
                     _logger.LogWarning(
                         "PaymentIntent {PaymentIntentId} currency mismatch: expected {Expected} but was {Actual}",
                         request.PaymentIntentId, CheckoutPricing.Currency, pi.Currency);
-                    await RefundOrphanedChargeAsync(request.PaymentIntentId);
-                    return Result<OrderDto>.Failure("Payment could not be verified");
+                    return await RefundOrFailAsync("Payment could not be verified");
                 }
 
                 var expectedMinorUnits = CheckoutPricing.ToMinorUnits(order.Total);
@@ -282,8 +329,7 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
                     _logger.LogWarning(
                         "PaymentIntent {PaymentIntentId} amount mismatch: charged {Charged} but expected {Expected}",
                         request.PaymentIntentId, pi.Amount, expectedMinorUnits);
-                    await RefundOrphanedChargeAsync(request.PaymentIntentId);
-                    return Result<OrderDto>.Failure("Payment could not be verified");
+                    return await RefundOrFailAsync("Payment could not be verified");
                 }
 
                 // Persist the verified payment reference so the webhook can match
@@ -298,23 +344,41 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
                 order.SetPaymentMethod(request.PaymentMethod);
             }
 
-            // Loop 2: now that the charge is verified, take stock atomically.
-            // BUG-05: decrement stock with a `stock >= qty` guard so two concurrent orders
-            // for the last unit can't both succeed. Zero rows affected means another order
-            // took the stock first; the surrounding transaction rolls back the order and any
-            // earlier decrements in this order.
-            // BUG-04: a card order is already charged at this point, so insufficient stock
-            // must refund the intent — otherwise the charge is orphaned.
-            foreach (var cartItem in cart.Items)
+            // Loop 2: take stock atomically now the charge is verified. Both branches iterate in ascending
+            // variant_id order — the lock-ordering CONTRACT that prevents deadlocks with any other multi-variant path.
+            if (isBankTransfer)
             {
-                var stockUpdated = await _context.TryDecrementVariantStockAsync(
-                    cartItem.VariantId, cartItem.Quantity, cancellationToken);
-
-                if (stockUpdated == 0)
+                // Wave A: a bank order still hard-decrements at create (reserved-aware, so it can't take a unit a
+                // card hold owns). Wave B reworks this into a Kind=BankTransfer hold with a long TTL.
+                foreach (var cartItem in cart.Items.OrderBy(i => i.VariantId))
                 {
-                    var product = products.First(p => p.Id == cartItem.ProductId);
-                    await RefundOrphanedChargeAsync(request.PaymentIntentId);
-                    return Result<OrderDto>.Failure($"Insufficient stock for '{product.Name}'");
+                    var stockUpdated = await _context.TryDecrementVariantStockAsync(
+                        cartItem.VariantId, cartItem.Quantity, cancellationToken);
+                    if (stockUpdated == 0)
+                    {
+                        var product = products.First(p => p.Id == cartItem.ProductId);
+                        return await RefundOrFailAsync($"Insufficient stock for '{product.Name}'");
+                    }
+                }
+            }
+            else
+            {
+                // Card (and default): convert each checkout-start hold into a sale (P2), sorted by variant_id.
+                foreach (var cartItem in cart.Items.OrderBy(i => i.VariantId))
+                {
+                    var outcome = await _reservations.ConsumeLineAsync(
+                        cart.Id, cartItem.VariantId, order.Id, cartItem.Quantity, ReservationKind.Card, cancellationToken);
+                    switch (outcome)
+                    {
+                        case ReservationConsumeOutcome.Consumed:
+                        case ReservationConsumeOutcome.AlreadyConsumedByThisOrder:
+                            // Sold, or an idempotent retry of THIS order — proceed. A concurrent same-intent
+                            // sibling is handled by the deterministic-id / unique-intent idempotency, not here.
+                            break;
+                        case ReservationConsumeOutcome.Unavailable:
+                            var product = products.First(p => p.Id == cartItem.ProductId);
+                            return await RefundOrFailAsync($"Insufficient stock for '{product.Name}'");
+                    }
                 }
             }
 
@@ -340,22 +404,63 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
             {
                 await _context.SaveChangesAsync(cancellationToken);
             }
-            catch (DbUpdateException ex) when (
-                ex.InnerException?.Message?.Contains("payment_intent_id", StringComparison.OrdinalIgnoreCase) == true)
+            catch (DbUpdateException ex) when (IsDuplicateOrderConflict(ex))
             {
-                // Unique-index violation on payment_intent_id: this intent already backs an
-                // order (idempotency guard). Any OTHER DbUpdateException propagates so real
-                // failures aren't masked and transient errors can still be retried.
+                // The deterministic order.Id PK or the unique payment_intent_id index rejected a duplicate (a
+                // retry or a concurrent sibling). Return the already-committed order idempotently rather than
+                // failing. Any OTHER DbUpdateException propagates so real failures aren't masked.
                 _logger.LogWarning(
                     ex,
                     "Duplicate order creation rejected for PaymentIntent {PaymentIntentId}",
                     request.PaymentIntentId);
-                return Result<OrderDto>.Failure("This payment has already been used for an order.");
+                var placed = await FindPlacedOrderAsync();
+                return placed is not null
+                    ? Result<OrderDto>.Success(placed)
+                    : Result<OrderDto>.Failure("This payment has already been used for an order.");
             }
 
             await transaction.CommitAsync(cancellationToken);
 
             return Result<OrderDto>.Success(MapToDto(order, products));
+
+            // Idempotency lookup: a committed order for this command's deterministic id OR its payment_intent_id.
+            // Returns the mapped DTO (loading the order's own products) or null when none exists yet.
+            async Task<OrderDto?> FindPlacedOrderAsync()
+            {
+                var existing = await _context.Orders
+                    .Include(o => o.Items)
+                    .FirstOrDefaultAsync(
+                        o => o.Id == orderId
+                          || (request.PaymentIntentId != null && o.PaymentIntentId == request.PaymentIntentId),
+                        cancellationToken);
+                if (existing is null)
+                {
+                    return null;
+                }
+
+                var placedProductIds = existing.Items.Select(i => i.ProductId).Distinct().ToList();
+                var placedProducts = await _context.Products
+                    .Include(p => p.Variants)
+                    .Include(p => p.Images)
+                    .Where(p => placedProductIds.Contains(p.Id))
+                    .ToListAsync(cancellationToken);
+                return MapToDto(existing, placedProducts);
+            }
+
+            // Guards every refund site against a concurrent sibling that already committed THIS intent's order
+            // (double-submit): re-query immediately before refunding and return the placed order idempotently
+            // rather than refund an order that was actually placed (which would ship it for free).
+            async Task<Result<OrderDto>> RefundOrFailAsync(string failureMessage)
+            {
+                var placed = await FindPlacedOrderAsync();
+                if (placed is not null)
+                {
+                    return Result<OrderDto>.Success(placed);
+                }
+
+                await RefundOrphanedChargeAsync(request.PaymentIntentId);
+                return Result<OrderDto>.Failure(failureMessage);
+            }
 
             // BUG-04: best-effort compensation for an already-charged card intent when the
             // order cannot be created. Only card orders carry a PaymentIntentId; non-card
@@ -380,6 +485,20 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Res
                 }
             }
         }
+    }
+
+    // A duplicate-order conflict: the deterministic order.Id PK (PK_orders) or the unique payment_intent_id index.
+    private static bool IsDuplicateOrderConflict(DbUpdateException ex)
+    {
+        var message = ex.InnerException?.Message;
+        if (string.IsNullOrEmpty(message))
+        {
+            return false;
+        }
+
+        return message.Contains("payment_intent_id", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("PK_orders", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("orders_pkey", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>

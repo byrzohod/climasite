@@ -27,13 +27,16 @@ public class MergeGuestCartCommandHandler : IRequestHandler<MergeGuestCartComman
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IStockReservationService _reservations;
 
     public MergeGuestCartCommandHandler(
         IApplicationDbContext context,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IStockReservationService reservations)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _reservations = reservations;
     }
 
     public async Task<Result<CartDto>> Handle(
@@ -74,6 +77,11 @@ public class MergeGuestCartCommandHandler : IRequestHandler<MergeGuestCartComman
                 ItemCount = 0
             });
         }
+
+        // INV-01 A2: release the guest cart's Active checkout holds BEFORE it is deleted below (cart_id ON DELETE
+        // SET NULL would otherwise orphan them until the sweeper self-heals). Runs its own transaction and clears
+        // the tracker, so it must precede the tracked merge mutations. Usually a no-op pre-checkout.
+        await _reservations.ReleaseCartAsync(guestCart.Id, cancellationToken);
 
         // Get or create user cart
         var userCart = await _context.Carts
