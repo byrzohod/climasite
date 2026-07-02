@@ -12,4 +12,5 @@
 | Reconstructed design | `/Users/sarkisharalampiev/Projects/climasite/.planning/design/DESIGN.md` |
 | Resume contract | `/Users/sarkisharalampiev/Projects/climasite/.planning/STATE.md` |
 | ADRs (repo) | `/Users/sarkisharalampiev/Projects/climasite/docs/adr/` |
-| PROC-01 plan + backlog | `/Users/sarkisharalampiev/Projects/climasite/docs/project-plan/` |
+| Planning hub + backlog | `/Users/sarkisharalampiev/Projects/climasite/docs/project-plan/` |
+| PROC-01 wave tracker | `/Users/sarkisharalampiev/Projects/climasite/docs/features/PROC-01/STATE.md` |

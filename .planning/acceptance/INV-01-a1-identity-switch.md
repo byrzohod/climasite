@@ -4,7 +4,7 @@ gate: acceptance
 result: PASS
 date: 2026-07-01
 branch: feature/inv-01-a1-identity-switch
-commit: <squash-merge tip of PR feature/inv-01-a1-identity-switch>
+commit: 607e7c7
 env: Development, real API on :5029 against shared-infra Postgres :5432 + Redis :6379 (2260-product dev DB)
 ---
 

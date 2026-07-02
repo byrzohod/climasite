@@ -4,7 +4,7 @@ gate: acceptance
 result: PASS
 date: 2026-07-02
 branch: feature/inv-01-a2-reservations-core
-commit: <squash-merge tip of PR feature/inv-01-a2-reservations-core>
+commit: 06bcae7
 env: Development, real API on :5029 (+ background reservation sweeper) against shared-infra Postgres :5432 + Redis :6379, real Stripe test mode
 ---
 

@@ -1,6 +1,7 @@
 # ClimaSite — Standard Development Workflow
 
 **Date:** 2026-06-11 (branch-protection + release-flow corrections 2026-06-21)
+**Last updated:** 2026-07-02 (CI lint/coverage-gate + integration-coverage + vault-gate corrections)
 **Status:** **Canonical — the single source of truth for the development workflow.** Where this document disagrees with CLAUDE.md, AGENTS.md, or any `.claude/skills/*/SKILL.md`, **this document wins** and the other file must be corrected to match. The earlier command/port/direct-push errors those files carried were fixed in DOC-01 (2026-06-16) and the Wave 0 governance pass (2026-06-21); the original findings remain on record in `docs/project-plan/_review/devops.md`, `_review/testing.md`, and `_review/docs.md`.
 
 **How to use this document:** This is the day-to-day operating manual for any developer or AI agent working on ClimaSite. Read "Local setup" once per machine, follow "Day-to-day workflow" for every change, and treat "Testing requirements before merge" and "Definition of Done" as hard gates. All commands below were verified against the actual codebase on 2026-06-11 (the E2E suite is **Playwright for .NET run via `dotnet test`** — not the TypeScript `npx playwright` workflow that older docs describe, and the API runs on port **5029**, not 5000). Anything not directly verifiable is marked "Needs confirmation".
@@ -71,7 +72,7 @@ pwsh tests/ClimaSite.E2E/bin/Debug/net10.0/playwright.ps1 install chromium
 ### 1.7 Stripe / email test configuration — explicit gaps
 
 - **Stripe (SEC-07):** the code reads **config-section keys only** — `Stripe:SecretKey` in `StripePaymentService.cs`, `Stripe:WebhookSecret` in `WebhooksController.cs`. Set them via the **double-underscore** env (`Stripe__SecretKey` / `Stripe__PublishableKey` / `Stripe__WebhookSecret`) or `appsettings.Development.json` — the flat `STRIPE_SECRET_KEY` documented in older CLAUDE.md does **not** reach the code. As of SEC-07 `appsettings.json` ships **no Stripe keys** (empty), and **Production fail-fasts at startup** if they're missing/placeholder/non-Stripe-shaped (`StripeConfiguration`); in Dev/Testing the payment service is constructed lazily, and integration tests use `FakePaymentService`. Local test-mode setup (a `pk_test`/`sk_test` pair + `stripe listen` webhook forwarding) is still undocumented — minor gap.
-- **Email:** `EmailService` reads `Email:*` section keys, defaults to `smtp.example.com`. Shared-infra provides **MailHog** for local SMTP capture, but no ClimaSite doc wires it up — gap, P2. Note the forgot-password flow currently never sends email at all (P1 bug, `_review/status.md` finding 2).
+- **Email:** `EmailService` reads `Email:*` section keys, defaults to `smtp.example.com`. Shared-infra provides **MailHog** for local SMTP capture, but no ClimaSite doc wires it up — gap, P2. Password reset sends via the durable email outbox and no longer logs the token (BUG-07 fixed).
 - **MinIO:** defaults to `localhost:9000` with hardcoded dev creds; production object-storage story is **Needs confirmation**.
 
 ### 1.8 Database migrations
@@ -171,7 +172,15 @@ E2E rules remain as in CLAUDE.md and they are correct: no mocking, self-containe
 4. Run **`/ui-qa`** when UI changed (per `.codex/PROJECT_MEMORY.md` merge-readiness list).
 5. PR description: what/why, test evidence (CI link), screenshots for UI (light + dark), and any new env vars or migrations called out explicitly.
 6. Keep pre-existing debt out of scope: report it, don't silently bundle fixes ("Keep unrelated existing debt separate from issues introduced by the current branch" — `.codex/PROJECT_MEMORY.md`).
-7. Squash-merge on green. Known CI blind spots you must cover manually until fixed (P2, `_review/testing.md` finding 7): CI runs **no lint job** and enforces **no coverage threshold** — run `npm run lint` yourself; coverage numbers in CLAUDE.md (80%/70%) are currently aspirational, not enforced.
+7. Squash-merge on green. CI now runs a **Lint & Format** job (`dotnet format ClimaSite.NoE2E.slnf --verify-no-changes` + `ng lint`), an **enforcing Coverage gate** (backend ≥80% / frontend ≥70%, wired into the required **Test Summary**), a **Lighthouse** job (reporting-only), and a **Dependency Audit** (`dotnet list --vulnerable`) — in addition to the six branch-protection-required checks. Still run `npm run lint` locally for the frontend, but format and coverage **are** enforced in CI (the CLAUDE.md 80%/70% numbers are the enforced thresholds, not aspirational).
+
+### 3.1 Mandatory vault-workflow gates
+
+The CI checks above are necessary but **not sufficient**. This repo runs the vault planning system, which adds three gates a developer following DEV_WORKFLOW alone would otherwise miss (all three are hard bars for non-trivial work):
+
+- **Spec before code (`no-spec-no-code` hook):** every unit needs an approved `.planning/units/<unit>/unit-plan.md` (test plan + acceptance) **before** you touch `src/**` — the hook **blocks** edits to `src/**` until that file exists. Escape for a throwaway spike only: `ALLOW_EXPLORATORY=1`.
+- **Cross-vendor Codex council:** run the council (`.claude/orchestration/council.sh`) on **every non-trivial change**, and as a **hard merge bar** on auth / payments / PII / migration / architecture work — fix every High/Medium finding and re-council until clean (Codex is a READ-ONLY advisor; Claude executes).
+- **`/acceptance` runtime gate:** behavior/source changes need an exploratory `/acceptance` pass driving the **real running app** adversarially, with a committed PASS report at `.planning/acceptance/<id>.md` whose `commit:` matches the merged tip — **before** `/trunk-merge`.
 
 ## 4. Testing requirements before merge
 
@@ -193,7 +202,7 @@ Plus, for new code (CLAUDE.md policy, still valid):
 - Unit tests for every new backend handler/service (use the `tests/ClimaSite.Application.Tests/TestHelpers/MockDbContext.cs` pattern).
 - Integration tests for every new/changed API endpoint (incl. 401/403 cases) using `tests/ClimaSite.Api.Tests/Infrastructure/TestWebApplicationFactory.cs`.
 - At least one E2E happy path per new user-facing flow.
-- Do not add to the known gaps: Payments/Webhooks/Orders/GDPR currently have **zero** integration tests and the Stripe card path has **zero** end-to-end coverage (P1 backlog, `_review/testing.md` findings 2–5) — if you touch those areas, tests are part of the change, not optional.
+- Maintain the coverage bar PROC-01 established: it added ~163 real-infra integration tests (Testcontainers) and a real-card Stripe E2E suite (`CardPaymentE2ETests`), so Payments/Orders/GDPR are integration-covered. New endpoints still ship with tests — that coverage is the floor, not the ceiling.
 
 ## 5. Documentation update rules
 
@@ -202,14 +211,14 @@ Update docs **in the same PR** as the change. Single-source-of-truth rules (from
 | When you… | You must update |
 |---|---|
 | Ship any user- or developer-visible change | `CHANGELOG.md` `[Unreleased]` (one bullet per change — the wishlist slice missed this; don't repeat it) |
-| Complete/advance a feature or plan phase | CLAUDE.md status table + the plan's **Status header** in `docs/plans/` (per-task checkboxes are explicitly *not* maintained status), + `.codex/PROJECT_MEMORY.md` if workflow-relevant |
+| Complete/advance a feature or plan phase | `docs/project-plan/PROJECT_STATUS.md` (+ `.planning/STATE.md`, `CHANGELOG.md`, `PRIORITIZED_BACKLOG.md`) — CLAUDE.md no longer carries a status table (it explicitly single-sources status) — + the plan's **Status header** in `docs/plans/` (per-task checkboxes are explicitly *not* maintained status), + `.codex/PROJECT_MEMORY.md` if workflow-relevant |
 | Make a non-obvious technical/architectural decision | New ADR in `docs/adr/` (never edit an accepted ADR's decision — write a superseding one; this rule was already violated once by ADR 002) |
 | Change commands, ports, env vars, or workflow | CLAUDE.md (canonical for conventions) and regenerate/patch the affected `AGENTS.md` snapshot — they currently drift and must not be left contradicting each other |
 | Add an env var or config key | CLAUDE.md env table **using the name the code actually reads** (section keys need `__` form, e.g. `Stripe__SecretKey`) |
 | Finish a plan | Move it to `docs/plans/archive/` with a "superseded by" banner — no third state |
 | Find a stale/contradicting doc | Fix it or add a dated "superseded by …" banner; never silently leave two answers in the repo |
 
-The active master plan is `docs/plans/18-project-completion.md`. `docs/plans/00-master-overview.md`, the `docs/validation/` suite (except `areas/07-wishlist.md`), `docs/plans/19-*`/`20-*`/most `21-*`, and `docs/tech-stack.md` are **stale** (verified in `_review/docs.md`) — do not treat them as current status.
+The active master plan is `docs/plans/18-project-completion.md`. `docs/plans/00-master-overview.md`, the `docs/validation/` suite (except `areas/07-wishlist.md`), `docs/plans/20-*`/most `21-*`, and `docs/tech-stack.md` are **stale** (verified in `_review/docs.md`) — do not treat them as current status. (`docs/plans/19-*` was the executed test/KG-hardening plan — no longer stale.)
 
 ## 6. Release process
 

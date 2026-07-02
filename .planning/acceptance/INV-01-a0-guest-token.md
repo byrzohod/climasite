@@ -4,7 +4,7 @@ gate: acceptance
 result: PASS
 date: 2026-07-01
 branch: feature/inv-01-a0-guest-token
-commit: <squash-merge tip of PR feature/inv-01-a0-guest-token>
+commit: 02e700b
 env: Development, real API on :5029 against shared-infra Postgres :5432 + Redis :6379 (2260-product dev DB)
 ---
 

@@ -10,6 +10,8 @@ auto-injected by the SessionStart hook after any `/clear`, compaction, or `--res
 fresh via `/checkpoint` at each unit/phase boundary. Read its **Next action** first. Everything else
 is linked from there.
 
+For what actually shipped (per PR), see [`../CHANGELOG.md`](../CHANGELOG.md) — the per-PR change history.
+
 ## The planning hub — `docs/project-plan/`
 
 The living planning hub: the output of a full multi-lens project review plus the docs that are kept
@@ -18,7 +20,7 @@ the one-line role of each file:
 
 | File | Role |
 |---|---|
-| [PROJECT_STATUS.md](project-plan/PROJECT_STATUS.md) | What ClimaSite is, what works, what blocks launch. **Refreshed at milestone boundaries** — it is dated, so cross-check against `.planning/STATE.md` for the very latest. |
+| [PROJECT_STATUS.md](project-plan/PROJECT_STATUS.md) | What ClimaSite is, what works, what blocks launch. **Refreshed at milestone boundaries** — it is dated; can lag main by a full epic — always cross-check `.planning/STATE.md` + `CHANGELOG.md` for the latest. |
 | [CONSOLIDATED_ROADMAP.md](project-plan/CONSOLIDATED_ROADMAP.md) | Path to launch in milestones (M1→M4); supersedes plan 18 as the roadmap entry point. |
 | [PRIORITIZED_BACKLOG.md](project-plan/PRIORITIZED_BACKLOG.md) | THE actionable, deduplicated work queue (`SEC-`/`BUG-`/`GAP-`/`OPS-`/`ARCH-`/`PERF-`/`TS-`/`UX-`/`DOC-`/`PROC-` IDs). |
 | [DECISIONS.md](project-plan/DECISIONS.md) | Decision log (D-001..); indexes `docs/adr/` and backfills decisions never recorded as ADRs. |

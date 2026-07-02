@@ -1,5 +1,7 @@
 # ClimaSite — Consolidated Roadmap
 
+> ⚠️ HISTORICAL (2026-06-11 milestone plan). Milestone M1 is COMPLETE and most of M2/M3 has shipped — the 'Where we are' paragraph below (broken payment path, stub admin pages, no emails, 404 legal pages) is NO LONGER TRUE; all are shipped. DEC-CURRENCY is decided (EUR) and BUG-05/inventory reservations shipped (INV-01). For live status see `PROJECT_STATUS.md` + `.planning/STATE.md` + `CHANGELOG.md`.
+
 **Date:** 2026-06-11
 **Sources:** `docs/project-plan/PROJECT_STATUS.md`, `docs/project-plan/PRIORITIZED_BACKLOG.md`, and the ten verified review files in `docs/project-plan/_review/`; reconciled against `docs/plans/18-project-completion.md` and `docs/plans/00-master-overview.md`.
 
