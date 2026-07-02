@@ -4,7 +4,7 @@
 > `--resume`. Read **Next action** first. Kept fresh via `/checkpoint` at each unit/phase boundary.
 > LEAN — pointers, not prose. **This is the single entry point; everything else is linked below.**
 
-- **Last checkpoint**: 2026-07-02 (**INV-01 Wave A2 (reservations CORE + sweeper) CODE-COMPLETE + council-clean + `/acceptance` PASS**, on branch `feature/inv-01-a2-reservations-core`, opening PR. Diff R1 REWORK (2 Highs: stale-consumed under-sell + admin-bypass; Codex + Claude verifier) → R2 APPROVE-WITH-CHANGES (bulk-atomic + orphan tests) → all applied. Core 430/App 1020/Api 509, format clean. **Live `/acceptance` proved the headline: two concurrent buyers race the last unit → LOSER GETS 400 BEFORE ANY STRIPE CHARGE (not charged-then-refunded); reserved=1 not 2; abandoned hold auto-expired by the sweeper in <10s.** A0 #98 + A1 #99 merged. Remaining: A3 (availability DISPLAY on PDP/cart) + B (bank-transfer hold).)
+- **Last checkpoint**: 2026-07-02 (**INV-01 Wave A3 (reservation-aware availability DISPLAY on PDP/cart) CODE-COMPLETE + council-clean + `/acceptance` PASS**, on branch `feature/inv-01-a3-availability-display`, opening PR. PDP+cart show `max(stock−reserved+ownHold,0)` (fresh — the [H] fix bypassed BOTH the MediatR AND the HTTP output-cache layers); browse/search/admin stay raw (scope guard). Diff councils R1→R2 (cache [H] closed)→R3 (own-hold in ALL cart mappers via shared `LineAvailable` + deterministic variant ordering). Core 430/App 1030/Api 514/FE 1801, format clean. **A0 #98 + A1 #99 + A2 #100 merged.** LAST slice = **Wave B** (bank-transfer hold-with-expiry).)
 
 ## Goal
 Production-grade multi-language (EN/BG/DE), multi-theme HVAC e-commerce platform — finish to production readiness with a hardened SDLC.

@@ -97,6 +97,49 @@ public class UpdateCartItemCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_WhenIncreaseExceedsReservationAdjustedStock_ReturnsFailure()
+    {
+        // INV-01 A3: an INCREASE is guarded — stock 5, 3 held elsewhere -> only 2 available; 1 -> 4 fails.
+        var userId = Guid.NewGuid();
+        var (product, variant) = SeedProduct(stock: 5);
+        variant.SetReservedQuantity(3);
+        var cart = new Core.Entities.Cart(userId, null);
+        var item = cart.AddItem(product.Id, variant.Id, 1, 400m);
+        _context.AddCart(cart);
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+
+        var result = await CreateHandler().Handle(
+            new UpdateCartItemCommand { ItemId = item.Id, Quantity = 4 },
+            CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Contain("Only 2 items available");
+    }
+
+    [Fact]
+    public async Task Handle_DecreaseBelowReservedCount_Succeeds_NotBlockedByOwnHold()
+    {
+        // INV-01 A3 [Medium fix]: a DECREASE must never be blocked by the reservation ceiling. Here the
+        // variant's reserved counter (7) models the hold this very cart is placing; reducing 7 -> 4 needs
+        // no extra stock, so it must succeed even though (stock 10 − reserved 7) = 3 < 4.
+        var userId = Guid.NewGuid();
+        var (product, variant) = SeedProduct(stock: 10);
+        variant.SetReservedQuantity(7);
+        var cart = new Core.Entities.Cart(userId, null);
+        var item = cart.AddItem(product.Id, variant.Id, 7, 400m);
+        _context.AddCart(cart);
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+
+        var result = await CreateHandler().Handle(
+            new UpdateCartItemCommand { ItemId = item.Id, Quantity = 4 },
+            CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Items.Should().ContainSingle();
+        result.Value.Items[0].Quantity.Should().Be(4);
+    }
+
+    [Fact]
     public async Task Handle_UpdatesQuantity_AndRecomputesTotals()
     {
         var userId = Guid.NewGuid();

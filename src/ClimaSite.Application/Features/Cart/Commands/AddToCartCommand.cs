@@ -72,8 +72,15 @@ public class AddToCartCommandHandler : IRequestHandler<AddToCartCommand, Result<
         }
         else
         {
-            // Use default variant if product has variants
-            variant = product.Variants.FirstOrDefault(v => v.IsActive);
+            // INV-01 A3: with no explicit variant, prefer the first active variant that actually has
+            // reservation-adjusted availability, so "PDP shows in stock" (which aggregates active variants)
+            // agrees with "add succeeds". Fall back to the first active variant when none is available, so
+            // the availability check below produces the honest "Only 0 items available" message.
+            // Deterministic order (SortOrder, Id) — must match GetProductBySlugQuery's variant order so the PDP's
+            // default-variant availability agrees with the variant add-to-cart actually selects (INV-01 A3).
+            var orderedVariants = product.Variants.OrderBy(v => v.SortOrder).ThenBy(v => v.Id).ToList();
+            variant = orderedVariants.FirstOrDefault(v => v.IsActive && v.StockQuantity - v.ReservedQuantity > 0)
+                      ?? orderedVariants.FirstOrDefault(v => v.IsActive);
         }
 
         if (variant == null)
@@ -81,15 +88,20 @@ public class AddToCartCommandHandler : IRequestHandler<AddToCartCommand, Result<
             return Result<CartDto>.Failure("No available variants for this product.");
         }
 
-        // Check stock
-        var availableStock = variant.StockQuantity;
+        // Get or create the cart first so the availability ceiling can add back THIS cart's own hold (A3).
+        var cart = await GetOrCreateCartAsync(userId, request.GuestSessionId, cancellationToken);
+
+        // Check stock (INV-01 A3: reservation-aware — units held by OTHER carts' in-flight checkouts are not
+        // available to add; this cart's own Active hold is added back so an existing line can re-grow up to
+        // what it holds — 0 for the common pre-checkout cart. Advisory only, no hold is taken here). The
+        // accumulated-quantity check below reuses this same reservation-adjusted ceiling.
+        var ownHolds = await CartReservationAvailability.GetOwnActiveHoldsAsync(_context, cart.Id, cancellationToken);
+        var availableStock = Math.Max(
+            variant.StockQuantity - variant.ReservedQuantity + ownHolds.GetValueOrDefault(variant.Id), 0);
         if (availableStock < request.Quantity)
         {
             return Result<CartDto>.Failure($"Only {availableStock} items available in stock.");
         }
-
-        // Get or create cart
-        var cart = await GetOrCreateCartAsync(userId, request.GuestSessionId, cancellationToken);
 
         // Check if item already in cart
         var existingItem = cart.Items.FirstOrDefault(i =>
@@ -158,6 +170,9 @@ public class AddToCartCommandHandler : IRequestHandler<AddToCartCommand, Result<
             .Where(p => productIds.Contains(p.Id))
             .ToListAsync(cancellationToken);
 
+        // INV-01 A3: this cart's own Active holds so every returned line's available cap adds them back.
+        var ownHolds = await CartReservationAvailability.GetOwnActiveHoldsAsync(_context, cart.Id, cancellationToken);
+
         var items = cart.Items.Select(item =>
         {
             var product = products.First(p => p.Id == item.ProductId);
@@ -180,7 +195,8 @@ public class AddToCartCommandHandler : IRequestHandler<AddToCartCommand, Result<
                 EffectivePrice = item.UnitPrice,
                 Quantity = item.Quantity,
                 LineTotal = item.UnitPrice * item.Quantity,
-                AvailableStock = variant?.StockQuantity ?? 0,
+                // INV-01 A3: reservation-aware per-line cap (adds back this cart's own hold), consistent with GetCartQuery.
+                AvailableStock = CartReservationAvailability.LineAvailable(variant, item.VariantId, ownHolds),
                 IsAvailable = variant != null && variant.IsActive && product.IsActive
             };
         }).ToList();

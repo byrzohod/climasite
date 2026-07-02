@@ -149,6 +149,9 @@ public class MergeGuestCartCommandHandler : IRequestHandler<MergeGuestCartComman
             .Where(p => productIds.Contains(p.Id))
             .ToListAsync(cancellationToken);
 
+        // INV-01 A3: this cart's own Active holds so every returned line's available cap adds them back.
+        var ownHolds = await CartReservationAvailability.GetOwnActiveHoldsAsync(_context, cart.Id, cancellationToken);
+
         var items = cart.Items.Select(item =>
         {
             var product = products.First(p => p.Id == item.ProductId);
@@ -171,7 +174,7 @@ public class MergeGuestCartCommandHandler : IRequestHandler<MergeGuestCartComman
                 EffectivePrice = item.UnitPrice,
                 Quantity = item.Quantity,
                 LineTotal = item.UnitPrice * item.Quantity,
-                AvailableStock = variant?.StockQuantity ?? 0,
+                AvailableStock = CartReservationAvailability.LineAvailable(variant, item.VariantId, ownHolds),
                 IsAvailable = variant != null && variant.IsActive && product.IsActive
             };
         }).ToList();

@@ -1,3 +1,4 @@
+using ClimaSite.Application.Common.Behaviors;
 using ClimaSite.Application.Features.Products.Queries;
 using ClimaSite.Application.Tests.TestHelpers;
 using ClimaSite.Core.Entities;
@@ -7,6 +8,17 @@ namespace ClimaSite.Application.Tests.Features.Products;
 
 public class GetProductBySlugQueryHandlerTests
 {
+    [Fact]
+    public void GetProductBySlugQuery_IsNotCacheable_SoAvailabilityIsAlwaysFresh()
+    {
+        // INV-01 A3 [High regression]: the PDP DTO embeds volatile reservation state (ReservedQuantity /
+        // AvailableQuantity). If the query implemented ICacheableQuery again, a hold/release would not show
+        // until the cache TTL elapsed — serving stale availability + stale Product JSON-LD. Deterministic
+        // break-probe: re-add `, ICacheableQuery` to GetProductBySlugQuery and this fails immediately.
+        typeof(ICacheableQuery).IsAssignableFrom(typeof(GetProductBySlugQuery))
+            .Should().BeFalse("GetProductBySlugQuery must not be response-cached");
+    }
+
     [Fact]
     public async Task Handle_OnSaleProduct_ProjectsCurrentPriceAsBaseAndOriginalAsSale()
     {
@@ -85,5 +97,51 @@ public class GetProductBySlugQueryHandlerTests
 
         result.MetaTitle.Should().BeNull();
         result.MetaDescription.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_VariantWithActiveReservations_ReportsReservationAdjustedAvailability()
+    {
+        // INV-01 A3: the PDP must show available = stock − reserved so a shopper never sees units
+        // another in-flight checkout is already holding.
+        var context = new MockDbContext();
+        var product = new Product("RSV-001", "Reserved Unit", "reserved-unit", 499.99m);
+        product.SetActive(true);
+        var variant = new ProductVariant(product.Id, "RSV-001-STD", "Standard");
+        variant.SetStockQuantity(10);
+        variant.SetReservedQuantity(4);
+        product.Variants.Add(variant);
+        context.AddProduct(product);
+
+        var handler = new GetProductBySlugQueryHandler(context);
+
+        var result = await handler.Handle(
+            new GetProductBySlugQuery { Slug = "reserved-unit" }, CancellationToken.None);
+
+        var dto = result.Variants.Should().ContainSingle().Subject;
+        dto.StockQuantity.Should().Be(10);
+        dto.ReservedQuantity.Should().Be(4);
+        dto.AvailableQuantity.Should().Be(6, "10 stock − 4 reserved");
+    }
+
+    [Fact]
+    public async Task Handle_ReservedExceedsStock_ClampsAvailabilityToZero()
+    {
+        // Defensive: any drift where reserved > stock must never surface a negative availability.
+        var context = new MockDbContext();
+        var product = new Product("RSV-002", "Oversold Unit", "oversold-unit", 299.99m);
+        product.SetActive(true);
+        var variant = new ProductVariant(product.Id, "RSV-002-STD", "Standard");
+        variant.SetStockQuantity(2);
+        variant.SetReservedQuantity(5);
+        product.Variants.Add(variant);
+        context.AddProduct(product);
+
+        var handler = new GetProductBySlugQueryHandler(context);
+
+        var result = await handler.Handle(
+            new GetProductBySlugQuery { Slug = "oversold-unit" }, CancellationToken.None);
+
+        result.Variants.Single().AvailableQuantity.Should().Be(0);
     }
 }
