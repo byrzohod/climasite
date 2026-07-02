@@ -28,6 +28,18 @@ public enum ReservationConsumeOutcome
 }
 
 /// <summary>
+/// Outcome of consuming a bank order's holds at mark-paid (INV-01 B). <see cref="ExpectedHolds"/> is the number
+/// of Active bank holds the order had (read under the order lock); <see cref="ConsumedHolds"/> is how many were
+/// actually converted to a sale. Mark-paid is ALL-OR-NOTHING: the caller commits the Paid transition only when
+/// <see cref="AllConsumed"/> — otherwise it rolls the whole unit of work back (never a partial physical decrement).
+/// </summary>
+public readonly record struct BankConsumeResult(int ExpectedHolds, int ConsumedHolds)
+{
+    /// <summary>True only when there was at least one live hold and EVERY one of them was consumed.</summary>
+    public bool AllConsumed => ExpectedHolds > 0 && ConsumedHolds == ExpectedHolds;
+}
+
+/// <summary>
 /// Orchestrates the stock-reservation concurrency mechanism (INV-01 A2): P1 reserve-to-target at
 /// checkout-start, P2 consume at order-create, P3 release/expire, and the R reconciler. Every variant mutation
 /// serializes on a <c>SELECT ... FOR UPDATE</c> variant-row lock (P0); every multi-variant loop acquires locks
@@ -96,4 +108,45 @@ public interface IStockReservationService
     /// reconcile each touched variant's counter to <c>Σ Active</c>. Returns the number of holds expired.
     /// </summary>
     Task<int> SweepExpiredHoldsAsync(int batchSize, CancellationToken cancellationToken = default);
+
+    // ---- INV-01 Wave B: bank-transfer hold-with-expiry ----
+
+    /// <summary>
+    /// Wave B — reserve a bank-transfer order's stock as an <c>Active</c> <c>BankTransfer</c> hold (NO physical
+    /// <c>stock_quantity</c> decrement): lock each line's variant (ascending id) and increment
+    /// <c>reserved_quantity</c> available-gated (so a bank hold can't steal a card hold's unit), inserting a hold
+    /// keyed on the order with <c>expires_at = now + BankHoldExpiryDays</c>. Any short line ⇒ Failure naming it;
+    /// the caller's transaction rolls the whole batch back. Idempotent: an existing Active hold for (order,
+    /// variant) is reused without re-incrementing. Runs INSIDE the caller's (order-create's) open transaction.
+    /// </summary>
+    Task<ReservationResult> ReserveBankOrderAsync(
+        Guid orderId,
+        IReadOnlyList<ReservationRequestLine> lines,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Wave B — consume a bank order's Active holds (hold → sold) at admin mark-paid: for each hold (ascending
+    /// variant_id, under the lock) decrement stock AND reserved together, then flip <c>Consumed</c>. Returns
+    /// <see cref="BankConsumeResult"/> = (holds that were Active, holds actually consumed). The caller must be
+    /// holding the ORDER lock so the hold set is stable, and marks the order Paid ONLY when
+    /// <see cref="BankConsumeResult.AllConsumed"/> — otherwise it rolls the whole unit of work back (no partial
+    /// physical decrement). Runs INSIDE the caller's (mark-paid's) open transaction.
+    /// </summary>
+    Task<BankConsumeResult> ConsumeBankOrderAsync(Guid orderId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Wave B — release a bank order's Active holds on cancellation (drops <c>reserved_quantity</c>; NO restock,
+    /// since a held bank order was never physically decremented). Locks each variant ascending id. Runs INSIDE
+    /// the caller's (cancel's) open transaction.
+    /// </summary>
+    Task ReleaseBankOrderAsync(Guid orderId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Wave B sweeper branch — for up to <paramref name="batchSize"/> orders holding an Active, expired
+    /// <c>BankTransfer</c> hold: expire the holds (drop the counter, ascending variant_id under the lock) and, if
+    /// any were actually expired, cancel the still-Pending order (the payment window elapsed unpaid), then
+    /// reconcile the touched variants. A concurrent mark-paid consumes the holds first, so its holds are no longer
+    /// Active here and the order is NOT cancelled. Returns the number of orders auto-cancelled.
+    /// </summary>
+    Task<int> SweepExpiredBankHoldsAsync(int batchSize, CancellationToken cancellationToken = default);
 }

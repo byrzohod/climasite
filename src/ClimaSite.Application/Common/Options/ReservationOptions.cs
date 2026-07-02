@@ -14,6 +14,13 @@ public class ReservationOptions
     public int HoldTtlMinutes { get; set; } = 20;
 
     /// <summary>
+    /// How long a bank-transfer hold lives before the sweeper auto-expires it AND cancels the still-unpaid
+    /// order (INV-01 Wave B). Much longer than a card hold because the buyer must initiate an offline wire.
+    /// Default 3 days.
+    /// </summary>
+    public int BankHoldExpiryDays { get; set; } = 3;
+
+    /// <summary>
     /// Anti-grief cap on the number of units a single cart may hold of ONE variant. A reserve whose target for
     /// any variant exceeds this is rejected before any Stripe call. Bounds per-variant inventory denial by one
     /// guest/user (whose cart is 1:1 with their identity). Default 10.
@@ -30,6 +37,7 @@ public class ReservationOptions
     public SweeperOptions Sweeper { get; set; } = new();
 
     public int EffectiveHoldTtlMinutes => HoldTtlMinutes > 0 ? HoldTtlMinutes : 20;
+    public int EffectiveBankHoldExpiryDays => BankHoldExpiryDays > 0 ? BankHoldExpiryDays : 3;
     public int EffectiveMaxUnitsPerVariant => MaxUnitsPerVariant > 0 ? MaxUnitsPerVariant : 10;
     public int EffectiveMaxActiveLinesPerCart => MaxActiveLinesPerCart > 0 ? MaxActiveLinesPerCart : 20;
 

@@ -352,6 +352,10 @@ public class MockDbContext : IApplicationDbContext
     public Task LockVariantForUpdateAsync(Guid variantId, CancellationToken cancellationToken = default)
         => Task.CompletedTask;
 
+    // No-op off Postgres (single-threaded) — same as the variant lock.
+    public Task LockOrderForUpdateAsync(Guid orderId, CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
+
     // reserved += qty WHERE (stock - reserved) >= qty
     public Task<int> TryIncrementReservedQuantityAsync(Guid variantId, int quantity, CancellationToken cancellationToken = default)
     {
@@ -423,6 +427,36 @@ public class MockDbContext : IApplicationDbContext
         // consistent with how this mock already sets other non-public members.
         typeof(BaseEntity).GetProperty(nameof(BaseEntity.Id))!.SetValue(reservation, id);
         _stockReservations.Add(reservation);
+        return Task.FromResult(1);
+    }
+
+    // INSERT ... ON CONFLICT (order_id, variant_id) WHERE status='Active' AND kind='BankTransfer' DO NOTHING —
+    // the bank hold's own uniqueness (cart_id is null, keyed on the order instead).
+    public Task<int> InsertActiveBankReservationAsync(Guid id, Guid variantId, Guid orderId, int quantity, DateTime expiresAt, CancellationToken cancellationToken = default)
+    {
+        if (_stockReservations.Any(r => r.OrderId == orderId && r.VariantId == variantId
+                && r.Kind == ReservationKind.BankTransfer && r.Status == ReservationStatus.Active))
+        {
+            return Task.FromResult(0);
+        }
+
+        var reservation = new StockReservation(variantId, null, quantity, expiresAt, ReservationKind.BankTransfer);
+        reservation.SetOrderId(orderId);
+        typeof(BaseEntity).GetProperty(nameof(BaseEntity.Id))!.SetValue(reservation, id);
+        _stockReservations.Add(reservation);
+        return Task.FromResult(1);
+    }
+
+    // stock += qty (unconditional restock; does not touch reserved).
+    public Task<int> IncrementVariantStockAsync(Guid variantId, int quantity, CancellationToken cancellationToken = default)
+    {
+        var variant = _productVariants.FirstOrDefault(v => v.Id == variantId);
+        if (variant is null)
+        {
+            return Task.FromResult(0);
+        }
+
+        variant.AdjustStock(quantity);
         return Task.FromResult(1);
     }
 

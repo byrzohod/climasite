@@ -80,6 +80,13 @@ public class StockReservationConfiguration : IEntityTypeConfiguration<StockReser
             .IsUnique()
             .HasFilter("status = 'Active'");
 
+        // INV-01 B: at most one LIVE bank-transfer hold per (order, variant). Bank holds have a null cart_id, so
+        // the (cart_id, variant_id) index above never dedupes them (Postgres NULLs are distinct) — they need their
+        // own filtered-unique index keyed on the order. Literal must byte-match the migration filter.
+        builder.HasIndex(r => new { r.OrderId, r.VariantId })
+            .IsUnique()
+            .HasFilter("status = 'Active' AND kind = 'BankTransfer'");
+
         // Sweeper scan (Active + expiring first), per-variant hold lookup, and the intent/order joins.
         builder.HasIndex(r => new { r.Status, r.ExpiresAt });
         builder.HasIndex(r => new { r.VariantId, r.Status });

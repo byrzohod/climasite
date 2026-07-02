@@ -1043,6 +1043,97 @@ public class CreateOrderCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_BankTransferOrder_ReservesHold_WithoutDecrementingStock()
+    {
+        // INV-01 B: a bank order RESERVES its stock (reserved += qty) rather than hard-decrementing it — the
+        // order commits Pending holding the units, to be consumed at admin mark-paid or auto-released on expiry.
+        var userId = Guid.NewGuid();
+        var product = CreateProduct();
+        var variant = product.Variants.First();
+        variant.SetStockQuantity(10);
+
+        var cart = new Cart(userId, null);
+        cart.AddItem(product.Id, variant.Id, 2, 100m);
+
+        _context.AddProduct(product);
+        _context.AddCart(cart);
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        var handler = CreateHandler();
+        var command = CreateValidCommand() with { PaymentMethod = "bank" };
+
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        variant.StockQuantity.Should().Be(10, "a bank order holds stock, it does not decrement it at create");
+        variant.ReservedQuantity.Should().Be(2);
+
+        var hold = await _context.StockReservations.SingleAsync();
+        hold.Kind.Should().Be(ReservationKind.BankTransfer);
+        hold.Status.Should().Be(ReservationStatus.Active);
+        hold.OrderId.Should().Be(result.Value!.Id);
+        hold.CartId.Should().BeNull("a bank hold is keyed on the order, not the cart");
+    }
+
+    [Fact]
+    public async Task Handle_BankTransferOrder_InsufficientStock_ReturnsFailure_NoHold()
+    {
+        var userId = Guid.NewGuid();
+        var product = CreateProduct();
+        var variant = product.Variants.First();
+        variant.SetStockQuantity(1);
+
+        var cart = new Cart(userId, null);
+        cart.AddItem(product.Id, variant.Id, 5, 100m);
+
+        _context.AddProduct(product);
+        _context.AddCart(cart);
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        var handler = CreateHandler();
+        var command = CreateValidCommand() with { PaymentMethod = "bank" };
+
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Contain("Insufficient stock");
+        variant.ReservedQuantity.Should().Be(0);
+        variant.StockQuantity.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Handle_BankTransferOrder_WithPaymentIntent_IsRejected_NoOrderNoHold()
+    {
+        // INV-01 B [council High]: a bank order must NEVER carry a PaymentIntent (else the Stripe webhook flips it
+        // straight to Paid with no order lock and no bank-hold consume ⇒ Paid with stock never taken). Reject the
+        // invalid combination before creating the order or reserving any hold.
+        var userId = Guid.NewGuid();
+        var product = CreateProduct();
+        var variant = product.Variants.First();
+        variant.SetStockQuantity(10);
+
+        var cart = new Cart(userId, null);
+        cart.AddItem(product.Id, variant.Id, 1, 100m);
+
+        _context.AddProduct(product);
+        _context.AddCart(cart);
+
+        _currentUserServiceMock.Setup(x => x.UserId).Returns(userId);
+        var handler = CreateHandler();
+        var command = CreateValidCommand() with { PaymentMethod = "bank", PaymentIntentId = "pi_should_not_be_here" };
+
+        var result = await handler.Handle(command, CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Contain("payment intent");
+        (await _context.Orders.ToListAsync()).Should().BeEmpty("no order is created for the invalid combination");
+        (await _context.StockReservations.ToListAsync()).Should().BeEmpty("no bank hold is inserted");
+        variant.StockQuantity.Should().Be(10);
+        variant.ReservedQuantity.Should().Be(0);
+        _paymentServiceMock.Verify(x => x.GetPaymentIntentAsync(It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
     public async Task Handle_CardOrderWithVerifiedIntent_DoesNotEnqueueBankEmail()
     {
         // Arrange: a verified card order must NOT stage bank-transfer instructions.

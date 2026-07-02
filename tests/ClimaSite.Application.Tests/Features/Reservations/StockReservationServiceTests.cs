@@ -342,4 +342,170 @@ public class StockReservationServiceTests
         hold.Status.Should().Be(ReservationStatus.Expired);
         variant.ReservedQuantity.Should().Be(0);
     }
+
+    // ---- INV-01 Wave B: bank-transfer hold-with-expiry ----
+
+    private Order SeedBankOrder()
+    {
+        var order = new Order($"ORD-{Guid.NewGuid():N}"[..14], "bank@test.com");
+        order.SetPaymentMethod("bank");
+        _context.AddOrder(order);
+        return order;
+    }
+
+    private StockReservation SeedBankHold(Guid orderId, Guid variantId, int quantity, DateTime expiresAt)
+    {
+        var hold = new StockReservation(variantId, null, quantity, expiresAt, ReservationKind.BankTransfer);
+        hold.SetOrderId(orderId);
+        _context.AddStockReservation(hold);
+        return hold;
+    }
+
+    [Fact]
+    public async Task ReserveBankOrder_HoldsStock_WithoutDecrementing()
+    {
+        var variant = SeedVariant(stock: 10);
+        var orderId = Guid.NewGuid();
+
+        var result = await CreateService().ReserveBankOrderAsync(orderId, new[] { Line(variant.Id, 2) });
+
+        result.Succeeded.Should().BeTrue();
+        variant.ReservedQuantity.Should().Be(2);
+        variant.StockQuantity.Should().Be(10, "a bank hold reserves but does NOT physically decrement stock");
+        var hold = _context.StockReservations.Single(r => r.OrderId == orderId);
+        hold.Status.Should().Be(ReservationStatus.Active);
+        hold.Kind.Should().Be(ReservationKind.BankTransfer);
+        hold.CartId.Should().BeNull("a bank hold is keyed on the order, not a cart");
+    }
+
+    [Fact]
+    public async Task ReserveBankOrder_InsufficientStock_Fails_NamesItem_NoReserve()
+    {
+        var variant = SeedVariant(stock: 1);
+
+        var result = await CreateService().ReserveBankOrderAsync(
+            Guid.NewGuid(), new[] { Line(variant.Id, 5, "Almost sold out") });
+
+        result.Succeeded.Should().BeFalse();
+        result.Error.Should().Contain("Almost sold out");
+        variant.ReservedQuantity.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ReserveBankOrder_CalledTwiceForSameOrder_IsIdempotent_NoDoubleCount()
+    {
+        // A commit-unknown retry re-runs the reserve for the same order. The (order, variant) idempotency check
+        // reuses the existing Active hold and does NOT re-increment. BREAK-PROBE: drop the `existing` check and
+        // the second call increments reserved to 4 while Σ Active stays 1 hold ⇒ drift.
+        var variant = SeedVariant(stock: 10);
+        var orderId = Guid.NewGuid();
+        var service = CreateService();
+
+        await service.ReserveBankOrderAsync(orderId, new[] { Line(variant.Id, 2) });
+        await service.ReserveBankOrderAsync(orderId, new[] { Line(variant.Id, 2) });
+
+        variant.ReservedQuantity.Should().Be(2, "the own hold is reused, not double-counted");
+        _context.StockReservations.Count(r => r.OrderId == orderId && r.Status == ReservationStatus.Active).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task ConsumeBankOrder_DecrementsStockAndReserved_FlipsConsumed()
+    {
+        var variant = SeedVariant(stock: 10);
+        var orderId = Guid.NewGuid();
+        var service = CreateService();
+        await service.ReserveBankOrderAsync(orderId, new[] { Line(variant.Id, 2) });
+
+        var consumed = await service.ConsumeBankOrderAsync(orderId);
+
+        consumed.ExpectedHolds.Should().Be(1);
+        consumed.ConsumedHolds.Should().Be(1);
+        consumed.AllConsumed.Should().BeTrue();
+        variant.StockQuantity.Should().Be(8, "mark-paid physically sells the held units");
+        variant.ReservedQuantity.Should().Be(0);
+        _context.StockReservations.Single(r => r.OrderId == orderId).Status.Should().Be(ReservationStatus.Consumed);
+    }
+
+    [Fact]
+    public async Task ConsumeBankOrder_IsIdempotent_NoDoubleDecrement()
+    {
+        var variant = SeedVariant(stock: 10);
+        var orderId = Guid.NewGuid();
+        var service = CreateService();
+        await service.ReserveBankOrderAsync(orderId, new[] { Line(variant.Id, 2) });
+
+        var first = await service.ConsumeBankOrderAsync(orderId);
+        var second = await service.ConsumeBankOrderAsync(orderId);
+
+        first.AllConsumed.Should().BeTrue();
+        first.ConsumedHolds.Should().Be(1);
+        // The second pass finds no Active holds (already Consumed) — nothing left to sell, so NOT AllConsumed.
+        second.ExpectedHolds.Should().Be(0);
+        second.ConsumedHolds.Should().Be(0);
+        second.AllConsumed.Should().BeFalse();
+        variant.StockQuantity.Should().Be(8, "decremented exactly once");
+    }
+
+    [Fact]
+    public async Task ReleaseBankOrder_DropsReserved_NoRestock()
+    {
+        var variant = SeedVariant(stock: 10);
+        var orderId = Guid.NewGuid();
+        var service = CreateService();
+        await service.ReserveBankOrderAsync(orderId, new[] { Line(variant.Id, 3) });
+
+        await service.ReleaseBankOrderAsync(orderId);
+
+        variant.ReservedQuantity.Should().Be(0);
+        variant.StockQuantity.Should().Be(10, "a held bank order was never decremented, so cancel must NOT restock");
+        _context.StockReservations.Single(r => r.OrderId == orderId).Status.Should().Be(ReservationStatus.Released);
+    }
+
+    [Fact]
+    public async Task SweepBank_ExpiredHold_ReleasesHold_AndCancelsOrder_StockNeverLeaked()
+    {
+        var variant = SeedVariant(stock: 10, reserved: 2);
+        var order = SeedBankOrder();
+        var hold = SeedBankHold(order.Id, variant.Id, quantity: 2, expiresAt: DateTime.UtcNow.AddMinutes(-5));
+
+        var cancelled = await CreateService().SweepExpiredBankHoldsAsync(batchSize: 10);
+
+        cancelled.Should().Be(1);
+        hold.Status.Should().Be(ReservationStatus.Expired);
+        variant.ReservedQuantity.Should().Be(0, "the expired hold no longer counts");
+        variant.StockQuantity.Should().Be(10, "an unpaid bank hold never physically decremented stock");
+        order.Status.Should().Be(OrderStatus.Cancelled);
+    }
+
+    [Fact]
+    public async Task SweepBank_FreshHold_LeftActive_OrderStaysPending()
+    {
+        var variant = SeedVariant(stock: 10, reserved: 2);
+        var order = SeedBankOrder();
+        var hold = SeedBankHold(order.Id, variant.Id, quantity: 2, expiresAt: DateTime.UtcNow.AddDays(3));
+
+        var cancelled = await CreateService().SweepExpiredBankHoldsAsync(batchSize: 10);
+
+        cancelled.Should().Be(0);
+        hold.Status.Should().Be(ReservationStatus.Active);
+        order.Status.Should().Be(OrderStatus.Pending);
+        variant.ReservedQuantity.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task SweepBank_HoldAlreadyConsumed_DoesNotCancelPaidOrder()
+    {
+        // A mark-paid consumed the hold + paid the order before the sweep. The sweeper only scans Active holds, so
+        // a Consumed hold is never selected — the paid order is left untouched (no spurious cancel).
+        var variant = SeedVariant(stock: 8, reserved: 0);
+        var order = SeedBankOrder();
+        order.SetStatus(OrderStatus.Paid);
+        var hold = SeedBankHold(order.Id, variant.Id, quantity: 2, expiresAt: DateTime.UtcNow.AddMinutes(-5));
+        hold.SetStatus(ReservationStatus.Consumed);
+
+        var cancelled = await CreateService().SweepExpiredBankHoldsAsync(batchSize: 10);
+
+        cancelled.Should().Be(0);
+        order.Status.Should().Be(OrderStatus.Paid);
+    }
 }

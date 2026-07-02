@@ -27,13 +27,16 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, Res
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IStockReservationService _reservations;
 
     public CancelOrderCommandHandler(
         IApplicationDbContext context,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IStockReservationService reservations)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _reservations = reservations;
     }
 
     public async Task<Result<OrderDto>> Handle(
@@ -49,8 +52,18 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, Res
 
         async Task<Result<OrderDto>> CancelOrderAsync()
         {
+            // Re-derive from committed state on every execution-strategy attempt (the retry reuses this scoped
+            // context and does not reset the tracker on a rollback) — needed now that restock/release go through
+            // raw from-state SQL alongside the tracked order.SetStatus.
+            _context.ClearChangeTracker();
+
             // Use explicit transaction to ensure stock restoration and order status update are atomic
             await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+            // INV-01 B [council High #2]: lock the ORDER row FIRST (before any variant lock), then RE-READ the
+            // order under it — so the restock-vs-release branch below is decided against the order's committed
+            // status, never a stale snapshot that races a concurrent admin mark-paid (which also takes this lock).
+            await _context.LockOrderForUpdateAsync(request.OrderId, cancellationToken);
 
             var order = await _context.Orders
                 .Include(o => o.Items)
@@ -79,7 +92,7 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, Res
                 return Result<OrderDto>.Failure($"Order cannot be cancelled. Current status: {order.Status}");
             }
 
-            // Restore stock for all items
+            // Load the order's products (for the response DTO's images/variants).
             var productIds = order.Items.Select(i => i.ProductId).Distinct().ToList();
             var products = await _context.Products
                 .Include(p => p.Variants)
@@ -87,13 +100,25 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, Res
                 .Where(p => productIds.Contains(p.Id))
                 .ToListAsync(cancellationToken);
 
-            foreach (var item in order.Items)
+            // INV-01 B: restock depends on whether stock was physically taken. An unpaid bank-transfer order still
+            // HOLDS its stock (reserved, never decremented) → RELEASE the hold (drops reserved, no restock). Any
+            // other cancellable order — a card order, or a bank order already marked Paid — had its stock
+            // physically decremented, so restock it atomically (ExecuteUpdate, never the tracked AdjustStock which
+            // is a lost-update footgun under a concurrent decrement).
+            var hasActiveBankHold = await _context.StockReservations.AsNoTracking().AnyAsync(
+                r => r.OrderId == order.Id && r.Kind == ReservationKind.BankTransfer
+                  && r.Status == ReservationStatus.Active,
+                cancellationToken);
+
+            if (hasActiveBankHold)
             {
-                var product = products.FirstOrDefault(p => p.Id == item.ProductId);
-                var variant = product?.Variants.FirstOrDefault(v => v.Id == item.VariantId);
-                if (variant != null)
+                await _reservations.ReleaseBankOrderAsync(order.Id, cancellationToken);
+            }
+            else
+            {
+                foreach (var item in order.Items.OrderBy(i => i.VariantId))
                 {
-                    variant.AdjustStock(item.Quantity); // Add back the stock
+                    await _context.IncrementVariantStockAsync(item.VariantId, item.Quantity, cancellationToken);
                 }
             }
 

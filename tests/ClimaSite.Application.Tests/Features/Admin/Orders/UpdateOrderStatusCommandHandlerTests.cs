@@ -1,5 +1,8 @@
+using ClimaSite.Application.Common.Interfaces;
+using ClimaSite.Application.Common.Options;
 using ClimaSite.Application.Features.Admin.Orders.Commands;
 using ClimaSite.Application.Features.Outbox;
+using ClimaSite.Application.Features.Reservations;
 using ClimaSite.Application.Tests.TestHelpers;
 using ClimaSite.Core.Entities;
 using FluentAssertions;
@@ -12,7 +15,7 @@ public class UpdateOrderStatusCommandHandlerTests
     private readonly MockDbContext _context = new();
 
     private UpdateOrderStatusCommandHandler CreateHandler() =>
-        new(_context, new EmailOutbox(_context));
+        new(_context, new EmailOutbox(_context), new StockReservationService(_context, new ReservationOptions()));
 
     private Order SeedPendingOrder(string email = "buyer@test.com", Guid? userId = null)
     {
@@ -23,6 +26,76 @@ public class UpdateOrderStatusCommandHandlerTests
         }
         _context.AddOrder(order);
         return order;
+    }
+
+    private Order SeedPendingBankOrder()
+    {
+        var order = new Order($"ORD-{Guid.NewGuid():N}"[..14], "bank@test.com");
+        order.SetPaymentMethod("bank");
+        _context.AddOrder(order);
+        return order;
+    }
+
+    private ProductVariant SeedVariant(int stock, int reserved = 0)
+    {
+        var variant = new ProductVariant(Guid.NewGuid(), $"SKU-{Guid.NewGuid():N}"[..12], "Default");
+        variant.SetStockQuantity(stock);
+        if (reserved > 0)
+        {
+            variant.SetReservedQuantity(reserved);
+        }
+
+        _context.AddProductVariant(variant);
+        return variant;
+    }
+
+    [Fact]
+    public async Task MarkBankTransferOrderPaid_ConsumesHold_DecrementsStock()
+    {
+        // INV-01 B: admin marking a bank order Paid consumes its Active hold (hold → sold) in the same unit of work.
+        var variant = SeedVariant(stock: 10);
+        var order = SeedPendingBankOrder();
+        var reservations = new StockReservationService(_context, new ReservationOptions());
+        await reservations.ReserveBankOrderAsync(order.Id, new[] { new ReservationRequestLine(variant.Id, 2, "AC") });
+        variant.StockQuantity.Should().Be(10);
+        variant.ReservedQuantity.Should().Be(2);
+
+        var result = await CreateHandler().Handle(new UpdateOrderStatusCommand
+        {
+            OrderId = order.Id,
+            Status = nameof(OrderStatus.Paid),
+            NotifyCustomer = false
+        }, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        order.Status.Should().Be(OrderStatus.Paid);
+        variant.StockQuantity.Should().Be(8, "mark-paid physically sells the held units");
+        variant.ReservedQuantity.Should().Be(0);
+        (await _context.StockReservations.SingleAsync()).Status.Should().Be(ReservationStatus.Consumed);
+    }
+
+    [Fact]
+    public async Task MarkBankTransferOrderPaid_HoldAlreadyExpired_ReturnsFailure_NoSale()
+    {
+        // The hold expired (swept ⇒ order should be auto-cancelled). Marking it Paid must be refused rather than
+        // sell stock that is no longer held (which would oversell).
+        var variant = SeedVariant(stock: 10);
+        var order = SeedPendingBankOrder();
+        var expiredHold = new StockReservation(variant.Id, null, 2, DateTime.UtcNow.AddMinutes(-5), ReservationKind.BankTransfer);
+        expiredHold.SetOrderId(order.Id);
+        expiredHold.SetStatus(ReservationStatus.Expired);
+        _context.AddStockReservation(expiredHold);
+
+        var result = await CreateHandler().Handle(new UpdateOrderStatusCommand
+        {
+            OrderId = order.Id,
+            Status = nameof(OrderStatus.Paid),
+            NotifyCustomer = false
+        }, CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        result.Error.Should().Contain("can no longer be marked as paid");
+        variant.StockQuantity.Should().Be(10, "no hold to sell — stock is untouched");
     }
 
     [Fact]

@@ -143,6 +143,15 @@ public interface IApplicationDbContext
     Task LockVariantForUpdateAsync(Guid variantId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// INV-01 B — locks the ORDER row (<c>SELECT id FROM orders WHERE id=@o FOR UPDATE</c>) for the rest of the
+    /// current transaction so every order-status transition (mark-paid consume, cancel release/restock, sweeper
+    /// auto-cancel) serializes per order. Acquired FIRST — BEFORE any variant lock — so the global lock order is
+    /// order → ascending variant_id (no deadlock). Executed for its lock side effect only; MUST be called inside
+    /// an open transaction. No-op on the in-memory double.
+    /// </summary>
+    Task LockOrderForUpdateAsync(Guid orderId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// P1 reserve — available-gated increment of the denormalised counter:
     /// <c>reserved += @qty WHERE (stock_quantity - reserved_quantity) &gt;= @qty</c>. Returns 1 when it moved,
     /// 0 = insufficient available stock (the caller rolls the whole batch back).
@@ -176,6 +185,22 @@ public interface IApplicationDbContext
     /// is the string enum name (<c>Card</c>/<c>BankTransfer</c>).
     /// </summary>
     Task<int> InsertActiveReservationAsync(Guid id, Guid variantId, Guid? cartId, int quantity, DateTime expiresAt, string kind, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// INV-01 B — insert a fresh <c>Active</c> <c>BankTransfer</c> hold keyed on an ORDER (not a cart): cart_id
+    /// is null, order_id is set. <c>ON CONFLICT (order_id, variant_id) WHERE status='Active' AND kind='BankTransfer'
+    /// DO NOTHING</c> (its own filtered-unique index — the card index doesn't dedupe a null cart_id) so a duplicate
+    /// per (order, variant) never throws; returns 1 when this call created the row, 0 on conflict.
+    /// </summary>
+    Task<int> InsertActiveBankReservationAsync(Guid id, Guid variantId, Guid orderId, int quantity, DateTime expiresAt, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// INV-01 B — atomically restock a variant: <c>stock_quantity += @qty</c> in a single <c>ExecuteUpdate</c>
+    /// (never a tracked load-increment-save, which would lose a concurrent decrement). Used when cancelling an
+    /// order whose stock was physically decremented (a card order, or a bank order already marked Paid). Returns
+    /// rows affected (1 = restocked, 0 = missing variant). Does not touch <c>reserved_quantity</c>.
+    /// </summary>
+    Task<int> IncrementVariantStockAsync(Guid variantId, int quantity, CancellationToken cancellationToken = default);
 
     /// <summary>Set an Active hold's quantity and expiry (P1 reconcile of an existing hold). Returns rows affected.</summary>
     Task<int> SetReservationQuantityAndExpiryAsync(Guid reservationId, int quantity, DateTime expiresAt, CancellationToken cancellationToken = default);

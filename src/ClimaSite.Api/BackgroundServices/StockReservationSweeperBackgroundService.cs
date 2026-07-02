@@ -58,7 +58,16 @@ public class StockReservationSweeperBackgroundService : BackgroundService
                 var expired = await reservations.SweepExpiredHoldsAsync(batchSize, stoppingToken);
                 if (expired > 0)
                 {
-                    _logger.LogInformation("Reservation sweeper expired {Count} hold(s).", expired);
+                    _logger.LogInformation("Reservation sweeper expired {Count} card hold(s).", expired);
+                }
+
+                // INV-01 B: also expire elapsed bank-transfer holds and auto-cancel their still-unpaid orders
+                // (stock is released, never leaked). Runs in the same tick, after the card sweep.
+                var cancelled = await reservations.SweepExpiredBankHoldsAsync(batchSize, stoppingToken);
+                if (cancelled > 0)
+                {
+                    _logger.LogInformation(
+                        "Reservation sweeper auto-cancelled {Count} unpaid bank-transfer order(s).", cancelled);
                 }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
