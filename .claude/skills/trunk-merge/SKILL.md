@@ -74,6 +74,7 @@ Before cutting the branch, confirm **all** of these. Each one is a thing that, s
 - [ ] **Incomplete work is flag-gated.** If any part of this unit is not finished/safe to be live, it is behind a **default-off** flag (`/feature-flag`), the flag has a **creation date + expiry + `temp-` prefix**, and its **removal is a DoD item**. Half-finished code merges **dark**, never live.
 - [ ] **Migrations are safe for trunk.** If this unit touches the schema: it uses **expand/contract** (`/db-migrate`), and there is **no destructive schema change in the same PR as the code using it** (§C-2). The additive migration ships first; the contract step is a later, separate PR.
 - [ ] **No secrets in the diff.** `git diff --staged` reviewed; the FAST stage runs gitleaks but you do not rely on it to catch your own paste.
+- [ ] **`STATE.md` reflects THIS merge.** `.planning/STATE.md` (Last checkpoint / Current position / **▶ Next action**) is refreshed via `/checkpoint` to the state **after** this unit lands, and ships **in this PR** — do **not** defer it to "the next PR" (that is exactly how STATE.md drifts a step behind `main` and misdirects the next `/clear`). Per-PR history goes to `CHANGELOG.md`, not STATE.md.
 
 If any box fails, fix it **before** branching. The cheapest place to catch a queue ejection is here.
 

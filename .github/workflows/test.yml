@@ -295,7 +295,8 @@ jobs:
         run: dotnet restore
 
       - name: Verify C# formatting (dotnet format)
-        run: dotnet format ClimaSite.NoE2E.slnf --verify-no-changes --no-restore
+        # Single canonical command lives in the script (never `--severity info`); --no-restore since the step above restored.
+        run: bash scripts/ci/format-check.sh --no-restore
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -327,21 +328,10 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
-      - name: .NET vulnerable packages (fail on any)
-        run: |
-          out="$(dotnet list ClimaSite.NoE2E.slnf package --vulnerable --include-transitive 2>&1)"
-          echo "$out"
-          # Allowlist (tracked under SEC-12): GHSA-v5pm-xwqc-g5wc = Microsoft.OpenApi 2.3.0, a transitive
-          # dependency of Swashbuckle. Swagger is Dev-only (SEC-06 gates UseSwagger behind IsDevelopment),
-          # so this advisory is NOT reachable in Production/Staging. It's also suppressed at the csproj
-          # (NuGetAuditSuppress). Drop only that advisory's line, then fail on ANY remaining vulnerable
-          # PACKAGE line. `dotnet list --vulnerable` prints `   > <pkg> <version> <Severity> <url>`, so the
-          # severity is the 3rd column (after `>`), not immediately after it. Remove once SEC-12 upgrades it.
-          if echo "$out" | grep -v 'GHSA-v5pm-xwqc-g5wc' | grep -qiE '^\s*>\s+\S+\s+\S+\s+(Critical|High|Moderate|Low)\b'; then
-            echo "::error::Vulnerable .NET packages found — update them before merge."
-            exit 1
-          fi
-          echo "No vulnerable .NET packages (excluding the SEC-12-tracked allowlist)."
+      - name: .NET vulnerable packages (fail on any; expiry-checked allowlist)
+        # Suppressions live in security/dependency-audit-allowlist.txt (id | pkg | reason | tracking | expiry).
+        # The gate still fails on any un-allowlisted vulnerable package AND on any past-expiry allowlist entry.
+        run: bash scripts/ci/dependency-audit.sh
 
       - name: Secret scan (gitleaks — informational until allowlisted, SEC-13)
         uses: gitleaks/gitleaks-action@v2

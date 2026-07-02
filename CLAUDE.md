@@ -30,6 +30,9 @@ from `.planning/STATE.md`; map of all docs in `docs/README.md`.
 - **`/acceptance` runtime gate:** behavior/source changes need an exploratory `/acceptance` pass (drive
   the REAL running app adversarially) with a committed PASS report at `.planning/acceptance/<id>.md` whose
   `commit:` matches the merged tip, **before** `/trunk-merge` (procedural DoD gate + Stop-hook nudge #11).
+- **Known footguns:** before touching CI/format/acceptance/E2E, skim **`docs/project-plan/KNOWN_FOOTGUNS.md`**
+  — the recurring traps (CRLF vs `dotnet format`; never `--severity info`; output-cache staleness → `?_cb=`;
+  the dependency-audit allowlist; the PR-checklist event-payload trap; NetworkIdle in E2E; reusable council findings).
 
 ## Project status & history (single-sourced — do NOT keep a status table here)
 
