@@ -22,21 +22,32 @@ echo
 
 # Print STATE.md up to (but not including) the first archived/historical section, if any.
 # Matched on ASCII substrings so it's robust to the leading emoji. "## Foundational milestones"
-# (short, useful orientation) deliberately does NOT match and stays injected.
+# (short, useful orientation) deliberately does NOT match and stays injected. awk signals whether
+# it trimmed via its exit code (3 = trimmed) so we don't infer truncation from line counts (command
+# substitution strips trailing newlines, which would make a wc-based check unreliable).
+set +e
 primed="$(awk '
-  /^## Recently done/           { exit }
-  /^## .*RESUME HERE/           { exit }
-  /^## .*Done \(all merged/     { exit }
-  /^## After #/                 { exit }
-  /^## Merged to main/          { exit }
-  /^## Remaining backlog after/ { exit }
+  /^## Recently done/           { trimmed=1; exit }
+  /^## .*RESUME HERE/           { trimmed=1; exit }
+  /^## .*Done \(all merged/     { trimmed=1; exit }
+  /^## After #/                 { trimmed=1; exit }
+  /^## Merged to main/          { trimmed=1; exit }
+  /^## Remaining backlog after/ { trimmed=1; exit }
   { print }
+  END { exit (trimmed ? 3 : 0) }
 ' "$STATE")"
+trimmed=$?
+set -e
+
+# awk should exit 0 (no trim) or 3 (trimmed); anything else is a real failure — don't inject partial state.
+if [ "$trimmed" -ne 0 ] && [ "$trimmed" -ne 3 ]; then
+  echo "state-prime: failed to read/prime $STATE" >&2
+  exit "$trimmed"
+fi
 
 printf '%s\n' "$primed"
 
-# If we stopped early, tell the reader where the rest is.
-if [ "$(printf '%s\n' "$primed" | wc -l)" -lt "$(wc -l < "$STATE")" ]; then
+if [ "$trimmed" -eq 3 ]; then
   echo
   echo "_(SessionStart trimmed older/archived sections from this injection — open \`.planning/STATE.md\` for the full file; per-PR history lives in \`CHANGELOG.md\`.)_"
 fi
